@@ -483,7 +483,6 @@ class TestAlertingFactory(unittest.TestCase):
         """
         In this test we will check that if critical_repeat is disabled, a no
         change critical alert is not re-raised.
-        :return:
         """
         self.test_alerts_config.head_tracker_current_head[
             'critical_repeat_enabled'] = "False"
@@ -1809,7 +1808,7 @@ class TestAlertingFactory(unittest.TestCase):
         current_went_down = datetime.now().timestamp()
         alert_timestamp = \
             current_went_down + float(self.test_alerts_config.node_is_down[
-                'critical_threshold'])
+                                          'critical_threshold'])
         self.test_factory_instance.classify_downtime_alert(
             current_went_down, self.test_alerts_config.node_is_down,
             NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
@@ -1880,285 +1879,230 @@ class TestAlertingFactory(unittest.TestCase):
         self.assertEqual(1, len(data_for_alerting))
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
-    # TODO: Follow the no change tests not the ones below due to the timer.
-    #
-    # @freeze_time("2012-01-01")
-    # def test_classify_threshold_time_period_no_warning_if_warning_already_sent(
-    #         self) -> None:
-    #     """
-    #     In this test we will check that no warning alert is raised if a warning
-    #     alert has already been sent
-    #     """
-    #     data_for_alerting = []
-    #
-    #     # Set the timer
-    #     current = int(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'warning_threshold'])
-    #     previous = 0
-    #     self.test_factory_instance.classify_thresholded_in_time_period_alert(
-    #         current, previous,
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total,
-    #         DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    #         DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-    #         self.test_parent_id, self.test_node_id,
-    #         GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-    #             .value, self.test_node_name, datetime.now().timestamp()
-    #     )
-    #     data_for_alerting.clear()
-    #
-    #     self.test_factory_instance.classify_thresholded_in_time_period_alert(
-    #         current + 1, current,
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total,
-    #         DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    #         DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-    #         self.test_parent_id, self.test_node_id,
-    #         GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-    #         .value, self.test_node_name, datetime.now().timestamp()
-    #     )
-    #     self.assertEqual([], data_for_alerting)
-    #
-    # @freeze_time("2012-01-01")
-    # def test_classify_threshold_time_period_raises_critical_if_repeat_elapsed(
-    #         self) -> None:
-    #     """
-    #     In this test we will check that a critical above threshold alert is
-    #     re-raised if the critical repeat window elapses. We will also check that
-    #     if the critical window does not elapse, a critical alert is not
-    #     re-raised.
-    #     """
-    #     data_for_alerting = []
-    #
-    #     # First critical above threshold alert
-    #     current = int(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'critical_threshold'])
-    #     previous = 0
-    #     self.test_factory_instance.classify_thresholded_in_time_period_alert(
-    #         current, previous,
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total,
-    #         DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    #         DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-    #         self.test_parent_id, self.test_node_id,
-    #         GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-    #             .value, self.test_node_name, datetime.now().timestamp()
-    #     )
-    #     data_for_alerting.clear()
-    #
-    #     # Classify with not elapsed repeat to confirm that no critical alert is
-    #     # raised.
-    #     pad = float(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'critical_repeat']) - 1
-    #     alert_timestamp = datetime.now().timestamp() + pad
-    #     self.test_factory_instance.classify_thresholded_in_time_period_alert(
-    #         current, current,
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total,
-    #         DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    #         DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-    #         self.test_parent_id, self.test_node_id,
-    #         GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-    #             .value, self.test_node_name, alert_timestamp
-    #     )
-    #     self.assertEqual([], data_for_alerting)
-    #
-    #     # Let repeat time to elapse and check that a critical alert is
-    #     # re-raised
-    #     pad = float(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'critical_repeat'])
-    #     alert_timestamp = datetime.now().timestamp() + pad
-    #     self.test_factory_instance.classify_thresholded_in_time_period_alert(
-    #         current, current,
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total,
-    #         DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    #         DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-    #         self.test_parent_id, self.test_node_id,
-    #         GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-    #             .value, self.test_node_name, alert_timestamp
-    #     )
-    #     period = float(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'critical_time_window'])
-    #     expected_alert = DroppedBlockHeadersIncreasedAboveThresholdAlert(
-    #         self.test_node_name, current, "CRITICAL", alert_timestamp, period,
-    #         "CRITICAL", self.test_parent_id, self.test_node_id)
-    #     self.assertEqual(1, len(data_for_alerting))
-    #     self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
-    #
-    # @freeze_time("2012-01-01")
-    # def test_classify_threshold_time_per_only_1_critical_if_above_and_no_repeat(
-    #         self) -> None:
-    #     """
-    #     In this test we will check that if critical_repeat is disabled, an
-    #     increased above critical alert is not re-raised.
-    #     """
-    #     self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #         'critical_repeat_enabled'] = "False"
-    #     data_for_alerting = []
-    #
-    #     # First critical above threshold alert
-    #     current = int(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'critical_threshold'])
-    #     previous = 0
-    #     self.test_factory_instance.classify_thresholded_in_time_period_alert(
-    #         current, previous,
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total,
-    #         DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    #         DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-    #         self.test_parent_id, self.test_node_id,
-    #         GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-    #             .value, self.test_node_name, datetime.now().timestamp()
-    #     )
-    #     data_for_alerting.clear()
-    #
-    #     # Let repeat time to elapse and check that a critical alert is not
-    #     # re-raised
-    #     pad = float(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'critical_repeat'])
-    #     alert_timestamp = datetime.now().timestamp() + pad
-    #     self.test_factory_instance.classify_thresholded_in_time_period_alert(
-    #         current, current,
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total,
-    #         DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    #         DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-    #         self.test_parent_id, self.test_node_id,
-    #         GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-    #             .value, self.test_node_name, alert_timestamp
-    #     )
-    #     self.assertEqual([], data_for_alerting)
-    #
-    # @parameterized.expand([
-    #     ('critical_time_window', 'critical_threshold', 'CRITICAL',),
-    #     ('warning_time_window', 'warning_threshold', 'WARNING',)
-    # ])
-    # @freeze_time("2012-01-01")
-    # def test_classify_thresh_time_per_info_alert_if_below_thresh_and_alert_sent(
-    #         self, period_var, threshold, threshold_severity) -> None:
-    #     """
-    #     In this test we will check that once the current value is less than a
-    #     threshold, a decreased below threshold info alert is sent. We will
-    #     perform this test for both warning and critical.
-    #     """
-    #     data_for_alerting = []
-    #
-    #     # First above threshold alert
-    #     current = int(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             threshold])
-    #     previous = 0
-    #     self.test_factory_instance.classify_thresholded_in_time_period_alert(
-    #         current, previous,
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total,
-    #         DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    #         DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-    #         self.test_parent_id, self.test_node_id,
-    #         GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-    #             .value, self.test_node_name, datetime.now().timestamp()
-    #     )
-    #     data_for_alerting.clear()
-    #
-    #     # Check that a below threshold INFO alert is raised
-    #     period = int(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             period_var])
-    #     alert_timestamp = datetime.now().timestamp() + period + 1
-    #     self.test_factory_instance.classify_thresholded_in_time_period_alert(
-    #         current, current,
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total,
-    #         DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    #         DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-    #         self.test_parent_id, self.test_node_id,
-    #         GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-    #             .value, self.test_node_name, alert_timestamp
-    #     )
-    #     expected_alert = DroppedBlockHeadersDecreasedBelowThresholdAlert(
-    #         self.test_node_name, 0, 'INFO', alert_timestamp, period,
-    #         threshold_severity, self.test_parent_id, self.test_node_id)
-    #     self.assertEqual(1, len(data_for_alerting))
-    #     self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
-    #
-    # @freeze_time("2012-01-01")
-    # def test_classify_thresh_time_per_warn_alert_if_below_critical_above_warn(
-    #         self) -> None:
-    #     """
-    #     In this test we will check that whenever
-    #     warning <= current <= critical <= previous, a warning alert is raised to
-    #     inform that the current value is greater than the critical value. Note
-    #     we will perform this test for the case when we first alert warning, then
-    #     critical and not immediately critical, as the warning alerting would be
-    #     obvious.
-    #     """
-    #     data_for_alerting = []
-    #
-    #     # Send warning increase above threshold alert
-    #     current = int(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'warning_threshold'])
-    #     previous = 0
-    #     self.test_factory_instance.classify_thresholded_in_time_period_alert(
-    #         current, previous,
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total,
-    #         DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    #         DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-    #         self.test_parent_id, self.test_node_id,
-    #         GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-    #             .value, self.test_node_name, datetime.now().timestamp()
-    #     )
-    #
-    #     # Send critical increase above threshold alert
-    #     previous = 0
-    #     current = int(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'critical_threshold'])
-    #     self.test_factory_instance.classify_thresholded_in_time_period_alert(
-    #         current, previous,
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total,
-    #         DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    #         DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-    #         self.test_parent_id, self.test_node_id,
-    #         GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-    #             .value, self.test_node_name, datetime.now().timestamp()
-    #     )
-    #     data_for_alerting.clear()
-    #
-    #     # Check that 2 alerts are raised, below critical and above warning
-    #     critical_period = int(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'critical_time_window'])
-    #     warning_period = int(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'warning_time_window'])
-    #     current = int(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'warning_threshold'])
-    #     previous = 0
-    #
-    #     # Allow a lot of time to pass so that all previous occurences are
-    #     # automatically deleted, and we are thus above warning.
-    #     alert_timestamp = datetime.now().timestamp() + critical_period + 100
-    #
-    #     self.test_factory_instance.classify_thresholded_in_time_period_alert(
-    #         current, previous,
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total,
-    #         DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    #         DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-    #         self.test_parent_id, self.test_node_id,
-    #         GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-    #             .value, self.test_node_name, alert_timestamp
-    #     )
-    #
-    #     new_current = int(
-    #         self.test_alerts_config.head_tracker_num_heads_dropped_total[
-    #             'warning_threshold'])
-    #     expected_alert_1 = DroppedBlockHeadersDecreasedBelowThresholdAlert(
-    #         self.test_node_name, new_current, 'INFO', alert_timestamp,
-    #         critical_period, 'CRITICAL', self.test_parent_id, self.test_node_id)
-    #     expected_alert_2 = DroppedBlockHeadersIncreasedAboveThresholdAlert(
-    #         self.test_node_name, new_current, "WARNING", alert_timestamp,
-    #         warning_period, "WARNING", self.test_parent_id, self.test_node_id)
-    #     self.assertEqual(2, len(data_for_alerting))
-    #     self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
-    #     self.assertEqual(expected_alert_2.alert_data, data_for_alerting[1])
+    @freeze_time("2012-01-01")
+    def test_classify_downtime_alert_no_warning_if_warning_already_sent(
+            self) -> None:
+        """
+        In this test we will check that no warning alert is raised if a warning
+        alert has already been sent
+        """
+        data_for_alerting = []
+        current_went_down = datetime.now().timestamp()
+        alert_timestamp = \
+            current_went_down + float(self.test_alerts_config.node_is_down[
+                                          'warning_threshold'])
+
+        # Start timer, no alert is raised
+        self.test_factory_instance.classify_downtime_alert(
+            current_went_down, self.test_alerts_config.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, current_went_down
+        )
+
+        # Raise a warning downtime alert is now raised
+        self.test_factory_instance.classify_downtime_alert(
+            current_went_down, self.test_alerts_config.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, alert_timestamp
+        )
+        data_for_alerting.clear()
+
+        # Try to generate another warning alert. Confirm that none was raised.
+        self.test_factory_instance.classify_downtime_alert(
+            current_went_down, self.test_alerts_config.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, alert_timestamp + 10
+        )
+
+    @freeze_time("2012-01-01")
+    def test_classify_downtime_alert_raises_critical_if_repeat_elapsed(
+            self) -> None:
+        """
+        In this test we will check that a critical downtime alert is re-raised
+        if the critical window elapses. We will also check that if the critical
+        window does not elapse, a critical alert is not re-raised.
+        """
+        data_for_alerting = []
+        current_went_down = datetime.now().timestamp()
+        alert_timestamp = \
+            current_went_down + float(self.test_alerts_config.node_is_down[
+                                          'critical_threshold'])
+
+        # Start timer, no alert is raised
+        self.test_factory_instance.classify_downtime_alert(
+            current_went_down, self.test_alerts_config.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, current_went_down
+        )
+
+        # A first critical/warning downtime alert is now raised
+        self.test_factory_instance.classify_downtime_alert(
+            current_went_down, self.test_alerts_config.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, alert_timestamp
+        )
+        data_for_alerting.clear()
+
+        # No alert is re-raised if the repeat time is not elapsed
+        alert_timestamp = \
+            alert_timestamp + float(self.test_alerts_config.node_is_down[
+                                        'critical_repeat'])
+        self.test_factory_instance.classify_downtime_alert(
+            current_went_down, self.test_alerts_config.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, alert_timestamp - 1
+        )
+        self.assertEqual([], data_for_alerting)
+
+        # Critical alert is re-raised if the repeat time elapsed.
+        self.test_factory_instance.classify_downtime_alert(
+            current_went_down, self.test_alerts_config.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, alert_timestamp
+        )
+        difference = alert_timestamp - current_went_down
+        expected_alert = NodeStillDownAlert(
+            self.test_node_name, difference, 'CRITICAL', alert_timestamp,
+            self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_downtime_alert_only_1_critical_if_repeat_disabled(
+            self) -> None:
+        """
+        In this test we will check that if critical_repeat is disabled, a
+        critical downtime alert is not re-raised.
+        """
+        self.test_alerts_config.node_is_down[
+            'critical_repeat_enabled'] = "False"
+        data_for_alerting = []
+        current_went_down = datetime.now().timestamp()
+        alert_timestamp = \
+            current_went_down + float(self.test_alerts_config.node_is_down[
+                                          'critical_threshold'])
+
+        # Start timer, no alert is raised
+        self.test_factory_instance.classify_downtime_alert(
+            current_went_down, self.test_alerts_config.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, current_went_down
+        )
+
+        # A first critical/warning downtime alert is now raised
+        self.test_factory_instance.classify_downtime_alert(
+            current_went_down, self.test_alerts_config.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, alert_timestamp
+        )
+        data_for_alerting.clear()
+
+        # Critical alert is not re-raised if the repeat time elapsed.
+        alert_timestamp = \
+            alert_timestamp + float(self.test_alerts_config.node_is_down[
+                                        'critical_repeat'])
+        self.test_factory_instance.classify_downtime_alert(
+            current_went_down, self.test_alerts_config.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, alert_timestamp
+        )
+        self.assertEqual([], data_for_alerting)
+
+    @parameterized.expand([
+        ('warning_threshold',), ('critical_threshold',),
+    ])
+    @freeze_time("2012-01-01")
+    def test_classify_downtime_alert_raises_info_if_node_is_back_up(
+            self, threshold_var) -> None:
+        """
+        In this test we will check that an info alert is raised whenever a
+        node is no longer down after it has been reported that it is down. We
+        will perform this test for both critical and warning
+        """
+        data_for_alerting = []
+        current_went_down = datetime.now().timestamp()
+        alert_timestamp = \
+            current_went_down + float(self.test_alerts_config.node_is_down[
+                                          threshold_var])
+
+        # Start timer, no alert is raised
+        self.test_factory_instance.classify_downtime_alert(
+            current_went_down, self.test_alerts_config.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, current_went_down
+        )
+
+        # A first critical/warning downtime alert is now raised
+        self.test_factory_instance.classify_downtime_alert(
+            current_went_down, self.test_alerts_config.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, alert_timestamp
+        )
+        data_for_alerting.clear()
+
+        # Info back up again alert is raised if node is no longer down.
+        alert_timestamp = alert_timestamp + 10
+        self.test_factory_instance.classify_downtime_alert(
+            None, self.test_alerts_config.node_is_down, NodeWentDownAtAlert,
+            NodeStillDownAlert, NodeBackUpAgainAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, alert_timestamp
+        )
+        expected_alert = NodeBackUpAgainAlert(
+            self.test_node_name, 'INFO', alert_timestamp, self.test_parent_id,
+            self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    def test_classify_downtime_alert_does_nothing_if_node_is_never_down(
+            self) -> None:
+        """
+        In this test we will check that no timer is started and no alert is
+        raised if the node was and is not down.
+        """
+        data_for_alerting = []
+
+        # Send data indicating that the node is not down, and check that no
+        # alert is raised and that no timer is started.
+        self.test_factory_instance.classify_downtime_alert(
+            None, self.test_alerts_config.node_is_down, NodeWentDownAtAlert,
+            NodeStillDownAlert, NodeBackUpAgainAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, datetime.now().timestamp()
+        )
+
+        critical_window_timer = self.test_factory_instance.alerting_state[
+            self.test_parent_id][self.test_node_id]['critical_window_timer'][
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value]
+        warning_window_timer = self.test_factory_instance.alerting_state[
+            self.test_parent_id][self.test_node_id]['warning_window_timer'][
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value]
+        self.assertEqual([], data_for_alerting)
+        self.assertFalse(critical_window_timer.timer_started)
+        self.assertFalse(warning_window_timer.timer_started)

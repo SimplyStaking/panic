@@ -712,7 +712,6 @@ class AlertingFactory(ABC):
             'critical_sent']
 
         monitoring_datetime = datetime.fromtimestamp(monitoring_timestamp)
-        went_down_datetime = datetime.fromtimestamp(current_went_down)
 
         if current_went_down is None:
             if warning_sent[metric_name] or critical_sent[metric_name]:
@@ -731,6 +730,7 @@ class AlertingFactory(ABC):
                 critical_window_timer.reset()
                 critical_repeat_limiter.reset()
         else:
+            went_down_datetime = datetime.fromtimestamp(current_went_down)
             if critical_enabled:
                 if not critical_window_timer.timer_started:
                     critical_window_timer.start_timer(went_down_datetime)
