@@ -1,6 +1,7 @@
+import copy
 from datetime import datetime, timedelta
 from queue import Queue
-from typing import Optional
+from typing import Optional, Any
 
 from src.utils.datetime import strfdelta
 
@@ -11,6 +12,9 @@ class TimedTaskLimiter:
 
         self._time_interval = time_interval
         self._last_time_that_did_task = datetime.min
+
+    def __eq__(self, other: Any) -> bool:
+        return self.__dict__ == other.__dict__
 
     @property
     def time_interval(self) -> timedelta:
@@ -45,6 +49,9 @@ class TimedTaskTracker:
         self._start_time = datetime.min
         self._timer_started = False
         self._did_task = False
+
+    def __eq__(self, other: Any) -> bool:
+        return self.__dict__ == other.__dict__
 
     @property
     def time_interval(self) -> timedelta:
@@ -144,11 +151,32 @@ class OccurrencesInTimePeriodTracker:
     queue is the number of occurrences. When adding a new occurrence the class
     attempts to keep the occurrences happened within a time period.
     """
+
     def __init__(self, time_period: timedelta) -> None:
         super().__init__()
 
         self._time_period = time_period
         self._occurrences_queue = Queue()
+
+    def __eq__(self, other: Any) -> bool:
+        """
+        This function checks that all keys and values are the same for both
+        objects except for the `self._occurrences_queue` variable. This is
+        omited because __eq__ was not implemented for the Queue object.
+        :param other: Other objects
+        :return: True if conditions described above are matched
+               : False otherwise
+        """
+
+        if self.__dict__.keys() != other.__dict__.keys():
+            return False
+
+        for key, val in self.__dict__.items():
+            if not key == '_occurrences_queue' \
+                    and not val == other.__dict__[key]:
+                return False
+
+        return True
 
     @property
     def time_period(self) -> timedelta:
