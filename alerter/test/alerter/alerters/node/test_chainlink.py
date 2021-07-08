@@ -37,6 +37,7 @@ from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, ALERT_EXCHANGE, CL_NODE_TRANSFORMED_DATA_ROUTING_KEY,
     CL_NODE_ALERT_ROUTING_KEY)
 from src.utils.env import RABBIT_IP
+from src.utils.exceptions import PANICException
 from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
                               delete_exchange_if_exists, disconnect_from_rabbit)
 
@@ -101,6 +102,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         }
         self.test_last_prometheus_source_used_new = "prometheus_source_2"
         self.test_last_monitored_prometheus_new = 47.666786
+        self.test_exception = PANICException('test_exception', 1)
 
         # Construct received configurations
         self.received_configurations = {
@@ -229,6 +231,23 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                         'previous': self.test_eth_balance_info
                     },
                 },
+            }
+        }
+
+        self.test_prom_non_down_error = {
+            'error': {
+                'meta_data': {
+                    'node_name': self.test_chainlink_node_name,
+                    'last_source_used': {
+                        'current': self.test_last_prometheus_source_used_new,
+                        'previous': self.test_last_prometheus_source_used,
+                    },
+                    'node_id': self.test_chainlink_node_id,
+                    'node_parent_id': self.test_parent_id,
+                    'time': self.test_last_monitored_prometheus_new
+                },
+                'message': self.test_exception.message,
+                'code': self.test_exception.code,
             }
         }
 
@@ -847,7 +866,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         self.assertEqual(3, mock_cond_alert.call_count)
         call_1 = call(
             EthBalanceToppedUpAlert,
-            self.test_cl_node_alerter._eth_balance_top_up_condition_function,
+            self.test_cl_node_alerter._greater_than_condition_function,
             [self.test_eth_balance_info_new['balance'],
              self.test_eth_balance_info['balance']], [
                 self.test_chainlink_node_name,
@@ -859,7 +878,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                 self.test_chainlink_node_id], data_for_alerting)
         call_2 = call(
             ChangeInSourceNodeAlert,
-            self.test_cl_node_alerter._change_in_source_condition_function,
+            self.test_cl_node_alerter._not_equal_condition_function,
             [self.test_process_start_time_seconds_new,
              self.test_process_start_time_seconds], [
                 self.test_chainlink_node_name,
@@ -869,7 +888,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                 self.test_chainlink_node_id], data_for_alerting)
         call_3 = call(
             GasBumpIncreasedOverNodeGasPriceLimitAlert,
-            self.test_cl_node_alerter._gas_price_over_limit_condition_function,
+            self.test_cl_node_alerter._greater_than_condition_function,
             [self.test_total_gas_bumps_exceeds_limit_new,
              self.test_total_gas_bumps_exceeds_limit], [
                 self.test_chainlink_node_name,
@@ -879,3 +898,145 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         self.assertTrue(call_1 in calls)
         self.assertTrue(call_2 in calls)
         self.assertTrue(call_3 in calls)
+
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_error_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_conditional_alert")
+    def test_process_prometheus_error_does_nothing_if_config_not_received(
+            self, mock_cond_alert, mock_error_alert) -> None:
+        """
+        In this test we will check that no classification function is called
+        if prometheus data has been received for a node who's associated alerts
+        configuration is not received yet.
+        """
+        data_for_alerting = []
+        self.test_cl_node_alerter._process_prometheus_error(
+            self.test_prom_non_down_error, data_for_alerting)
+
+        mock_cond_alert.assert_not_called()
+        mock_error_alert.assert_not_called()
+
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_error_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "create_alerting_state")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_conditional_alert")
+    def test_proc_prom_err_does_not_classify_change_in_source_current_is_None(
+            self, mock_cond_alert, mock_create_alerting_state,
+            mock_error) -> None:
+        """
+        In this test we will check that if the current value for
+        last_source_used is None, the ChangeInSource alert is not classified.
+        Here we will also test that create_alert_state is called once a
+        configuration is found.
+        """
+        mock_error.return_value = None
+
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+
+        # Set last_source_used current to None
+        self.test_prom_non_down_error['error']['meta_data'][
+            'last_source_used']['current'] = None
+
+        data_for_alerting = []
+        self.test_cl_node_alerter._process_prometheus_error(
+            self.test_prom_non_down_error, data_for_alerting)
+
+        mock_cond_alert.assert_not_called()
+
+        mock_create_alerting_state.assert_called_once_with(
+            self.test_parent_id, self.test_chainlink_node_id,
+            self.test_configs_factory.configs[chain])
+
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_error_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_conditional_alert")
+    def test_process_prom_error_does_not_classify_change_in_source_if_disabled(
+            self, mock_cond_alert, mock_error_alert) -> None:
+        """
+        In this test we will check that if a process_start_seconds is disabled
+        from the config, there will be no alert classification for the
+        associated alert.
+        """
+        mock_error_alert.return_value = None
+
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+
+        # Set each metric to disabled
+        for index, config in self.received_configurations.items():
+            config['enabled'] = 'False'
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+
+        data_for_alerting = []
+        self.test_cl_node_alerter._process_prometheus_error(
+            self.test_prom_non_down_error, data_for_alerting)
+
+        mock_cond_alert.assert_not_called()
+
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_error_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_conditional_alert")
+    def test_process_prometheus_error_classifies_correctly_if_data_valid(
+            self, mock_cond_alert, mock_error_alert) -> None:
+        """
+        In this test we will check that the correct classification functions are
+        called correctly by the process_prometheus_error function. Note that
+        the actual logic for these classification functions was tested in the
+        alert factory class.
+        """
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+        configs = self.test_configs_factory.configs[chain]
+
+        data_for_alerting = []
+        self.test_cl_node_alerter._process_prometheus_error(
+            self.test_prom_non_down_error, data_for_alerting)
+
+        calls = mock_error_alert.call_args_list
+        self.assertEqual(2, mock_error_alert.call_count)
+        error_msg = self.test_prom_non_down_error['error']['message']
+        error_code = self.test_prom_non_down_error['error']['code']
+        call_1 = call(
+            5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new,
+            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, error_msg,
+            "Prometheus url is now valid!. Last source used {}.".format(
+                self.test_last_prometheus_source_used_new), error_code)
+        call_2 = call(
+            5003, MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new,
+            GroupedChainlinkNodeAlertsMetricCode.MetricNotFound.value,
+            error_msg, "All metrics found!. Last source used {}.".format(
+                self.test_last_prometheus_source_used_new), error_code)
+        self.assertTrue(call_1 in calls)
+        self.assertTrue(call_2 in calls)
+
+        calls = mock_cond_alert.call_args_list
+        self.assertEqual(1, mock_cond_alert.call_count)
+        call_1 = call(
+            ChangeInSourceNodeAlert,
+            self.test_cl_node_alerter._not_equal_condition_function,
+            [self.test_last_prometheus_source_used_new,
+             self.test_last_prometheus_source_used], [
+                self.test_chainlink_node_name,
+                self.test_last_prometheus_source_used_new,
+                configs.process_start_time_seconds['severity'],
+                self.test_last_monitored_prometheus_new, self.test_parent_id,
+                self.test_chainlink_node_id], data_for_alerting)
+        self.assertTrue(call_1 in calls)

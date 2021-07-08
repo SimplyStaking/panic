@@ -2,7 +2,7 @@ import copy
 import json
 import logging
 import sys
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
@@ -123,20 +123,12 @@ class ChainlinkNodeAlerter(Alerter):
             self.rabbitmq.basic_ack(method.delivery_tag, False)
 
     @staticmethod
-    def _eth_balance_top_up_condition_function(current_balance: float,
-                                               previous_balance: float) -> bool:
-        return current_balance > previous_balance
+    def _greater_than_condition_function(current: Any, previous: Any) -> bool:
+        return current > previous
 
     @staticmethod
-    def _change_in_source_condition_function(
-            current_start_time: float,
-            previous_start_time: float) -> bool:
-        return current_start_time != previous_start_time
-
-    @staticmethod
-    def _gas_price_over_limit_condition_function(
-            current_gas_bumps: float, previous_gas_bumps: float) -> bool:
-        return current_gas_bumps > previous_gas_bumps
+    def _not_equal_condition_function(current: Any, previous: Any) -> bool:
+        return current != previous
 
     def _process_prometheus_result(self, prom_data: Dict,
                                    data_for_alerting: List) -> None:
@@ -255,8 +247,8 @@ class ChainlinkNodeAlerter(Alerter):
                 if current is not None:
                     self.alerting_factory.classify_conditional_alert(
                         ChangeInSourceNodeAlert,
-                        self._change_in_source_condition_function,
-                        [current, previous], [
+                        self._not_equal_condition_function, [current, previous],
+                        [
                             meta_data['node_name'], new_source,
                             sub_config['severity'], meta_data['last_monitored'],
                             meta_data['node_parent_id'], meta_data['node_id']
@@ -270,7 +262,7 @@ class ChainlinkNodeAlerter(Alerter):
                 if current is not None:
                     self.alerting_factory.classify_conditional_alert(
                         GasBumpIncreasedOverNodeGasPriceLimitAlert,
-                        self._gas_price_over_limit_condition_function, [
+                        self._greater_than_condition_function, [
                             current, previous], [
                             meta_data['node_name'], sub_config['severity'],
                             meta_data['last_monitored'],
@@ -330,7 +322,7 @@ class ChainlinkNodeAlerter(Alerter):
                     increase = current['balance'] - previous['balance']
                     self.alerting_factory.classify_conditional_alert(
                         EthBalanceToppedUpAlert,
-                        self._eth_balance_top_up_condition_function,
+                        self._greater_than_condition_function,
                         [current['balance'], previous['balance']], [
                             meta_data['node_name'], current['balance'],
                             increase, sub_config['severity'],
@@ -346,9 +338,11 @@ class ChainlinkNodeAlerter(Alerter):
         # We must make sure that the alerts_config has been received for the
         # chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
-            meta_data['parent_id'])
+            meta_data['node_parent_id'])
         if chain_name is not None:
             configs = self.alerts_configs_factory.configs[chain_name]
+            self.alerting_factory.create_alerting_state(
+                meta_data['node_parent_id'], meta_data['node_id'], configs)
 
             # Check if the source has been changed, if yes alert accordingly
             if str_to_bool(configs.process_start_time_seconds['enabled']):
@@ -359,13 +353,10 @@ class ChainlinkNodeAlerter(Alerter):
                 previous = meta_data['last_source_used']['previous']
                 sub_config = configs.process_start_time_seconds
                 if current is not None:
-                    def condition_function(last_source_used: str,
-                                           previous_source_used: str) -> bool:
-                        return last_source_used != previous_source_used
-
                     self.alerting_factory.classify_conditional_alert(
-                        ChangeInSourceNodeAlert, condition_function,
-                        [current, previous], [
+                        ChangeInSourceNodeAlert,
+                        self._not_equal_condition_function, [current, previous],
+                        [
                             meta_data['node_name'], current,
                             sub_config['severity'], meta_data['time'],
                             meta_data['node_parent_id'], meta_data['node_id']
