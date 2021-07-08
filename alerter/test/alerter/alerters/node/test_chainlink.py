@@ -220,22 +220,20 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
     targeted the factory classes.
     """
 
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "add_new_config",
-                       wraps=ChainlinkAlertsConfigsFactory.add_new_config)
-    @mock.patch.object(
-        ChainlinkNodeAlertingFactory, "remove_chain_alerting_state",
-        wraps=ChainlinkNodeAlertingFactory.remove_chain_alerting_state)
+    @mock.patch.object(ChainlinkAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(ChainlinkAlertsConfigsFactory, "add_new_config")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "remove_chain_alerting_state")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_confs_adds_new_conf_and_clears_alerting_state_if_new_confs(
             self, mock_ack, mock_remove_alerting_state,
-            mock_add_new_conf) -> None:
+            mock_add_new_conf, mock_get_parent_id) -> None:
         """
         In this test we will check that if new alert configs are received for
         a new chain, the new config is added and the alerting state is cleared.
         """
         mock_ack.return_value = None
-
-        # TODO: Tomorrow see if you can fix this, if not check only for called.
+        mock_get_parent_id.return_value = self.test_parent_id
 
         self.test_cl_node_alerter.rabbitmq.connect()
         blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
@@ -251,33 +249,97 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         del self.received_configurations['DEFAULT']
         mock_add_new_conf.assert_called_once_with(chain,
                                                   self.received_configurations)
+        mock_get_parent_id.assert_called_once_with(chain)
         mock_remove_alerting_state.assert_called_once_with(self.test_parent_id)
+        mock_ack.assert_called_once()
 
+    @mock.patch.object(ChainlinkAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(ChainlinkAlertsConfigsFactory, "remove_config")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "remove_chain_alerting_state")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_confs_removes_confs_and_alerting_state_if_conf_deleted(
-            self) -> None:
+            self, mock_ack, mock_remove_alerting_state, mock_remove_config,
+            mock_get_parent_id) -> None:
         """
         In this test we will check that if alert configurations are deleted for
         a chain, the configs are removed and the alerting state is reset. Here
         we will assume that the configurations exist
         """
-        pass
+        mock_ack.return_value = None
+        mock_get_parent_id.return_value = self.test_parent_id
 
+        self.test_cl_node_alerter.rabbitmq.connect()
+        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=self.test_configs_routing_key)
+        body = json.dumps({})
+        properties = pika.spec.BasicProperties()
+        self.test_cl_node_alerter._process_configs(blocking_channel, method,
+                                                   properties, body)
+
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        mock_get_parent_id.assert_called_once_with(chain)
+        mock_remove_alerting_state.assert_called_once_with(self.test_parent_id)
+        mock_remove_config.assert_called_once_with(chain)
+        mock_ack.assert_called_once()
+
+    @mock.patch.object(ChainlinkAlertsConfigsFactory, "add_new_config")
+    @mock.patch.object(ChainlinkAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(ChainlinkAlertsConfigsFactory, "remove_config")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "remove_chain_alerting_state")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_confs_does_nothing_if_received_new_empty_configs(
-            self) -> None:
+            self, mock_ack, mock_remove_alerting_state, mock_remove_conf,
+            mock_get_parent_id, mock_add_new_conf) -> None:
         """
         In this test we will check that if empty alert configurations are
-        received for a new chain, the function does nothing.
+        received for a new chain, the function does nothing. We will mock that
+        the config does not exist by making get_parent_id return None.
         """
-        pass
+        mock_ack.return_value = None
+        mock_get_parent_id.return_value = None
 
-    def test_process_configs_acknowledges_received_data(self) -> None:
-        """
-        In this test we will check that if either processing is successful
-        or processing fails, the data is always acknowledged
-        """
-        pass
+        self.test_cl_node_alerter.rabbitmq.connect()
+        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=self.test_configs_routing_key)
+        body = json.dumps({})
+        properties = pika.spec.BasicProperties()
+        self.test_cl_node_alerter._process_configs(blocking_channel, method,
+                                                   properties, body)
 
-    # TODO: 1. Tests above
-    #     : 2. Test place latest data on queue
-    #     : 3. Test prometheus result, error, process downtime, process down
-    #     :    and process_transformed_data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        mock_remove_alerting_state.assert_not_called()
+        mock_remove_conf.assert_not_called()
+        mock_add_new_conf.assert_not_called()
+        mock_get_parent_id.assert_called_once_with(chain)
+        mock_ack.assert_called_once()
+
+    @mock.patch.object(ChainlinkAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_configs_acknowledges_received_data(
+            self, mock_ack, mock_get_parent_id) -> None:
+        """
+        In this test we will check that if processing fails, the data is always
+        acknowledged. The case for when processing does not fail was performed
+        in each test above by checking that mock_ack has been called once.
+        """
+        mock_ack.return_value = None
+        mock_get_parent_id.side_effect = Exception('test')
+
+        self.test_cl_node_alerter.rabbitmq.connect()
+        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=self.test_configs_routing_key)
+        body = json.dumps(self.received_configurations)
+        properties = pika.spec.BasicProperties()
+
+        # Secondly test for when processing fails successful
+        self.test_cl_node_alerter._process_configs(blocking_channel, method,
+                                                   properties, body)
+        mock_ack.assert_called_once()
