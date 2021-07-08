@@ -130,6 +130,11 @@ class ChainlinkNodeAlerter(Alerter):
     def _not_equal_condition_function(current: Any, previous: Any) -> bool:
         return current != previous
 
+    @staticmethod
+    def _prometheus_is_down_condition_function(index_key: Optional[str],
+                                               code: Optional[int]) -> bool:
+        return index_key == 'error' and code == 5015
+
     def _process_prometheus_result(self, prom_data: Dict,
                                    data_for_alerting: List) -> None:
         meta_data = prom_data['result']['meta_data']
@@ -387,8 +392,6 @@ class ChainlinkNodeAlerter(Alerter):
                 prom_data['error']['code']
             )
 
-    # TODO: In testing debug over this function piece by piece to check if
-    #     : monitoring timestamps etc make sense.
     def _process_downtime(self, trans_data: Dict, data_for_alerting: List):
         # We will parse some meta_data first, note we will assume that the
         # transformed data has correct structure and valid data.
@@ -397,8 +400,8 @@ class ChainlinkNodeAlerter(Alerter):
         origin_name = ""
         for source in VALID_CHAINLINK_SOURCES:
             if trans_data[source]:
-                response_index_key = 'result' if 'result' in trans_data \
-                    else 'error'
+                response_index_key = 'result' if 'result' in trans_data[
+                    source] else 'error'
                 parent_id = trans_data[source][response_index_key]['meta_data'][
                     'node_parent_id']
                 origin_id = trans_data[source][response_index_key]['meta_data'][
@@ -422,12 +425,13 @@ class ChainlinkNodeAlerter(Alerter):
                 all_sources_down = True
                 for source in VALID_CHAINLINK_SOURCES:
                     if trans_data[source]:
-                        response_index_key = \
-                            'result' if 'result' in trans_data else 'error'
+                        response_index_key = 'result' if 'result' in trans_data[
+                            source] else 'error'
                         data = trans_data[source][response_index_key]
                         if response_index_key != 'error' \
                                 or data['code'] != 5015:
                             all_sources_down = False
+                            break
 
                 if all_sources_down:
                     # Choose the smallest timing variables for downtime
@@ -460,7 +464,8 @@ class ChainlinkNodeAlerter(Alerter):
                     for source in VALID_CHAINLINK_SOURCES:
                         if trans_data[source]:
                             response_index_key = \
-                                'result' if 'result' in trans_data else 'error'
+                                'result' if 'result' in trans_data[
+                                    source] else 'error'
                             data = trans_data[source][response_index_key]
                             new_monitoring_timestamp = data['meta_data'][
                                 'last_monitored'] \
@@ -483,43 +488,30 @@ class ChainlinkNodeAlerter(Alerter):
 
                     # Classify to check if prometheus is down or back up
                     if trans_data['prometheus']:
-                        response_index_key = \
-                            'result' if 'result' in trans_data else 'error'
+                        response_index_key = 'result' if 'result' in trans_data[
+                            'prometheus'] else 'error'
                         error_code = None if response_index_key == 'result' \
                             else trans_data['prometheus']['error']['code']
-
-                        def condition_function(
-                                index_key: str, code: Optional[int]) -> bool:
-                            return index_key == 'error' and code == 5015
-
-                        self.alerting_factory.classify_source_downtime_alert(
-                            PrometheusSourceIsDownAlert, condition_function,
-                            [response_index_key, error_code], [
-                                origin_name, Severity.WARNING.value,
-                                trans_data['prometheus']['error']['meta_data'][
-                                    'time'], parent_id, origin_id
-                            ], data_for_alerting, parent_id, origin_id,
-                            GroupedChainlinkNodeAlertsMetricCode
-                                .PrometheusSourceIsDown.value,
-                            PrometheusSourceBackUpAgainAlert
-                        )
+                        monitoring_timestamp = trans_data['prometheus'][
+                            'error']['meta_data']['time']
                     else:
                         # This condition covers the case for when prometheus
                         # is disabled and we had a prometheus down alert before
                         # hand.
-                        def condition_function() -> bool:
-                            return False
+                        response_index_key = None
+                        error_code = None
 
-                        self.alerting_factory.classify_source_downtime_alert(
-                            PrometheusSourceIsDownAlert, condition_function,
-                            [], [
-                                origin_name, Severity.WARNING.value,
-                                monitoring_timestamp, parent_id, origin_id
-                            ], data_for_alerting, parent_id, origin_id,
-                            GroupedChainlinkNodeAlertsMetricCode
-                                .PrometheusSourceIsDown.value,
-                            PrometheusSourceBackUpAgainAlert
-                        )
+                    self.alerting_factory.classify_source_downtime_alert(
+                        PrometheusSourceIsDownAlert,
+                        self._prometheus_is_down_condition_function,
+                        [response_index_key, error_code], [
+                            origin_name, Severity.WARNING.value,
+                            monitoring_timestamp, parent_id, origin_id
+                        ], data_for_alerting, parent_id, origin_id,
+                        GroupedChainlinkNodeAlertsMetricCode
+                            .PrometheusSourceIsDown.value,
+                        PrometheusSourceBackUpAgainAlert
+                    )
 
     def _process_transformed_data(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,

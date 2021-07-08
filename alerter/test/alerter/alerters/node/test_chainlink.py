@@ -1064,3 +1064,19 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             self.test_cl_node_alerter._not_equal_condition_function(
                 current, previous)
         self.assertEqual(expected_result, actual_result)
+
+    @parameterized.expand([
+        (None, 20, False,),
+        ('result', 20, False,),
+        ('result', None, False,),
+        (None, None, False,),
+        ('error', 10, False,),
+        ('error', None, False,),
+        ('error', 5015, True,),
+    ])
+    def test_prometheus_is_down_condition_function_returns_correctly(
+            self, index_key, code, expected_result) -> None:
+        actual_result = \
+            self.test_cl_node_alerter._prometheus_is_down_condition_function(
+                index_key, code)
+        self.assertEqual(expected_result, actual_result)
