@@ -3,11 +3,30 @@ import json
 import logging
 import unittest
 from unittest import mock
+from unittest.mock import call
 
 import pika
 from parameterized import parameterized
 
-from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
+from src.alerter.alerters.node.chainlink import (
+    ChainlinkNodeAlerter, GroupedChainlinkNodeAlertsMetricCode)
+from src.alerter.alerts.node.chainlink import (
+    ReceivedANewHeaderAlert, InvalidUrlAlert, ValidUrlAlert,
+    MetricNotFoundErrorAlert, MetricFoundAlert, NoChangeInHeightAlert,
+    BlockHeightUpdatedAlert, NoChangeInTotalHeadersReceivedAlert,
+    HeadsInQueueIncreasedAboveThresholdAlert,
+    HeadsInQueueDecreasedBelowThresholdAlert,
+    MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
+    MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
+    NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
+    NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
+    DroppedBlockHeadersIncreasedAboveThresholdAlert,
+    DroppedBlockHeadersDecreasedBelowThresholdAlert,
+    TotalErroredJobRunsIncreasedAboveThresholdAlert,
+    TotalErroredJobRunsDecreasedBelowThresholdAlert,
+    EthBalanceIncreasedAboveThresholdAlert,
+    EthBalanceDecreasedBelowThresholdAlert, EthBalanceToppedUpAlert,
+    ChangeInSourceNodeAlert, GasBumpIncreasedOverNodeGasPriceLimitAlert)
 from src.alerter.factory.chainlink_node_alerting_factory import \
     ChainlinkNodeAlertingFactory
 from src.configs.factory.chainlink_alerts_configs_factory import \
@@ -15,7 +34,8 @@ from src.configs.factory.chainlink_alerts_configs_factory import \
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
-    HEALTH_CHECK_EXCHANGE, ALERT_EXCHANGE, CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
+    HEALTH_CHECK_EXCHANGE, ALERT_EXCHANGE, CL_NODE_TRANSFORMED_DATA_ROUTING_KEY,
+    CL_NODE_ALERT_ROUTING_KEY)
 from src.utils.env import RABBIT_IP
 from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
                               delete_exchange_if_exists, disconnect_from_rabbit)
@@ -32,11 +52,55 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         self.rabbitmq = RabbitMQApi(
             self.dummy_logger, RABBIT_IP,
             connection_check_time_interval=self.connection_check_time_interval)
-        self.test_queue_size = 100
+        self.test_queue_size = 5
         self.test_parent_id = 'test_parent_id'
         self.test_queue_name = 'Test Queue'
         self.test_data_str = 'test_data_str'
         self.test_configs_routing_key = 'chains.chainlink.bsc.alerts_config'
+        self.test_chainlink_node_name = 'test_chainlink_node'
+        self.test_chainlink_node_id = 'test_chainlink_node_id345834t8h3r5893h8'
+        self.test_went_down_at_prometheus = None
+        self.test_current_height = 50000000000
+        self.test_eth_blocks_in_queue = 3
+        self.test_total_block_headers_received = 454545040
+        self.test_total_block_headers_dropped = 4
+        self.test_no_of_active_jobs = 10
+        self.test_max_pending_tx_delay = 6
+        self.test_process_start_time_seconds = 345474.4
+        self.test_total_gas_bumps = 11
+        self.test_total_gas_bumps_exceeds_limit = 13
+        self.test_no_of_unconfirmed_txs = 7
+        self.test_total_errored_job_runs = 15
+        self.test_current_gas_price_info = {
+            'percentile': 50.5,
+            'price': 22.0,
+        }
+        self.test_eth_balance_info = {
+            'address': 'address1', 'balance': 34.4, 'latest_usage': 5.0,
+        }
+        self.test_last_prometheus_source_used = "prometheus_source_1"
+        self.test_last_monitored_prometheus = 45.666786
+        self.test_went_down_at_prometheus_new = None
+        self.test_current_height_new = 50000000001
+        self.test_eth_blocks_in_queue_new = 4
+        self.test_total_block_headers_received_new = 454545041
+        self.test_total_block_headers_dropped_new = 5
+        self.test_no_of_active_jobs_new = 11
+        self.test_max_pending_tx_delay_new = 7
+        self.test_process_start_time_seconds_new = 345476.4
+        self.test_total_gas_bumps_new = 13
+        self.test_total_gas_bumps_exceeds_limit_new = 14
+        self.test_no_of_unconfirmed_txs_new = 8
+        self.test_total_errored_job_runs_new = 16
+        self.test_current_gas_price_info_new = {
+            'percentile': 52.5,
+            'price': 24.0,
+        }
+        self.test_eth_balance_info_new = {
+            'address': 'address1', 'balance': 44.4, 'latest_usage': 0.0,
+        }
+        self.test_last_prometheus_source_used_new = "prometheus_source_2"
+        self.test_last_monitored_prometheus_new = 47.666786
 
         # Construct received configurations
         self.received_configurations = {
@@ -94,6 +158,79 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                     'warning_threshold': '3',
                     'warning_enabled': 'true',
                 }
+
+        self.test_prom_result_data = {
+            'result': {
+                'meta_data': {
+                    'node_name': self.test_chainlink_node_name,
+                    'last_source_used': {
+                        'current': self.test_last_prometheus_source_used_new,
+                        'previous': self.test_last_prometheus_source_used
+                    },
+                    'node_id': self.test_chainlink_node_id,
+                    'node_parent_id': self.test_parent_id,
+                    'last_monitored': self.test_last_monitored_prometheus_new,
+                },
+                'data': {
+                    'went_down_at': {
+                        'current': self.test_went_down_at_prometheus_new,
+                        'previous': self.test_went_down_at_prometheus
+                    },
+                    'current_height': {
+                        'current': self.test_current_height_new,
+                        'previous': self.test_current_height
+                    },
+                    'eth_blocks_in_queue': {
+                        'current': self.test_eth_blocks_in_queue_new,
+                        'previous': self.test_eth_blocks_in_queue
+                    },
+                    'total_block_headers_received': {
+                        'current': self.test_total_block_headers_received_new,
+                        'previous': self.test_total_block_headers_received,
+                    },
+                    'total_block_headers_dropped': {
+                        'current': self.test_total_block_headers_dropped_new,
+                        'previous': self.test_total_block_headers_dropped,
+                    },
+                    'no_of_active_jobs': {
+                        'current': self.test_no_of_active_jobs_new,
+                        'previous': self.test_no_of_active_jobs,
+                    },
+                    'max_pending_tx_delay': {
+                        'current': self.test_max_pending_tx_delay_new,
+                        'previous': self.test_max_pending_tx_delay
+                    },
+                    'process_start_time_seconds': {
+                        'current': self.test_process_start_time_seconds_new,
+                        'previous': self.test_process_start_time_seconds,
+                    },
+                    'total_gas_bumps': {
+                        'current': self.test_total_gas_bumps_new,
+                        'previous': self.test_total_gas_bumps
+                    },
+                    'total_gas_bumps_exceeds_limit': {
+                        'current': self.test_total_gas_bumps_exceeds_limit_new,
+                        'previous': self.test_total_gas_bumps_exceeds_limit,
+                    },
+                    'no_of_unconfirmed_txs': {
+                        'current': self.test_no_of_unconfirmed_txs_new,
+                        'previous': self.test_no_of_unconfirmed_txs,
+                    },
+                    'total_errored_job_runs': {
+                        'current': self.test_total_errored_job_runs_new,
+                        'previous': self.test_total_errored_job_runs,
+                    },
+                    'current_gas_price_info': {
+                        'current': self.test_current_gas_price_info_new,
+                        'previous': self.test_current_gas_price_info
+                    },
+                    'eth_balance_info': {
+                        'current': self.test_eth_balance_info_new,
+                        'previous': self.test_eth_balance_info
+                    },
+                },
+            }
+        }
 
         # Test object
         self.test_configs_factory = ChainlinkAlertsConfigsFactory()
@@ -343,3 +480,402 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         self.test_cl_node_alerter._process_configs(blocking_channel, method,
                                                    properties, body)
         mock_ack.assert_called_once()
+
+    def test_place_latest_data_on_queue_places_data_on_queue_correctly(
+            self) -> None:
+        test_data = ['data_1', 'data_2']
+
+        self.assertTrue(self.test_cl_node_alerter.publishing_queue.empty())
+
+        expected_data_1 = {
+            'exchange': ALERT_EXCHANGE,
+            'routing_key': CL_NODE_ALERT_ROUTING_KEY,
+            'data': 'data_1',
+            'properties': pika.BasicProperties(delivery_mode=2),
+            'mandatory': True
+        }
+        expected_data_2 = {
+            'exchange': ALERT_EXCHANGE,
+            'routing_key': CL_NODE_ALERT_ROUTING_KEY,
+            'data': 'data_2',
+            'properties': pika.BasicProperties(delivery_mode=2),
+            'mandatory': True
+        }
+        self.test_cl_node_alerter._place_latest_data_on_queue(test_data)
+        self.assertEqual(2,
+                         self.test_cl_node_alerter.publishing_queue.qsize())
+        self.assertEqual(expected_data_1,
+                         self.test_cl_node_alerter.publishing_queue.get())
+        self.assertEqual(expected_data_2,
+                         self.test_cl_node_alerter.publishing_queue.get())
+
+    def test_place_latest_data_on_queue_removes_old_data_if_full_then_places(
+            self) -> None:
+        # First fill the queue with the same data
+        test_data_1 = ['data_1']
+        for i in range(self.test_queue_size):
+            self.test_cl_node_alerter._place_latest_data_on_queue(test_data_1)
+
+        # Now fill the queue with the second piece of data, and confirm that
+        # now only the second piece of data prevails.
+        test_data_2 = ['data_2']
+        for i in range(self.test_queue_size):
+            self.test_cl_node_alerter._place_latest_data_on_queue(test_data_2)
+
+        for i in range(self.test_queue_size):
+            expected_data = {
+                'exchange': ALERT_EXCHANGE,
+                'routing_key': CL_NODE_ALERT_ROUTING_KEY,
+                'data': 'data_2',
+                'properties': pika.BasicProperties(delivery_mode=2),
+                'mandatory': True
+            }
+            self.assertEqual(expected_data,
+                             self.test_cl_node_alerter.publishing_queue.get())
+
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_error_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_no_change_in_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_thresholded_time_window_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_thresholded_in_time_period_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_conditional_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_thresholded_alert_reverse")
+    def test_process_prometheus_result_does_nothing_if_config_not_received(
+            self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
+            mock_thresh_win_alert, mock_no_change_alert,
+            mock_error_alert) -> None:
+        """
+        In this test we will check that no classification function is called
+        if prometheus data has been received for a node who's associated alerts
+        configuration is not received yet.
+        """
+        data_for_alerting = []
+        self.test_cl_node_alerter._process_prometheus_result(
+            self.test_prom_result_data, data_for_alerting)
+
+        mock_reverse.assert_not_called()
+        mock_cond_alert.assert_not_called()
+        mock_thresh_per_alert.assert_not_called()
+        mock_thresh_win_alert.assert_not_called()
+        mock_no_change_alert.assert_not_called()
+        mock_error_alert.assert_not_called()
+
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "create_alerting_state")
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_error_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_no_change_in_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_thresholded_time_window_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_thresholded_in_time_period_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_conditional_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_thresholded_alert_reverse")
+    def test_process_prometheus_result_does_not_classify_if_current_is_None(
+            self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
+            mock_thresh_win_alert, mock_no_change_alert,
+            mock_error_alert, mock_create_alerting_state) -> None:
+        """
+        In this test we will check that if the current metric value is None, no
+        alert classification is made for the metrics. The only alerts which are
+        classified are the ones which try to detect error alerts (i.e. not
+        associated with any data metric). Note that for easier testing we will
+        assume that all current metric values are None. Here we will also test
+        that create_alert_state is called once a configuration is found.
+        """
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+
+        # Set each current metric value to None
+        data = self.test_prom_result_data['result']['data']
+        for metric, current_previous in data.items():
+            current_previous['current'] = None
+
+        data_for_alerting = []
+        self.test_cl_node_alerter._process_prometheus_result(
+            self.test_prom_result_data, data_for_alerting)
+
+        mock_reverse.assert_not_called()
+        mock_cond_alert.assert_not_called()
+        mock_thresh_per_alert.assert_not_called()
+        mock_thresh_win_alert.assert_not_called()
+        mock_no_change_alert.assert_not_called()
+
+        calls = mock_error_alert.call_args_list
+        self.assertEqual(2, mock_error_alert.call_count)
+        call_1 = call(
+            5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new,
+            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "",
+            "Prometheus url is now valid!. Last source used {}.".format(
+                self.test_last_prometheus_source_used_new), None)
+        call_2 = call(
+            5003, MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new,
+            GroupedChainlinkNodeAlertsMetricCode.MetricNotFound.value, "",
+            "All metrics found!. Last source used {}.".format(
+                self.test_last_prometheus_source_used_new), None)
+        self.assertTrue(call_1 in calls)
+        self.assertTrue(call_2 in calls)
+        mock_create_alerting_state.assert_called_once_with(
+            self.test_parent_id, self.test_chainlink_node_id,
+            self.test_configs_factory.configs[chain])
+
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_error_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_no_change_in_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_thresholded_time_window_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_thresholded_in_time_period_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_conditional_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_thresholded_alert_reverse")
+    def test_process_prometheus_result_does_not_classify_if_metrics_disabled(
+            self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
+            mock_thresh_win_alert, mock_no_change_alert,
+            mock_error_alert) -> None:
+        """
+        In this test we will check that if a metric is disabled from the config,
+        there will be no alert classification for the associated alerts. Note
+        that for easier testing we will set every metric to be disabled. Again,
+        the only classification which would happen is for the error alerts.
+        """
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+
+        # Set each metric to disabled
+        for index, config in self.received_configurations.items():
+            config['enabled'] = 'False'
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+
+        data_for_alerting = []
+        self.test_cl_node_alerter._process_prometheus_result(
+            self.test_prom_result_data, data_for_alerting)
+
+        mock_reverse.assert_not_called()
+        mock_cond_alert.assert_not_called()
+        mock_thresh_per_alert.assert_not_called()
+        mock_thresh_win_alert.assert_not_called()
+        mock_no_change_alert.assert_not_called()
+
+        calls = mock_error_alert.call_args_list
+        self.assertEqual(2, mock_error_alert.call_count)
+        call_1 = call(
+            5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new,
+            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "",
+            "Prometheus url is now valid!. Last source used {}.".format(
+                self.test_last_prometheus_source_used_new), None)
+        call_2 = call(
+            5003, MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new,
+            GroupedChainlinkNodeAlertsMetricCode.MetricNotFound.value, "",
+            "All metrics found!. Last source used {}.".format(
+                self.test_last_prometheus_source_used_new), None)
+        self.assertTrue(call_1 in calls)
+        self.assertTrue(call_2 in calls)
+
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_error_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_no_change_in_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_thresholded_time_window_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_thresholded_in_time_period_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_conditional_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_thresholded_alert_reverse")
+    def test_process_prometheus_result_classifies_correctly_if_data_valid(
+            self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
+            mock_thresh_win_alert, mock_no_change_alert,
+            mock_error_alert) -> None:
+        """
+        In this test we will check that the correct classification functions are
+        called correctly by the process_prometheus_result function. Note that
+        the actual logic for these classification functions was tested in the
+        alert factory class.
+        """
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+        configs = self.test_configs_factory.configs[chain]
+
+        data_for_alerting = []
+        self.test_cl_node_alerter._process_prometheus_result(
+            self.test_prom_result_data, data_for_alerting)
+
+        calls = mock_error_alert.call_args_list
+        self.assertEqual(2, mock_error_alert.call_count)
+        call_1 = call(
+            5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new,
+            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "",
+            "Prometheus url is now valid!. Last source used {}.".format(
+                self.test_last_prometheus_source_used_new), None)
+        call_2 = call(
+            5003, MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new,
+            GroupedChainlinkNodeAlertsMetricCode.MetricNotFound.value, "",
+            "All metrics found!. Last source used {}.".format(
+                self.test_last_prometheus_source_used_new), None)
+        self.assertTrue(call_1 in calls)
+        self.assertTrue(call_2 in calls)
+
+        calls = mock_no_change_alert.call_args_list
+        self.assertEqual(2, mock_no_change_alert.call_count)
+        call_1 = call(
+            self.test_current_height_new, self.test_current_height,
+            configs.head_tracker_current_head, NoChangeInHeightAlert,
+            BlockHeightUpdatedAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new)
+        call_2 = call(
+            self.test_total_block_headers_received_new,
+            self.test_total_block_headers_received,
+            configs.head_tracker_heads_received_total,
+            NoChangeInTotalHeadersReceivedAlert, ReceivedANewHeaderAlert,
+            data_for_alerting, self.test_parent_id, self.test_chainlink_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived
+                .value, self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new)
+        self.assertTrue(call_1 in calls)
+        self.assertTrue(call_2 in calls)
+
+        calls = mock_thresh_win_alert.call_args_list
+        self.assertEqual(3, mock_thresh_win_alert.call_count)
+        call_1 = call(
+            self.test_eth_blocks_in_queue_new,
+            configs.head_tracker_heads_in_queue,
+            HeadsInQueueIncreasedAboveThresholdAlert,
+            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new)
+        call_2 = call(
+            self.test_max_pending_tx_delay_new, configs.max_unconfirmed_blocks,
+            MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
+            MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
+                .value, self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new)
+        call_3 = call(
+            self.test_no_of_unconfirmed_txs_new,
+            configs.unconfirmed_transactions,
+            NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
+            NoOfUnconfirmedTxsDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NoOfUnconfirmedTxsThreshold
+                .value, self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new)
+        self.assertTrue(call_1 in calls)
+        self.assertTrue(call_2 in calls)
+        self.assertTrue(call_3 in calls)
+
+        calls = mock_thresh_per_alert.call_args_list
+        self.assertEqual(2, mock_thresh_per_alert.call_count)
+        call_1 = call(
+            self.test_total_block_headers_dropped_new,
+            self.test_total_block_headers_dropped,
+            configs.head_tracker_num_heads_dropped_total,
+            DroppedBlockHeadersIncreasedAboveThresholdAlert,
+            DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
+                .value,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new)
+        call_2 = call(
+            self.test_total_errored_job_runs_new,
+            self.test_total_errored_job_runs, configs.run_status_update_total,
+            TotalErroredJobRunsIncreasedAboveThresholdAlert,
+            TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
+                .value, self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new)
+        self.assertTrue(call_1 in calls)
+        self.assertTrue(call_2 in calls)
+
+        calls = mock_reverse.call_args_list
+        self.assertEqual(1, mock_reverse.call_count)
+        call_1 = call(
+            self.test_eth_balance_info_new['balance'],
+            configs.eth_balance_amount,
+            EthBalanceIncreasedAboveThresholdAlert,
+            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_parent_id, self.test_chainlink_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new)
+        self.assertTrue(call_1 in calls)
+
+        calls = mock_cond_alert.call_args_list
+        self.assertEqual(3, mock_cond_alert.call_count)
+        call_1 = call(
+            EthBalanceToppedUpAlert,
+            self.test_cl_node_alerter._eth_balance_top_up_condition_function,
+            [self.test_eth_balance_info_new['balance'],
+             self.test_eth_balance_info['balance']], [
+                self.test_chainlink_node_name,
+                self.test_eth_balance_info_new['balance'],
+                self.test_eth_balance_info_new[
+                    'balance'] - self.test_eth_balance_info['balance'],
+                configs.eth_balance_amount_increase['severity'],
+                self.test_last_monitored_prometheus_new, self.test_parent_id,
+                self.test_chainlink_node_id], data_for_alerting)
+        call_2 = call(
+            ChangeInSourceNodeAlert,
+            self.test_cl_node_alerter._change_in_source_condition_function,
+            [self.test_process_start_time_seconds_new,
+             self.test_process_start_time_seconds], [
+                self.test_chainlink_node_name,
+                self.test_last_prometheus_source_used_new,
+                configs.process_start_time_seconds['severity'],
+                self.test_last_monitored_prometheus_new, self.test_parent_id,
+                self.test_chainlink_node_id], data_for_alerting)
+        call_3 = call(
+            GasBumpIncreasedOverNodeGasPriceLimitAlert,
+            self.test_cl_node_alerter._gas_price_over_limit_condition_function,
+            [self.test_total_gas_bumps_exceeds_limit_new,
+             self.test_total_gas_bumps_exceeds_limit], [
+                self.test_chainlink_node_name,
+                configs.tx_manager_gas_bump_exceeds_limit_total['severity'],
+                self.test_last_monitored_prometheus_new, self.test_parent_id,
+                self.test_chainlink_node_id], data_for_alerting)
+        self.assertTrue(call_1 in calls)
+        self.assertTrue(call_2 in calls)
+        self.assertTrue(call_3 in calls)

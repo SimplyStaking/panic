@@ -122,6 +122,22 @@ class ChainlinkNodeAlerter(Alerter):
         else:
             self.rabbitmq.basic_ack(method.delivery_tag, False)
 
+    @staticmethod
+    def _eth_balance_top_up_condition_function(current_balance: float,
+                                               previous_balance: float) -> bool:
+        return current_balance > previous_balance
+
+    @staticmethod
+    def _change_in_source_condition_function(
+            current_start_time: float,
+            previous_start_time: float) -> bool:
+        return current_start_time != previous_start_time
+
+    @staticmethod
+    def _gas_price_over_limit_condition_function(
+            current_gas_bumps: float, previous_gas_bumps: float) -> bool:
+        return current_gas_bumps > previous_gas_bumps
+
     def _process_prometheus_result(self, prom_data: Dict,
                                    data_for_alerting: List) -> None:
         meta_data = prom_data['result']['meta_data']
@@ -156,19 +172,6 @@ class ChainlinkNodeAlerter(Alerter):
             )
 
             # Check if the alert rules are satisfied for the metrics
-            if str_to_bool(configs.head_tracker_current_head['enabled']):
-                current = data['current_height']['current']
-                previous = data['current_height']['previous']
-                sub_config = configs.head_tracker_current_head
-                if current is not None:
-                    self.alerting_factory.classify_no_change_in_alert(
-                        current, previous, sub_config, NoChangeInHeightAlert,
-                        BlockHeightUpdatedAlert, data_for_alerting,
-                        meta_data['node_parent_id'], meta_data['node_id'],
-                        GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight
-                            .value, meta_data['node_name'],
-                        meta_data['last_monitored']
-                    )
             if str_to_bool(configs.head_tracker_current_head['enabled']):
                 current = data['current_height']['current']
                 previous = data['current_height']['previous']
@@ -250,12 +253,9 @@ class ChainlinkNodeAlerter(Alerter):
                 new_source = meta_data['last_source_used']['current']
                 sub_config = configs.process_start_time_seconds
                 if current is not None:
-                    def condition_function(current_start_time: float,
-                                           previous_start_time: float) -> bool:
-                        return current_start_time != previous_start_time
-
                     self.alerting_factory.classify_conditional_alert(
-                        ChangeInSourceNodeAlert, condition_function,
+                        ChangeInSourceNodeAlert,
+                        self._change_in_source_condition_function,
                         [current, previous], [
                             meta_data['node_name'], new_source,
                             sub_config['severity'], meta_data['last_monitored'],
@@ -264,17 +264,14 @@ class ChainlinkNodeAlerter(Alerter):
                     )
             if str_to_bool(
                     configs.tx_manager_gas_bump_exceeds_limit_total['enabled']):
-                current = data['total_gas_bumps']['current']
-                previous = data['total_gas_bumps']['previous']
+                current = data['total_gas_bumps_exceeds_limit']['current']
+                previous = data['total_gas_bumps_exceeds_limit']['previous']
                 sub_config = configs.tx_manager_gas_bump_exceeds_limit_total
                 if current is not None:
-                    def condition_function(current_gas_bumps: float,
-                                           previous_gas_bumps: float) -> bool:
-                        return current_gas_bumps > previous_gas_bumps
-
                     self.alerting_factory.classify_conditional_alert(
                         GasBumpIncreasedOverNodeGasPriceLimitAlert,
-                        condition_function, [current, previous], [
+                        self._gas_price_over_limit_condition_function, [
+                            current, previous], [
                             meta_data['node_name'], sub_config['severity'],
                             meta_data['last_monitored'],
                             meta_data['node_parent_id'], meta_data['node_id']
@@ -314,30 +311,29 @@ class ChainlinkNodeAlerter(Alerter):
             if str_to_bool(configs.eth_balance_amount['enabled']):
                 current = data['eth_balance_info']['current']
                 sub_config = configs.eth_balance_amount
-                if current:
+                if current is not None:
                     self.alerting_factory.classify_thresholded_alert_reverse(
                         current['balance'], sub_config,
                         EthBalanceIncreasedAboveThresholdAlert,
                         EthBalanceDecreasedBelowThresholdAlert,
                         data_for_alerting, meta_data['node_parent_id'],
                         meta_data['node_id'],
-                        GroupedChainlinkNodeAlertsMetricCode.
-                            EthBalanceThreshold.value,
+                        GroupedChainlinkNodeAlertsMetricCode
+                            .EthBalanceThreshold.value,
                         meta_data['node_name'], meta_data['last_monitored']
                     )
             if str_to_bool(configs.eth_balance_amount_increase['enabled']):
                 current = data['eth_balance_info']['current']
                 previous = data['eth_balance_info']['previous']
                 sub_config = configs.eth_balance_amount_increase
-                if current:
-                    def condition_function(current_balance: float,
-                                           previous_balance: float) -> bool:
-                        return current_balance > previous_balance
-
+                if current is not None:
+                    increase = current['balance'] - previous['balance']
                     self.alerting_factory.classify_conditional_alert(
-                        EthBalanceToppedUpAlert, condition_function,
+                        EthBalanceToppedUpAlert,
+                        self._eth_balance_top_up_condition_function,
                         [current['balance'], previous['balance']], [
-                            meta_data['node_name'], sub_config['severity'],
+                            meta_data['node_name'], current['balance'],
+                            increase, sub_config['severity'],
                             meta_data['last_monitored'],
                             meta_data['node_parent_id'], meta_data['node_id']
                         ], data_for_alerting
