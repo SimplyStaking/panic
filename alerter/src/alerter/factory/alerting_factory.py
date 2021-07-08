@@ -774,3 +774,33 @@ class AlertingFactory(ABC):
                     warning_window_timer.do_task()
                     self.alerting_state[parent_id][monitorable_id][
                         'warning_sent'][metric_name] = True
+
+    def classify_source_downtime_alert(
+            self, condition_true_alert: Type[ConditionalAlert],
+            condition_function: Callable, condition_fn_args: List[Any],
+            alert_args: List[Any], data_for_alerting: List,
+            parent_id: str, monitorable_id: str, metric_name: str,
+            condition_false_alert: Type[ConditionalAlert] = None,
+    ) -> None:
+        """
+        This function operators exactly as the classify_conditional_alert with
+        the only difference being that we are not alerting repetitively if the
+        condition no longer is true. In the case of source downtime, this
+        prevents BackUpAgain alerts from being re-raised again.
+        """
+        warning_sent = self.alerting_state[parent_id][monitorable_id][
+            'warning_sent']
+        if condition_function(*condition_fn_args):
+            alert = condition_true_alert(*alert_args)
+            data_for_alerting.append(alert.alert_data)
+            self.component_logger.debug("Successfully classified alert %s",
+                                        alert.alert_data)
+            self.alerting_state[parent_id][monitorable_id][
+                'warning_sent'][metric_name] = True
+        elif condition_false_alert is not None and warning_sent[metric_name]:
+            alert = condition_false_alert(*alert_args)
+            data_for_alerting.append(alert.alert_data)
+            self.component_logger.debug("Successfully classified alert %s",
+                                        alert.alert_data)
+            self.alerting_state[parent_id][monitorable_id][
+                'warning_sent'][metric_name] = False

@@ -387,6 +387,8 @@ class ChainlinkNodeAlerter(Alerter):
                 prom_data['error']['code']
             )
 
+    # TODO: In testing debug over this function piece by piece to check if
+    #     : monitoring timestamps etc make sense.
     def _process_downtime(self, trans_data: Dict, data_for_alerting: List):
         # We will parse some meta_data first, note we will assume that the
         # transformed data has correct structure and valid data.
@@ -410,6 +412,8 @@ class ChainlinkNodeAlerter(Alerter):
         chain_name = self.alerts_configs_factory.get_chain_name(parent_id)
         if chain_name is not None:
             configs = self.alerts_configs_factory.configs[chain_name]
+            self.alerting_factory.create_alerting_state(parent_id, origin_id,
+                                                        configs)
 
             # Check if downtime is enabled.
             if str_to_bool(configs.node_is_down['enabled']):
@@ -488,13 +492,15 @@ class ChainlinkNodeAlerter(Alerter):
                                 index_key: str, code: Optional[int]) -> bool:
                             return index_key == 'error' and code == 5015
 
-                        self.alerting_factory.classify_conditional_alert(
+                        self.alerting_factory.classify_source_downtime_alert(
                             PrometheusSourceIsDownAlert, condition_function,
                             [response_index_key, error_code], [
                                 origin_name, Severity.WARNING.value,
                                 trans_data['prometheus']['error']['meta_data'][
                                     'time'], parent_id, origin_id
-                            ], data_for_alerting,
+                            ], data_for_alerting, parent_id, origin_id,
+                            GroupedChainlinkNodeAlertsMetricCode
+                                .PrometheusSourceIsDown.value,
                             PrometheusSourceBackUpAgainAlert
                         )
                     else:
@@ -504,12 +510,14 @@ class ChainlinkNodeAlerter(Alerter):
                         def condition_function() -> bool:
                             return False
 
-                        self.alerting_factory.classify_conditional_alert(
+                        self.alerting_factory.classify_source_downtime_alert(
                             PrometheusSourceIsDownAlert, condition_function,
                             [], [
                                 origin_name, Severity.WARNING.value,
-                                datetime.now().timestamp(), parent_id, origin_id
-                            ], data_for_alerting,
+                                monitoring_timestamp, parent_id, origin_id
+                            ], data_for_alerting, parent_id, origin_id,
+                            GroupedChainlinkNodeAlertsMetricCode
+                                .PrometheusSourceIsDown.value,
                             PrometheusSourceBackUpAgainAlert
                         )
 

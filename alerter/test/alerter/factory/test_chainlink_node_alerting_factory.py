@@ -145,6 +145,9 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         }
 
         warning_sent = copy.deepcopy(warning_critical_sent_dict)
+        warning_sent[
+            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value
+        ] = False
         critical_sent = copy.deepcopy(warning_critical_sent_dict)
         error_sent = {
             GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value: False,

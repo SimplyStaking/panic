@@ -1040,3 +1040,27 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                 self.test_last_monitored_prometheus_new, self.test_parent_id,
                 self.test_chainlink_node_id], data_for_alerting)
         self.assertTrue(call_1 in calls)
+
+    @parameterized.expand([
+        (10, 20, False,),
+        (10, 10, False,),
+        (20, 10, True,),
+    ])
+    def test_greater_than_condition_function_returns_correctly(
+            self, current, previous, expected_result) -> None:
+        actual_result = \
+            self.test_cl_node_alerter._greater_than_condition_function(
+                current, previous)
+        self.assertEqual(expected_result, actual_result)
+
+    @parameterized.expand([
+        (10, 20, True,),
+        (10, 10, False,),
+        (20, 10, True,),
+    ])
+    def test_not_equal_condition_function_returns_correctly(
+            self, current, previous, expected_result) -> None:
+        actual_result = \
+            self.test_cl_node_alerter._not_equal_condition_function(
+                current, previous)
+        self.assertEqual(expected_result, actual_result)

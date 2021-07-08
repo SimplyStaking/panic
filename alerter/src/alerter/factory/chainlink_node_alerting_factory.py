@@ -87,6 +87,8 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                     False,
                 GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
                     False,
+                GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown
+                    .value: False
             }
             critical_sent = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:

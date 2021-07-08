@@ -57,6 +57,8 @@ class AlertingFactoryInstance(AlertingFactory):
                 GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value
                 : False,
                 GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value: False,
+                GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown:
+                    False,
             }
             critical_sent = {
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
@@ -2106,3 +2108,138 @@ class TestAlertingFactory(unittest.TestCase):
         self.assertEqual([], data_for_alerting)
         self.assertFalse(critical_window_timer.timer_started)
         self.assertFalse(warning_window_timer.timer_started)
+
+    """new"""
+
+    @freeze_time("2012-01-01")
+    def test_classify_source_downtime_alert_raises_condition_true_alert_if_true(
+            self) -> None:
+        """
+        Given a true condition, in this test we will check that the
+        classify_source_downtime_alert fn calls the condition_true_alert
+        """
+
+        def condition_function(*args): return True
+
+        data_for_alerting = []
+
+        self.test_factory_instance.classify_source_downtime_alert(
+            PrometheusSourceIsDownAlert, condition_function, [], [
+                self.test_node_name, 'WARNING', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ], data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
+            PrometheusSourceBackUpAgainAlert
+        )
+
+        expected_alert_1 = PrometheusSourceIsDownAlert(
+            self.test_node_name, 'WARNING', datetime.now().timestamp(),
+            self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_source_downtime_alert_raises_condition_false_alert_if_false_and_warning_sent(
+            self) -> None:
+        """
+        Given a false condition, in this test we will check that the
+        classify_source_downtime_alert fn calls the condition_false_alert if it
+        is not None and a warning alert notifying the problem has already been
+        sent.
+        """
+
+        def condition_function_true(*args): return True
+        def condition_function_false(*args): return not condition_function_true(
+            args)
+
+        data_for_alerting = []
+
+        # Send the warning alert first
+        self.test_factory_instance.classify_source_downtime_alert(
+            PrometheusSourceIsDownAlert, condition_function_true, [], [
+                self.test_node_name, 'WARNING', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ], data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
+            PrometheusSourceBackUpAgainAlert
+        )
+        data_for_alerting.clear()
+
+        self.test_factory_instance.classify_source_downtime_alert(
+            PrometheusSourceIsDownAlert, condition_function_false, [], [
+                self.test_node_name, 'INFO', datetime.now().timestamp() + 1,
+                self.test_parent_id, self.test_node_id
+            ], data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
+            PrometheusSourceBackUpAgainAlert
+        )
+
+        expected_alert_1 = PrometheusSourceBackUpAgainAlert(
+            self.test_node_name, 'INFO', datetime.now().timestamp() + 1,
+            self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_source_down_alert_no_alert_if_no_false_alert_and_false(
+            self) -> None:
+        """
+        Given a false condition and no condition_false_alert, in this test we
+        will check that no alert is raised by the classify_source_downtime_alert
+        fn.
+        """
+
+        def condition_function_true(*args): return True
+
+        def condition_function_false(*args): return not condition_function_true(
+            args)
+
+        data_for_alerting = []
+
+        # Send the warning alert first
+        self.test_factory_instance.classify_source_downtime_alert(
+            PrometheusSourceIsDownAlert, condition_function_true, [], [
+                self.test_node_name, 'WARNING', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ], data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
+            PrometheusSourceBackUpAgainAlert
+        )
+        data_for_alerting.clear()
+
+        self.test_factory_instance.classify_source_downtime_alert(
+            PrometheusSourceIsDownAlert, condition_function_false, [], [
+                self.test_node_name, 'INFO', datetime.now().timestamp() + 1,
+                self.test_parent_id, self.test_node_id
+            ], data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
+        )
+
+        self.assertEqual([], data_for_alerting)
+
+    @freeze_time("2012-01-01")
+    def test_classify_source_down_alert_no_alert_if_warning_not_sent_and_false(
+            self) -> None:
+        """
+        Given a false condition and that no warning alert has been sent, in this
+        test we will check that no alert is raised by the
+        classify_source_downtime_alert fn.
+        """
+
+        def condition_function_true(*args): return True
+
+        def condition_function_false(*args): return not condition_function_true(
+            args)
+
+        data_for_alerting = []
+
+        self.test_factory_instance.classify_source_downtime_alert(
+            PrometheusSourceIsDownAlert, condition_function_false, [], [
+                self.test_node_name, 'INFO', datetime.now().timestamp() + 1,
+                self.test_parent_id, self.test_node_id
+            ], data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
+            PrometheusSourceBackUpAgainAlert
+        )
+
+        self.assertEqual([], data_for_alerting)
