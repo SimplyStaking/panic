@@ -1,9 +1,9 @@
 import copy
 import json
 import logging
-from multiprocessing import Process
 import sys
 from datetime import datetime
+from multiprocessing import Process
 from types import FrameType
 from typing import Dict
 
@@ -14,6 +14,8 @@ from src.alerter.alerter_starters import start_chainlink_node_alerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.manager import AlertersManager
+from src.configs.factory.chainlink_alerts_configs_factory import \
+    ChainlinkAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import CHAINLINK_NODE_ALERTER_NAME
 from src.utils.constants.rabbitmq import (
@@ -22,11 +24,8 @@ from src.utils.constants.rabbitmq import (
     CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
     CL_ALERTS_CONFIGS_ROUTING_KEY, ALERT_EXCHANGE, TOPIC,
     CL_NODE_ALERT_ROUTING_KEY)
-from src.utils.exceptions import (ParentIdsMissMatchInAlertsConfiguration,
-                                  MessageWasNotDeliveredException)
+from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-from src.configs.factory.chainlink_alerts_configs_factory import \
-    ChainlinkAlertsConfigsFactory
 
 
 class ChainlinkNodeAlerterManager(AlertersManager):
@@ -113,7 +112,7 @@ class ChainlinkNodeAlerterManager(AlertersManager):
 
             for alerter, process in self.alerter_process_dict.items():
                 log_and_print("Terminating the process of {}".format(
-                              alerter), self.logger)
+                    alerter), self.logger)
                 if process.is_alive():
                     heartbeat['running_processes'].append(alerter)
                 else:
@@ -149,7 +148,6 @@ class ChainlinkNodeAlerterManager(AlertersManager):
         if (CHAINLINK_NODE_ALERTER_NAME not in self.alerter_process_dict or
                 not self.alerter_process_dict[
                     CHAINLINK_NODE_ALERTER_NAME].is_alive()):
-
             """
             We must clear out all the metrics which are found in Redis.
             Sending this alert to the alert router and then the data store will
