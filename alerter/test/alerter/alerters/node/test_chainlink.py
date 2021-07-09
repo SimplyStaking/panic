@@ -641,76 +641,6 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         mock_no_change_alert.assert_not_called()
         mock_error_alert.assert_not_called()
 
-    @mock.patch.object(ChainlinkNodeAlertingFactory, "create_alerting_state")
-    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_error_alert")
-    @mock.patch.object(ChainlinkNodeAlertingFactory,
-                       "classify_no_change_in_alert")
-    @mock.patch.object(ChainlinkNodeAlertingFactory,
-                       "classify_thresholded_time_window_alert")
-    @mock.patch.object(ChainlinkNodeAlertingFactory,
-                       "classify_thresholded_in_time_period_alert")
-    @mock.patch.object(ChainlinkNodeAlertingFactory,
-                       "classify_conditional_alert")
-    @mock.patch.object(ChainlinkNodeAlertingFactory,
-                       "classify_thresholded_alert_reverse")
-    def test_process_prometheus_result_does_not_classify_if_current_is_None(
-            self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
-            mock_thresh_win_alert, mock_no_change_alert,
-            mock_error_alert, mock_create_alerting_state) -> None:
-        """
-        In this test we will check that if the current metric value is None, no
-        alert classification is made for the metrics. The only alerts which are
-        classified are the ones which try to detect error alerts (i.e. not
-        associated with any data metric). Note that for easier testing we will
-        assume that all current metric values are None. Here we will also test
-        that create_alert_state is called once a configuration is found.
-        """
-        # Add configs for the test data
-        parsed_routing_key = self.test_configs_routing_key.split('.')
-        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-        del self.received_configurations['DEFAULT']
-        self.test_configs_factory.add_new_config(chain,
-                                                 self.received_configurations)
-
-        # Set each current metric value to None
-        data = self.test_prom_result_data['data']
-        for metric, current_previous in data.items():
-            current_previous['current'] = None
-
-        data_for_alerting = []
-        self.test_cl_node_alerter._process_prometheus_result(
-            self.test_prom_result_data, data_for_alerting)
-
-        mock_reverse.assert_not_called()
-        mock_cond_alert.assert_not_called()
-        mock_thresh_per_alert.assert_not_called()
-        mock_thresh_win_alert.assert_not_called()
-        mock_no_change_alert.assert_not_called()
-
-        calls = mock_error_alert.call_args_list
-        self.assertEqual(2, mock_error_alert.call_count)
-        call_1 = call(
-            5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
-            self.test_parent_id, self.test_chainlink_node_id,
-            self.test_chainlink_node_name,
-            self.test_last_monitored_prometheus_new,
-            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "",
-            "Prometheus url is now valid!. Last source used {}.".format(
-                self.test_last_prometheus_source_used_new), None)
-        call_2 = call(
-            5003, MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
-            self.test_parent_id, self.test_chainlink_node_id,
-            self.test_chainlink_node_name,
-            self.test_last_monitored_prometheus_new,
-            GroupedChainlinkNodeAlertsMetricCode.MetricNotFound.value, "",
-            "All metrics found!. Last source used {}.".format(
-                self.test_last_prometheus_source_used_new), None)
-        self.assertTrue(call_1 in calls)
-        self.assertTrue(call_2 in calls)
-        mock_create_alerting_state.assert_called_once_with(
-            self.test_parent_id, self.test_chainlink_node_id,
-            self.test_configs_factory.configs[chain])
-
     @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_error_alert")
     @mock.patch.object(ChainlinkNodeAlertingFactory,
                        "classify_no_change_in_alert")
@@ -973,42 +903,6 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
 
         mock_cond_alert.assert_not_called()
         mock_error_alert.assert_not_called()
-
-    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_error_alert")
-    @mock.patch.object(ChainlinkNodeAlertingFactory, "create_alerting_state")
-    @mock.patch.object(ChainlinkNodeAlertingFactory,
-                       "classify_conditional_alert")
-    def test_proc_prom_err_does_not_classify_change_in_source_current_is_None(
-            self, mock_cond_alert, mock_create_alerting_state,
-            mock_error) -> None:
-        """
-        In this test we will check that if the current value for
-        last_source_used is None, the ChangeInSource alert is not classified.
-        Here we will also test that create_alert_state is called once a
-        configuration is found.
-        """
-        mock_error.return_value = None
-
-        # Add configs for the test data
-        parsed_routing_key = self.test_configs_routing_key.split('.')
-        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-        del self.received_configurations['DEFAULT']
-        self.test_configs_factory.add_new_config(chain,
-                                                 self.received_configurations)
-
-        # Set last_source_used current to None
-        self.test_prom_non_down_error['meta_data']['last_source_used'][
-            'current'] = None
-
-        data_for_alerting = []
-        self.test_cl_node_alerter._process_prometheus_error(
-            self.test_prom_non_down_error, data_for_alerting)
-
-        mock_cond_alert.assert_not_called()
-
-        mock_create_alerting_state.assert_called_once_with(
-            self.test_parent_id, self.test_chainlink_node_id,
-            self.test_configs_factory.configs[chain])
 
     @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_error_alert")
     @mock.patch.object(ChainlinkNodeAlertingFactory,
