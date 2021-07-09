@@ -111,8 +111,6 @@ class ChainlinkNodeAlerterManager(AlertersManager):
             heartbeat['dead_processes'] = []
 
             for alerter, process in self.alerter_process_dict.items():
-                log_and_print("Terminating the process of {}".format(
-                    alerter), self.logger)
                 if process.is_alive():
                     heartbeat['running_processes'].append(alerter)
                 else:
