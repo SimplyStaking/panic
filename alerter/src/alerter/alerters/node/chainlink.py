@@ -493,7 +493,10 @@ class ChainlinkNodeAlerter(Alerter):
                         error_code = None if response_index_key == 'result' \
                             else trans_data['prometheus']['error']['code']
                         monitoring_timestamp = trans_data['prometheus'][
-                            'error']['meta_data']['time']
+                            'result']['meta_data']['last_monitored'] \
+                            if response_index_key == 'result' \
+                            else trans_data['prometheus']['error']['meta_data'][
+                            'time']
                     else:
                         # This condition covers the case for when prometheus
                         # is disabled and we had a prometheus down alert before
@@ -510,7 +513,10 @@ class ChainlinkNodeAlerter(Alerter):
                         ], data_for_alerting, parent_id, origin_id,
                         GroupedChainlinkNodeAlertsMetricCode
                             .PrometheusSourceIsDown.value,
-                        PrometheusSourceBackUpAgainAlert
+                        PrometheusSourceBackUpAgainAlert, [
+                            origin_name, Severity.INFO.value,
+                            monitoring_timestamp, parent_id, origin_id
+                        ]
                     )
 
     def _process_transformed_data(

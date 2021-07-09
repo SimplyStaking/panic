@@ -1392,11 +1392,13 @@ class TestAlertingFactory(unittest.TestCase):
             PrometheusSourceIsDownAlert, condition_function, [], [
                 self.test_node_name, 'WARNING', datetime.now().timestamp(),
                 self.test_parent_id, self.test_node_id
-            ], data_for_alerting, PrometheusSourceBackUpAgainAlert
+            ], data_for_alerting, PrometheusSourceBackUpAgainAlert,
+            [self.test_node_name, 'INFO', datetime.now().timestamp(),
+             self.test_parent_id, self.test_node_id]
         )
 
         expected_alert_1 = PrometheusSourceBackUpAgainAlert(
-            self.test_node_name, 'WARNING', datetime.now().timestamp(),
+            self.test_node_name, 'INFO', datetime.now().timestamp(),
             self.test_parent_id, self.test_node_id)
         self.assertEqual(1, len(data_for_alerting))
         self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
@@ -2149,6 +2151,7 @@ class TestAlertingFactory(unittest.TestCase):
         """
 
         def condition_function_true(*args): return True
+
         def condition_function_false(*args): return not condition_function_true(
             args)
 
@@ -2161,17 +2164,19 @@ class TestAlertingFactory(unittest.TestCase):
                 self.test_parent_id, self.test_node_id
             ], data_for_alerting, self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
-            PrometheusSourceBackUpAgainAlert
         )
         data_for_alerting.clear()
 
         self.test_factory_instance.classify_source_downtime_alert(
             PrometheusSourceIsDownAlert, condition_function_false, [], [
-                self.test_node_name, 'INFO', datetime.now().timestamp() + 1,
+                self.test_node_name, 'WARNING', datetime.now().timestamp() + 1,
                 self.test_parent_id, self.test_node_id
             ], data_for_alerting, self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
-            PrometheusSourceBackUpAgainAlert
+            PrometheusSourceBackUpAgainAlert, [
+                self.test_node_name, 'INFO', datetime.now().timestamp() + 1,
+                self.test_parent_id, self.test_node_id
+            ]
         )
 
         expected_alert_1 = PrometheusSourceBackUpAgainAlert(
@@ -2203,7 +2208,6 @@ class TestAlertingFactory(unittest.TestCase):
                 self.test_parent_id, self.test_node_id
             ], data_for_alerting, self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
-            PrometheusSourceBackUpAgainAlert
         )
         data_for_alerting.clear()
 
@@ -2235,11 +2239,14 @@ class TestAlertingFactory(unittest.TestCase):
 
         self.test_factory_instance.classify_source_downtime_alert(
             PrometheusSourceIsDownAlert, condition_function_false, [], [
-                self.test_node_name, 'INFO', datetime.now().timestamp() + 1,
+                self.test_node_name, 'WARNING', datetime.now().timestamp() + 1,
                 self.test_parent_id, self.test_node_id
             ], data_for_alerting, self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
-            PrometheusSourceBackUpAgainAlert
+            PrometheusSourceBackUpAgainAlert, [
+                self.test_node_name, 'INFO', datetime.now().timestamp() + 1,
+                self.test_parent_id, self.test_node_id
+            ]
         )
 
         self.assertEqual([], data_for_alerting)

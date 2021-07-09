@@ -1,3 +1,4 @@
+import copy
 import datetime
 import json
 import logging
@@ -26,7 +27,9 @@ from src.alerter.alerts.node.chainlink import (
     TotalErroredJobRunsDecreasedBelowThresholdAlert,
     EthBalanceIncreasedAboveThresholdAlert,
     EthBalanceDecreasedBelowThresholdAlert, EthBalanceToppedUpAlert,
-    ChangeInSourceNodeAlert, GasBumpIncreasedOverNodeGasPriceLimitAlert)
+    ChangeInSourceNodeAlert, GasBumpIncreasedOverNodeGasPriceLimitAlert,
+    NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+    PrometheusSourceIsDownAlert, PrometheusSourceBackUpAgainAlert)
 from src.alerter.factory.chainlink_node_alerting_factory import \
     ChainlinkNodeAlertingFactory
 from src.configs.factory.chainlink_alerts_configs_factory import \
@@ -37,7 +40,7 @@ from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, ALERT_EXCHANGE, CL_NODE_TRANSFORMED_DATA_ROUTING_KEY,
     CL_NODE_ALERT_ROUTING_KEY)
 from src.utils.env import RABBIT_IP
-from src.utils.exceptions import PANICException
+from src.utils.exceptions import PANICException, NodeIsDownException
 from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
                               delete_exchange_if_exists, disconnect_from_rabbit)
 
@@ -103,6 +106,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         self.test_last_prometheus_source_used_new = "prometheus_source_2"
         self.test_last_monitored_prometheus_new = 47.666786
         self.test_exception = PANICException('test_exception', 1)
+        self.test_node_is_down_exception = NodeIsDownException(
+            self.test_chainlink_node_name)
 
         # Construct received configurations
         self.received_configurations = {
@@ -251,6 +256,57 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             }
         }
 
+        self.transformed_data_example_result = {
+            'prometheus': copy.deepcopy(self.test_prom_result_data),
+            # TODO: Add more data sources once they are enabled
+        }
+        self.transformed_data_example_not_all_sources_down = {
+            'prometheus': {
+                'error': {
+                    'meta_data': {
+                        'node_name': self.test_chainlink_node_name,
+                        'last_source_used': {
+                            'current':
+                                self.test_last_prometheus_source_used_new,
+                            'previous': self.test_last_prometheus_source_used,
+                        },
+                        'node_id': self.test_chainlink_node_id,
+                        'node_parent_id': self.test_parent_id,
+                        'time': self.test_last_monitored_prometheus_new
+                    },
+                    'message': self.test_exception.message,
+                    'code': self.test_exception.code,
+                }
+            },
+            # TODO: Add more data sources once they are enabled
+        }
+        self.transformed_data_example_all_sources_down = {
+            'prometheus': {
+                'error': {
+                    'meta_data': {
+                        'node_name': self.test_chainlink_node_name,
+                        'last_source_used': {
+                            'current':
+                                self.test_last_prometheus_source_used_new,
+                            'previous': self.test_last_prometheus_source_used,
+                        },
+                        'node_id': self.test_chainlink_node_id,
+                        'node_parent_id': self.test_parent_id,
+                        'time': self.test_last_monitored_prometheus_new
+                    },
+                    'message': self.test_node_is_down_exception.message,
+                    'code': self.test_node_is_down_exception.code,
+                    'data': {
+                        'went_down_at': {
+                            'current': self.test_last_monitored_prometheus_new,
+                            'previous': None
+                        }
+                    }
+                }
+            },
+            # TODO: Add more data sources once they are enabled
+        }
+
         # Test object
         self.test_configs_factory = ChainlinkAlertsConfigsFactory()
         self.test_alerting_factory = ChainlinkNodeAlertingFactory(
@@ -279,6 +335,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         self.test_configs_factory = None
         self.alerting_factory = None
         self.test_cl_node_alerter = None
+        self.test_exception = None
+        self.test_node_is_down_exception = None
 
     def test_alerts_configs_factory_returns_alerts_configs_factory(
             self) -> None:
@@ -1080,3 +1138,140 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             self.test_cl_node_alerter._prometheus_is_down_condition_function(
                 index_key, code)
         self.assertEqual(expected_result, actual_result)
+
+    @parameterized.expand([
+        ("self.transformed_data_example_result",),
+        ("self.transformed_data_example_all_sources_down",),
+        ("self.transformed_data_example_not_all_sources_down",),
+    ])
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_downtime_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_source_downtime_alert")
+    def test_process_downtime_does_nothing_if_config_not_received(
+            self, transformed_data, mock_source_downtime,
+            mock_downtime) -> None:
+        """
+        In this test we will check that no classification function is called
+        if transformed data has been received for a node who's associated alerts
+        configuration is not received yet. We will perform this test for
+        multiple transformed_data types.
+        """
+        data_for_alerting = []
+        self.test_cl_node_alerter._process_downtime(eval(transformed_data),
+                                                    data_for_alerting)
+
+        mock_source_downtime.assert_not_called()
+        mock_downtime.assert_not_called()
+
+    @parameterized.expand([
+        ("self.transformed_data_example_result",),
+        ("self.transformed_data_example_all_sources_down",),
+        ("self.transformed_data_example_not_all_sources_down",),
+    ])
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_downtime_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_source_downtime_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "create_alerting_state")
+    def test_process_downtime_does_not_classify_if_downtime_disabled(
+            self, transformed_data, mock_create_alerting_state,
+            mock_source_downtime, mock_downtime) -> None:
+        """
+        In this test we will check that no alert classification is done if
+        downtime is disabled from the configs. Here we will also test that
+        create_alert_state is called once a configuration is found.
+        """
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        for index, config in self.received_configurations.items():
+            config['enabled'] = 'False'
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+
+        data_for_alerting = []
+        self.test_cl_node_alerter._process_downtime(eval(transformed_data),
+                                                    data_for_alerting)
+
+        mock_source_downtime.assert_not_called()
+        mock_downtime.assert_not_called()
+        mock_create_alerting_state.assert_called_once_with(
+            self.test_parent_id, self.test_chainlink_node_id,
+            self.test_configs_factory.configs[chain])
+
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_downtime_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_source_downtime_alert")
+    def test_process_downtime_classifies_downtime_alert_if_all_sources_down(
+            self, mock_source_downtime, mock_downtime) -> None:
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+        configs = self.test_configs_factory.configs[chain]
+
+        data_for_alerting = []
+        self.test_cl_node_alerter._process_downtime(
+            self.transformed_data_example_all_sources_down, data_for_alerting)
+
+        mock_source_downtime.assert_not_called()
+        mock_downtime.assert_called_once_with(
+            self.test_last_monitored_prometheus_new, configs.node_is_down,
+            NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_chainlink_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new)
+
+    @parameterized.expand([
+        ("self.transformed_data_example_result", "result", None),
+        ("self.transformed_data_example_not_all_sources_down", "error", 1),
+    ])
+    @mock.patch.object(ChainlinkNodeAlertingFactory, "classify_downtime_alert")
+    @mock.patch.object(ChainlinkNodeAlertingFactory,
+                       "classify_source_downtime_alert")
+    def test_process_downtime_classifies_correctly_if_not_all_sources_down(
+            self, transformed_data, response_index_key, error_code,
+            mock_source_downtime, mock_downtime) -> None:
+        """
+        In this test we will check that if not all sources are down, the
+        process_downtime function attempts to classify for a backup again alert
+        and prometheus downtime alert.
+        """
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+        configs = self.test_configs_factory.configs[chain]
+
+        data_for_alerting = []
+        self.test_cl_node_alerter._process_downtime(
+            eval(transformed_data), data_for_alerting)
+
+        mock_downtime.assert_called_once_with(
+            None, configs.node_is_down, NodeWentDownAtAlert, NodeStillDownAlert,
+            NodeBackUpAgainAlert, data_for_alerting, self.test_parent_id,
+            self.test_chainlink_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_chainlink_node_name,
+            self.test_last_monitored_prometheus_new)
+        mock_source_downtime.assert_called_once_with(
+            PrometheusSourceIsDownAlert,
+            self.test_cl_node_alerter._prometheus_is_down_condition_function,
+            [response_index_key, error_code], [
+                self.test_chainlink_node_name, "WARNING",
+                self.test_last_monitored_prometheus_new, self.test_parent_id,
+                self.test_chainlink_node_id
+            ], data_for_alerting, self.test_parent_id,
+            self.test_chainlink_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
+            PrometheusSourceBackUpAgainAlert, [
+                self.test_chainlink_node_name, "INFO",
+                self.test_last_monitored_prometheus_new, self.test_parent_id,
+                self.test_chainlink_node_id
+            ]
+        )

@@ -492,16 +492,19 @@ class AlertingFactory(ABC):
     def classify_conditional_alert(
             self, condition_true_alert: Type[ConditionalAlert],
             condition_function: Callable, condition_fn_args: List[Any],
-            alert_args: List[Any], data_for_alerting: List,
-            condition_false_alert: Type[ConditionalAlert] = None
+            true_alert_args: List[Any], data_for_alerting: List,
+            condition_false_alert: Type[ConditionalAlert] = None,
+            false_alert_args: List[Any] = None
     ) -> None:
         if condition_function(*condition_fn_args):
-            alert = condition_true_alert(*alert_args)
+            alert = condition_true_alert(*true_alert_args)
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
         elif condition_false_alert is not None:
-            alert = condition_false_alert(*alert_args)
+            if false_alert_args is None:
+                false_alert_args = []
+            alert = condition_false_alert(*false_alert_args)
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
@@ -778,9 +781,10 @@ class AlertingFactory(ABC):
     def classify_source_downtime_alert(
             self, condition_true_alert: Type[ConditionalAlert],
             condition_function: Callable, condition_fn_args: List[Any],
-            alert_args: List[Any], data_for_alerting: List,
+            true_alert_args: List[Any], data_for_alerting: List,
             parent_id: str, monitorable_id: str, metric_name: str,
             condition_false_alert: Type[ConditionalAlert] = None,
+            false_alert_args: List[Any] = None
     ) -> None:
         """
         This function operators exactly as the classify_conditional_alert with
@@ -791,14 +795,16 @@ class AlertingFactory(ABC):
         warning_sent = self.alerting_state[parent_id][monitorable_id][
             'warning_sent']
         if condition_function(*condition_fn_args):
-            alert = condition_true_alert(*alert_args)
+            alert = condition_true_alert(*true_alert_args)
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
             self.alerting_state[parent_id][monitorable_id][
                 'warning_sent'][metric_name] = True
         elif condition_false_alert is not None and warning_sent[metric_name]:
-            alert = condition_false_alert(*alert_args)
+            if false_alert_args is None:
+                false_alert_args = []
+            alert = condition_false_alert(*false_alert_args)
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
