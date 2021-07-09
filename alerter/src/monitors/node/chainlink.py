@@ -245,9 +245,9 @@ class ChainlinkNodeMonitor(Monitor):
         else:
             processed_data['result']['data']['gas_updater_set_gas_price'] = None
 
-        # Add the ethereum balance of all addresses to the processed data. We
-        # will monitor the first account we find. Note, it is very unlikely that
-        # a node is mapped to multiple addresses.
+        # Add the ethereum balance to the processed data. We will monitor the
+        # first account we find. Note, it is very unlikely that a node is mapped
+        # to multiple addresses.
         processed_data['result']['data']['eth_balance'] = {}
         ethereum_balance_dict = processed_data['result']['data']['eth_balance']
         for _, data_subset in enumerate(data_copy['eth_balance']):
