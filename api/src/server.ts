@@ -479,7 +479,6 @@ app.post('/server/redis/metrics',
         }
     });
 
-
 // ---------------------------------------- Mongo Endpoints
 
 app.post('/server/mongo/alerts',
@@ -601,7 +600,6 @@ app.post('/server/mongo/alerts',
         }
     });
 
-    
 app.post('/server/mongo/metrics',
     async (req: express.Request, res: express.Response) => {
         console.log('Received POST request for %s', req.url);
@@ -610,7 +608,7 @@ app.post('/server/mongo/metrics',
             sources,
             minTimestamp,
             maxTimestamp,
-            noOfMetrics
+            noOfMetricsPerSource
         } = req.body;
 
         // Check that all parameters have been sent
@@ -619,7 +617,7 @@ app.post('/server/mongo/metrics',
             sources,
             minTimestamp,
             maxTimestamp,
-            noOfMetrics
+            noOfMetricsPerSource
         });
         if (missingKeysList.length !== 0) {
             const err = new MissingKeysInBody(...missingKeysList);
@@ -651,68 +649,68 @@ app.post('/server/mongo/metrics',
         const parsedMinTimestamp = parseFloat(minTimestamp);
         const parsedMaxTimestamp = parseFloat(maxTimestamp);
 
-        const parsedNoOfMetrics = parseInt(noOfMetrics);
-        if (isNaN(parsedNoOfMetrics) || parsedNoOfMetrics <= 0) {
-            const err = new InvalidParameterValue('req.body.noOfMetrics');
+        const parsedNoOfMetricsPerSource = parseInt(noOfMetricsPerSource);
+        if (isNaN(parsedNoOfMetricsPerSource) || parsedNoOfMetricsPerSource <= 0) {
+            const err = new InvalidParameterValue('req.body.noOfMetricsPerSource');
             res.status(err.code).send(errorJson(err.message));
             return;
         }
 
-        let result = resultJson({metrics: []});
+        let result = resultJson({metrics: {}});
         if (mongoInterface.client) {
             try {
                 const db = mongoInterface.client.db(mongoDB);
                 if (chains.length > 0) {
-                    let queryList: any = [];
-                    for (let i = 1; i < chains.length; i++) {
-                        queryList.push({$unionWith: chains[i]})
-                    }
-                    /**
-                     * @note currently we only have the system doc type
-                     * when more monitorables are added, then multiple doc_types
-                     * must be added to the query. Leaving as system for now for
-                     * time constraint purposes.
-                     *  */ 
-                    // sources.forEach(async (source: string, i:number): Promise<void> => {
-                    //   let docType;
-                    //   if(source.includes("system")){
-                    //     docType = "system"
-                    //   }
-
-                    //   queryList.push(
-                    //     {$match: {doc_type: docType}},
-                    //     // {$unwind: "$" + source},
-                    //     // {$sort: {"timestamp": -1, _id: 1}},
-                    //     // {$limit: parsedNoOfMetrics},
-                    //     // {$group: {_id: null, metrics: {$push: "$alerts"}}},
-                    //     // {$project: {_id: 0, alerts: "$alerts"}},
-                    //   );
-                    // });
-                    queryList.push(
-                      {$match: {doc_type: 'system'}},
-                      {$unwind: "$system_2a8b23ee-cab6-439c-85ca-d2ba5a45c934"},
-                      {
-                        $match: {
-                          "d": {
-                            "$gte": parsedMinTimestamp,
-                            "$lte": parsedMaxTimestamp
-                          }
+                    var queryPromise = new Promise<void>((resolve, reject) => {
+                      sources.forEach(async (source: string, i:number): Promise<void> => {
+                        let queryList: any = [];
+                        for (let i = 1; i < chains.length; i++) {
+                          queryList.push({$unionWith: chains[i]})
                         }
-                    },
-                      {$sort: {"timestamp": -1, _id: 1}},
-                      {$limit: parsedNoOfMetrics},
-                    );
-                    const collection = db.collection(chains[0]);
-                    const docs = await collection.aggregate(queryList)
-                        .toArray();
-                    console.log(docs);
-                    for (const doc of docs) {
-                        result.result.metrics = result.result.metrics.concat(
-                            doc['system_2a8b23ee-cab6-439c-85ca-d2ba5a45c934'])
-                    }
+
+                        if (!(source in result.result.metrics)){
+                          result.result.metrics[source] = []
+                        }
+
+                        let docType;
+                        if(source.includes("system")){
+                          docType = "system"
+                        }
+                        const originSource = "$".concat(source);
+                        const timestampSource = source.concat(".timestamp");
+                        queryList.push(
+                          {$match: {doc_type: docType}},
+                          {$unwind: originSource},
+                          {
+                            $match: {
+                              [timestampSource]: {
+                                "$gte": parsedMinTimestamp,
+                                "$lte": parsedMaxTimestamp
+                              }
+                            }
+                          },
+                          {$sort: {"timestamp": -1, _id: 1}},
+                          {$limit: parsedNoOfMetricsPerSource},
+                        );
+                        const collection = db.collection(chains[0]);
+                        const docs = await collection.aggregate(queryList)
+                          .toArray();
+                        for (const doc of docs) {
+                          result.result.metrics[source] = result.result.metrics[source].concat(
+                              doc[source])
+                        }
+                        if (i === sources.length -1) resolve();
+                      });
+                    });
+                    
+                    queryPromise.then(() => {
+                      res.status(SUCCESS_STATUS).send(result);
+                      return;
+                    });
+                } else {
+                  res.status(SUCCESS_STATUS).send(result);
+                  return;
                 }
-                res.status(SUCCESS_STATUS).send(result);
-                return;
             } catch (err) {
                 console.error(err);
                 const retrievalErr = new CouldNotRetrieveDataFromMongo();
@@ -728,6 +726,7 @@ app.post('/server/mongo/metrics',
             return;
         }
     });
+
 // ---------------------------------------- Server defaults
 
 app.get('/server/*', async (req: express.Request, res: express.Response) => {

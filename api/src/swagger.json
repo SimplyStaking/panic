@@ -134,7 +134,7 @@
             "description": "OK",
             "schema": {
               "type": "object",
-              "$ref": "#/definitions/metricsOverview"
+              "$ref": "#/definitions/redisMetricsOverview"
             }
           },
           "532": {
@@ -174,7 +174,47 @@
             "description": "OK",
             "schema": {
               "type": "object",
-              "$ref": "#/definitions/metricsOverview"
+              "$ref": "#/definitions/mongoAlertsResult"
+            }
+          },
+          "532": {
+            "description": "Error: Missing key(s) in request body."
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised."
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo."
+          },
+          "539": {
+            "description": "Error: An invalid value was given to the parameter."
+          }
+        }
+      }
+    },
+    "/server/mongo/metrics": {
+      "post": {
+        "tags": [
+          "Mongo"
+        ],
+        "summary": "Returns a list of metrics for the requested chains, sources between a time period sorted by most recent. A number limit of metrics per source is specified.",
+        "requestBody": {
+          "description": "Specify the chains, sources, minimum/maximum timestamp (Range of time), and number of metrics per source to be retrieved.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/definitions/mongoMetrics"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "$ref": "#/definitions/mongoMetricsOverview"
             }
           },
           "532": {
@@ -342,7 +382,24 @@
         }
       }
     },
-    "metricsOverview": {
+    "mongoMetricsOverview": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "object",
+          "properties": {
+            "unique_source_id": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "$ref": "#/definitions/system_metrics"
+              }
+            }
+          }
+        }
+      }
+    },
+    "redisMetricsOverview": {
       "type": "object",
       "properties": {
         "result": {
@@ -516,6 +573,38 @@
         "timestamp": {
           "type": "integer",
           "example": 1625758847.87753
+        }
+      }
+    },
+    "mongoMetrics": {
+      "type": "object",
+      "properties": {
+        "chains": {
+          "type": "array",
+          "example": [
+            "chain_name_51383ec9-b49e-4d03-8068-d60f5f3c9285",
+            "GENERAL"
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "example": [
+            "system_2a8b23ee-cab6-439c-85ca-d2ba5a45c934",
+            "system_5330c562-368b-4192-bbaf-db6638307783",
+            "system_d2a0a05e-c0ec-4b39-a101-d3cb5f47bc03"
+          ]
+        },
+        "minTimestamp": {
+          "type": "integer",
+          "example": 0
+        },
+        "maxTimestamp": {
+          "type": "integer",
+          "example": 2625677273
+        },
+        "noOfMetricsPerSource": {
+          "type": "integer",
+          "example": 100
         }
       }
     },
