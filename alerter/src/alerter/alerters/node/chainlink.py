@@ -137,8 +137,8 @@ class ChainlinkNodeAlerter(Alerter):
 
     def _process_prometheus_result(self, prom_data: Dict,
                                    data_for_alerting: List) -> None:
-        meta_data = prom_data['result']['meta_data']
-        data = prom_data['result']['data']
+        meta_data = prom_data['meta_data']
+        data = prom_data['data']
 
         # We must make sure that the alerts_config has been received for the
         # chain.
@@ -338,7 +338,7 @@ class ChainlinkNodeAlerter(Alerter):
 
     def _process_prometheus_error(self, prom_data: Dict,
                                   data_for_alerting: List) -> None:
-        meta_data = prom_data['error']['meta_data']
+        meta_data = prom_data['meta_data']
 
         # We must make sure that the alerts_config has been received for the
         # chain.
@@ -375,10 +375,10 @@ class ChainlinkNodeAlerter(Alerter):
                 meta_data['node_parent_id'], meta_data['node_id'],
                 meta_data['node_name'], meta_data['time'],
                 GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value,
-                prom_data['error']['message'],
+                prom_data['message'],
                 "Prometheus url is now valid!. Last source used {}.".format(
                     meta_data['last_source_used']['current']),
-                prom_data['error']['code']
+                prom_data['code']
             )
             self.alerting_factory.classify_error_alert(
                 5003, MetricNotFoundErrorAlert, MetricFoundAlert,
@@ -386,10 +386,10 @@ class ChainlinkNodeAlerter(Alerter):
                 meta_data['node_id'], meta_data['node_name'],
                 meta_data['time'],
                 GroupedChainlinkNodeAlertsMetricCode.MetricNotFound.value,
-                prom_data['error']['message'],
+                prom_data['message'],
                 "All metrics found!. Last source used {}.".format(
                     meta_data['last_source_used']['current']),
-                prom_data['error']['code']
+                prom_data['code']
             )
 
     def _process_downtime(self, trans_data: Dict, data_for_alerting: List):

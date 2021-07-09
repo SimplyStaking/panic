@@ -7,6 +7,8 @@ from unittest import mock
 from unittest.mock import call
 
 import pika
+import pika.exceptions
+from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.alerter.alerters.node.chainlink import (
@@ -167,97 +169,95 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                 }
 
         self.test_prom_result_data = {
-            'result': {
-                'meta_data': {
-                    'node_name': self.test_chainlink_node_name,
-                    'last_source_used': {
-                        'current': self.test_last_prometheus_source_used_new,
-                        'previous': self.test_last_prometheus_source_used
-                    },
-                    'node_id': self.test_chainlink_node_id,
-                    'node_parent_id': self.test_parent_id,
-                    'last_monitored': self.test_last_monitored_prometheus_new,
+            'meta_data': {
+                'node_name': self.test_chainlink_node_name,
+                'last_source_used': {
+                    'current': self.test_last_prometheus_source_used_new,
+                    'previous': self.test_last_prometheus_source_used
                 },
-                'data': {
-                    'went_down_at': {
-                        'current': self.test_went_down_at_prometheus_new,
-                        'previous': self.test_went_down_at_prometheus
-                    },
-                    'current_height': {
-                        'current': self.test_current_height_new,
-                        'previous': self.test_current_height
-                    },
-                    'eth_blocks_in_queue': {
-                        'current': self.test_eth_blocks_in_queue_new,
-                        'previous': self.test_eth_blocks_in_queue
-                    },
-                    'total_block_headers_received': {
-                        'current': self.test_total_block_headers_received_new,
-                        'previous': self.test_total_block_headers_received,
-                    },
-                    'total_block_headers_dropped': {
-                        'current': self.test_total_block_headers_dropped_new,
-                        'previous': self.test_total_block_headers_dropped,
-                    },
-                    'no_of_active_jobs': {
-                        'current': self.test_no_of_active_jobs_new,
-                        'previous': self.test_no_of_active_jobs,
-                    },
-                    'max_pending_tx_delay': {
-                        'current': self.test_max_pending_tx_delay_new,
-                        'previous': self.test_max_pending_tx_delay
-                    },
-                    'process_start_time_seconds': {
-                        'current': self.test_process_start_time_seconds_new,
-                        'previous': self.test_process_start_time_seconds,
-                    },
-                    'total_gas_bumps': {
-                        'current': self.test_total_gas_bumps_new,
-                        'previous': self.test_total_gas_bumps
-                    },
-                    'total_gas_bumps_exceeds_limit': {
-                        'current': self.test_total_gas_bumps_exceeds_limit_new,
-                        'previous': self.test_total_gas_bumps_exceeds_limit,
-                    },
-                    'no_of_unconfirmed_txs': {
-                        'current': self.test_no_of_unconfirmed_txs_new,
-                        'previous': self.test_no_of_unconfirmed_txs,
-                    },
-                    'total_errored_job_runs': {
-                        'current': self.test_total_errored_job_runs_new,
-                        'previous': self.test_total_errored_job_runs,
-                    },
-                    'current_gas_price_info': {
-                        'current': self.test_current_gas_price_info_new,
-                        'previous': self.test_current_gas_price_info
-                    },
-                    'eth_balance_info': {
-                        'current': self.test_eth_balance_info_new,
-                        'previous': self.test_eth_balance_info
-                    },
+                'node_id': self.test_chainlink_node_id,
+                'node_parent_id': self.test_parent_id,
+                'last_monitored': self.test_last_monitored_prometheus_new,
+            },
+            'data': {
+                'went_down_at': {
+                    'current': self.test_went_down_at_prometheus_new,
+                    'previous': self.test_went_down_at_prometheus
                 },
-            }
+                'current_height': {
+                    'current': self.test_current_height_new,
+                    'previous': self.test_current_height
+                },
+                'eth_blocks_in_queue': {
+                    'current': self.test_eth_blocks_in_queue_new,
+                    'previous': self.test_eth_blocks_in_queue
+                },
+                'total_block_headers_received': {
+                    'current': self.test_total_block_headers_received_new,
+                    'previous': self.test_total_block_headers_received,
+                },
+                'total_block_headers_dropped': {
+                    'current': self.test_total_block_headers_dropped_new,
+                    'previous': self.test_total_block_headers_dropped,
+                },
+                'no_of_active_jobs': {
+                    'current': self.test_no_of_active_jobs_new,
+                    'previous': self.test_no_of_active_jobs,
+                },
+                'max_pending_tx_delay': {
+                    'current': self.test_max_pending_tx_delay_new,
+                    'previous': self.test_max_pending_tx_delay
+                },
+                'process_start_time_seconds': {
+                    'current': self.test_process_start_time_seconds_new,
+                    'previous': self.test_process_start_time_seconds,
+                },
+                'total_gas_bumps': {
+                    'current': self.test_total_gas_bumps_new,
+                    'previous': self.test_total_gas_bumps
+                },
+                'total_gas_bumps_exceeds_limit': {
+                    'current': self.test_total_gas_bumps_exceeds_limit_new,
+                    'previous': self.test_total_gas_bumps_exceeds_limit,
+                },
+                'no_of_unconfirmed_txs': {
+                    'current': self.test_no_of_unconfirmed_txs_new,
+                    'previous': self.test_no_of_unconfirmed_txs,
+                },
+                'total_errored_job_runs': {
+                    'current': self.test_total_errored_job_runs_new,
+                    'previous': self.test_total_errored_job_runs,
+                },
+                'current_gas_price_info': {
+                    'current': self.test_current_gas_price_info_new,
+                    'previous': self.test_current_gas_price_info
+                },
+                'eth_balance_info': {
+                    'current': self.test_eth_balance_info_new,
+                    'previous': self.test_eth_balance_info
+                },
+            },
         }
 
         self.test_prom_non_down_error = {
-            'error': {
-                'meta_data': {
-                    'node_name': self.test_chainlink_node_name,
-                    'last_source_used': {
-                        'current': self.test_last_prometheus_source_used_new,
-                        'previous': self.test_last_prometheus_source_used,
-                    },
-                    'node_id': self.test_chainlink_node_id,
-                    'node_parent_id': self.test_parent_id,
-                    'time': self.test_last_monitored_prometheus_new
+            'meta_data': {
+                'node_name': self.test_chainlink_node_name,
+                'last_source_used': {
+                    'current': self.test_last_prometheus_source_used_new,
+                    'previous': self.test_last_prometheus_source_used,
                 },
-                'message': self.test_exception.message,
-                'code': self.test_exception.code,
-            }
+                'node_id': self.test_chainlink_node_id,
+                'node_parent_id': self.test_parent_id,
+                'time': self.test_last_monitored_prometheus_new
+            },
+            'message': self.test_exception.message,
+            'code': self.test_exception.code,
         }
 
         self.transformed_data_example_result = {
-            'prometheus': copy.deepcopy(self.test_prom_result_data),
+            'prometheus': {
+                'result': copy.deepcopy(self.test_prom_result_data)
+            },
             # TODO: Add more data sources once they are enabled
         }
         self.transformed_data_example_not_all_sources_down = {
@@ -673,7 +673,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                                                  self.received_configurations)
 
         # Set each current metric value to None
-        data = self.test_prom_result_data['result']['data']
+        data = self.test_prom_result_data['data']
         for metric, current_previous in data.items():
             current_previous['current'] = None
 
@@ -997,8 +997,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                                                  self.received_configurations)
 
         # Set last_source_used current to None
-        self.test_prom_non_down_error['error']['meta_data'][
-            'last_source_used']['current'] = None
+        self.test_prom_non_down_error['meta_data']['last_source_used'][
+            'current'] = None
 
         data_for_alerting = []
         self.test_cl_node_alerter._process_prometheus_error(
@@ -1064,8 +1064,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
 
         calls = mock_error_alert.call_args_list
         self.assertEqual(2, mock_error_alert.call_count)
-        error_msg = self.test_prom_non_down_error['error']['message']
-        error_code = self.test_prom_non_down_error['error']['code']
+        error_msg = self.test_prom_non_down_error['message']
+        error_code = self.test_prom_non_down_error['code']
         call_1 = call(
             5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
@@ -1275,3 +1275,236 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                 self.test_chainlink_node_id
             ]
         )
+
+    @mock.patch(
+        "src.alerter.alerters.node.chainlink.transformed_data_processing_helper")
+    @mock.patch.object(ChainlinkNodeAlerter, "_process_downtime")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_transformed_data_calls_the_correct_process_fns_correctly(
+            self, mock_basic_ack, mock_process_downtime, mock_helper) -> None:
+        # Declare some fields for the process_transformed_data function
+        self.test_cl_node_alerter._initialise_rabbitmq()
+        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        properties = pika.spec.BasicProperties()
+        self.test_cl_node_alerter._process_transformed_data(
+            blocking_channel, method, properties, body)
+
+        mock_basic_ack.assert_called_once()
+        mock_process_downtime.assert_called_once_with(
+            self.transformed_data_example_result, [])
+        configuration = {
+            'prometheus': {
+                'result': self.test_cl_node_alerter._process_prometheus_result,
+                'error': self.test_cl_node_alerter._process_prometheus_error,
+            }
+        }
+        mock_helper.assert_called_once_with(
+            self.test_alerter_name, configuration,
+            self.transformed_data_example_result, [])
+
+    @mock.patch.object(ChainlinkNodeAlerter, "_place_latest_data_on_queue")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_transformed_data_places_alerts_on_queue_if_any(
+            self, mock_basic_ack, mock_place_on_queue) -> None:
+        # Add configs so that the data can be classified. The test data used
+        # will generate an alert because it will obey the thresholds.
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+
+        # Declare some fields for the process_transformed_data function
+        self.test_cl_node_alerter._initialise_rabbitmq()
+        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        properties = pika.spec.BasicProperties()
+        self.test_cl_node_alerter._process_transformed_data(
+            blocking_channel, method, properties, body)
+
+        mock_basic_ack.assert_called_once()
+        mock_place_on_queue.assert_called_once()
+
+    @mock.patch.object(ChainlinkNodeAlerter, "_place_latest_data_on_queue")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_transformed_data_does_not_place_alerts_on_queue_if_none(
+            self, mock_basic_ack, mock_place_on_queue) -> None:
+        # We will not be adding configs so that no alerts are generated
+
+        # Declare some fields for the process_transformed_data function
+        self.test_cl_node_alerter._initialise_rabbitmq()
+        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        properties = pika.spec.BasicProperties()
+        self.test_cl_node_alerter._process_transformed_data(
+            blocking_channel, method, properties, body)
+
+        mock_basic_ack.assert_called_once()
+        mock_place_on_queue.assert_not_called()
+
+    @mock.patch.object(ChainlinkNodeAlerter, "_process_downtime")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_transformed_data_does_not_raise_processing_error(
+            self, mock_basic_ack, mock_process_downtime) -> None:
+        """
+        In this test we will generate an exception from one of the processing
+        functions to see if an exception is raised.
+        """
+        mock_process_downtime.side_effect = self.test_exception
+
+        # Declare some fields for the process_transformed_data function
+        self.test_cl_node_alerter._initialise_rabbitmq()
+        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        properties = pika.spec.BasicProperties()
+        try:
+            self.test_cl_node_alerter._process_transformed_data(
+                blocking_channel, method, properties, body)
+        except PANICException as e:
+            self.fail('Did not expect {} to be raised.'.format(e))
+
+        mock_basic_ack.assert_called_once()
+
+    @mock.patch.object(ChainlinkNodeAlerter, "_send_data")
+    @mock.patch.object(ChainlinkNodeAlerter, "_process_downtime")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_transformed_data_attempts_to_send_data_from_queue(
+            self, mock_basic_ack, mock_process_downtime,
+            mock_send_data) -> None:
+        # Add configs so that the data can be classified. The test data used
+        # will generate an alert because it will obey the thresholds.
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+
+        # First do the test for when there are no processing errors
+        self.test_cl_node_alerter._initialise_rabbitmq()
+        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        properties = pika.spec.BasicProperties()
+        self.test_cl_node_alerter._process_transformed_data(
+            blocking_channel, method, properties, body)
+
+        mock_basic_ack.assert_called_once()
+        mock_send_data.assert_called_once()
+
+        # Now do the test for when there are processing errors
+        mock_basic_ack.reset_mock()
+        mock_send_data.reset_mock()
+        mock_process_downtime.side_effect = self.test_exception
+
+        # Declare some fields for the process_transformed_data function
+        self.test_cl_node_alerter._process_transformed_data(
+            blocking_channel, method, properties, body)
+
+        mock_basic_ack.assert_called_once()
+        mock_send_data.assert_called_once()
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeAlerter, "_send_data")
+    @mock.patch.object(ChainlinkNodeAlerter, "_send_heartbeat")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_transformed_data_sends_hb_if_no_processing_errors(
+            self, mock_basic_ack, mock_send_hb, mock_send_data) -> None:
+        # To avoid sending data
+        mock_send_data.return_value = None
+
+        # Add configs so that the data can be classified. The test data used
+        # will generate an alert because it will obey the thresholds.
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+
+        self.test_cl_node_alerter._initialise_rabbitmq()
+        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        properties = pika.spec.BasicProperties()
+        self.test_cl_node_alerter._process_transformed_data(
+            blocking_channel, method, properties, body)
+
+        mock_basic_ack.assert_called_once()
+        test_hb = {
+            'component_name': self.test_alerter_name,
+            'is_alive': True,
+            'timestamp': datetime.datetime.now().timestamp()
+        }
+        mock_send_hb.assert_called_once_with(test_hb)
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeAlerter, "_process_downtime")
+    @mock.patch.object(ChainlinkNodeAlerter, "_send_data")
+    @mock.patch.object(ChainlinkNodeAlerter, "_send_heartbeat")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_transformed_data_does_not_send_hb_if_processing_error(
+            self, mock_basic_ack, mock_send_hb, mock_send_data,
+            mock_process_downtime) -> None:
+        # To avoid sending data
+        mock_send_data.return_value = None
+
+        # Generate error in processing
+        mock_process_downtime.side_effect = self.test_exception
+
+        self.test_cl_node_alerter._initialise_rabbitmq()
+        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        properties = pika.spec.BasicProperties()
+        self.test_cl_node_alerter._process_transformed_data(
+            blocking_channel, method, properties, body)
+
+        mock_basic_ack.assert_called_once()
+        mock_send_hb.assert_not_called()
+
+    @parameterized.expand([
+        (pika.exceptions.AMQPConnectionError,
+         pika.exceptions.AMQPConnectionError('test'),),
+        (pika.exceptions.AMQPChannelError,
+         pika.exceptions.AMQPChannelError('test'),),
+        (Exception, Exception('test'),),
+    ])
+    @mock.patch.object(ChainlinkNodeAlerter, "_send_data")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_transformed_data_raises_unexpected_exception(
+            self, exception_class, exception_instance, mock_basic_ack,
+            mock_send_data) -> None:
+        # We will generate the error from the send_data fn
+        mock_send_data.side_effect = exception_instance
+
+        # Add configs so that the data can be classified. The test data used
+        # will generate an alert because it will obey the thresholds.
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+
+        self.test_cl_node_alerter._initialise_rabbitmq()
+        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        properties = pika.spec.BasicProperties()
+
+        self.assertRaises(exception_class,
+                          self.test_cl_node_alerter._process_transformed_data,
+                          blocking_channel, method, properties, body)
+
+        mock_basic_ack.assert_called_once()
