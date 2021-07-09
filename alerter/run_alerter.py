@@ -9,8 +9,8 @@ from typing import Tuple
 import pika.exceptions
 
 from src.alert_router.alert_router import AlertRouter
-from src.alerter.managers.github import GithubAlerterManager
 from src.alerter.managers.chainlink import ChainlinkNodeAlerterManager
+from src.alerter.managers.github import GithubAlerterManager
 from src.alerter.managers.manager import AlertersManager
 from src.alerter.managers.system import SystemAlertersManager
 from src.channels_manager.manager import ChannelsManager
@@ -44,8 +44,7 @@ from src.utils.constants.rabbitmq import (
     ALERTS_CONFIGS_ROUTING_KEY_GEN, ALERT_ROUTER_CONFIGS_ROUTING_KEY,
     CONFIGS_STORE_INPUT_ROUTING_KEY, CHANNELS_MANAGER_CONFIGS_ROUTING_KEY,
     TOPIC, CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
-    CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, CL_NODE_ALERT_ROUTING_KEY,
-    CL_ALERTS_CONFIGS_ROUTING_KEY)
+    CL_ALERTS_CONFIGS_ROUTING_KEY, CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME)
 from src.utils.constants.starters import (
     RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD,
 )
@@ -709,6 +708,21 @@ def _initialise_and_declare_config_queues() -> None:
                                  CL_ALERTS_CONFIGS_ROUTING_KEY),
                 dummy_logger)
             rabbitmq.queue_bind(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                CL_ALERTS_CONFIGS_ROUTING_KEY)
+
+            # Chainlink Node Alerter queues
+            log_and_print("Creating queue '{}'".format(
+                CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 CL_ALERTS_CONFIGS_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
                                 CONFIG_EXCHANGE,
                                 CL_ALERTS_CONFIGS_ROUTING_KEY)
 
