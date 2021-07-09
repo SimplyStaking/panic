@@ -17,6 +17,8 @@ from src.alerter.alerter_starters import start_chainlink_node_alerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.chainlink import (ChainlinkNodeAlerterManager)
+from src.configs.factory.chainlink_alerts_configs_factory import \
+    ChainlinkAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import CHAINLINK_NODE_ALERTER_NAME
@@ -26,16 +28,13 @@ from src.utils.constants.rabbitmq import (
     CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
     CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
     PING_ROUTING_KEY, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-    ALERT_EXCHANGE, TOPIC,
-    CL_NODE_ALERT_ROUTING_KEY, CL_ALERTS_CONFIGS_ROUTING_KEY)
-from src.configs.factory.chainlink_alerts_configs_factory import \
-    ChainlinkAlertsConfigsFactory
+    ALERT_EXCHANGE, CL_NODE_ALERT_ROUTING_KEY, CL_ALERTS_CONFIGS_ROUTING_KEY)
 from src.utils.exceptions import PANICException
-from test.utils.utils import infinite_fn
 from test.utils.utils import (
-    DummyAlertCode, delete_exchange_if_exists, delete_queue_if_exists,
+    delete_exchange_if_exists, delete_queue_if_exists,
     disconnect_from_rabbit, connect_to_rabbit
 )
+from test.utils.utils import infinite_fn
 
 
 class TestChainlinkNodeAlerterManager(unittest.TestCase):
@@ -563,7 +562,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
 
         # Check that that the processes have terminated
         self.assertFalse(self.test_manager.alerter_process_dict[
-            CHAINLINK_NODE_ALERTER_NAME].is_alive())
+                             CHAINLINK_NODE_ALERTER_NAME].is_alive())
 
         # initialise
         blocking_channel = self.test_manager.rabbitmq.channel
@@ -578,7 +577,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         time.sleep(1)
 
         self.assertTrue(self.test_manager.alerter_process_dict[
-            CHAINLINK_NODE_ALERTER_NAME].is_alive())
+                            CHAINLINK_NODE_ALERTER_NAME].is_alive())
 
         # Clean before test finishes
         self.test_manager.alerter_process_dict[
@@ -766,8 +765,14 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         self.test_manager._process_configs(
             blocking_channel, method_chains, properties, body)
 
-        call_1 = call({'alert_code': {'name': 'ComponentResetAlert', 'code': 'internal_alert_1'}, 'metric': 'component_reset_alert', 'message': 'Component: Chainlink Node Alerter has been reset for chainlink polygon.',
-                       'severity': 'INTERNAL', 'parent_id': 'chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4', 'origin_id': 'ChainlinkNodeAlerter', 'timestamp': 1625239987.518717}
+        call_1 = call({'alert_code': {'name': 'ComponentResetAlert',
+                                      'code': 'internal_alert_1'},
+                       'metric': 'component_reset_alert',
+                       'message': 'Component: Chainlink Node Alerter has been reset for chainlink polygon.',
+                       'severity': 'INTERNAL',
+                       'parent_id': 'chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4',
+                       'origin_id': 'ChainlinkNodeAlerter',
+                       'timestamp': 1625239987.518717}
                       )
 
         mock_push_data_to_queue.has_calls(call_1)

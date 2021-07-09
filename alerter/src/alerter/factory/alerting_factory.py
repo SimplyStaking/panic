@@ -417,7 +417,7 @@ class AlertingFactory(ABC):
             alert = decreased_below_threshold_alert(
                 monitorable_name, critical_occurrences, Severity.INFO.value,
                 monitoring_timestamp, critical_period, Severity.CRITICAL.value,
-                parent_id, monitorable_id,)
+                parent_id, monitorable_id, )
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)

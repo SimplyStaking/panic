@@ -50,7 +50,6 @@ CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME = \
 CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME = \
     'chainlink_alerter_manager_configs_queue'
 
-
 # Routing Keys
 SYSTEM_RAW_DATA_ROUTING_KEY = 'system'
 CHAINLINK_NODE_RAW_DATA_ROUTING_KEY = 'node.chainlink'

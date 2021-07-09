@@ -96,7 +96,6 @@ ChainlinkNodeErrorSolvedAlert = Union[
 ErrorAlert = Union[ChainlinkNodeErrorAlert]
 ErrorSolvedAlert = Union[ChainlinkNodeErrorSolvedAlert]
 
-
 DownAlert = Union[NodeWentDownAtAlert]
 StillDownAlert = Union[NodeStillDownAlert]
 BackUpAlert = Union[NodeBackUpAgainAlert]
