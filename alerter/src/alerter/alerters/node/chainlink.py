@@ -173,7 +173,7 @@ class ChainlinkNodeAlerter(Alerter):
                 current = data['current_height']['current']
                 previous = data['current_height']['previous']
                 sub_config = configs.head_tracker_current_head
-                if current is not None:
+                if current is not None and previous is not None:
                     self.alerting_factory.classify_no_change_in_alert(
                         current, previous, sub_config, NoChangeInHeightAlert,
                         BlockHeightUpdatedAlert, data_for_alerting,
@@ -202,7 +202,7 @@ class ChainlinkNodeAlerter(Alerter):
                 current = data['total_block_headers_received']['current']
                 previous = data['total_block_headers_received']['previous']
                 sub_config = configs.head_tracker_heads_received_total
-                if current is not None:
+                if current is not None and previous is not None:
                     self.alerting_factory.classify_no_change_in_alert(
                         current, previous, sub_config,
                         NoChangeInTotalHeadersReceivedAlert,
@@ -217,7 +217,7 @@ class ChainlinkNodeAlerter(Alerter):
                 current = data['total_block_headers_dropped']['current']
                 previous = data['total_block_headers_dropped']['previous']
                 sub_config = configs.head_tracker_num_heads_dropped_total
-                if current is not None:
+                if current is not None and previous is not None:
                     self.alerting_factory \
                         .classify_thresholded_in_time_period_alert(
                         current, previous, sub_config,
@@ -249,7 +249,7 @@ class ChainlinkNodeAlerter(Alerter):
                 previous = data['process_start_time_seconds']['previous']
                 new_source = meta_data['last_source_used']['current']
                 sub_config = configs.process_start_time_seconds
-                if current is not None:
+                if current is not None and previous is not None:
                     self.alerting_factory.classify_conditional_alert(
                         ChangeInSourceNodeAlert,
                         self._not_equal_condition_function, [current, previous],
@@ -264,7 +264,7 @@ class ChainlinkNodeAlerter(Alerter):
                 current = data['total_gas_bumps_exceeds_limit']['current']
                 previous = data['total_gas_bumps_exceeds_limit']['previous']
                 sub_config = configs.tx_manager_gas_bump_exceeds_limit_total
-                if current is not None:
+                if current is not None and previous is not None:
                     self.alerting_factory.classify_conditional_alert(
                         GasBumpIncreasedOverNodeGasPriceLimitAlert,
                         self._greater_than_condition_function, [
@@ -293,7 +293,7 @@ class ChainlinkNodeAlerter(Alerter):
                 current = data['total_errored_job_runs']['current']
                 previous = data['total_errored_job_runs']['previous']
                 sub_config = configs.run_status_update_total
-                if current is not None:
+                if current is not None and previous is not None:
                     self.alerting_factory \
                         .classify_thresholded_in_time_period_alert(
                         current, previous, sub_config,
@@ -308,7 +308,7 @@ class ChainlinkNodeAlerter(Alerter):
             if str_to_bool(configs.eth_balance_amount['enabled']):
                 current = data['eth_balance_info']['current']
                 sub_config = configs.eth_balance_amount
-                if current is not None:
+                if current != {}:
                     self.alerting_factory.classify_thresholded_alert_reverse(
                         current['balance'], sub_config,
                         EthBalanceIncreasedAboveThresholdAlert,
@@ -323,7 +323,7 @@ class ChainlinkNodeAlerter(Alerter):
                 current = data['eth_balance_info']['current']
                 previous = data['eth_balance_info']['previous']
                 sub_config = configs.eth_balance_amount_increase
-                if current is not None:
+                if current != {} and previous != {}:
                     increase = current['balance'] - previous['balance']
                     self.alerting_factory.classify_conditional_alert(
                         EthBalanceToppedUpAlert,
@@ -357,7 +357,7 @@ class ChainlinkNodeAlerter(Alerter):
                 current = meta_data['last_source_used']['current']
                 previous = meta_data['last_source_used']['previous']
                 sub_config = configs.process_start_time_seconds
-                if current is not None:
+                if current is not None and previous is not None:
                     self.alerting_factory.classify_conditional_alert(
                         ChangeInSourceNodeAlert,
                         self._not_equal_condition_function, [current, previous],
