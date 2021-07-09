@@ -39,6 +39,27 @@ export interface SystemKeys {
     [key: string]: string
 }
 
+export interface ChainlinkNodeKeys {
+    current_height: string,
+    eth_blocks_in_queue: string,
+    total_block_headers_received: string,
+    total_block_headers_dropped: string,
+    no_of_active_jobs: string,
+    max_pending_tx_delay: string,
+    process_start_time_seconds: string,
+    total_gas_bumps: string,
+    total_gas_bumps_exceeds_limit: string,
+    no_of_unconfirmed_txs: string,
+    total_errored_job_runs: string,
+    current_gas_price_info: string,
+    eth_balance_info: string,
+    went_down_at_prometheus: string,
+    last_prometheus_source_used: string,
+    last_monitored_prometheus: string,
+
+    [key: string]: string
+}
+
 export interface GitHubKeys {
     no_of_releases: string,
     last_monitored: string,
@@ -76,9 +97,29 @@ export interface AlertKeysSystem {
     [key: string]: string
 }
 
-export interface AlertKeysRepo {
-    github_release: string,
-    cannot_access_github: string,
+export interface AlertKeysGitHubRepo {
+    github_release: string
+    cannot_access_github: string
+
+    [key: string]: string
+}
+
+export interface AlertKeysChainlinkNode {
+    head_tacker_current_head: string,
+    head_tracker_heads_in_queue: string,
+    head_tracker_heads_received_total: string,
+    head_tracker_num_heads_dropped_total: string,
+    max_unconfirmed_blocks: string,
+    process_start_time_seconds: string,
+    tx_manager_gas_bump_exceeds_limit_total: string,
+    unconfirmed_transactions: string,
+    run_status_update_total: string,
+    eth_balance_amount: string,
+    eth_balance_amount_increase: string,
+    invalid_url: string,
+    metric_not_found: string,
+    node_is_down: string,
+    prometheus_is_down: string,
 
     [key: string]: string
 }
@@ -94,11 +135,13 @@ export type RedisKeys =
     | UniqueKeys
     | SystemKeys
     | GitHubKeys
+    | ChainlinkNodeKeys
     | ComponentKeys
     | ChainKeys
     | ConfigKeys
     | AlertKeysSystem
-    | AlertKeysRepo
+    | AlertKeysGitHubRepo
+    | AlertKeysChainlinkNode
     | BaseChainKeys;
 
 interface MonitorablesInfoResultData {
@@ -144,6 +187,37 @@ export function isAlertsOverviewInput(object: any): boolean {
             }
         });
     return isAlertsOverviewInput;
+}
+
+interface ParentSourceChainInput {
+  systems: string[],
+  repos: string[],
+}
+
+export interface ParentSourceInput {
+  [key: string]: ParentSourceChainInput
+}
+
+export function isParentSourceInput(object: any): boolean {
+  let isParentSourceInput: boolean = true;
+  if (!object || object.constructor !== Object) {
+      return false;
+  }
+  Object.keys(object).forEach(
+      (key: string, _: number): void => {
+          if (!(object[key] && object[key].constructor === Object)) {
+              isParentSourceInput = false;
+          } else if (!('systems' in object[key] && 'repos' in object[key])) {
+              isParentSourceInput = false;
+          } else if (!(Array.isArray(object[key].systems)
+              && Array.isArray(object[key].repos))) {
+              isParentSourceInput = false;
+          } else if (!(allElementsInListHaveTypeString(object[key].systems)
+              && allElementsInListHaveTypeString(object[key].repos))) {
+              isParentSourceInput = false;
+          }
+      });
+  return isParentSourceInput;
 }
 
 interface AlertsOverviewResultData {

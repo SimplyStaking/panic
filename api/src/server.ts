@@ -1,17 +1,23 @@
+import * as dotenv from "dotenv";
 import { readFile } from "./server/files";
 import path from "path";
 import https from "https";
 import {
-    AlertKeysRepo,
+    AlertKeysGitHubRepo,
     AlertKeysSystem,
     AlertsOverviewInput,
+    ParentSourceInput,
     AlertsOverviewResult,
     BaseChainKeys,
     HttpsOptions,
     isAlertsOverviewInput,
+    isParentSourceInput,
     MonitorablesInfoResult,
     RedisHashes,
-    RedisKeys
+    RedisKeys,
+    SystemKeys,
+    GitHubKeys,
+    MetricsResult
 } from "./server/types";
 import {
     CouldNotRetrieveDataFromMongo,
@@ -39,15 +45,24 @@ import {
     addPostfixToKeys,
     addPrefixToKeys,
     baseChainsRedis,
-    getAlertKeysRepo,
+    getAlertKeysGitHubRepo,
     getAlertKeysSystem,
     getBaseChainKeys,
     getRedisHashes,
-    RedisInterface
+    RedisInterface,
+    getSystemKeys,
+    getGitHubKeys,
+    getChainlinkKeys
 } from "./server/redis"
 import {MongoInterface} from "./server/mongo";
 import {MongoClientOptions} from "mongodb";
 import { ERR_STATUS, Severities, SUCCESS_STATUS } from "./server/constants";
+import { stringify } from "querystring";
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
+
+// Use the environmental variables from the .env file
+dotenv.config();
 
 // Import certificate files
 const httpsKey: Buffer = readFile(path.join(__dirname, '../../', 'certificates',
@@ -77,6 +92,7 @@ app.use((err: any, req: express.Request, res: express.Response,
 
     next();
 });
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Connect with Redis
 const redisHost = process.env.REDIS_IP || "localhost";
@@ -116,7 +132,7 @@ setInterval(async () => {
 
 // ---------------------------------------- Redis Endpoints
 
-// This endpoint expects a list of base chains (Cosmos, Substrate, Chainlink or General)
+// This endpoint expects a list of base chains (cosmos, substrate, chainlink or general)
 // inside the body structure.
 app.post('/server/redis/monitorablesInfo',
     async (req: express.Request, res: express.Response) => {
@@ -154,11 +170,10 @@ app.post('/server/redis/monitorablesInfo',
             baseChainKeys, `${uniqueAlerterIdentifier}:`);
         const baseChainKeysPostfix: RedisKeys = addPostfixToKeys(
             baseChainKeysNamespace, '_');
-        const constructedKeys: string[] = baseChains.map(
+        let constructedKeys: string[] = baseChains.map(
             (baseChain: string): string => {
                 return baseChainKeysPostfix.monitorables_info + baseChain
             });
-
         let result: MonitorablesInfoResult = resultJson({});
         if (redisInterface.client) {
             redisInterface.client.mget(constructedKeys, (err: any, values: any) => {
@@ -220,7 +235,7 @@ app.post('/server/redis/alertsOverview',
         const alertKeysSystem: AlertKeysSystem = getAlertKeysSystem();
         const alertKeysSystemPostfix: RedisKeys = addPostfixToKeys(
             alertKeysSystem, '_');
-        const alertKeysRepo: AlertKeysRepo = getAlertKeysRepo();
+        const alertKeysRepo: AlertKeysGitHubRepo = getAlertKeysGitHubRepo();
         const alertKeysRepoPostfix: RedisKeys = addPostfixToKeys(alertKeysRepo,
             '_');
         for (const [parentId, sourcesObject] of Object.entries(parentIds)) {
@@ -249,6 +264,7 @@ app.post('/server/redis/alertsOverview',
             for (const [parentHash, monitorableKeysObject] of Object.entries(
                 parentHashKeys)) {
                 const parentId: string = parentHashId[parentHash];
+                const currentTimestamp = Math.floor(Date.now() / 1000);
                 result.result[parentId] = {
                     "info": 0,
                     "critical": 0,
@@ -268,16 +284,16 @@ app.post('/server/redis/alertsOverview',
                             (key: string, i: number): void => {
                                 const value = JSON.parse(values[i]);
                                 if (value && value.constructor === Object &&
-                                    "message" in value && "severity" in value) {
+                                    "message" in value && "severity" in value
+                                      && "expiry" in value) {
                                     // Add array of problems if not initialised
                                     // yet and there is indeed problems.
                                     if (value.severity !== Severities.INFO &&
-                                        !result.result[parentId].problems[
-                                            monitorableId]) {
+                                        !result.result[parentId].problems[monitorableId] &&
+                                        !(currentTimestamp >= value.expiry)) {
                                         result.result[parentId].problems[
                                             monitorableId] = []
                                     }
-
                                     // If the alerter has detected a new release
                                     // add it to the list of releases
                                     const newReleaseKey: string =
@@ -288,29 +304,32 @@ app.post('/server/redis/alertsOverview',
                                         result.result[parentId].releases[
                                             monitorableId] = value
                                     }
-
-                                    // Increase the counter and save the
-                                    // problems.
-                                    if (value.severity === Severities.INFO) {
+                                    if (currentTimestamp >= value.expiry){
+                                      result.result[parentId].info += 1;
+                                    }else{
+                                      // Increase the counter and save the
+                                      // problems.
+                                      if (value.severity === Severities.INFO) {
                                         result.result[parentId].info += 1;
-                                    } else if (
-                                        value.severity === Severities.CRITICAL
-                                    ) {
-                                        result.result[parentId].critical += 1;
-                                        result.result[parentId].problems[
-                                            monitorableId].push(value)
-                                    } else if (
-                                        value.severity === Severities.WARNING
-                                    ) {
-                                        result.result[parentId].warning += 1;
-                                        result.result[parentId].problems[
-                                            monitorableId].push(value)
-                                    } else if (
-                                        value.severity === Severities.ERROR
-                                    ) {
-                                        result.result[parentId].error += 1;
-                                        result.result[parentId].problems[
-                                            monitorableId].push(value)
+                                      } else if (
+                                          value.severity === Severities.CRITICAL
+                                      ) {
+                                          result.result[parentId].critical += 1;
+                                          result.result[parentId].problems[
+                                              monitorableId].push(value)
+                                      } else if (
+                                          value.severity === Severities.WARNING
+                                      ) {
+                                          result.result[parentId].warning += 1;
+                                          result.result[parentId].problems[
+                                              monitorableId].push(value)
+                                      } else if (
+                                          value.severity === Severities.ERROR
+                                      ) {
+                                          result.result[parentId].error += 1;
+                                          result.result[parentId].problems[
+                                              monitorableId].push(value)
+                                      }
                                     }
                                 } else {
                                     result.result[parentId].info += 1;
@@ -338,6 +357,128 @@ app.post('/server/redis/alertsOverview',
             return;
         }
     });
+
+// This endpoint returns metrics and their values, for the requested sources
+// and their chains
+app.post('/server/redis/metrics',
+    async (req: express.Request, res: express.Response) => {
+        console.log('Received POST request for %s', req.url);
+        const parentIds: ParentSourceInput = req.body.parentIds;
+
+        // Check if some required keys are missing in the body object, if yes
+        // notify the client.
+        const missingKeysList: string[] = missingValues({parentIds});
+        if (missingKeysList.length !== 0) {
+            const err = new MissingKeysInBody(...missingKeysList);
+            res.status(err.code).send(errorJson(err.message));
+            return;
+        }
+
+        // Check if the passed dict is valid
+        if (!isParentSourceInput(parentIds)) {
+            const err = new InvalidJsonSchema("req.body.parentIds");
+            res.status(err.code).send(errorJson(err.message));
+            return;
+        }
+
+        // Construct the redis keys inside a JSON object indexed by parent hash
+        // and the system/repo id. We also need a way to map the hash to the
+        // parent id.
+        const parentHashKeys: { [key: string]: { [key: string]: string[] } } = {};
+        const parentHashId: { [key: string]: string } = {};
+
+        const redisHashes: RedisHashes = getRedisHashes();
+        const redisHashesNamespace: RedisKeys = addPrefixToKeys(
+            redisHashes, `${uniqueAlerterIdentifier}:`);
+        const redisHashesPostfix: RedisKeys = addPostfixToKeys(
+            redisHashesNamespace, '_');
+        
+        const metricKeysSystem: SystemKeys = getSystemKeys();
+        const metricKeysSystemPostfix: RedisKeys = addPostfixToKeys(
+            metricKeysSystem, '_');
+        
+        const metricKeysGitHub: GitHubKeys = getGitHubKeys();
+        const metricKeysGitHubPostfix: RedisKeys = addPostfixToKeys(
+            metricKeysGitHub, '_');
+
+        for (const [parentId, sourcesObject] of Object.entries(parentIds)) {
+            const parentHash: string = redisHashesPostfix.parent + parentId;
+            parentHashKeys[parentHash] = {};
+            parentHashId[parentHash] = parentId;
+            sourcesObject.systems.forEach((systemId) => {
+                const constructedKeys: RedisKeys = addPostfixToKeys(
+                    metricKeysSystemPostfix, systemId);
+                parentHashKeys[parentHash][systemId] = Object.values(
+                    constructedKeys)
+            });
+            sourcesObject.repos.forEach((repoId) => {
+                const constructedKeys: RedisKeys = addPostfixToKeys(
+                    metricKeysGitHubPostfix, repoId);
+                parentHashKeys[parentHash][repoId] = Object.values(
+                    constructedKeys)
+            });
+        }
+
+        let result: MetricsResult = resultJson({});
+        if (redisInterface.client) {
+            // Using multi() means that all commands are only performed once
+            // exec() is called, and this is done atomically.
+            const redisMulti = redisInterface.client.multi();
+            for (const [parentHash, monitorableKeysObject] of Object.entries(
+                parentHashKeys)) {
+                const parentId: string = parentHashId[parentHash];
+                result.result[parentId] = {
+                    "system": {},
+                    "github": {},
+                };
+                for (const [monitorableId, keysList] of
+                    Object.entries(monitorableKeysObject)) {
+                    redisMulti.hmget(parentHash, keysList, (err: any, values: any) => {
+                        if (err) {
+                            console.log(err);
+                            return
+                        }
+                        keysList.forEach(
+                          (key: string, i: number): void => {
+                            // Must be stringified as it doesn't parse `None`
+                            const value = JSON.parse(JSON.stringify(values[i]));
+                            if (monitorableId.includes('system')) {
+                              if(!(monitorableId in result.result[parentId].system)){
+                                result.result[parentId].system[monitorableId] = <SystemKeys>{}
+                              }
+                              result.result[parentId].system[monitorableId][key.replace('_' + monitorableId, '')] = value;
+                            }else if (monitorableId.includes('repo')){
+                              if(!(monitorableId in result.result[parentId].github)){
+                                result.result[parentId].github[monitorableId] = <GitHubKeys>{}
+                              }
+                              result.result[parentId].github[monitorableId][key.replace('_' + monitorableId, '')] = value;
+                            }else{
+                              // Do nothing
+                            }
+                          });
+                    })
+                }
+            }
+            redisMulti.exec((err: any, _: any) => {
+                if (err) {
+                    console.error(err);
+                    const retrievalErr = new CouldNotRetrieveDataFromRedis();
+                    res.status(retrievalErr.code).send(errorJson(
+                        retrievalErr.message));
+                    return
+                }
+                res.status(SUCCESS_STATUS).send(result);
+                return;
+            });
+        } else {
+            // This is done just for the sake of completion, as it is very
+            // unlikely to occur.
+            const err = new RedisClientNotInitialised();
+            res.status(err.code).send(errorJson(err.message));
+            return;
+        }
+    });
+
 
 // ---------------------------------------- Mongo Endpoints
 
@@ -431,8 +572,8 @@ app.post('/server/mongo/alerts',
                         },
                         {$sort: {"alerts.timestamp": -1, _id: 1}},
                         {$limit: parsedNoOfAlerts},
-                        {$group: {_id: null, alrts: {$push: "$alerts"}}},
-                        {$project: {_id: 0, alerts: "$alrts"}},
+                        {$group: {_id: null, alerts: {$push: "$alerts"}}},
+                        {$project: {_id: 0, alerts: "$alerts"}},
                     );
                     const collection = db.collection(chains[0]);
                     const docs = await collection.aggregate(queryList)
@@ -442,7 +583,6 @@ app.post('/server/mongo/alerts',
                             doc.alerts)
                     }
                 }
-                console.log(result.result.alerts.length);
                 res.status(SUCCESS_STATUS).send(result);
                 return;
             } catch (err) {
@@ -461,6 +601,133 @@ app.post('/server/mongo/alerts',
         }
     });
 
+    
+app.post('/server/mongo/metrics',
+    async (req: express.Request, res: express.Response) => {
+        console.log('Received POST request for %s', req.url);
+        const {
+            chains,
+            sources,
+            minTimestamp,
+            maxTimestamp,
+            noOfMetrics
+        } = req.body;
+
+        // Check that all parameters have been sent
+        const missingKeysList: string[] = missingValues({
+            chains,
+            sources,
+            minTimestamp,
+            maxTimestamp,
+            noOfMetrics
+        });
+        if (missingKeysList.length !== 0) {
+            const err = new MissingKeysInBody(...missingKeysList);
+            res.status(err.code).send(errorJson(err.message));
+            return;
+        }
+
+        // --------------------- Input Validation -------------------
+
+        const arrayBasedStringParams = {chains, sources};
+        for (const [param, value] of Object.entries(arrayBasedStringParams)) {
+            if (!Array.isArray(value) ||
+                !allElementsInListHaveTypeString(value)) {
+                const err = new InvalidParameterValue(`req.body.${param}`);
+                res.status(err.code).send(errorJson(err.message));
+                return;
+            }
+        }
+
+        const positiveFloats = {minTimestamp, maxTimestamp};
+        for (const [param, value] of Object.entries(positiveFloats)) {
+            const parsedFloat = parseFloat(value);
+            if (isNaN(parsedFloat) || parsedFloat < 0) {
+                const err = new InvalidParameterValue(`req.body.${param}`);
+                res.status(err.code).send(errorJson(err.message));
+                return;
+            }
+        }
+        const parsedMinTimestamp = parseFloat(minTimestamp);
+        const parsedMaxTimestamp = parseFloat(maxTimestamp);
+
+        const parsedNoOfMetrics = parseInt(noOfMetrics);
+        if (isNaN(parsedNoOfMetrics) || parsedNoOfMetrics <= 0) {
+            const err = new InvalidParameterValue('req.body.noOfMetrics');
+            res.status(err.code).send(errorJson(err.message));
+            return;
+        }
+
+        let result = resultJson({metrics: []});
+        if (mongoInterface.client) {
+            try {
+                const db = mongoInterface.client.db(mongoDB);
+                if (chains.length > 0) {
+                    let queryList: any = [];
+                    for (let i = 1; i < chains.length; i++) {
+                        queryList.push({$unionWith: chains[i]})
+                    }
+                    /**
+                     * @note currently we only have the system doc type
+                     * when more monitorables are added, then multiple doc_types
+                     * must be added to the query. Leaving as system for now for
+                     * time constraint purposes.
+                     *  */ 
+                    // sources.forEach(async (source: string, i:number): Promise<void> => {
+                    //   let docType;
+                    //   if(source.includes("system")){
+                    //     docType = "system"
+                    //   }
+
+                    //   queryList.push(
+                    //     {$match: {doc_type: docType}},
+                    //     // {$unwind: "$" + source},
+                    //     // {$sort: {"timestamp": -1, _id: 1}},
+                    //     // {$limit: parsedNoOfMetrics},
+                    //     // {$group: {_id: null, metrics: {$push: "$alerts"}}},
+                    //     // {$project: {_id: 0, alerts: "$alerts"}},
+                    //   );
+                    // });
+                    queryList.push(
+                      {$match: {doc_type: 'system'}},
+                      {$unwind: "$system_2a8b23ee-cab6-439c-85ca-d2ba5a45c934"},
+                      {
+                        $match: {
+                          "d": {
+                            "$gte": parsedMinTimestamp,
+                            "$lte": parsedMaxTimestamp
+                          }
+                        }
+                    },
+                      {$sort: {"timestamp": -1, _id: 1}},
+                      {$limit: parsedNoOfMetrics},
+                    );
+                    const collection = db.collection(chains[0]);
+                    const docs = await collection.aggregate(queryList)
+                        .toArray();
+                    console.log(docs);
+                    for (const doc of docs) {
+                        result.result.metrics = result.result.metrics.concat(
+                            doc['system_2a8b23ee-cab6-439c-85ca-d2ba5a45c934'])
+                    }
+                }
+                res.status(SUCCESS_STATUS).send(result);
+                return;
+            } catch (err) {
+                console.error(err);
+                const retrievalErr = new CouldNotRetrieveDataFromMongo();
+                res.status(retrievalErr.code).send(errorJson(
+                    retrievalErr.message));
+                return;
+            }
+        } else {
+            // This is done just for the sake of completion, as it is very
+            // unlikely to occur.
+            const err = new MongoClientNotInitialised();
+            res.status(err.code).send(errorJson(err.message));
+            return;
+        }
+    });
 // ---------------------------------------- Server defaults
 
 app.get('/server/*', async (req: express.Request, res: express.Response) => {

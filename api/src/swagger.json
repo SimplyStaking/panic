@@ -1,0 +1,558 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "PANIC API",
+    "description": "Endpoints to query Redis and Mongodb for Alerts and Metrics.",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Local Dev"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Redis",
+      "description": "Endpoints that retrieve data from Redis."
+    },
+    {
+      "name": "Mongo",
+      "description": "Endpoints that retrieve data from Mongodb."
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/server/redis/monitorablesInfo": {
+      "post": {
+        "tags": [
+          "Redis"
+        ],
+        "summary": "Returns a list of all the monitorable and non-monitorable sources.",
+        "requestBody": {
+          "description": "baseChains object, which is a list of network types. Accepted inputs: general, cosmos, substrate, chainlink.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/definitions/baseChains"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "$ref": "#/definitions/monitorablesInfo"
+            }
+          },
+          "532": {
+            "description": "Error: Missing key(s) in request body."
+          },
+          "533": {
+            "description": "Error: Redis client not initialised."
+          },
+          "534": {
+            "description": "Error: Could not retrieve data from Redis."
+          },
+          "537": {
+            "description": "Error: Invalid base chain(s)."
+          }
+        }
+      }
+    },
+    "/server/redis/alertsOverview": {
+      "post": {
+        "tags": [
+          "Redis"
+        ],
+        "summary": "Returns a counter of all the metric states in alert form per chain.",
+        "requestBody": {
+          "description": "Unique chains ids and lists of the sources being monitored per type.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/definitions/chainSources"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "$ref": "#/definitions/alertsOverview"
+            }
+          },
+          "532": {
+            "description": "Error: Missing key(s) in request body."
+          },
+          "533": {
+            "description": "Error: Redis client not initialised."
+          },
+          "534": {
+            "description": "Error: Could not retrieve data from Redis."
+          },
+          "538": {
+            "description": "Error: JSON does not obey the required schema. "
+          }
+        }
+      }
+    },
+    "/server/redis/metrics": {
+      "post": {
+        "tags": [
+          "Redis"
+        ],
+        "summary": "Returns the values for the requested sources of the requested chains.",
+        "requestBody": {
+          "description": "Unique chains ids and lists of the sources being monitored per type.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/definitions/chainSources"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "$ref": "#/definitions/metricsOverview"
+            }
+          },
+          "532": {
+            "description": "Error: Missing key(s) in request body."
+          },
+          "533": {
+            "description": "Error: Redis client not initialised."
+          },
+          "534": {
+            "description": "Error: Could not retrieve data from Redis."
+          },
+          "538": {
+            "description": "Error: JSON does not obey the required schema. "
+          }
+        }
+      }
+    },
+    "/server/mongo/alerts": {
+      "post": {
+        "tags": [
+          "Mongo"
+        ],
+        "summary": "Returns a list of alerts for the requested chains, sources and severities between a time period sorted by most recent. A number limit of alerts can also be specified.",
+        "requestBody": {
+          "description": "Specify the chains, severities, sources, minimum/maximum timestamp (Range of time), and number of alerts to be retrieved.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/definitions/mongoAlerts"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "$ref": "#/definitions/metricsOverview"
+            }
+          },
+          "532": {
+            "description": "Error: Missing key(s) in request body."
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised."
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo."
+          },
+          "539": {
+            "description": "Error: An invalid value was given to the parameter."
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "baseChains": {
+      "type": "object",
+      "properties": {
+        "baseChains": {
+          "type": "array",
+          "example": [
+            "cosmos",
+            "general",
+            "chainlink",
+            "substrate"
+          ]
+        }
+      }
+    },
+    "monitorablesInfo": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "object",
+          "properties": {
+            "cosmos": {},
+            "chainlink": {},
+            "substrate": {},
+            "general": {}
+          }
+        }
+      }
+    },
+    "monitorable": {
+      "type": "object",
+      "properties": {
+        "variable_chain_name": {
+          "type": "object",
+          "properties": {
+            "monitored": {
+              "type": "object",
+              "properties": {
+                "systems": {
+                  "$ref": "#/definitions/systems"
+                },
+                "github_repos": {
+                  "$ref": "#/definitions/github_repos"
+                }
+              }
+            },
+            "not_monitored": {
+              "type": "object",
+              "properties": {
+                "systems": {
+                  "$ref": "#/definitions/systems"
+                },
+                "github_repos": {
+                  "$ref": "#/definitions/github_repos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "systems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "system_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "github_repos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "github_repo_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "chainSources": {
+      "type": "object",
+      "properties": {
+        "parentIds": {
+          "type": "object",
+          "properties": {
+            "unique_chain_id": {
+              "type": "object",
+              "properties": {
+                "systems": {
+                  "type": "array",
+                  "example": [
+                    "system_5330c562-368b-4192-bbaf-db6638307783",
+                    "system_d2a0a05e-c0ec-4b39-a101-d3cb5f47bc03"
+                  ]
+                },
+                "repos": {
+                  "type": "array",
+                  "example": [
+                    "repo_4ca781b6-154e-4bd0-8418-0c5debc07e54",
+                    "repo_fc4dfda7-2e97-433d-98ba-8af626a989b0"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "alertsOverview": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "object",
+          "properties": {
+            "unique_chain_id": {
+              "type": "object",
+              "properties": {
+                "info": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "critical": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "warning": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "error": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "problems": {
+                  "type": "object"
+                },
+                "releases": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "metricsOverview": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "object",
+          "properties": {
+            "unique_chain_id": {
+              "type": "object",
+              "properties": {
+                "system": {
+                  "type": "object",
+                  "unique_system_id": {
+                    "type": "object",
+                    "$ref": "#/definitions/system_metrics"
+                  }
+                },
+                "github": {
+                  "type": "object",
+                  "unique_github_id": {
+                    "type": "object",
+                    "$ref": "#/definitions/github_metrics"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "system_metrics": {
+      "type": "object",
+      "properties": {
+        "s1": {
+          "type": "string"
+        },
+        "s2": {
+          "type": "string"
+        },
+        "s3": {
+          "type": "string"
+        },
+        "s4": {
+          "type": "string"
+        },
+        "s5": {
+          "type": "string"
+        },
+        "s6": {
+          "type": "string"
+        },
+        "s7": {
+          "type": "string"
+        },
+        "s8": {
+          "type": "string"
+        },
+        "s9": {
+          "type": "string"
+        },
+        "s10": {
+          "type": "string"
+        },
+        "s11": {
+          "type": "string"
+        },
+        "s12": {
+          "type": "string"
+        },
+        "s13": {
+          "type": "string"
+        },
+        "s14": {
+          "type": "string"
+        },
+        "s15": {
+          "type": "string"
+        }
+      }
+    },
+    "github_metrics": {
+      "type": "object",
+      "properties": {
+        "gh1": {
+          "type": "string"
+        },
+        "gh2": {
+          "type": "string"
+        }
+      }
+    },
+    "mongoAlerts": {
+      "type": "object",
+      "properties": {
+        "chains": {
+          "type": "array",
+          "example": [
+            "chain_name_51383ec9-b49e-4d03-8068-d60f5f3c9285",
+            "GENERAL"
+          ]
+        },
+        "severities": {
+          "type": "array",
+          "example": [
+            "INFO",
+            "WARNING",
+            "CRITICAL",
+            "ERROR"
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "example": [
+            "system_2a8b23ee-cab6-439c-85ca-d2ba5a45c934",
+            "repo_fc4dfda7-2e97-433d-98ba-8af626a989b0",
+            "system_5330c562-368b-4192-bbaf-db6638307783",
+            "system_d2a0a05e-c0ec-4b39-a101-d3cb5f47bc03",
+            "repo_4ca781b6-154e-4bd0-8418-0c5debc07e54"
+          ]
+        },
+        "minTimestamp": {
+          "type": "integer",
+          "example": 0
+        },
+        "maxTimestamp": {
+          "type": "integer",
+          "example": 2625677273
+        },
+        "noOfAlerts": {
+          "type": "integer",
+          "example": 100
+        }
+      }
+    },
+    "mongoAlertsResult": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "object",
+          "alerts": {
+            "type": "array",
+            "item": {
+              "type": "object",
+              "$ref": "#/definitions/alert"
+            }
+          }
+        }
+      }
+    },
+    "alert": {
+      "type": "object",
+      "properties": {
+        "origin": {
+          "type": "string",
+          "example": "system_2a8b23ee-cab6-439c-85ca-d2ba5a45c934"
+        },
+        "alert_name": {
+          "type": "string",
+          "example": "SystemRAMUsageIncreasedAboveThresholdAlert"
+        },
+        "severity": {
+          "type": "string",
+          "example": "CRITICAL"
+        },
+        "message": {
+          "type": "string",
+          "example": "arbitrum system RAM usage INCREASED above CRITICAL Threshold. Current value: 56.13%."
+        },
+        "metric": {
+          "type": "string",
+          "example": "system_ram_usage"
+        },
+        "timestamp": {
+          "type": "integer",
+          "example": 1625758847.87753
+        }
+      }
+    },
+    "id": {
+      "properties": {
+        "uuid": {
+          "type": "string"
+        }
+      }
+    },
+    "Cat": {
+      "type": "object",
+      "properties": {
+        "genus": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "isHungry": {
+          "type": "boolean"
+        },
+        "lastFedDate": {
+          "type": "string"
+        }
+      }
+    },
+    "Cats": {
+      "type": "object",
+      "properties": {
+        "cats": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Cat"
+          }
+        }
+      }
+    }
+  }
+}

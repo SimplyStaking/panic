@@ -2,7 +2,7 @@ import {readFile} from "./server/files";
 import path from "path"
 import https from "https"
 import {
-    AlertKeysRepo,
+    AlertKeysGitHubRepo,
     AlertKeysSystem,
     AlertsOverviewInput,
     AlertsOverviewResult,
@@ -42,7 +42,7 @@ import {
     addPostfixToKeys,
     addPrefixToKeys,
     baseChainsRedis,
-    getAlertKeysRepo,
+    getAlertKeysGitHubRepo,
     getAlertKeysSystem,
     getBaseChainKeys,
     getRedisHashes,
@@ -68,7 +68,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../', 'build')));
 app.use(bodyParser.json());
 app.use(cookieParser());
-app.use((err: any, req: express.Request, res: express.Response,
+app.use((err: any, _req: express.Request, res: express.Response,
          next: express.NextFunction) => {
     // This check makes sure this is a JSON parsing issue, but it might be
     // coming from any middleware, not just body-parser.
@@ -118,7 +118,7 @@ setInterval(async () => {
 
 // ---------------------------------------- Redis Endpoints
 
-// This endpoint expects a list of base chains (Cosmos, Substrate, or General)
+// This endpoint expects a list of base chains (Cosmos, Substrate, Chainlink, or General)
 // inside the body structure.
 app.post('/server/redis/monitorablesInfo',
     async (req: express.Request, res: express.Response) => {
@@ -222,8 +222,8 @@ app.post('/server/redis/alertsOverview',
         const alertKeysSystem: AlertKeysSystem = getAlertKeysSystem();
         const alertKeysSystemPostfix: RedisKeys = addPostfixToKeys(
             alertKeysSystem, '_');
-        const alertKeysRepo: AlertKeysRepo = getAlertKeysRepo();
-        const alertKeysRepoPostfix: RedisKeys = addPostfixToKeys(alertKeysRepo,
+        const AlertKeysGitHubRepo: AlertKeysGitHubRepo = getAlertKeysGitHubRepo();
+        const AlertKeysGitHubRepoPostfix: RedisKeys = addPostfixToKeys(AlertKeysGitHubRepo,
             '_');
         for (const [parentId, sourcesObject] of Object.entries(parentIds)) {
             const parentHash: string = redisHashesPostfix.parent + parentId;
@@ -237,7 +237,7 @@ app.post('/server/redis/alertsOverview',
             });
             sourcesObject.repos.forEach((repoId) => {
                 const constructedKeys: RedisKeys = addPostfixToKeys(
-                    alertKeysRepoPostfix, repoId);
+                    AlertKeysGitHubRepoPostfix, repoId);
                 parentHashKeys[parentHash][repoId] = Object.values(
                     constructedKeys)
             });
@@ -283,7 +283,7 @@ app.post('/server/redis/alertsOverview',
                                     // add it to the list of releases
                                     const newReleaseKey: string =
                                         addPostfixToKeys(
-                                            alertKeysRepoPostfix,
+                                            AlertKeysGitHubRepoPostfix,
                                             monitorableId).github_release;
                                     if (key === newReleaseKey) {
                                         result.result[parentId].releases[

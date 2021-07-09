@@ -95,7 +95,6 @@ class ChainlinkNodeAlerterManager(AlertersManager):
                                        exchange_type=TOPIC, passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 
