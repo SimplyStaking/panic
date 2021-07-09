@@ -335,7 +335,7 @@ class SaveConfig extends Component {
         timeWindowAlertsConfig[id].parent_id = currentChainId;
         timeWindowAlertsConfig[id].enabled = chainConfig.timeWindowAlerts.byId[id].enabled;
         timeWindowAlertsConfig[id].critical_threshold = chainConfig.timeWindowAlerts.byId[id].critical.threshold;
-        timeWindowAlertsConfig[id].critical_timewindow = chainConfig.timeWindowAlerts.byId[id].critical.time_window;
+        timeWindowAlertsConfig[id].critical_time_window = chainConfig.timeWindowAlerts.byId[id].critical.time_window;
         timeWindowAlertsConfig[id].critical_repeat = chainConfig.timeWindowAlerts.byId[id].critical.repeat;
         timeWindowAlertsConfig[id].critical_repeat_enabled = chainConfig.timeWindowAlerts.byId[id].critical.repeat_enabled;
         timeWindowAlertsConfig[id].critical_enabled = chainConfig.timeWindowAlerts.byId[id].critical.enabled;
@@ -496,7 +496,7 @@ class SaveConfig extends Component {
         timeWindowAlertsConfig[id].parent_id = currentChainId;
         timeWindowAlertsConfig[id].enabled = chainConfig.timeWindowAlerts.byId[id].enabled;
         timeWindowAlertsConfig[id].critical_threshold = chainConfig.timeWindowAlerts.byId[id].critical.threshold;
-        timeWindowAlertsConfig[id].critical_timewindow = chainConfig.timeWindowAlerts.byId[id].critical.time_window;
+        timeWindowAlertsConfig[id].critical_time_window = chainConfig.timeWindowAlerts.byId[id].critical.time_window;
         timeWindowAlertsConfig[id].critical_repeat = chainConfig.timeWindowAlerts.byId[id].critical.repeat;
         timeWindowAlertsConfig[id].critical_repeat_enabled = chainConfig.timeWindowAlerts.byId[id].critical.repeat_enabled;
         timeWindowAlertsConfig[id].critical_enabled = chainConfig.timeWindowAlerts.byId[id].critical.enabled;
