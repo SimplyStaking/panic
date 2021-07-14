@@ -378,7 +378,7 @@ const chainlinkSeverityAlerts = {
     },
     18: {
       name: "Chainlink node: Gas price increases over the node's price limit",
-      identifier: 'tx_manager_gas_bump_exceeds_limit',
+      identifier: 'tx_manager_gas_bump_exceeds_limit_total',
       description:
         'If the current gas price is higher than the gas limit of the node an '
         + 'alert should is raised',
