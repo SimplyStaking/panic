@@ -159,7 +159,6 @@ export interface MonitorablesInfoResult {
     [key: string]: Object
 }
 
-// @TODO repos should be changed to github repos as dockerhub repos are thing
 interface AlertsOverviewChainInput {
     systems: string[],
     repos: string[],
