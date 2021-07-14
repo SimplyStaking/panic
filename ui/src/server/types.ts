@@ -40,24 +40,24 @@ export interface SystemKeys {
 }
 
 export interface ChainlinkNodeKeys {
-  current_height: string,
-  eth_blocks_in_queue: string,
-  total_block_headers_received: string,
-  total_block_headers_dropped: string,
-  no_of_active_jobs: string,
-  max_pending_tx_delay: string,
-  process_start_time_seconds: string,
-  total_gas_bumps: string,
-  total_gas_bumps_exceeds_limit: string,
-  no_of_unconfirmed_txs: string,
-  total_errored_job_runs: string,
-  current_gas_price_info: string,
-  eth_balance_info: string,
-  went_down_at_prometheus: string,
-  last_prometheus_source_used: string,
-  last_monitored_prometheus: string,
+    current_height: string,
+    eth_blocks_in_queue: string,
+    total_block_headers_received: string,
+    total_block_headers_dropped: string,
+    no_of_active_jobs: string,
+    max_pending_tx_delay: string,
+    process_start_time_seconds: string,
+    total_gas_bumps: string,
+    total_gas_bumps_exceeds_limit: string,
+    no_of_unconfirmed_txs: string,
+    total_errored_job_runs: string,
+    current_gas_price_info: string,
+    eth_balance_info: string,
+    went_down_at_prometheus: string,
+    last_prometheus_source_used: string,
+    last_monitored_prometheus: string,
 
-  [key: string]: string
+    [key: string]: string
 }
 
 export interface GitHubKeys {
@@ -98,30 +98,30 @@ export interface AlertKeysSystem {
 }
 
 export interface AlertKeysGitHubRepo {
-    github_release: string,
-    cannot_access_github: string,
+    github_release: string
+    cannot_access_github: string
 
     [key: string]: string
 }
 
 export interface AlertKeysChainlinkNode {
-  head_tacker_current_head: string,
-  head_tracker_heads_in_queue: string,
-  head_tracker_heads_received_total: string,
-  head_tracker_num_heads_dropped_total: string,
-  max_unconfirmed_blocks: string,
-  process_start_time_seconds: string,
-  tx_manager_gas_bump_exceeds_limit_total: string,
-  unconfirmed_transactions: string,
-  run_status_update_total: string,
-  eth_balance_amount: string,
-  eth_balance_amount_increase: string,
-  invalid_url: string,
-  metric_not_found: string,
-  node_is_down: string,
-  prometheus_is_down: string,
+    head_tacker_current_head: string,
+    head_tracker_heads_in_queue: string,
+    head_tracker_heads_received_total: string,
+    head_tracker_num_heads_dropped_total: string,
+    max_unconfirmed_blocks: string,
+    process_start_time_seconds: string,
+    tx_manager_gas_bump_exceeds_limit_total: string,
+    unconfirmed_transactions: string,
+    run_status_update_total: string,
+    eth_balance_amount: string,
+    eth_balance_amount_increase: string,
+    invalid_url: string,
+    metric_not_found: string,
+    node_is_down: string,
+    prometheus_is_down: string,
 
-  [key: string]: string
+    [key: string]: string
 }
 
 export interface BaseChainKeys {
@@ -145,10 +145,9 @@ export type RedisKeys =
     | BaseChainKeys;
 
 interface MonitorablesInfoResultData {
-    cosmos?: Object,
-    substrate?: Object,
-    general?: Object,
-    chainlink?: Object,
+    Cosmos?: Object,
+    Substrate?: Object,
+    General?: Object,
 
     [key: string]: Object | undefined
 }
@@ -159,7 +158,6 @@ export interface MonitorablesInfoResult {
     [key: string]: Object
 }
 
-// @TODO repos should be changed to github repos as dockerhub repos are thing
 interface AlertsOverviewChainInput {
     systems: string[],
     repos: string[],
@@ -189,30 +187,6 @@ export function isAlertsOverviewInput(object: any): boolean {
             }
         });
     return isAlertsOverviewInput;
-}
-
-interface AlertsOverviewResultData {
-    [key: string]: {
-        info: number,
-        warning: number,
-        critical: number,
-        error: number
-        problems: {
-            [key: string]: {
-                msg: string
-                severity: string
-            }[]
-        }
-        releases: {
-            [key: string]: string
-        }
-    }
-}
-
-export interface AlertsOverviewResult {
-    result: AlertsOverviewResultData
-
-    [key: string]: AlertsOverviewResultData
 }
 
 interface ParentSourceChainInput {
@@ -246,19 +220,26 @@ export function isParentSourceInput(object: any): boolean {
   return isParentSourceInput;
 }
 
-interface MetricsResultData {
-  [key: string]: {
-    system: {
-      [key: string]: SystemKeys
+interface AlertsOverviewResultData {
+    [key: string]: {
+        info: number,
+        warning: number,
+        critical: number,
+        error: number
+        problems: {
+            [key: string]: {
+                msg: string
+                severity: string
+            }[]
+        }
+        releases: {
+            [key: string]: string
+        }
     }
-    github: {
-      [key: string]: GitHubKeys
-    },
-  }
 }
 
-export interface MetricsResult {
-  result: MetricsResultData,
+export interface AlertsOverviewResult {
+    result: AlertsOverviewResultData
 
-  [key: string]: MetricsResultData
+    [key: string]: AlertsOverviewResultData
 }
