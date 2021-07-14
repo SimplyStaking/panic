@@ -890,9 +890,9 @@ if __name__ == '__main__':
         target=run_github_alerters_manager, args=())
     github_alerter_manager_process.start()
 
-    # chainlink_alerter_manager_process = multiprocessing.Process(
-    #     target=run_chainlink_alerters_manager, args=())
-    # chainlink_alerter_manager_process.start()
+    chainlink_alerter_manager_process = multiprocessing.Process(
+        target=run_chainlink_alerters_manager, args=())
+    chainlink_alerter_manager_process.start()
 
     # Start the monitor managers in a separate process
     system_monitors_manager_process = multiprocessing.Process(
