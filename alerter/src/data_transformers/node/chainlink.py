@@ -19,7 +19,7 @@ from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
                                           CL_NODE_DT_INPUT_QUEUE_NAME,
                                           CHAINLINK_NODE_RAW_DATA_ROUTING_KEY,
                                           STORE_EXCHANGE, ALERT_EXCHANGE,
-                                          HEALTH_CHECK_EXCHANGE,
+                                          HEALTH_CHECK_EXCHANGE, TOPIC,
                                           CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   NodeIsDownException,
@@ -63,13 +63,13 @@ class ChainlinkNodeDataTransformer(DataTransformer):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", STORE_EXCHANGE)
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
-        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
     def _load_number_state(self, state_type: Union[Type[float], Type[int]],

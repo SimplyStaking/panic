@@ -49,7 +49,7 @@ _key_component_heartbeat = 'c1'
 # chX_<parent_id>
 _key_chain_mute_alerts = 'ch1'
 
-# confx_<config_type>
+# confx_<routing_key>
 _key_config = 'conf1'
 
 # bcX_<base_chain>
@@ -260,8 +260,8 @@ class Keys:
         return _key_chain_mute_alerts
 
     @staticmethod
-    def get_config(config_type: str) -> str:
-        return Keys._as_prefix(_key_config) + config_type
+    def get_config(routing_key: str) -> str:
+        return Keys._as_prefix(_key_config) + routing_key
 
     @staticmethod
     def get_alert_open_file_descriptors(origin_id: str) -> str:
