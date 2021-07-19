@@ -29,10 +29,10 @@ from src.utils.types import str_to_bool
 
 class ChainlinkNodeAlerter(Alerter):
     """
-    We will have one chainlink node alerter for all chainlink nodes. Also the
-    chainlink alerter doesn't have to restart if the configurations change, as
-    it will be listening for both data and configs in the same queue. Ideally,
-    this is to be done for every other alerter when refactoring.
+    We will have one alerter for all chainlink nodes. The chainlink alerter
+    doesn't have to restart if the configurations change, as it will be
+    listening for both data and configs in the same queue. Ideally, this should
+    be done for every other alerter when refactoring.
     """
 
     def __init__(
