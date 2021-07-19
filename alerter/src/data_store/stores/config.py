@@ -242,7 +242,7 @@ class ConfigStore(Store):
                     config_type_key = parsed_routing_key[3]
                 elif parsed_routing_key[3].lower() == NODES_CONFIG.lower():
                     config_type_key = parsed_routing_key[1] + \
-                                      '_' + NODES_CONFIG.lower()
+                        '_' + NODES_CONFIG.lower()
         except KeyError as ke:
             self._logger.error("Failed to process routing_key %s",
                                routing_key)
@@ -272,6 +272,7 @@ class ConfigStore(Store):
         current_helper_configs = MONITORABLES_PARSING_HELPER[config_type_key]
 
         for helper_config in current_helper_configs:
+            parent_id = ''
             # Get a list of all the id's for the received data
             for _, config_details in received_config.items():
                 master_monitor_key = helper_config['master_monitor_key']
@@ -280,6 +281,7 @@ class ConfigStore(Store):
                 name_key = helper_config['name_key']
                 master_monitor_key_enabled = str_to_bool(
                     config_details[master_monitor_key])
+                parent_id = config_details['parent_id']
 
                 if sub_monitor_keys:
                     sub_monitor_keys_enabled = [str_to_bool(config_details[key])
@@ -314,6 +316,7 @@ class ConfigStore(Store):
             # structure
             config_key = helper_config['config_key']
             if data_for_store:
+                data_for_store[source_chain_name]['parent_id'] = parent_id
                 data_for_store[source_chain_name]['monitored'][
                     config_key] = monitored_list
                 data_for_store[source_chain_name]['not_monitored'][
@@ -321,6 +324,7 @@ class ConfigStore(Store):
             else:
                 data_for_store = {
                     source_chain_name: {
+                        'parent_id': parent_id,
                         'monitored': {
                             config_key: monitored_list
                         },

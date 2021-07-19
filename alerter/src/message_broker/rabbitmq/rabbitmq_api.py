@@ -8,7 +8,7 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.utils.constants.rabbitmq import DIRECT
+from src.utils.constants.rabbitmq import TOPIC
 from src.utils.exceptions import (ConnectionNotInitialisedException,
                                   MessageWasNotDeliveredException,
                                   BlankCredentialException)
@@ -347,7 +347,7 @@ class RabbitMQApi:
         if self._connection_initialised():
             return self._safe(self.channel.basic_qos, args, -1)
 
-    def exchange_declare(self, exchange: str, exchange_type: str = DIRECT,
+    def exchange_declare(self, exchange: str, exchange_type: str = TOPIC,
                          passive: bool = False, durable: bool = False,
                          auto_delete: bool = False, internal: bool = False) \
             -> Optional[int]:

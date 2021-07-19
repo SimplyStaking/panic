@@ -36,7 +36,7 @@ class AlertStore(Store):
         Initialise the necessary data for rabbitmq to be able to reach the data
         store as well as appropriately communicate with it.
 
-        Creates a store exchange of type `topic`
+        Creates a store exchange of type `direct`
         Declares a queue named `alerts_store_queue` and binds it to the store
         exchange with a routing key `alert`.
         """
