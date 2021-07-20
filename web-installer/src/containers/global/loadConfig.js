@@ -248,6 +248,7 @@ class LoadConfig extends Component {
                 const critical = {
                   threshold: value.critical_threshold,
                   repeat: value.critical_repeat,
+                  repeat_enabled: value.critical_repeat_enabled === 'true',
                   enabled: value.critical_enabled === 'true',
                 };
                 thresholdAlerts.byId[key].warning = warning;
@@ -316,6 +317,7 @@ class LoadConfig extends Component {
                   };
                   const critical = {
                     repeat: value.critical_repeat,
+                    repeat_enabled: value.critical_repeat_enabled === 'true',
                     enabled: value.critical_enabled === 'true',
                   };
                   repeatAlerts.byId[key].warning = warning;
@@ -330,6 +332,7 @@ class LoadConfig extends Component {
                   const critical = {
                     threshold: value.critical_threshold,
                     repeat: value.critical_repeat,
+                    repeat_enabled: value.critical_repeat_enabled === 'true',
                     enabled: value.critical_enabled === 'true',
                   };
                   thresholdAlerts.byId[key].warning = warning;
@@ -346,6 +349,7 @@ class LoadConfig extends Component {
                     threshold: value.critical_threshold,
                     time_window: value.critical_time_window,
                     repeat: value.critical_repeat,
+                    repeat_enabled: value.critical_repeat_enabled === 'true',
                     enabled: value.critical_enabled === 'true',
                   };
                   timeWindowAlerts.byId[key].warning = warning;
@@ -440,6 +444,7 @@ class LoadConfig extends Component {
                   };
                   const critical = {
                     repeat: value.critical_repeat,
+                    repeat_enabled: value.critical_repeat_enabled === 'true',
                     enabled: value.critical_enabled === 'true',
                   };
                   repeatAlerts.byId[key].warning = warning;
@@ -454,6 +459,7 @@ class LoadConfig extends Component {
                   const critical = {
                     threshold: value.critical_threshold,
                     repeat: value.critical_repeat,
+                    repeat_enabled: value.critical_repeat_enabled === 'true',
                     enabled: value.critical_enabled === 'true',
                   };
                   thresholdAlerts.byId[key].warning = warning;
@@ -470,6 +476,7 @@ class LoadConfig extends Component {
                     threshold: value.critical_threshold,
                     time_window: value.critical_time_window,
                     repeat: value.critical_repeat,
+                    repeat_enabled: value.critical_repeat_enabled === 'true',
                     enabled: value.critical_enabled === 'true',
                   };
                   timeWindowAlerts.byId[key].warning = warning;
@@ -537,12 +544,13 @@ class LoadConfig extends Component {
                 } else {
                   node.prometheus_url = node.prometheus_url.split(',');
                 }
-                if (node.node_address.length === 0) {
-                  node.node_address = [];
+                if (node.geth_prometheus_url.length === 0) {
+                  node.geth_prometheus_url = [];
                 } else {
-                  node.node_address = node.node_address.split(',');
+                  node.geth_prometheus_url = node.geth_prometheus_url.split(',');
                 }
                 node.monitor_prometheus = node.monitor_prometheus === 'true';
+                node.monitor_geth_prometheus = node.monitor_geth_prometheus === 'true';
                 node.monitor_node = node.monitor_node === 'true';
                 addNodeChainlinkDetails(node);
               });
@@ -594,6 +602,7 @@ class LoadConfig extends Component {
                   const critical = {
                     threshold: value.critical_threshold,
                     repeat: value.critical_repeat,
+                    repeat_enabled: value.critical_repeat_enabled === 'true',
                     enabled: value.critical_enabled === 'true',
                   };
                   thresholdAlerts.byId[key].warning = warning;
@@ -610,6 +619,7 @@ class LoadConfig extends Component {
                     threshold: value.critical_threshold,
                     time_window: value.critical_time_window,
                     repeat: value.critical_repeat,
+                    repeat_enabled: value.critical_repeat_enabled === 'true',
                     enabled: value.critical_enabled === 'true',
                   };
                   timeWindowAlerts.byId[key].warning = warning;
@@ -835,6 +845,7 @@ LoadConfig.propTypes = {
           critical: PropTypes.shape({
             delay: PropTypes.number,
             repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -846,13 +857,14 @@ LoadConfig.propTypes = {
           name: PropTypes.string,
           warning: PropTypes.shape({
             threshold: PropTypes.number,
-            timewindow: PropTypes.number,
+            time_window: PropTypes.number,
             enabled: PropTypes.bool,
           }),
           critical: PropTypes.shape({
             threshold: PropTypes.number,
-            timewindow: PropTypes.number,
+            time_window: PropTypes.number,
             repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -869,6 +881,7 @@ LoadConfig.propTypes = {
           critical: PropTypes.shape({
             threshold: PropTypes.number,
             repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -899,6 +912,7 @@ LoadConfig.propTypes = {
           critical: PropTypes.shape({
             delay: PropTypes.number,
             repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -910,13 +924,14 @@ LoadConfig.propTypes = {
           name: PropTypes.string,
           warning: PropTypes.shape({
             threshold: PropTypes.number,
-            timewindow: PropTypes.number,
+            time_window: PropTypes.number,
             enabled: PropTypes.bool,
           }),
           critical: PropTypes.shape({
             threshold: PropTypes.number,
-            timewindow: PropTypes.number,
+            time_window: PropTypes.number,
             repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -933,6 +948,7 @@ LoadConfig.propTypes = {
           critical: PropTypes.shape({
             threshold: PropTypes.number,
             repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -963,6 +979,7 @@ LoadConfig.propTypes = {
           critical: PropTypes.shape({
             delay: PropTypes.number,
             repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -974,12 +991,12 @@ LoadConfig.propTypes = {
           name: PropTypes.string,
           warning: PropTypes.shape({
             threshold: PropTypes.number,
-            timewindow: PropTypes.number,
+            time_window: PropTypes.number,
             enabled: PropTypes.bool,
           }),
           critical: PropTypes.shape({
             threshold: PropTypes.number,
-            timewindow: PropTypes.number,
+            time_window: PropTypes.number,
             repeat: PropTypes.number,
             enabled: PropTypes.bool,
           }),
@@ -997,6 +1014,7 @@ LoadConfig.propTypes = {
           critical: PropTypes.shape({
             threshold: PropTypes.number,
             repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,

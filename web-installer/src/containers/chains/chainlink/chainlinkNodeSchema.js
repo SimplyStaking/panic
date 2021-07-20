@@ -1,5 +1,4 @@
 import * as Yup from 'yup';
-import Web3 from 'web3';
 
 const ChainlinkNodeSchema = (props) => Yup.object().shape({
   name: Yup.string()
@@ -46,14 +45,6 @@ const ChainlinkNodeSchema = (props) => Yup.object().shape({
       return true;
     })
     .required('Node name is required.'),
-  node_address: Yup.array()
-    .of(Yup.string()
-      .test('ethereum-address-validation', 'One or more provided addresses are not valid!.', (value) => {
-        if (Web3.utils.isAddress(value)) {
-          return true;
-        }
-        return false;
-      })),
 });
 
 export default ChainlinkNodeSchema;

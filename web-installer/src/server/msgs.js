@@ -59,6 +59,10 @@ function DeleteDirectory() {
   this.message = 'Deleted Directory.';
 }
 
+function MetricNotFound(metric, url) {
+  this.message = `Metric: ${metric} not found at URL ${url}.`;
+}
+
 module.exports = {
   ConfigSubmitted,
   TwilioCallSubmitted,
@@ -75,4 +79,5 @@ module.exports = {
   MessageNoConnection,
   ConnectionError,
   DeleteDirectory,
+  MetricNotFound,
 };

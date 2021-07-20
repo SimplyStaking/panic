@@ -12,7 +12,7 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { PingPrometheus, PingTendermint, PingNodeExporter } from 'utils/buttons';
+import { PingPrometheus, PingTendermint } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import Button from 'components/material_ui/CustomButtons/Button';
 import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
@@ -55,7 +55,7 @@ const NodesForm = ({
                 <Grid item xs={12}>
                   <CssTextField
                     id="chain-name-outlined-full-width"
-                    error={!!(errors.name)}
+                    error={!!errors.name}
                     value={values.name}
                     label="Node name"
                     type="text"
@@ -192,7 +192,7 @@ const NodesForm = ({
                 </Grid>
                 <Grid item xs={2}>
                   <Grid container direction="row" justify="flex-end" alignItems="center">
-                    <PingNodeExporter disabled exporterUrl="" />
+                    <PingPrometheus disabled prometheusUrl="" metric="" />
                   </Grid>
                 </Grid>
                 <Grid item xs={8}>
@@ -253,7 +253,7 @@ const NodesForm = ({
                 <Grid item xs={8}>
                   <CssTextField
                     id="node-exporter-url-outlined-full-width"
-                    error={!!(errors.exporter_url)}
+                    error={!!errors.exporter_url}
                     value={values.exporter_url}
                     label="Node Exporter URL"
                     type="text"
@@ -302,7 +302,11 @@ const NodesForm = ({
                 </Grid>
                 <Grid item xs={2}>
                   <Grid container direction="row" justify="flex-end" alignItems="center">
-                    <PingNodeExporter disabled={false} exporterUrl={values.exporter_url} />
+                    <PingPrometheus
+                      disabled={false}
+                      prometheusUrl={values.exporter_url}
+                      metric="go_memstats_alloc_bytes_total"
+                    />
                   </Grid>
                 </Grid>
                 <Grid item xs={2}>
