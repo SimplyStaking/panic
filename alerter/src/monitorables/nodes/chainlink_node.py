@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Union
 
-from schema import Schema, Optional as SchemaOptional
+from schema import Schema, Or
 
 from src.monitorables.nodes.node import Node
 from src.utils.exceptions import InvalidDictSchemaException
@@ -96,7 +96,7 @@ class ChainlinkNode(Node):
         return self._current_gas_price_info
 
     @property
-    def eth_balance_info(self) -> Dict[str, Dict[str, float]]:
+    def eth_balance_info(self) -> Dict[str, Union[str, float]]:
         return self._eth_balance_info
 
     @property
@@ -296,16 +296,15 @@ class ChainlinkNode(Node):
         :return: True if the dict obeys the required schema
                : False otherwise
         """
-        schema = Schema({
-            SchemaOptional(str): {
-                'balance': float,
-                'latest_usage': float,
-            }
-        })
+        schema = Schema(Or({
+            'address': str,
+            'balance': float,
+            'latest_usage': float,
+        }, {}))
         return schema.is_valid(new_eth_balance_info)
 
     def set_eth_balance_info(
-            self, new_eth_balance_info: Dict[str, Dict[str, float]]) -> None:
+            self, new_eth_balance_info: Dict[str, Union[str, float]]) -> None:
         """
         This method sets the new_eth_balance_info. It first checks that the new
         dict obeys the required schema. If not, an InvalidDictSchemaException is

@@ -1,6 +1,25 @@
 from enum import Enum
 from typing import Union, Any
 
+from src.alerter.alerts.node.chainlink import (
+    NoChangeInHeightAlert, BlockHeightUpdatedAlert,
+    HeadsInQueueIncreasedAboveThresholdAlert,
+    HeadsInQueueDecreasedBelowThresholdAlert,
+    NoChangeInTotalHeadersReceivedAlert, ReceivedANewHeaderAlert,
+    DroppedBlockHeadersIncreasedAboveThresholdAlert,
+    DroppedBlockHeadersDecreasedBelowThresholdAlert,
+    MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
+    MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, ChangeInSourceNodeAlert,
+    GasBumpIncreasedOverNodeGasPriceLimitAlert,
+    NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
+    NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
+    TotalErroredJobRunsDecreasedBelowThresholdAlert,
+    TotalErroredJobRunsIncreasedAboveThresholdAlert,
+    EthBalanceIncreasedAboveThresholdAlert,
+    EthBalanceDecreasedBelowThresholdAlert, EthBalanceToppedUpAlert,
+    InvalidUrlAlert, ValidUrlAlert, MetricNotFoundErrorAlert, MetricFoundAlert,
+    PrometheusSourceIsDownAlert, PrometheusSourceBackUpAgainAlert,
+    NodeStillDownAlert, NodeWentDownAtAlert, NodeBackUpAgainAlert)
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -17,6 +36,9 @@ from src.monitorables.system import System
 
 RedisType = Union[bytes, str, int, float]
 Monitorable = Union[System, GitHubRepo, ChainlinkNode]
+
+# TODO: The below system alerts must be refactored to the types beneath them
+#     : when the system alerter is refactored.
 IncreasedAboveThresholdSystemAlert = Union[
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -29,6 +51,54 @@ DecreasedBelowThresholdSystemAlert = Union[
     SystemRAMUsageDecreasedBelowThresholdAlert,
     SystemStorageUsageDecreasedBelowThresholdAlert
 ]
+
+ChainlinkNodeNoChangeInAlert = Union[
+    NoChangeInHeightAlert, NoChangeInTotalHeadersReceivedAlert,
+]
+ChainlinkNodeChangeInAlert = Union[
+    BlockHeightUpdatedAlert, ReceivedANewHeaderAlert
+]
+NoChangeInAlert = Union[ChainlinkNodeNoChangeInAlert]
+ChangeInAlert = Union[ChainlinkNodeChangeInAlert]
+
+IncreasedAboveThresholdChainlinkNodeAlert = Union[
+    HeadsInQueueIncreasedAboveThresholdAlert,
+    DroppedBlockHeadersIncreasedAboveThresholdAlert,
+    MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
+    NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
+    TotalErroredJobRunsIncreasedAboveThresholdAlert,
+    EthBalanceIncreasedAboveThresholdAlert
+]
+DecreasedBelowThresholdChainlinkNodeAlert = Union[
+    HeadsInQueueDecreasedBelowThresholdAlert,
+    DroppedBlockHeadersDecreasedBelowThresholdAlert,
+    MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
+    NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
+    TotalErroredJobRunsDecreasedBelowThresholdAlert,
+    EthBalanceDecreasedBelowThresholdAlert
+]
+IncreasedAboveThresholdAlert = Union[IncreasedAboveThresholdChainlinkNodeAlert]
+DecreasedBelowThresholdAlert = Union[DecreasedBelowThresholdChainlinkNodeAlert]
+
+ChainlinkNodeConditionalAlert = Union[
+    ChangeInSourceNodeAlert, GasBumpIncreasedOverNodeGasPriceLimitAlert,
+    EthBalanceToppedUpAlert, PrometheusSourceIsDownAlert,
+    PrometheusSourceBackUpAgainAlert
+]
+ConditionalAlert = Union[ChainlinkNodeConditionalAlert]
+
+ChainlinkNodeErrorAlert = Union[
+    InvalidUrlAlert, MetricNotFoundErrorAlert
+]
+ChainlinkNodeErrorSolvedAlert = Union[
+    ValidUrlAlert, MetricFoundAlert
+]
+ErrorAlert = Union[ChainlinkNodeErrorAlert]
+ErrorSolvedAlert = Union[ChainlinkNodeErrorSolvedAlert]
+
+DownAlert = Union[NodeWentDownAtAlert]
+StillDownAlert = Union[NodeStillDownAlert]
+BackUpAlert = Union[NodeBackUpAgainAlert]
 
 
 class OpsgenieSeverities(Enum):

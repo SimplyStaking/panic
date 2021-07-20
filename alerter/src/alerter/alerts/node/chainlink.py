@@ -35,7 +35,7 @@ class BlockHeightUpdatedAlert(Alert):
 
 
 class HeadsInQueueIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
@@ -50,7 +50,7 @@ class HeadsInQueueIncreasedAboveThresholdAlert(Alert):
 
 
 class HeadsInQueueDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, threshold_severity: str, parent_id: str,
                  origin_id: str) -> None:
         super().__init__(
@@ -64,28 +64,33 @@ class HeadsInQueueDecreasedBelowThresholdAlert(Alert):
 
 class NoChangeInTotalHeadersReceivedAlert(Alert):
     def __init__(self, origin_name: str, duration: float, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str) -> None:
+                 timestamp: float, parent_id: str, origin_id: str,
+                 current_headers_received: int) -> None:
         super().__init__(
             ChainlinkNodeAlertCode.NoChangeInTotalHeadersReceivedAlert,
-            "The last block header received by {} was at least {} ago.".format(
+            "The last block header received by {} was at least {} ago. {} "
+            "headers received in total.".format(
                 origin_name, strfdelta(timedelta(seconds=duration),
-                                       "{hours}h, {minutes}m, {seconds}s")),
-            severity, timestamp, parent_id, origin_id,
+                                       "{hours}h, {minutes}m, {seconds}s"),
+                current_headers_received), severity, timestamp, parent_id,
+            origin_id,
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived)
 
 
 class ReceivedANewHeaderAlert(Alert):
     def __init__(self, origin_name: str, severity: str, timestamp: float,
-                 parent_id: str, origin_id: str) -> None:
+                 parent_id: str, origin_id: str,
+                 current_headers_received: int) -> None:
         super().__init__(
             ChainlinkNodeAlertCode.ReceivedANewHeaderAlert,
-            "{} received a new block header.".format(origin_name), severity,
+            "{} received a new block header. {} headers received in "
+            "total.".format(origin_name, current_headers_received), severity,
             timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived)
 
 
 class DroppedBlockHeadersIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
@@ -101,7 +106,7 @@ class DroppedBlockHeadersIncreasedAboveThresholdAlert(Alert):
 
 
 class DroppedBlockHeadersDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
@@ -117,7 +122,7 @@ class DroppedBlockHeadersDecreasedBelowThresholdAlert(Alert):
 
 
 class MaxUnconfirmedBlocksIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
@@ -133,7 +138,7 @@ class MaxUnconfirmedBlocksIncreasedAboveThresholdAlert(Alert):
 
 
 class MaxUnconfirmedBlocksDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, threshold_severity: str, parent_id: str,
                  origin_id: str) -> None:
         super().__init__(
@@ -169,7 +174,7 @@ class GasBumpIncreasedOverNodeGasPriceLimitAlert(Alert):
 
 
 class NoOfUnconfirmedTxsIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
@@ -185,7 +190,7 @@ class NoOfUnconfirmedTxsIncreasedAboveThresholdAlert(Alert):
 
 
 class NoOfUnconfirmedTxsDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, threshold_severity: str, parent_id: str,
                  origin_id: str) -> None:
         super().__init__(
@@ -199,7 +204,7 @@ class NoOfUnconfirmedTxsDecreasedBelowThresholdAlert(Alert):
 
 
 class TotalErroredJobRunsIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
@@ -215,7 +220,7 @@ class TotalErroredJobRunsIncreasedAboveThresholdAlert(Alert):
 
 
 class TotalErroredJobRunsDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
+    def __init__(self, origin_name: str, current_value: int, severity: str,
                  timestamp: float, duration: float, threshold_severity: str,
                  parent_id: str, origin_id: str) -> None:
         super().__init__(

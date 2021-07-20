@@ -13,8 +13,8 @@ from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.alerter.alerters.github import GithubAlerter
-from src.alerter.alerters.system import SystemAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
+from src.alerter.alerters.system import SystemAlerter
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
@@ -25,7 +25,6 @@ from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           ALERT_STORE_INPUT_QUEUE_NAME,
                                           HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
                                           ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
-from src.utils.constants.data import EXPIRE_METRICS
 from src.utils.exceptions import (PANICException,
                                   MessageWasNotDeliveredException)
 from test.utils.utils import (connect_to_rabbit,
@@ -723,7 +722,7 @@ class TestAlertStore(unittest.TestCase):
         # we always delete all github metrics for all chains
         self.test_store._process_redis_store(self.alert_data_github_1)
         chain_hash_1 = Keys.get_hash_parent(self.alert_data_github_1[
-            'parent_id'])
+                                                'parent_id'])
         metric_key_1 = eval(
             "Keys.get_alert_{}(self.alert_data_github_1['origin_id'])".format(
                 self.alert_data_github_1['metric']))
@@ -731,7 +730,7 @@ class TestAlertStore(unittest.TestCase):
 
         self.test_store._process_redis_store(self.alert_data_github_2)
         chain_hash_2 = Keys.get_hash_parent(self.alert_data_github_2[
-            'parent_id'])
+                                                'parent_id'])
         metric_key_2 = eval(
             "Keys.get_alert_{}(self.alert_data_github_2['origin_id'])".format(
                 self.alert_data_github_2['metric']))
@@ -739,7 +738,7 @@ class TestAlertStore(unittest.TestCase):
 
         self.test_store._process_redis_store(self.alert_data_github_3)
         chain_hash_3 = Keys.get_hash_parent(self.alert_data_github_3[
-            'parent_id'])
+                                                'parent_id'])
         metric_key_3 = eval(
             "Keys.get_alert_{}(self.alert_data_github_3['origin_id'])".format(
                 self.alert_data_github_3['metric']))

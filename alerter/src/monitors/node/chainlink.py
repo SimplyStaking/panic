@@ -227,7 +227,9 @@ class ChainlinkNodeMonitor(Monitor):
             self.logger.debug("%s %s: %s", self.node_config, metric, value)
             processed_data['result']['data'][metric] = value
 
-        # Add gas_updater_set_gas_price info to the processed data
+        # Add gas_updater_set_gas_price info to the processed data. Note we will
+        # process the first percentile object we find. It is very unlikely to
+        # find multiple.
         processed_data['result']['data']['gas_updater_set_gas_price'] = {}
         set_gas_price_dict = processed_data['result']['data'][
             'gas_updater_set_gas_price']
@@ -239,18 +241,22 @@ class ChainlinkNodeMonitor(Monitor):
                         "percentile"]
                     set_gas_price_dict["price"] = data_copy[
                         'gas_updater_set_gas_price'][data_subset]
+                    break
         else:
             processed_data['result']['data']['gas_updater_set_gas_price'] = None
 
-        # Add the ethereum balance of all addresses to the processed data
+        # Add the ethereum balance to the processed data. We will monitor the
+        # first account we find. Note, it is very unlikely that a node is mapped
+        # to multiple addresses.
         processed_data['result']['data']['eth_balance'] = {}
-        ethereum_balances_dict = processed_data['result']['data'][
-            'eth_balance']
-        for eth_address in self.node_config.ethereum_addresses:
-            for _, data_subset in enumerate(data_copy['eth_balance']):
-                if json.loads(data_subset)['account'] == eth_address:
-                    ethereum_balances_dict[eth_address] = data_copy[
-                        'eth_balance'][data_subset]
+        ethereum_balance_dict = processed_data['result']['data']['eth_balance']
+        for _, data_subset in enumerate(data_copy['eth_balance']):
+            if "account" in json.loads(data_subset):
+                eth_address = json.loads(data_subset)['account']
+                ethereum_balance_dict['address'] = eth_address
+                ethereum_balance_dict['balance'] = data_copy['eth_balance'][
+                    data_subset]
+                break
 
         # Add the number of error job runs to the processed data
         no_of_error_job_runs = 0

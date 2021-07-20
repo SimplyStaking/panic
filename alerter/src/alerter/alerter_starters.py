@@ -5,9 +5,11 @@ import pika.exceptions
 
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.github import GithubAlerter
-from src.alerter.alerters.system import SystemAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
+from src.alerter.alerters.system import SystemAlerter
 from src.configs.alerts.system import SystemAlertsConfig
+from src.configs.factory.chainlink_alerts_configs_factory import \
+    ChainlinkAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (SYSTEM_ALERTER_NAME_TEMPLATE,
                                        GITHUB_ALERTER_NAME,
@@ -19,8 +21,6 @@ from src.utils.env import (ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL,
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
-from src.configs.factory.chainlink_alerts_configs_factory import \
-    ChainlinkAlertsConfigsFactory
 
 
 def _initialise_alerter_logger(alerter_display_name: str,
@@ -107,7 +107,7 @@ def _initialise_github_alerter() -> GithubAlerter:
 
 
 def _initialise_chainlink_node_alerter(
-    chainlink_alerts_configs_factory: ChainlinkAlertsConfigsFactory
+        chainlink_alerts_configs_factory: ChainlinkAlertsConfigsFactory
 ) -> ChainlinkNodeAlerter:
     alerter_display_name = CHAINLINK_NODE_ALERTER_NAME
 

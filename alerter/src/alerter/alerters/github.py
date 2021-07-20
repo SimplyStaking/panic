@@ -144,14 +144,12 @@ class GithubAlerter(Alerter):
             self.logger.exception(e)
             processing_error = True
 
-        self.rabbitmq.basic_ack(method.delivery_tag, False)
-
-        # Place the data on the publishing queue if there were no processing
-        # errors. This is done after acknowledging the data, so that if
-        # acknowledgement fails, the data is processed again and we do not have
-        # duplication of data in the queue
-        if not processing_error:
+        # Place the data on the publishing queue if there is something to send.
+        if len(data_for_alerting) != 0:
             self._place_latest_data_on_queue(data_for_alerting)
+
+        # If the data is processed, it can be acknowledged.
+        self.rabbitmq.basic_ack(method.delivery_tag, False)
 
         # Send any data waiting in the publisher queue, if any
         try:
