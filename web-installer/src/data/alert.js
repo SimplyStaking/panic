@@ -5,7 +5,8 @@ export default {
     + 'alerts you could receive. To simplify this process we have '
     + 'pre-configured all the alerts which were decided based on our '
     + 'experience in the field, but you are free to change them to your preference. '
-    + 'If you set the repetition of the alert to be 0 that alert will not repeat.',
+    + 'It is important to have the warning thresholds and time_windows be less than that '
+    + 'of the critical thresholds and time_windows as the alerter will not work properly.',
   subtitle_1: 'Threshold Alerts',
   subtitle_2: 'Severity Alerts',
 };

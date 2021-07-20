@@ -259,7 +259,7 @@ const chainlinkThresholdAlerts = {
 const chainlinkTimeWindowAlerts = {
   byId: {
     12: {
-      name: 'Chianlink node: Number of unconfirmed transactions.',
+      name: 'Chainlink node: Number of unconfirmed transactions.',
       identifier: 'unconfirmed_transactions',
       description:
         'Number of unconfirmed transactions per node persist over a time period. '
