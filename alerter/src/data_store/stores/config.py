@@ -242,7 +242,7 @@ class ConfigStore(Store):
                     config_type_key = parsed_routing_key[3]
                 elif parsed_routing_key[3].lower() == NODES_CONFIG.lower():
                     config_type_key = parsed_routing_key[1] + \
-                        '_' + NODES_CONFIG.lower()
+                                      '_' + NODES_CONFIG.lower()
         except KeyError as ke:
             self._logger.error("Failed to process routing_key %s",
                                routing_key)
