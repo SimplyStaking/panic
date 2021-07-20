@@ -11,8 +11,7 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
-from src.alerter.alerters.node.chainlink import (
-    ChainlinkNodeAlerter, GroupedChainlinkNodeAlertsMetricCode)
+from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.node.chainlink import (
     ReceivedANewHeaderAlert, InvalidUrlAlert, ValidUrlAlert,
     MetricNotFoundErrorAlert, MetricFoundAlert, NoChangeInHeightAlert,
@@ -34,6 +33,8 @@ from src.alerter.alerts.node.chainlink import (
     PrometheusSourceIsDownAlert, PrometheusSourceBackUpAgainAlert)
 from src.alerter.factory.chainlink_node_alerting_factory import \
     ChainlinkNodeAlertingFactory
+from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
+    import GroupedChainlinkNodeAlertsMetricCode
 from src.configs.factory.chainlink_alerts_configs_factory import \
     ChainlinkAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
