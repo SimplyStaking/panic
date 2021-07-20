@@ -398,6 +398,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value,
             self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
 
         # Check that no alert is raised even if the warning window elapses again
         data_for_alerting.clear()
@@ -441,6 +442,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value,
             self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Classify with not elapsed repeat to confirm that no critical alert is
@@ -510,6 +512,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value,
             self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Let repeat time to elapse and check that a critical alert is
@@ -562,6 +565,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value,
             self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Check that an INFO alert is raised
@@ -714,6 +718,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
                 .value, self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
 
         # Check that no alert is raised even if the warning window elapses again
         data_for_alerting.clear()
@@ -765,6 +770,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
                 .value, self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Classify with not elapsed repeat to confirm that no critical alert is
@@ -844,6 +850,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
                 .value, self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Let repeat time to elapse and check that a critical alert is
@@ -904,6 +911,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
                 .value, self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Check that an INFO alert is raised
@@ -964,6 +972,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
                 .value, self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
 
         # First above critical threshold alert
         pad = float(self.test_alerts_config.head_tracker_heads_in_queue[
@@ -978,6 +987,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold
                 .value, self.test_node_name, alert_timestamp
         )
+        self.assertEqual(2, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Check that 2 alerts are raised, below critical and above warning
@@ -1091,6 +1101,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
                 .value, self.test_node_name, datetime.now().timestamp()
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         self.test_factory_instance.classify_thresholded_in_time_period_alert(
@@ -1129,6 +1140,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
                 .value, self.test_node_name, datetime.now().timestamp()
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Classify with not elapsed repeat to confirm that no critical alert is
@@ -1197,6 +1209,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
                 .value, self.test_node_name, datetime.now().timestamp()
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Let repeat time to elapse and check that a critical alert is not
@@ -1244,6 +1257,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
                 .value, self.test_node_name, datetime.now().timestamp()
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Check that a below threshold INFO alert is raised
@@ -1293,6 +1307,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
                 .value, self.test_node_name, datetime.now().timestamp()
         )
+        self.assertEqual(1, len(data_for_alerting))
 
         # Send critical increase above threshold alert
         previous = 0
@@ -1308,6 +1323,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
                 .value, self.test_node_name, datetime.now().timestamp()
         )
+        self.assertEqual(2, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Check that 2 alerts are raised, below critical and above warning
@@ -1502,6 +1518,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
             self.test_node_name, datetime.now().timestamp()
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Classify again to check if a warning alert is raised
@@ -1537,6 +1554,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
             self.test_node_name, datetime.now().timestamp()
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Classify with not elapsed repeat to confirm that no critical alert is
@@ -1595,6 +1613,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
             self.test_node_name, datetime.now().timestamp()
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Let repeat time to elapse and check that a critical alert is not
@@ -1637,6 +1656,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
             self.test_node_name, datetime.now().timestamp()
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Check that an above threshold INFO alert is raised. Current is set to
@@ -1683,6 +1703,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
             self.test_node_name, datetime.now().timestamp()
         )
+        self.assertEqual(1, len(data_for_alerting))
 
         # Send critical decrease below threshold alert
         current = float(self.test_alerts_config.eth_balance_amount[
@@ -1695,6 +1716,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
             self.test_node_name, datetime.now().timestamp()
         )
+        self.assertEqual(2, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Check that 2 alerts are raised, above critical and below warning
@@ -1778,6 +1800,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "error msg",
             "resolved msg", test_err.code
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Generate solved alert
@@ -1913,6 +1936,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
             self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Try to generate another warning alert. Confirm that none was raised.
@@ -1955,6 +1979,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
             self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # No alert is re-raised if the repeat time is not elapsed
@@ -2017,6 +2042,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
             self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Critical alert is not re-raised if the repeat time elapsed.
@@ -2066,6 +2092,7 @@ class TestAlertingFactory(unittest.TestCase):
             GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value,
             self.test_node_name, alert_timestamp
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Info back up again alert is raised if node is no longer down.
@@ -2165,6 +2192,7 @@ class TestAlertingFactory(unittest.TestCase):
             ], data_for_alerting, self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         self.test_factory_instance.classify_source_downtime_alert(
@@ -2209,6 +2237,7 @@ class TestAlertingFactory(unittest.TestCase):
             ], data_for_alerting, self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown.value,
         )
+        self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         self.test_factory_instance.classify_source_downtime_alert(

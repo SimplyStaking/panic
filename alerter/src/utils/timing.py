@@ -161,7 +161,7 @@ class OccurrencesInTimePeriodTracker:
         """
         This function checks that all keys and values are the same for both
         objects except for the `self._occurrences_queue` variable. This is
-        omited because __eq__ was not implemented for the Queue object.
+        omitted because __eq__ was not implemented for the Queue object.
         :param other: Other objects
         :return: True if conditions described above are matched
                : False otherwise
