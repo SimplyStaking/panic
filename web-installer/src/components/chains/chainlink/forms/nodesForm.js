@@ -7,7 +7,7 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { PingChainlinkPrometheus } from 'utils/buttons';
+import { PingPrometheus } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import { Autocomplete } from '@material-ui/lab';
 import Button from 'components/material_ui/CustomButtons/Button';
@@ -30,8 +30,8 @@ const NodesForm = ({
     setFieldValue('prometheus_url', prometheusUrl);
   };
 
-  const updateEthereumAddress = (event, ethereumAddress) => {
-    setFieldValue('node_address', ethereumAddress);
+  const updateGethPrometheusUrl = (event, gethPrometheusUrl) => {
+    setFieldValue('geth_prometheus_url', gethPrometheusUrl);
   };
 
   return (
@@ -141,9 +141,10 @@ const NodesForm = ({
                 </Grid>
                 <Grid item xs={2}>
                   <Grid container direction="row" justify="flex-end" alignItems="center">
-                    <PingChainlinkPrometheus
+                    <PingPrometheus
                       disabled={false}
                       prometheusUrl={values.prometheus_url}
+                      metric="max_unconfirmed_blocks"
                     />
                   </Grid>
                 </Grid>
@@ -152,20 +153,18 @@ const NodesForm = ({
                     multiple
                     freeSolo
                     options={[]}
-                    onChange={updateEthereumAddress}
-                    value={values.node_address}
+                    onChange={updateGethPrometheusUrl}
+                    value={values.geth_prometheus_url}
                     renderInput={(params) => (
                       <CssTextField
                         // eslint-disable-next-line react/jsx-props-no-spreading
                         {...params}
-                        id="node-based-url-outlined-full-width"
-                        error={!!(errors.node_address)}
-                        label="Node addresses"
+                        id="geth-prometheus-url-outlined-full-width"
+                        label="Ethereum Geth Prometheus URL"
                         type="text"
                         style={{ margin: 8 }}
-                        name="node_address"
-                        placeholder={data.nodeForm.ethereumAddressHolder}
-                        helperText={errors.node_address ? errors.node_address : ''}
+                        name="geth_prometheus_url"
+                        placeholder={data.nodeForm.gethPrometheusHolder}
                         fullWidth
                         margin="normal"
                         InputLabelProps={{
@@ -177,7 +176,33 @@ const NodesForm = ({
                     )}
                   />
                 </Grid>
-                <Grid item xs={4} />
+                <Grid item xs={2}>
+                  <Grid container direction="row" justify="flex-end" alignItems="center">
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={values.monitor_geth_prometheus}
+                          onClick={() => {
+                            setFieldValue('monitor_geth_prometheus', !values.monitor_geth_prometheus);
+                          }}
+                          name="monitor_geth_prometheus"
+                          color="primary"
+                        />
+                      )}
+                      label="Monitor"
+                      labelPlacement="start"
+                    />
+                  </Grid>
+                </Grid>
+                <Grid item xs={2}>
+                  <Grid container direction="row" justify="flex-end" alignItems="center">
+                    <PingPrometheus
+                      disabled={false}
+                      prometheusUrl={values.geth_prometheus_url}
+                      metric="chain_head_block"
+                    />
+                  </Grid>
+                </Grid>
                 <Grid item xs={2}>
                   <Box pl={1}>
                     <Typography> Monitor Node </Typography>
@@ -242,14 +267,13 @@ const NodesForm = ({
 NodesForm.propTypes = {
   errors: PropTypes.shape({
     name: PropTypes.string,
-    prometheus_url: PropTypes.string,
-    node_address: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     name: PropTypes.string.isRequired,
     prometheus_url: PropTypes.arrayOf(PropTypes.string.isRequired),
-    node_address: PropTypes.arrayOf(PropTypes.string.isRequired),
+    geth_prometheus_url: PropTypes.arrayOf(PropTypes.string.isRequired),
+    monitor_geth_prometheus: PropTypes.bool.isRequired,
     monitor_prometheus: PropTypes.bool.isRequired,
     monitor_node: PropTypes.bool.isRequired,
   }).isRequired,
@@ -263,7 +287,8 @@ NodesForm.propTypes = {
       nameTip: PropTypes.string.isRequired,
       prometheusHolder: PropTypes.string.isRequired,
       prometheusTip: PropTypes.string.isRequired,
-      ethereumAddressHolder: PropTypes.string.isRequired,
+      gethPrometheusHolder: PropTypes.string.isRequired,
+      gethPrometheusTip: PropTypes.string.isRequired,
       monitorNodeTip: PropTypes.string.isRequired,
       backStep: PropTypes.string.isRequired,
       nextStep: PropTypes.string.isRequired,

@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
@@ -140,8 +141,8 @@ const AlertsTable = ({
                                 color="primary"
                               />
                             )}
-                            label="Enabled"
-                            labelPlacement="start"
+                            label="Warning Alert Enabled"
+                            labelPlacement="end"
                           />
                         </Grid>
                         <Grid item>
@@ -217,6 +218,7 @@ const AlertsTable = ({
                                       critical: {
                                         repeat:
                                           RepeatAlerts.byId[id].critical.repeat,
+                                        repeat_enabled: RepeatAlerts.byId[id].critical.repeat_enabled,
                                         enabled: !RepeatAlerts.byId[id].critical
                                           .enabled,
                                       },
@@ -227,8 +229,8 @@ const AlertsTable = ({
                                 color="primary"
                               />
                             )}
-                            label="Enabled"
-                            labelPlacement="start"
+                            label="Critical Alert Enabled"
+                            labelPlacement="end"
                           />
                         </Grid>
                         <Grid item>
@@ -254,6 +256,7 @@ const AlertsTable = ({
                                   warning: RepeatAlerts.byId[id].warning,
                                   critical: {
                                     repeat: event.target.value,
+                                    repeat_enabled: RepeatAlerts.byId[id].critical.repeat_enabled,
                                     enabled:
                                       RepeatAlerts.byId[id].critical.enabled,
                                   },
@@ -277,6 +280,40 @@ const AlertsTable = ({
                               min: 0,
                               style: { textAlign: 'right' },
                             }}
+                          />
+                        </Grid>
+                        <Grid item>
+                          <FormControlLabel
+                            control={(
+                              <Checkbox
+                                checked={RepeatAlerts.byId[id].critical.repeat_enabled}
+                                onClick={() => {
+                                  updateRepeatAlertDetails({
+                                    id,
+                                    parent_id: currentChain,
+                                    alert: {
+                                      name: RepeatAlerts.byId[id].name,
+                                      identifier:
+                                        RepeatAlerts.byId[id].identifier,
+                                      description:
+                                        RepeatAlerts.byId[id].description,
+                                      adornment: RepeatAlerts.byId[id].adornment,
+                                      warning: RepeatAlerts.byId[id].warning,
+                                      critical: {
+                                        repeat: RepeatAlerts.byId[id].critical.repeat,
+                                        repeat_enabled: !RepeatAlerts.byId[id].critical.repeat_enabled,
+                                        enabled: RepeatAlerts.byId[id].critical.enabled,
+                                      },
+                                      enabled: RepeatAlerts.byId[id].enabled,
+                                    },
+                                  });
+                                }}
+                                name="enabled"
+                                color="primary"
+                              />
+                            )}
+                            label="Repeat Enabled"
+                            labelPlacement="end"
                           />
                         </Grid>
                       </Grid>
@@ -306,7 +343,7 @@ const AlertsTable = ({
                             color="primary"
                           />
                         )}
-                        label=""
+                        label="Alert Enabled"
                       />
                     </StyledTableCell>
                   </StyledTableRow>
@@ -364,8 +401,8 @@ const AlertsTable = ({
                                 color="primary"
                               />
                             )}
-                            label="Enabled"
-                            labelPlacement="start"
+                            label="Warning Alert Enabled"
+                            labelPlacement="end"
                           />
                         </Grid>
                         <Grid item>
@@ -522,6 +559,12 @@ const AlertsTable = ({
                                         time_window:
                                           TimeWindowAlerts.byId[id].critical
                                             .time_window,
+                                        repeat:
+                                          TimeWindowAlerts.byId[id].critical
+                                            .repeat,
+                                        repeat_enabled:
+                                          TimeWindowAlerts.byId[id].critical
+                                            .repeat_enabled,
                                         enabled: !TimeWindowAlerts.byId[id]
                                           .critical.enabled,
                                       },
@@ -533,7 +576,7 @@ const AlertsTable = ({
                                 color="primary"
                               />
                             )}
-                            label="Enabled"
+                            label="Critical Alert Enabled"
                             labelPlacement="end"
                           />
                         </Grid>
@@ -572,6 +615,9 @@ const AlertsTable = ({
                                     repeat:
                                       TimeWindowAlerts.byId[id].critical
                                         .repeat,
+                                    repeat_enabled:
+                                      TimeWindowAlerts.byId[id].critical
+                                        .repeat_enabled,
                                     enabled:
                                       TimeWindowAlerts.byId[id].critical
                                         .enabled,
@@ -632,6 +678,7 @@ const AlertsTable = ({
                                       repeat:
                                         TimeWindowAlerts.byId[id].critical
                                           .repeat,
+                                      repeat_enabled: TimeWindowAlerts.byId[id].critical.repeat_enabled,
                                       enabled:
                                         TimeWindowAlerts.byId[id].critical
                                           .enabled,
@@ -693,6 +740,7 @@ const AlertsTable = ({
                                         TimeWindowAlerts.byId[id].critical
                                           .time_window,
                                       repeat: event.target.value,
+                                      repeat_enabled: TimeWindowAlerts.byId[id].critical.repeat_enabled,
                                       enabled:
                                         TimeWindowAlerts.byId[id].critical
                                           .enabled,
@@ -717,6 +765,43 @@ const AlertsTable = ({
                                 min: 0,
                                 style: { textAlign: 'right' },
                               }}
+                            />
+                          </Grid>
+                          <Grid item>
+                            <FormControlLabel
+                              control={(
+                                <Checkbox
+                                  checked={TimeWindowAlerts.byId[id].critical.repeat_enabled}
+                                  onClick={() => {
+                                    updateTimeWindowAlertDetails({
+                                      id,
+                                      parent_id: currentChain,
+                                      alert: {
+                                        name: TimeWindowAlerts.byId[id].name,
+                                        identifier:
+                                          TimeWindowAlerts.byId[id].identifier,
+                                        description:
+                                          TimeWindowAlerts.byId[id].description,
+                                        adornment_threshold: TimeWindowAlerts.byId[id].adornment_threshold,
+                                        adornment_time: TimeWindowAlerts.byId[id].adornment_time,
+                                        warning: TimeWindowAlerts.byId[id].warning,
+                                        critical: {
+                                          threshold: TimeWindowAlerts.byId[id].critical.threshold,
+                                          time_window: TimeWindowAlerts.byId[id].critical.time_window,
+                                          repeat: TimeWindowAlerts.byId[id].critical.repeat,
+                                          repeat_enabled: !TimeWindowAlerts.byId[id].critical.repeat_enabled,
+                                          enabled: TimeWindowAlerts.byId[id].critical.enabled,
+                                        },
+                                        enabled: TimeWindowAlerts.byId[id].enabled,
+                                      },
+                                    });
+                                  }}
+                                  name="enabled"
+                                  color="primary"
+                                />
+                              )}
+                              label="Repeat Enabled"
+                              labelPlacement="end"
                             />
                           </Grid>
                         </Grid>
@@ -752,7 +837,7 @@ const AlertsTable = ({
                             color="primary"
                           />
                         )}
-                        label=""
+                        label="Alert Enabled"
                       />
                     </StyledTableCell>
                   </StyledTableRow>
@@ -804,7 +889,7 @@ const AlertsTable = ({
                                 color="primary"
                               />
                             )}
-                            label="Enabled"
+                            label="Warning Alert Enabled"
                             labelPlacement="end"
                           />
                         </Grid>
@@ -887,11 +972,10 @@ const AlertsTable = ({
                                         ThresholdAlerts.byId[id].adornment_time,
                                       warning: ThresholdAlerts.byId[id].warning,
                                       critical: {
-                                        threshold:
-                                          ThresholdAlerts.byId[id].critical
-                                            .threshold,
-                                        enabled: !ThresholdAlerts.byId[id]
-                                          .critical.enabled,
+                                        threshold: ThresholdAlerts.byId[id].critical.threshold,
+                                        repeat: ThresholdAlerts.byId[id].critical.repeat,
+                                        repeat_enabled: ThresholdAlerts.byId[id].critical.repeat_enabled,
+                                        enabled: !ThresholdAlerts.byId[id].critical.enabled,
                                       },
                                       enabled: ThresholdAlerts.byId[id].enabled,
                                     },
@@ -900,7 +984,7 @@ const AlertsTable = ({
                                 color="primary"
                               />
                             )}
-                            label="Enabled"
+                            label="Critical Alert Enabled"
                             labelPlacement="end"
                           />
                         </Grid>
@@ -932,9 +1016,8 @@ const AlertsTable = ({
                                   warning: ThresholdAlerts.byId[id].warning,
                                   critical: {
                                     threshold: event.target.value,
-                                    repeat:
-                                      ThresholdAlerts.byId[id].critical
-                                        .repeat,
+                                    repeat: ThresholdAlerts.byId[id].critical.repeat,
+                                    repeat_enabled: ThresholdAlerts.byId[id].critical.repeat_enabled,
                                     enabled:
                                       ThresholdAlerts.byId[id].critical
                                         .enabled,
@@ -989,6 +1072,7 @@ const AlertsTable = ({
                                         ThresholdAlerts.byId[id].critical
                                           .threshold,
                                       repeat: event.target.value,
+                                      repeat_enabled: ThresholdAlerts.byId[id].critical.repeat_enabled,
                                       enabled:
                                         ThresholdAlerts.byId[id].critical
                                           .enabled,
@@ -1012,6 +1096,43 @@ const AlertsTable = ({
                                 min: 0,
                                 style: { textAlign: 'right' },
                               }}
+                            />
+                          </Grid>
+                          <Grid item>
+                            <FormControlLabel
+                              control={(
+                                <Checkbox
+                                  checked={ThresholdAlerts.byId[id].critical.repeat_enabled}
+                                  onClick={() => {
+                                    updateThresholdAlertDetails({
+                                      id,
+                                      parent_id: currentChain,
+                                      alert: {
+                                        name: ThresholdAlerts.byId[id].name,
+                                        identifier:
+                                          ThresholdAlerts.byId[id].identifier,
+                                        description:
+                                          ThresholdAlerts.byId[id].description,
+                                        adornment: ThresholdAlerts.byId[id].adornment,
+                                        adornment_time:
+                                          ThresholdAlerts.byId[id].adornment_time,
+                                        warning: ThresholdAlerts.byId[id].warning,
+                                        critical: {
+                                          threshold: ThresholdAlerts.byId[id].critical.threshold,
+                                          repeat: ThresholdAlerts.byId[id].critical.repeat,
+                                          repeat_enabled: !ThresholdAlerts.byId[id].critical.repeat_enabled,
+                                          enabled: ThresholdAlerts.byId[id].critical.enabled,
+                                        },
+                                        enabled: ThresholdAlerts.byId[id].enabled,
+                                      },
+                                    });
+                                  }}
+                                  name="enabled"
+                                  color="primary"
+                                />
+                              )}
+                              label="Repeat Enabled"
+                              labelPlacement="end"
                             />
                           </Grid>
                         </Grid>
@@ -1045,7 +1166,7 @@ const AlertsTable = ({
                             color="primary"
                           />
                         )}
-                        label=""
+                        label="Alert Enabled"
                       />
                     </StyledTableCell>
                   </StyledTableRow>
@@ -1135,7 +1256,7 @@ const AlertsTable = ({
                                     color="primary"
                                   />
                                 )}
-                                label=""
+                                label="Alert Enabled"
                               />
                             </StyledTableCell>
                           </StyledTableRow>
@@ -1197,6 +1318,7 @@ AlertsTable.propTypes = {
           }),
           critical: PropTypes.shape({
             repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -1219,6 +1341,7 @@ AlertsTable.propTypes = {
           critical: PropTypes.shape({
             threshold: PropTypes.number,
             time_window: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -1240,6 +1363,7 @@ AlertsTable.propTypes = {
           critical: PropTypes.shape({
             threshold: PropTypes.number,
             repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,

@@ -18,6 +18,7 @@ Change the contents of this file to this:
 - Fixed issue with GitHub alerter raising new release alerts in reverse order for multiple releases.
 - The data store components are now compatible with the base Chainlink integration features.
 - Added Chainlink Node Alerter Manager and tests.
+- Web-Installer bug fixes and removing outdated alerts.
 - Added Chainlink Node Alerter logic and tests.
 
 ## 0.1.2

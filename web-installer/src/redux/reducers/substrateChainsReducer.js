@@ -39,6 +39,7 @@ const substrateRepeatAlerts = {
       },
       critical: {
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -55,6 +56,7 @@ const substrateRepeatAlerts = {
       },
       critical: {
         repeat: 300,
+        repeat_enabled: true,
         enabled: false,
       },
       enabled: true,
@@ -73,6 +75,7 @@ const substrateRepeatAlerts = {
       },
       critical: {
         repeat: 500,
+        repeat_enabled: true,
         enabled: false,
       },
       enabled: true,
@@ -99,6 +102,7 @@ const substrateTimeWindowAlerts = {
         threshold: 60,
         time_window: 3600,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -119,6 +123,7 @@ const substrateTimeWindowAlerts = {
         threshold: 60,
         time_window: 3600,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -144,6 +149,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 200,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -164,6 +170,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 180,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -182,6 +189,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -200,6 +208,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -218,6 +227,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -236,6 +246,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -254,6 +265,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,

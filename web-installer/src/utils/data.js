@@ -13,19 +13,9 @@ function pingTendermint(tendermintRpcUrl) {
     { tendermintRpcUrl });
 }
 
-function pingCosmosPrometheus(prometheusUrl) {
-  return sendData('/server/cosmos/prometheus', {},
-    { prometheusUrl });
-}
-
-function pingChainlinkPrometheus(prometheusUrl) {
-  return sendData('/server/chainlink/prometheus', {},
-    { prometheusUrl });
-}
-
-function pingNodeExporter(exporterUrl) {
-  return sendData('/server/system/exporter', {},
-    { exporterUrl });
+function pingPrometheus(prometheusUrl, metric) {
+  return sendData('/server/common/prometheus', {},
+    { prometheusUrl, metric });
 }
 
 function deleteConfigs() {
@@ -107,7 +97,6 @@ function refreshAccessToken() {
 export {
   fetchData, testCall, sendData, sendTestEmail, pingTendermint, pingRepo,
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
-  pingCosmosPrometheus, pingNodeExporter, sendConfig, saveAccount,
-  deleteAccount, getConfigPaths, getConfig, loadAccounts, deleteConfigs,
-  pingDockerHub, pingChainlinkPrometheus,
+  sendConfig, saveAccount, deleteAccount, getConfigPaths, getConfig,
+  loadAccounts, deleteConfigs, pingDockerHub, pingPrometheus,
 };
