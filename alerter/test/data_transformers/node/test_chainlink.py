@@ -95,9 +95,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             'price': 22.0,
         }
         self.test_eth_balance_info = {
-            'address1': {'balance': 34.4, 'latest_usage': 5.0},
-            'address2': {'balance': 40.0, 'latest_usage': 0.0},
-            'address3': {'balance': 70.0, 'latest_usage': 34.0}
+            'address': 'address1', 'balance': 34.4, 'latest_usage': 5.0,
         }
         self.test_last_prometheus_source_used = "prometheus_source_1"
         self.test_last_monitored_prometheus = 45.666786
@@ -154,10 +152,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             'price': 24.0,
         }
         self.test_eth_balance_info_new = {
-            'address1': {'balance': 44.4, 'latest_usage': 0.0},
-            'address2': {'balance': 39.0, 'latest_usage': 1.0},
-            'address3': {'balance': 50.0, 'latest_usage': 20.0},
-            'address4': {'balance': 67.0, 'latest_usage': 0.0}
+            'address': 'address1', 'balance': 44.4, 'latest_usage': 0.0,
         }
         self.test_last_prometheus_source_used_new = "prometheus_source_2"
         self.test_last_monitored_prometheus_new = 47.666786
@@ -281,21 +276,11 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                                     self.test_current_gas_price_info_new[
                                         'price']
                             },
-                        'eth_balance':
-                            {
-                                'address1':
-                                    self.test_eth_balance_info_new['address1'][
-                                        'balance'],
-                                'address2':
-                                    self.test_eth_balance_info_new['address2'][
-                                        'balance'],
-                                'address3':
-                                    self.test_eth_balance_info_new['address3'][
-                                        'balance'],
-                                'address4':
-                                    self.test_eth_balance_info_new['address4'][
-                                        'balance']
-                            },
+                        'eth_balance': {
+                            'address': 'address1',
+                            'balance': self.test_eth_balance_info_new[
+                                'balance'],
+                        },
                     },
                 }
             }

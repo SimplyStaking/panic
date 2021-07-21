@@ -14,12 +14,12 @@ from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                          ALERT_STORE_INPUT_QUEUE_NAME,
-                                          ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.constants.data import (EXPIRE_METRICS,
                                       CHAINLINK_METRICS_TO_STORE,
                                       SYSTEM_METRICS_TO_STORE)
+from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                          ALERT_STORE_INPUT_QUEUE_NAME,
+                                          ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException)
 
 

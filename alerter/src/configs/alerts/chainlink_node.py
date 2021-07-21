@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Any
 
 
 class ChainlinkNodeAlertsConfig:
@@ -28,6 +28,9 @@ class ChainlinkNodeAlertsConfig:
         self._eth_balance_amount = eth_balance_amount
         self._eth_balance_amount_increase = eth_balance_amount_increase
         self._node_is_down = node_is_down
+
+    def __eq__(self, other: Any) -> bool:
+        return self.__dict__ == other.__dict__
 
     @property
     def parent_id(self) -> str:

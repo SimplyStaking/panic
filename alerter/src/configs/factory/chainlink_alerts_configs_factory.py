@@ -90,7 +90,8 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
                : None otherwise
         """
         for chain_name, config in self.configs.items():
-            if config.parent_id == parent_id:
+            if type(config) == ChainlinkNodeAlertsConfig \
+                    and config.parent_id == parent_id:
                 return chain_name
 
         return None
