@@ -27,7 +27,8 @@ def get_json(endpoint: str, logger: logging.Logger, params=None,
 
 
 def get_prometheus(endpoint: str, logger: logging.Logger, verify: bool = True):
-    metrics = requests.get(endpoint, timeout=10, verify=verify).content
+    metrics = requests.get(endpoint, timeout=10, verify=verify, headers={
+                           'Connection': 'close'}).content
     logger.debug("Retrieved prometheus data from endpoint: " + endpoint)
     return metrics.decode('utf-8')
 
@@ -74,7 +75,7 @@ def get_prometheus_metrics_data(endpoint: str,
                             sample.value
                     else:
                         response[sample.name] = sample.value + \
-                                                response[sample.name]
+                            response[sample.name]
 
     missing_metrics = set(requested_metrics) - set(response)
     for metric in missing_metrics:

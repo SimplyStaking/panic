@@ -121,8 +121,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             'eth_balance_amount', 'node_is_down'
         ]
         metrics_with_time_window = [
-            'head_tracker_heads_in_queue',
-            'head_tracker_num_heads_dropped_total', 'max_unconfirmed_blocks',
+            'max_unconfirmed_blocks',
             'unconfirmed_transactions', 'run_status_update_total'
         ]
         severity_metrics = [
@@ -776,7 +775,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             NoChangeInTotalHeadersReceivedAlert, ReceivedANewHeaderAlert,
             data_for_alerting, self.test_parent_id, self.test_chainlink_node_id,
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived
-                .value, self.test_chainlink_node_name,
+            .value, self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new)
         self.assertTrue(call_1 in calls)
         self.assertTrue(call_2 in calls)
@@ -784,59 +783,37 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         calls = mock_thresh_win_alert.call_args_list
         self.assertEqual(3, mock_thresh_win_alert.call_count)
         call_1 = call(
-            self.test_eth_blocks_in_queue_new,
-            configs.head_tracker_heads_in_queue,
-            HeadsInQueueIncreasedAboveThresholdAlert,
-            HeadsInQueueDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_chainlink_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value,
-            self.test_chainlink_node_name,
-            self.test_last_monitored_prometheus_new)
-        call_2 = call(
             self.test_max_pending_tx_delay_new, configs.max_unconfirmed_blocks,
             MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-                .value, self.test_chainlink_node_name,
+            .value, self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new)
-        call_3 = call(
+        call_2 = call(
             self.test_no_of_unconfirmed_txs_new,
             configs.unconfirmed_transactions,
             NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
             NoOfUnconfirmedTxsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             GroupedChainlinkNodeAlertsMetricCode.NoOfUnconfirmedTxsThreshold
-                .value, self.test_chainlink_node_name,
+            .value, self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new)
         self.assertTrue(call_1 in calls)
         self.assertTrue(call_2 in calls)
-        self.assertTrue(call_3 in calls)
 
         calls = mock_thresh_per_alert.call_args_list
         self.assertEqual(2, mock_thresh_per_alert.call_count)
         call_1 = call(
-            self.test_total_block_headers_dropped_new,
-            self.test_total_block_headers_dropped,
-            configs.head_tracker_num_heads_dropped_total,
-            DroppedBlockHeadersIncreasedAboveThresholdAlert,
-            DroppedBlockHeadersDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_chainlink_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
-                .value,
-            self.test_chainlink_node_name,
-            self.test_last_monitored_prometheus_new)
-        call_2 = call(
             self.test_total_errored_job_runs_new,
             self.test_total_errored_job_runs, configs.run_status_update_total,
             TotalErroredJobRunsIncreasedAboveThresholdAlert,
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-                .value, self.test_chainlink_node_name,
+            .value, self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new)
         self.assertTrue(call_1 in calls)
-        self.assertTrue(call_2 in calls)
 
         calls = mock_reverse.call_args_list
         self.assertEqual(1, mock_reverse.call_count)

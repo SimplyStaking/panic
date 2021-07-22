@@ -70,9 +70,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.test_queue_name = 'Test Queue'
         self.prometheus_metrics = {
             'head_tracker_current_head': 'strict',
-            'head_tracker_heads_in_queue': 'strict',
             'head_tracker_heads_received_total': 'strict',
-            'head_tracker_num_heads_dropped_total': 'strict',
             'job_subscriber_subscriptions': 'strict',
             'max_unconfirmed_blocks': 'strict',
             'process_start_time_seconds': 'strict',
@@ -81,7 +79,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             'unconfirmed_transactions': 'strict',
             'gas_updater_set_gas_price': 'optional',
             'eth_balance': 'strict',
-            'run_status_update_total': 'strict',
+            'run_status_update_total': 'optional',
         }
         self.retrieved_prometheus_data_example = {
             'eth_balance': {'{"account": "eth_add_1"}': 26.043292035081947},
@@ -89,9 +87,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                 '{"percentile": "20%"}': 5000000000.0
             },
             'head_tracker_current_head': 6924314.0,
-            'head_tracker_heads_in_queue': 0.0,
             'head_tracker_heads_received_total': 26392.0,
-            'head_tracker_num_heads_dropped_total': 2.0,
             'job_subscriber_subscriptions': 0.0,
             'max_unconfirmed_blocks': 0.0,
             'process_start_time_seconds': 1619431240.24,
@@ -144,9 +140,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             'gas_updater_set_gas_price'] = None
         self.processed_prometheus_data_example = {
             'head_tracker_current_head': 6924314.0,
-            'head_tracker_heads_in_queue': 0.0,
             'head_tracker_heads_received_total': 26392.0,
-            'head_tracker_num_heads_dropped_total': 2.0,
             'job_subscriber_subscriptions': 0.0,
             'max_unconfirmed_blocks': 0.0,
             'process_start_time_seconds': 1619431240.24,
@@ -386,9 +380,8 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             self) -> None:
         # Test when optionals are not None
         expected_output = \
-            "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
+            "head_tracker_current_head={}, " \
             "head_tracker_heads_received_total={}, " \
-            "head_tracker_num_heads_dropped_total={}, " \
             "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
             "process_start_time_seconds={}, " \
             "tx_manager_num_gas_bumps_total={}, " \
@@ -399,11 +392,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                 self.processed_prometheus_data_example[
                     'head_tracker_current_head'],
                 self.processed_prometheus_data_example[
-                    'head_tracker_heads_in_queue'],
-                self.processed_prometheus_data_example[
                     'head_tracker_heads_received_total'],
-                self.processed_prometheus_data_example[
-                    'head_tracker_num_heads_dropped_total'],
                 self.processed_prometheus_data_example[
                     'job_subscriber_subscriptions'],
                 self.processed_prometheus_data_example[
@@ -429,9 +418,8 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
 
         # Test when optionals are None
         expected_output = \
-            "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
+            "head_tracker_current_head={}, " \
             "head_tracker_heads_received_total={}, " \
-            "head_tracker_num_heads_dropped_total={}, " \
             "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
             "process_start_time_seconds={}, " \
             "tx_manager_num_gas_bumps_total={}, " \
@@ -442,11 +430,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                 self.processed_prometheus_data_example_optionals_none[
                     'head_tracker_current_head'],
                 self.processed_prometheus_data_example_optionals_none[
-                    'head_tracker_heads_in_queue'],
-                self.processed_prometheus_data_example_optionals_none[
                     'head_tracker_heads_received_total'],
-                self.processed_prometheus_data_example_optionals_none[
-                    'head_tracker_num_heads_dropped_total'],
                 self.processed_prometheus_data_example_optionals_none[
                     'job_subscriber_subscriptions'],
                 self.processed_prometheus_data_example_optionals_none[
@@ -477,9 +461,8 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         del self.processed_prometheus_data_example['head_tracker_current_head']
         del self.processed_prometheus_data_example['eth_balance']
         expected_output = \
-            "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
+            "head_tracker_current_head={}, " \
             "head_tracker_heads_received_total={}, " \
-            "head_tracker_num_heads_dropped_total={}, " \
             "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
             "process_start_time_seconds={}, " \
             "tx_manager_num_gas_bumps_total={}, " \
@@ -489,11 +472,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             "".format(
                 "Disabled",
                 self.processed_prometheus_data_example[
-                    'head_tracker_heads_in_queue'],
-                self.processed_prometheus_data_example[
                     'head_tracker_heads_received_total'],
-                self.processed_prometheus_data_example[
-                    'head_tracker_num_heads_dropped_total'],
                 self.processed_prometheus_data_example[
                     'job_subscriber_subscriptions'],
                 self.processed_prometheus_data_example[
@@ -523,9 +502,8 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         del self.processed_prometheus_data_example_optionals_none[
             'eth_balance']
         expected_output = \
-            "head_tracker_current_head={}, head_tracker_heads_in_queue={}, " \
+            "head_tracker_current_head={}, " \
             "head_tracker_heads_received_total={}, " \
-            "head_tracker_num_heads_dropped_total={}, " \
             "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
             "process_start_time_seconds={}, " \
             "tx_manager_num_gas_bumps_total={}, " \
@@ -535,11 +513,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             "".format(
                 "Disabled",
                 self.processed_prometheus_data_example_optionals_none[
-                    'head_tracker_heads_in_queue'],
-                self.processed_prometheus_data_example_optionals_none[
                     'head_tracker_heads_received_total'],
-                self.processed_prometheus_data_example_optionals_none[
-                    'head_tracker_num_heads_dropped_total'],
                 self.processed_prometheus_data_example_optionals_none[
                     'job_subscriber_subscriptions'],
                 self.processed_prometheus_data_example_optionals_none[

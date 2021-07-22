@@ -99,10 +99,6 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
             current_head_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 cl_node_alerts_config.head_tracker_current_head)
-            heads_in_queue_thresholds = parse_alert_time_thresholds(
-                ['warning_time_window', 'critical_time_window',
-                 'critical_repeat'],
-                cl_node_alerts_config.head_tracker_heads_in_queue)
             total_headers_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 cl_node_alerts_config.head_tracker_heads_received_total)
@@ -138,9 +134,6 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                 AlertsMetricCode.NoChangeInHeight.value: TimedTaskTracker(
                     timedelta(seconds=current_head_thresholds[
                         'warning_threshold'])),
-                AlertsMetricCode.HeadsInQueueThreshold.value: TimedTaskTracker(
-                    timedelta(seconds=heads_in_queue_thresholds[
-                        'warning_time_window'])),
                 AlertsMetricCode.NoChangeInTotalHeadersReceived.value:
                     TimedTaskTracker(timedelta(seconds=total_headers_thresholds[
                         'warning_threshold'])),
@@ -159,9 +152,6 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                 AlertsMetricCode.NoChangeInHeight.value: TimedTaskTracker(
                     timedelta(seconds=current_head_thresholds[
                         'critical_threshold'])),
-                AlertsMetricCode.HeadsInQueueThreshold.value: TimedTaskTracker(
-                    timedelta(seconds=heads_in_queue_thresholds[
-                        'critical_time_window'])),
                 AlertsMetricCode.NoChangeInTotalHeadersReceived.value:
                     TimedTaskTracker(timedelta(seconds=total_headers_thresholds[
                         'critical_threshold'])),
@@ -179,9 +169,6 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
             critical_repeat_timer = {
                 AlertsMetricCode.NoChangeInHeight.value: TimedTaskLimiter(
                     timedelta(seconds=current_head_thresholds[
-                        'critical_repeat'])),
-                AlertsMetricCode.HeadsInQueueThreshold.value: TimedTaskLimiter(
-                    timedelta(seconds=heads_in_queue_thresholds[
                         'critical_repeat'])),
                 AlertsMetricCode.NoChangeInTotalHeadersReceived.value:
                     TimedTaskLimiter(timedelta(seconds=total_headers_thresholds[

@@ -3,7 +3,6 @@ from ..grouped_alerts_metric_code import GroupedAlertsMetricCode
 
 class GroupedChainlinkNodeAlertsMetricCode(GroupedAlertsMetricCode):
     NoChangeInHeight = 'head_tacker_current_head'
-    HeadsInQueueThreshold = 'head_tracker_heads_in_queue'
     NoChangeInTotalHeadersReceived = 'head_tracker_heads_received_total'
     DroppedBlockHeadersThreshold = 'head_tracker_num_heads_dropped_total'
     MaxUnconfirmedBlocksThreshold = 'max_unconfirmed_blocks'

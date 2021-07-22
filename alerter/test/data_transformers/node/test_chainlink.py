@@ -247,12 +247,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                     'data': {
                         'head_tracker_current_head':
                             float(self.test_current_height_new),
-                        'head_tracker_heads_in_queue':
-                            float(self.test_eth_blocks_in_queue_new),
                         'head_tracker_heads_received_total':
                             float(self.test_total_block_headers_received_new),
-                        'head_tracker_num_heads_dropped_total':
-                            float(self.test_total_block_headers_dropped_new),
                         'job_subscriber_subscriptions':
                             float(self.test_no_of_active_jobs_new),
                         'max_unconfirmed_blocks':
@@ -280,7 +276,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                             'address': 'address1',
                             'balance': self.test_eth_balance_info_new[
                                 'balance'],
-                        },
+                            },
                     },
                 }
             }
@@ -289,6 +285,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             self.raw_data_example_result_all)
         self.raw_data_example_result_options_None['prometheus'][
             'result']['data']['gas_updater_set_gas_price'] = None
+        self.raw_data_example_result_options_None['prometheus'][
+            'result']['data']['run_status_update_total_errors'] = None
         self.raw_data_example_general_error = {
             'prometheus': {
                 'error': {
@@ -369,6 +367,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             self.transformed_data_example_result_all)
         self.transformed_data_example_result_options_None['prometheus'][
             'result']['data']['current_gas_price_info'] = None
+        self.transformed_data_example_result_options_None['prometheus'][
+            'result']['data']['run_status_update_total_errors'] = None
         self.transformed_data_example_general_error = {
             'prometheus': {
                 'error': {
@@ -584,7 +584,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.raw_data_example_downtime_error = None
 
     def test_str_returns_transformer_name(self) -> None:
-        self.assertEqual(self.transformer_name, str(self.test_data_transformer))
+        self.assertEqual(self.transformer_name,
+                         str(self.test_data_transformer))
 
     def test_transformer_name_returns_transformer_name(self) -> None:
         self.assertEqual(self.transformer_name,
@@ -720,7 +721,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.redis.delete_all()
 
         # Save state to Redis first
-        save_chainlink_node_to_redis(self.redis, self.loaded_cl_node_trans_data)
+        save_chainlink_node_to_redis(
+            self.redis, self.loaded_cl_node_trans_data)
 
         # Reset chainlink node to default values to detect the loading
         self.test_chainlink_node.reset()
@@ -776,7 +778,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.redis.delete_all()
 
         # Save state to Redis first
-        save_chainlink_node_to_redis(self.redis, self.loaded_cl_node_trans_data)
+        save_chainlink_node_to_redis(
+            self.redis, self.loaded_cl_node_trans_data)
 
         # Reset cl_node to default values
         self.test_chainlink_node.reset()
@@ -1079,7 +1082,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             'mandatory': True
         }
 
-        self.assertEqual(2, self.test_data_transformer.publishing_queue.qsize())
+        self.assertEqual(
+            2, self.test_data_transformer.publishing_queue.qsize())
         self.assertDictEqual(
             expected_data_for_alerting,
             self.test_data_transformer.publishing_queue.queue[0])
@@ -1089,102 +1093,102 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
 
     @parameterized.expand([
         ({
-             'prometheus': {
-                 'result': {
-                     'meta_data': {
-                         'node_parent_id': 'node_parent_id1',
-                         'node_id': 'node_id1',
-                         'node_name': 'node_name1',
-                     }
-                 }
-             }
-         }, (True, 'node_parent_id1', 'node_id1', 'node_name1',),),
+            'prometheus': {
+                'result': {
+                    'meta_data': {
+                        'node_parent_id': 'node_parent_id1',
+                        'node_id': 'node_id1',
+                        'node_name': 'node_name1',
+                    }
+                }
+            }
+        }, (True, 'node_parent_id1', 'node_id1', 'node_name1',),),
         ({
-             'prometheus': {
-                 'error': {
-                     'meta_data': {
-                         'node_parent_id': 'node_parent_id1',
-                         'node_id': 'node_id1',
-                         'node_name': 'node_name1',
-                     }
-                 }
-             }
-         }, (True, 'node_parent_id1', 'node_id1', 'node_name1',),),
+            'prometheus': {
+                'error': {
+                    'meta_data': {
+                        'node_parent_id': 'node_parent_id1',
+                        'node_id': 'node_id1',
+                        'node_name': 'node_name1',
+                    }
+                }
+            }
+        }, (True, 'node_parent_id1', 'node_id1', 'node_name1',),),
         ({
-             'prometheus': {
-                 'error': {
-                     'meta_data': {
-                         'bad_node_parent_id_index': 'node_parent_id1',
-                         'node_id': 'node_id1',
-                         'node_name': 'node_name1',
-                     }
-                 }
-             }
-         }, None,),
+            'prometheus': {
+                'error': {
+                    'meta_data': {
+                        'bad_node_parent_id_index': 'node_parent_id1',
+                        'node_id': 'node_id1',
+                        'node_name': 'node_name1',
+                    }
+                }
+            }
+        }, None,),
         ({
-             'prometheus': {
-                 'error': {
-                     'meta_data': {
-                         'node_parent_id': 'node_parent_id1',
-                         'bad_node_id_index': 'node_id1',
-                         'node_name': 'node_name1',
-                     }
-                 }
-             }
-         }, None,),
+            'prometheus': {
+                'error': {
+                    'meta_data': {
+                        'node_parent_id': 'node_parent_id1',
+                        'bad_node_id_index': 'node_id1',
+                        'node_name': 'node_name1',
+                    }
+                }
+            }
+        }, None,),
         ({
-             'prometheus': {
-                 'error': {
-                     'meta_data': {
-                         'node_parent_id': 'node_parent_id1',
-                         'node_id': 'node_id1',
-                         'bad_node_name_index': 'node_name1',
-                     }
-                 }
-             }
-         }, None,),
+            'prometheus': {
+                'error': {
+                    'meta_data': {
+                        'node_parent_id': 'node_parent_id1',
+                        'node_id': 'node_id1',
+                        'bad_node_name_index': 'node_name1',
+                    }
+                }
+            }
+        }, None,),
         ({
-             'prometheus': {
-                 'bad_index': {
-                     'meta_data': {
-                         'node_parent_id': 'node_parent_id1',
-                         'node_id': 'node_id1',
-                         'node_name': 'node_name1',
-                     }
-                 }
-             }
-         }, None,),
+            'prometheus': {
+                'bad_index': {
+                    'meta_data': {
+                        'node_parent_id': 'node_parent_id1',
+                        'node_id': 'node_id1',
+                        'node_name': 'node_name1',
+                    }
+                }
+            }
+        }, None,),
         ({
-             'prometheus': {
-                 'result': {
-                     'meta_data': {
-                         'node_parent_id': 'node_parent_id1',
-                         'node_id': 'node_id1',
-                         'node_name': 'node_name1',
-                     }
-                 }
-             },
-             'bad_source': {
-                 'result': {
-                     'meta_data': {
-                         'node_parent_id': 'node_parent_id1',
-                         'node_id': 'node_id1',
-                         'node_name': 'node_name1',
-                     }
-                 }
-             }
-         }, None,),
+            'prometheus': {
+                'result': {
+                    'meta_data': {
+                        'node_parent_id': 'node_parent_id1',
+                        'node_id': 'node_id1',
+                        'node_name': 'node_name1',
+                    }
+                }
+            },
+            'bad_source': {
+                'result': {
+                    'meta_data': {
+                        'node_parent_id': 'node_parent_id1',
+                        'node_id': 'node_id1',
+                        'node_name': 'node_name1',
+                    }
+                }
+            }
+        }, None,),
         ({
-             'bad_source': {
-                 'result': {
-                     'meta_data': {
-                         'node_parent_id': 'node_parent_id1',
-                         'node_id': 'node_id1',
-                         'node_name': 'node_name1',
-                     }
-                 }
-             }
-         }, None,),
+            'bad_source': {
+                'result': {
+                    'meta_data': {
+                        'node_parent_id': 'node_parent_id1',
+                        'node_id': 'node_id1',
+                        'node_name': 'node_name1',
+                    }
+                }
+            }
+        }, None,),
         ({'prometheus': {}}, None,),
     ])
     def test_raw_data_has_valid_sources_structure_return(

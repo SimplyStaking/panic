@@ -98,20 +98,18 @@ export const getAlertKeysGitHubRepo = (): AlertKeysGitHubRepo => ({
 
 export const getAlertKeysChainlinkNode = (): AlertKeysChainlinkNode => ({
     head_tacker_current_head: 'alert_cl_node1',
-    head_tracker_heads_in_queue: 'alert_cl_node2',
-    head_tracker_heads_received_total: 'alert_cl_node3',
-    head_tracker_num_heads_dropped_total: 'alert_cl_node4',
-    max_unconfirmed_blocks: 'alert_cl_node5',
-    process_start_time_seconds: 'alert_cl_node6',
-    tx_manager_gas_bump_exceeds_limit_total: 'alert_cl_node7',
-    unconfirmed_transactions: 'alert_cl_node8',
-    run_status_update_total: 'alert_cl_node9',
-    eth_balance_amount: 'alert_cl_node10',
-    eth_balance_amount_increase: 'alert_cl_node11',
-    invalid_url: 'alert_cl_node12',
-    metric_not_found: 'alert_cl_node13',
-    node_is_down: 'alert_cl_node14',
-    prometheus_is_down: 'alert_cl_node15',
+    head_tracker_heads_received_total: 'alert_cl_node2',
+    max_unconfirmed_blocks: 'alert_cl_node3',
+    process_start_time_seconds: 'alert_cl_node4',
+    tx_manager_gas_bump_exceeds_limit_total: 'alert_cl_node5',
+    unconfirmed_transactions: 'alert_cl_node6',
+    run_status_update_total: 'alert_cl_node7',
+    eth_balance_amount: 'alert_cl_node8',
+    eth_balance_amount_increase: 'alert_cl_node9',
+    invalid_url: 'alert_cl_node10',
+    metric_not_found: 'alert_cl_node11',
+    node_is_down: 'alert_cl_node12',
+    prometheus_is_down: 'alert_cl_node13',
 });
 
 export const getBaseChainKeys = (): BaseChainKeys => ({

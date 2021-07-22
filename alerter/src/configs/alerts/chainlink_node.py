@@ -3,9 +3,7 @@ from typing import Dict, Any
 
 class ChainlinkNodeAlertsConfig:
     def __init__(self, parent_id: str, head_tracker_current_head: Dict,
-                 head_tracker_heads_in_queue: Dict,
                  head_tracker_heads_received_total: Dict,
-                 head_tracker_num_heads_dropped_total: Dict,
                  max_unconfirmed_blocks: Dict,
                  process_start_time_seconds: Dict,
                  tx_manager_gas_bump_exceeds_limit_total: Dict,
@@ -14,11 +12,8 @@ class ChainlinkNodeAlertsConfig:
                  eth_balance_amount_increase: Dict, node_is_down: Dict) -> None:
         self._parent_id = parent_id
         self._head_tracker_current_head = head_tracker_current_head
-        self._head_tracker_heads_in_queue = head_tracker_heads_in_queue
         self._head_tracker_heads_received_total = \
             head_tracker_heads_received_total
-        self._head_tracker_num_heads_dropped_total = \
-            head_tracker_num_heads_dropped_total
         self._max_unconfirmed_blocks = max_unconfirmed_blocks
         self._process_start_time_seconds = process_start_time_seconds
         self._tx_manager_gas_bump_exceeds_limit_total = \
@@ -41,16 +36,8 @@ class ChainlinkNodeAlertsConfig:
         return self._head_tracker_current_head
 
     @property
-    def head_tracker_heads_in_queue(self) -> Dict:
-        return self._head_tracker_heads_in_queue
-
-    @property
     def head_tracker_heads_received_total(self) -> Dict:
         return self._head_tracker_heads_received_total
-
-    @property
-    def head_tracker_num_heads_dropped_total(self) -> Dict:
-        return self._head_tracker_num_heads_dropped_total
 
     @property
     def max_unconfirmed_blocks(self) -> Dict:
