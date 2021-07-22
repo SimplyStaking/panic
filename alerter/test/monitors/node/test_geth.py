@@ -491,14 +491,16 @@ class TestGethNodeMonitor(unittest.TestCase):
             self.retrieved_metrics_example))
 
     @mock.patch.object(logging.Logger, "info")
+    @mock.patch.object(GethNodeMonitor, "_process_data")
     @mock.patch.object(GethNodeMonitor, "_send_heartbeat")
     @mock.patch.object(GethNodeMonitor, "_send_data")
     @mock.patch.object(GethNodeMonitor, "_get_data")
     def test_monitor_does_not_log_if_retrieval_error(
             self, mock_get_data, mock_send_data, mock_send_hb,
-            mock_log) -> None:
+            mock_process_data, mock_log) -> None:
         mock_send_data.return_value = None
         mock_send_hb.return_value = None
+        mock_process_data.return_value = None
         mock_get_data.side_effect = ReqConnectionError('test')
         self.test_monitor._monitor()
         mock_log.assert_not_called()
