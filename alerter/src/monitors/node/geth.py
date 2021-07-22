@@ -44,7 +44,7 @@ class GethNodeMonitor(Monitor):
     def _display_data(self, data: Dict) -> str:
         # This function assumes that the data has been obtained and processed
         # successfully by the node monitor
-        return "current_height={}".format(data['process_cpu_seconds_total'])
+        return "current_height={}".format(data['current_height'])
 
     def _get_data(self) -> Dict:
         return {
