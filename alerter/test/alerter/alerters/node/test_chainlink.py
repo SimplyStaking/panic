@@ -68,9 +68,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         self.test_chainlink_node_id = 'test_chainlink_node_id345834t8h3r5893h8'
         self.test_went_down_at_prometheus = None
         self.test_current_height = 50000000000
-        self.test_eth_blocks_in_queue = 3
         self.test_total_block_headers_received = 454545040
-        self.test_total_block_headers_dropped = 4
         self.test_no_of_active_jobs = 10
         self.test_max_pending_tx_delay = 6
         self.test_process_start_time_seconds = 345474.4
@@ -89,9 +87,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         self.test_last_monitored_prometheus = 45.666786
         self.test_went_down_at_prometheus_new = None
         self.test_current_height_new = 50000000001
-        self.test_eth_blocks_in_queue_new = 4
         self.test_total_block_headers_received_new = 454545041
-        self.test_total_block_headers_dropped_new = 5
         self.test_no_of_active_jobs_new = 11
         self.test_max_pending_tx_delay_new = 7
         self.test_process_start_time_seconds_new = 345476.4
@@ -188,17 +184,9 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                     'current': self.test_current_height_new,
                     'previous': self.test_current_height
                 },
-                'eth_blocks_in_queue': {
-                    'current': self.test_eth_blocks_in_queue_new,
-                    'previous': self.test_eth_blocks_in_queue
-                },
                 'total_block_headers_received': {
                     'current': self.test_total_block_headers_received_new,
                     'previous': self.test_total_block_headers_received,
-                },
-                'total_block_headers_dropped': {
-                    'current': self.test_total_block_headers_dropped_new,
-                    'previous': self.test_total_block_headers_dropped,
                 },
                 'no_of_active_jobs': {
                     'current': self.test_no_of_active_jobs_new,

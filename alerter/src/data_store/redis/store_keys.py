@@ -23,21 +23,19 @@ _key_system_went_down_at = 's15'
 
 # clX_<cl_node_id>
 _key_cl_node_current_height = 'cl1'
-_key_cl_node_eth_blocks_in_queue = 'cl2'
-_key_cl_node_total_block_headers_received = 'cl3'
-_key_cl_node_total_block_headers_dropped = 'cl4'
-_key_cl_node_no_of_active_jobs = 'cl5'
-_key_cl_node_max_pending_tx_delay = 'cl6'
-_key_cl_node_process_start_time_seconds = 'cl7'
-_key_cl_node_total_gas_bumps = 'cl8'
-_key_cl_node_total_gas_bumps_exceeds_limit = 'cl9'
-_key_cl_node_no_of_unconfirmed_txs = 'cl10'
-_key_cl_node_total_errored_job_runs = 'cl11'
-_key_cl_node_current_gas_price_info = 'cl12'
-_key_cl_node_eth_balance_info = 'cl13'
-_key_cl_node_went_down_at_prometheus = 'cl14'
-_key_cl_node_last_prometheus_source_used = 'cl15'
-_key_cl_node_last_monitored_prometheus = 'cl16'
+_key_cl_node_total_block_headers_received = 'cl2'
+_key_cl_node_no_of_active_jobs = 'cl3'
+_key_cl_node_max_pending_tx_delay = 'cl4'
+_key_cl_node_process_start_time_seconds = 'cl5'
+_key_cl_node_total_gas_bumps = 'cl6'
+_key_cl_node_total_gas_bumps_exceeds_limit = 'cl7'
+_key_cl_node_no_of_unconfirmed_txs = 'cl8'
+_key_cl_node_total_errored_job_runs = 'cl9'
+_key_cl_node_current_gas_price_info = 'cl10'
+_key_cl_node_eth_balance_info = 'cl11'
+_key_cl_node_went_down_at_prometheus = 'cl12'
+_key_cl_node_last_prometheus_source_used = 'cl13'
+_key_cl_node_last_monitored_prometheus = 'cl14'
 
 # ghX_<repo_id>
 _key_github_no_of_releases = 'gh1'
@@ -107,7 +105,7 @@ class Keys:
     @staticmethod
     def get_system_process_cpu_seconds_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_process_cpu_seconds_total) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_process_memory_usage(system_id: str) -> str:
@@ -136,33 +134,33 @@ class Keys:
     @staticmethod
     def get_system_network_transmit_bytes_per_second(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_transmit_bytes_per_second) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_network_receive_bytes_per_second(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_receive_bytes_per_second) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_network_receive_bytes_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_receive_bytes_total) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_network_transmit_bytes_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_transmit_bytes_total) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_disk_io_time_seconds_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_disk_io_time_seconds_total) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_disk_io_time_seconds_in_interval(
             system_id: str) -> str:
         return Keys._as_prefix(_key_system_disk_io_time_seconds_in_interval) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_went_down_at(system_id: str) -> str:
@@ -177,18 +175,9 @@ class Keys:
         return Keys._as_prefix(_key_cl_node_current_height) + cl_node_id
 
     @staticmethod
-    def get_cl_node_eth_blocks_in_queue(cl_node_id: str) -> str:
-        return Keys._as_prefix(_key_cl_node_eth_blocks_in_queue) + cl_node_id
-
-    @staticmethod
     def get_cl_node_total_block_headers_received(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_total_block_headers_received) \
-               + cl_node_id
-
-    @staticmethod
-    def get_cl_node_total_block_headers_dropped(cl_node_id: str) -> str:
-        return Keys._as_prefix(_key_cl_node_total_block_headers_dropped) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_cl_node_no_of_active_jobs(cl_node_id: str) -> str:
@@ -201,7 +190,7 @@ class Keys:
     @staticmethod
     def get_cl_node_process_start_time_seconds(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_process_start_time_seconds) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_cl_node_total_gas_bumps(cl_node_id: str) -> str:
@@ -210,7 +199,7 @@ class Keys:
     @staticmethod
     def get_cl_node_total_gas_bumps_exceeds_limit(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_total_gas_bumps_exceeds_limit) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_cl_node_no_of_unconfirmed_txs(cl_node_id: str) -> str:
@@ -231,17 +220,17 @@ class Keys:
     @staticmethod
     def get_cl_node_went_down_at_prometheus(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_went_down_at_prometheus) + \
-               cl_node_id
+            cl_node_id
 
     @staticmethod
     def get_cl_node_last_prometheus_source_used(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_last_prometheus_source_used) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_cl_node_last_monitored_prometheus(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_last_monitored_prometheus) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_github_no_of_releases(repo_id: str) -> str:

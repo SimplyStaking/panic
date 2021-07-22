@@ -198,24 +198,6 @@ class ChainlinkNodeAlerter(Alerter):
                         MetricCode.NoChangeInTotalHeadersReceived.value,
                         meta_data['node_name'], meta_data['last_monitored']
                     )
-            if str_to_bool(
-                    configs.head_tracker_num_heads_dropped_total['enabled']):
-                current = data['total_block_headers_dropped']['current']
-                previous = data['total_block_headers_dropped']['previous']
-                sub_config = configs.head_tracker_num_heads_dropped_total
-                if current is not None and previous is not None:
-                    self.alerting_factory \
-                        .classify_thresholded_in_time_period_alert(
-                            current, previous, sub_config,
-                            cl_alerts.
-                            DroppedBlockHeadersIncreasedAboveThresholdAlert,
-                            cl_alerts.
-                            DroppedBlockHeadersDecreasedBelowThresholdAlert,
-                            data_for_alerting, meta_data['node_parent_id'],
-                            meta_data['node_id'],
-                            MetricCode.DroppedBlockHeadersThreshold.value,
-                            meta_data['node_name'], meta_data['last_monitored']
-                        )
             if str_to_bool(configs.max_unconfirmed_blocks['enabled']):
                 current = data['max_pending_tx_delay']['current']
                 sub_config = configs.max_unconfirmed_blocks

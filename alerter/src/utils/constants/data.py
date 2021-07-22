@@ -12,9 +12,9 @@ RAW_TO_TRANSFORMED_CHAINLINK_METRICS = {
     'eth_balance': 'eth_balance_info',
     'run_status_update_total_errors': 'total_errored_job_runs',
 }
-INT_CHAINLINK_METRICS = ['current_height', 'eth_blocks_in_queue',
+INT_CHAINLINK_METRICS = ['current_height',
                          'total_block_headers_received',
-                         'total_block_headers_dropped', 'no_of_active_jobs',
+                         'no_of_active_jobs',
                          'max_pending_tx_delay', 'total_gas_bumps',
                          'total_gas_bumps_exceeds_limit',
                          'no_of_unconfirmed_txs', 'total_errored_job_runs']
