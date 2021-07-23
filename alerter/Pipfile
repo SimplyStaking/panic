@@ -23,3 +23,6 @@ twilio = "*"
 opsgenie-sdk = "*"
 watchdog = "*"
 web3 = "*"
+
+[requires]
+python_version = "3.9.5"
