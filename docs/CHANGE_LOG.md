@@ -20,6 +20,7 @@ Change the contents of this file to this:
 - Added Chainlink Node Alerter Manager and tests.
 - Web-Installer bug fixes and removing outdated alerts.
 - Added Chainlink Node Alerter logic and tests.
+- Added Geth Node Monitoring along with the monitor tests.
 
 ## 0.1.2
 
