@@ -15,14 +15,14 @@ from requests.exceptions import (ConnectionError as ReqConnectionError,
                                  MissingSchema, InvalidSchema, InvalidURL)
 from urllib3.exceptions import ProtocolError
 
-from src.configs.nodes.geth import GethNodeConfig
+from src.configs.nodes.evm import EVMNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitors.node.geth import GethNodeMonitor
+from src.monitors.node.evm import EVMNodeMonitor
 from src.utils import env
 from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           RAW_DATA_EXCHANGE,
                                           HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-                                          GETH_NODE_RAW_DATA_ROUTING_KEY)
+                                          EVM_NODE_RAW_DATA_ROUTING_KEY)
 from src.utils.exceptions import (PANICException, NodeIsDownException,
                                   DataReadingException, InvalidUrlException,
                                   MessageWasNotDeliveredException)
@@ -30,7 +30,7 @@ from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
                               delete_exchange_if_exists, disconnect_from_rabbit)
 
 
-class TestGethNodeMonitor(unittest.TestCase):
+class TestEVMNodeMonitor(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('Dummy')
         self.dummy_logger.disabled = True
@@ -62,13 +62,13 @@ class TestGethNodeMonitor(unittest.TestCase):
             'current_height': 2003024
         }
         self.test_exception = PANICException('test_exception', 1)
-        self.node_config = GethNodeConfig(self.node_id, self.parent_id,
-                                          self.node_name, self.monitor_node,
-                                          self.node_http_url)
-        self.test_monitor = GethNodeMonitor(self.monitor_name, self.node_config,
-                                            self.dummy_logger,
-                                            self.monitoring_period,
-                                            self.rabbitmq)
+        self.node_config = EVMNodeConfig(self.node_id, self.parent_id,
+                                         self.node_name, self.monitor_node,
+                                         self.node_http_url)
+        self.test_monitor = EVMNodeMonitor(self.monitor_name, self.node_config,
+                                           self.dummy_logger,
+                                           self.monitoring_period,
+                                           self.rabbitmq)
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
@@ -135,8 +135,8 @@ class TestGethNodeMonitor(unittest.TestCase):
             body=self.test_data_str, is_body_dict=False,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=False)
 
-    @mock.patch.object(GethNodeMonitor, "_process_retrieved_data")
-    @mock.patch.object(GethNodeMonitor, "_process_error")
+    @mock.patch.object(EVMNodeMonitor, "_process_retrieved_data")
+    @mock.patch.object(EVMNodeMonitor, "_process_error")
     def test_process_data_calls_process_error_on_retrieval_error(
             self, mock_process_error, mock_process_retrieved_data) -> None:
         # Do not test the processing of data for now
@@ -149,8 +149,8 @@ class TestGethNodeMonitor(unittest.TestCase):
         self.assertEqual(1, mock_process_error.call_count)
         self.assertEqual(0, mock_process_retrieved_data.call_count)
 
-    @mock.patch.object(GethNodeMonitor, "_process_retrieved_data")
-    @mock.patch.object(GethNodeMonitor, "_process_error")
+    @mock.patch.object(EVMNodeMonitor, "_process_retrieved_data")
+    @mock.patch.object(EVMNodeMonitor, "_process_error")
     def test_process_data_calls_process_retrieved_data_on_retrieval_success(
             self, mock_process_error, mock_process_retrieved_data) -> None:
         # Do not test the processing of data for now
@@ -254,7 +254,7 @@ class TestGethNodeMonitor(unittest.TestCase):
         self.assertEqual(0, res.method.message_count)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-            routing_key=GETH_NODE_RAW_DATA_ROUTING_KEY)
+            routing_key=EVM_NODE_RAW_DATA_ROUTING_KEY)
 
         self.test_monitor._send_data(self.test_data_dict)
 
@@ -271,9 +271,9 @@ class TestGethNodeMonitor(unittest.TestCase):
         self.assertEqual(self.test_data_dict, json.loads(body))
 
     @freeze_time("2012-01-01")
-    @mock.patch.object(GethNodeMonitor, "_send_data")
-    @mock.patch.object(GethNodeMonitor, "_send_heartbeat")
-    @mock.patch.object(GethNodeMonitor, "_get_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
+    @mock.patch.object(EVMNodeMonitor, "_get_data")
     def test_monitor_sends_data_and_hb_if_data_retrieve_and_processing_success(
             self, mock_get_data, mock_send_hb, mock_send_data) -> None:
         expected_output_data = {
@@ -303,10 +303,10 @@ class TestGethNodeMonitor(unittest.TestCase):
         mock_send_hb.assert_called_once_with(expected_output_hb)
         mock_send_data.assert_called_once_with(expected_output_data)
 
-    @mock.patch.object(GethNodeMonitor, "_process_data")
-    @mock.patch.object(GethNodeMonitor, "_send_data")
-    @mock.patch.object(GethNodeMonitor, "_send_heartbeat")
-    @mock.patch.object(GethNodeMonitor, "_get_data")
+    @mock.patch.object(EVMNodeMonitor, "_process_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
+    @mock.patch.object(EVMNodeMonitor, "_get_data")
     def test_monitor_sends_no_data_and_hb_if_data_ret_success_and_proc_fails(
             self, mock_get_data, mock_send_hb, mock_send_data,
             mock_process_data) -> None:
@@ -321,9 +321,9 @@ class TestGethNodeMonitor(unittest.TestCase):
         mock_send_hb.assert_not_called()
         mock_send_data.assert_not_called()
 
-    @mock.patch.object(GethNodeMonitor, "_send_data")
-    @mock.patch.object(GethNodeMonitor, "_send_heartbeat")
-    @mock.patch.object(GethNodeMonitor, "_get_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
+    @mock.patch.object(EVMNodeMonitor, "_get_data")
     def test_monitor_sends_no_data_and_no_hb_on_get_data_unexpected_exception(
             self, mock_get_data, mock_send_hb, mock_send_data) -> None:
         mock_get_data.side_effect = self.test_exception
@@ -336,9 +336,9 @@ class TestGethNodeMonitor(unittest.TestCase):
         mock_send_hb.assert_not_called()
 
     @freeze_time("2012-01-01")
-    @mock.patch.object(GethNodeMonitor, "_send_data")
-    @mock.patch.object(GethNodeMonitor, "_send_heartbeat")
-    @mock.patch.object(GethNodeMonitor, "_get_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
+    @mock.patch.object(EVMNodeMonitor, "_get_data")
     def test_monitor_sends_exception_data_and_hb_on_expected_exceptions(
             self, mock_get_data, mock_send_hb, mock_send_data) -> None:
         errors_exceptions_dict = {
@@ -403,9 +403,9 @@ class TestGethNodeMonitor(unittest.TestCase):
          MessageWasNotDeliveredException('test'))
     ])
     @freeze_time("2012-01-01")
-    @mock.patch.object(GethNodeMonitor, "_send_data")
-    @mock.patch.object(GethNodeMonitor, "_send_heartbeat")
-    @mock.patch.object(GethNodeMonitor, "_get_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
+    @mock.patch.object(EVMNodeMonitor, "_get_data")
     def test_monitor_raises_error_if_raised_by_send_hb_and_sends_data(
             self, exception_class, exception_instance, mock_get_data,
             mock_send_hb, mock_send_data) -> None:
@@ -436,9 +436,9 @@ class TestGethNodeMonitor(unittest.TestCase):
         mock_send_data.assert_called_once_with(expected_output_data)
 
     @freeze_time("2012-01-01")
-    @mock.patch.object(GethNodeMonitor, "_send_data")
-    @mock.patch.object(GethNodeMonitor, "_send_heartbeat")
-    @mock.patch.object(GethNodeMonitor, "_get_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
+    @mock.patch.object(EVMNodeMonitor, "_get_data")
     def test_monitor_does_not_send_hb_and_data_if_send_data_fails(
             self, mock_get_data, mock_send_hb, mock_send_data) -> None:
         mock_get_data.return_value = self.retrieved_metrics_example
@@ -475,9 +475,9 @@ class TestGethNodeMonitor(unittest.TestCase):
             mock_send_data.reset_mock()
 
     @mock.patch.object(logging.Logger, "info")
-    @mock.patch.object(GethNodeMonitor, "_send_heartbeat")
-    @mock.patch.object(GethNodeMonitor, "_send_data")
-    @mock.patch.object(GethNodeMonitor, "_get_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
+    @mock.patch.object(EVMNodeMonitor, "_send_data")
+    @mock.patch.object(EVMNodeMonitor, "_get_data")
     def test_monitor_logs_data_if_no_retrieval_error(
             self, mock_get_data, mock_send_data, mock_send_hb,
             mock_log) -> None:
@@ -491,10 +491,10 @@ class TestGethNodeMonitor(unittest.TestCase):
             self.retrieved_metrics_example))
 
     @mock.patch.object(logging.Logger, "info")
-    @mock.patch.object(GethNodeMonitor, "_process_data")
-    @mock.patch.object(GethNodeMonitor, "_send_heartbeat")
-    @mock.patch.object(GethNodeMonitor, "_send_data")
-    @mock.patch.object(GethNodeMonitor, "_get_data")
+    @mock.patch.object(EVMNodeMonitor, "_process_data")
+    @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
+    @mock.patch.object(EVMNodeMonitor, "_send_data")
+    @mock.patch.object(EVMNodeMonitor, "_get_data")
     def test_monitor_does_not_log_if_retrieval_error(
             self, mock_get_data, mock_send_data, mock_send_hb,
             mock_process_data, mock_log) -> None:
