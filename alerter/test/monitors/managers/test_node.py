@@ -14,13 +14,13 @@ from parameterized import parameterized
 from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
-from src.configs.nodes.geth import GethNodeConfig
+from src.configs.nodes.evm import EVMNodeConfig
 from src.configs.nodes.node import NodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.node import NodeMonitorsManager
 from src.monitors.monitor import Monitor
 from src.monitors.node.chainlink import ChainlinkNodeMonitor
-from src.monitors.node.geth import GethNodeMonitor
+from src.monitors.node.evm import EVMNodeMonitor
 from src.monitors.starters import start_node_monitor
 from src.utils import env
 from src.utils.constants.names import NODE_MONITOR_NAME_TEMPLATE
@@ -28,7 +28,7 @@ from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, NODE_MON_MAN_HEARTBEAT_QUEUE_NAME,
     NODE_MON_MAN_CONFIGS_QUEUE_NAME, PING_ROUTING_KEY,
     NODES_CONFIGS_ROUTING_KEY_CHAINS, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-    GETH_NODES_CONFIGS_ROUTING_KEY_CHAINS)
+    EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import (infinite_fn, connect_to_rabbit,
                               delete_queue_if_exists, disconnect_from_rabbit,
@@ -100,7 +100,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.node_name_4 = 'node_4'
         self.monitor_node_4 = True
         self.node_http_url_4 = 'url4'
-        self.node_config_4 = GethNodeConfig(
+        self.node_config_4 = EVMNodeConfig(
             self.node_id_4, self.parent_id_4, self.node_name_4,
             self.monitor_node_4, self.node_http_url_4)
         self.node_id_5 = 'config_id5'
@@ -108,7 +108,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.node_name_5 = 'node_5'
         self.monitor_node_5 = True
         self.node_http_url_5 = 'url5'
-        self.node_config_5 = GethNodeConfig(
+        self.node_config_5 = EVMNodeConfig(
             self.node_id_5, self.parent_id_5, self.node_name_5,
             self.monitor_node_5, self.node_http_url_5)
 
@@ -139,14 +139,14 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
                     self.node_name_4),
                 'process': self.dummy_process4,
-                'monitor_type': GethNodeMonitor,
+                'monitor_type': EVMNodeMonitor,
                 'node_config': self.node_config_4,
             },
             'config_id5': {
                 'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
                     self.node_name_5),
                 'process': self.dummy_process5,
-                'monitor_type': GethNodeMonitor,
+                'monitor_type': EVMNodeMonitor,
                 'node_config': self.node_config_5,
             },
         }
@@ -172,7 +172,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
                         'monitor_prometheus': str(self.monitor_prometheus_2)
                     },
                 },
-                'geth_nodes_config': {
+                'evm_nodes_config': {
                     'config_id4': {
                         'id': self.node_id_4,
                         'parent_id': self.parent_id_4,
@@ -218,7 +218,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'monitor_prometheus': str(self.monitor_prometheus_2)
             }
         }
-        self.sent_configs_example_chainlink_geth = {
+        self.sent_configs_example_chainlink_evm = {
             'config_id4': {
                 'id': self.node_id_4,
                 'parent_id': self.parent_id_4,
@@ -250,8 +250,8 @@ class TestNodeMonitorsManager(unittest.TestCase):
         # Some test routing keys
         self.chainlink_routing_key = \
             'chains.chainlink.Binance Smart Chain.nodes_config'
-        self.chainlink_geth_routing_key = \
-            'chains.chainlink.Binance Smart Chain.geth_nodes_config'
+        self.chainlink_evm_routing_key = \
+            'chains.chainlink.Binance Smart Chain.evm_nodes_config'
         self.kusama_routing_key = 'chains.Substrate.Kusama.nodes_config'
 
     def tearDown(self) -> None:
@@ -283,7 +283,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.config_process_dict_example = None
         self.nodes_configs_example = None
         self.sent_configs_example_chainlink = None
-        self.sent_configs_example_chainlink_geth = None
+        self.sent_configs_example_chainlink_evm = None
         self.sent_configs_example_kusama = None
         self.test_manager = None
         self.test_exception = None
@@ -358,7 +358,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.test_manager.rabbitmq.basic_publish_confirm(
             exchange=CONFIG_EXCHANGE,
-            routing_key=GETH_NODES_CONFIGS_ROUTING_KEY_CHAINS,
+            routing_key=EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS,
             body=self.test_data_str, is_body_dict=False,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
 
@@ -439,14 +439,14 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
                     self.node_name_4),
                 'process': self.dummy_process4,
-                'monitor_type': GethNodeMonitor,
+                'monitor_type': EVMNodeMonitor,
                 'node_config': self.node_config_4
             },
             'config_id5': {
                 'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
                     self.node_name_5),
                 'process': self.dummy_process5,
-                'monitor_type': GethNodeMonitor,
+                'monitor_type': EVMNodeMonitor,
                 'node_config': self.node_config_5
             },
         }
@@ -740,7 +740,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.assertEqual(sent_configs, actual_return)
 
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    def test_process_geth_node_configs_starts_monitors_for_new_configs(
+    def test_process_evm_node_configs_starts_monitors_for_new_configs(
             self, startup_mock) -> None:
         # We will check whether _create_and_start_monitor_process is called
         # correctly on each newly added configuration if `monitor_node = True`.
@@ -750,7 +750,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         startup_mock.return_value = None
 
         # First test for when current_configs is empty
-        sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_geth)
+        sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_evm)
         sent_configs['config_id3'] = {
             'id': self.node_id_3,
             'parent_id': self.parent_id_3,
@@ -758,10 +758,10 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'node_http_url': 'url3',
             'monitor_node': "False",
         }
-        self.test_manager._process_geth_node_configs(sent_configs, {})
+        self.test_manager._process_evm_node_configs(sent_configs, {})
         expected_calls = [
-            call(self.node_config_4, self.node_id_4, GethNodeMonitor),
-            call(self.node_config_5, self.node_id_5, GethNodeMonitor),
+            call(self.node_config_4, self.node_id_4, EVMNodeMonitor),
+            call(self.node_config_5, self.node_id_5, EVMNodeMonitor),
         ]
         startup_mock.assert_has_calls(expected_calls, True)
         self.assertEqual(2, startup_mock.call_count)
@@ -777,16 +777,16 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'monitor_node': str(self.monitor_node_4),
             }
         }
-        self.test_manager._process_geth_node_configs(sent_configs,
-                                                     current_configs)
+        self.test_manager._process_evm_node_configs(sent_configs,
+                                                    current_configs)
         expected_calls = [
-            call(self.node_config_5, self.node_id_5, GethNodeMonitor),
+            call(self.node_config_5, self.node_id_5, EVMNodeMonitor),
         ]
         startup_mock.assert_has_calls(expected_calls, True)
         self.assertEqual(1, startup_mock.call_count)
 
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    def test_process_geth_node_configs_return_if_valid_new_configurations(
+    def test_process_evm_node_configs_return_if_valid_new_configurations(
             self, startup_mock) -> None:
         # In this test we will assume that all added configurations are valid.
         # Thus we need to check that the function returns a dict containing all
@@ -796,7 +796,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         startup_mock.return_value = None
 
         # First test for when current_configs is empty
-        sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_geth)
+        sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_evm)
         sent_configs['config_id3'] = {
             'id': self.node_id_3,
             'parent_id': self.parent_id_3,
@@ -804,7 +804,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'node_http_url': 'url3',
             'monitor_node': 'False',
         }
-        actual_return = self.test_manager._process_geth_node_configs(
+        actual_return = self.test_manager._process_evm_node_configs(
             sent_configs, {})
         expected_return = copy.deepcopy(sent_configs)
         del expected_return['config_id3']
@@ -820,7 +820,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
                 'monitor_node': str(self.monitor_node_4),
             }
         }
-        actual_return = self.test_manager._process_geth_node_configs(
+        actual_return = self.test_manager._process_evm_node_configs(
             sent_configs, current_configs)
         expected_return = copy.deepcopy(sent_configs)
         del expected_return['config_id3']
@@ -829,7 +829,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    def test_process_geth_node_configs_restarts_monitors_for_edited_confs(
+    def test_process_evm_node_configs_restarts_monitors_for_edited_confs(
             self, startup_mock, mock_terminate, mock_join) -> None:
         # We will check that the running monitors associated with the modified
         # configs are killed and started with the latest configuration as long
@@ -841,7 +841,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
             self.config_process_dict_example
         self.test_manager._nodes_configs = self.nodes_configs_example
 
-        sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_geth)
+        sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_evm)
 
         # Assume that config_id4, will be the configuration whose monitors will
         # be killed but not started.
@@ -861,15 +861,15 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'monitor_node': str(self.monitor_node_5),
         }
 
-        self.test_manager._process_geth_node_configs(
+        self.test_manager._process_evm_node_configs(
             sent_configs,
             self.nodes_configs_example['chainlink Binance Smart Chain'][
-                'geth_nodes_config'])
-        modified_node_5_config = GethNodeConfig(
+                'evm_nodes_config'])
+        modified_node_5_config = EVMNodeConfig(
             self.node_id_5, self.parent_id_5, 'changed_node_name',
             self.monitor_node_5, self.node_http_url_5)
         startup_mock.assert_called_once_with(
-            modified_node_5_config, self.node_id_5, GethNodeMonitor)
+            modified_node_5_config, self.node_id_5, EVMNodeMonitor)
         self.assertEqual(2, mock_terminate.call_count)
         self.assertEqual(2, mock_join.call_count)
         self.assertTrue('config_id5' in self.test_manager.config_process_dict)
@@ -878,7 +878,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    def test_process_geth_node_configs_return_if_valid_edited_confs(
+    def test_process_evm_node_configs_return_if_valid_edited_confs(
             self, startup_mock, mock_terminate, mock_join) -> None:
         # In this test we will assume that all edited configurations are valid.
         # Thus we need to check that the function returns a dict containing all
@@ -890,7 +890,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
             self.config_process_dict_example
         self.test_manager._nodes_configs = self.nodes_configs_example
 
-        sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_geth)
+        sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_evm)
 
         # Assume config_id4 will be the config whose monitor will be killed and
         # not restarted.
@@ -910,10 +910,10 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'monitor_node': str(self.monitor_node_5),
         }
 
-        actual_return = self.test_manager._process_geth_node_configs(
+        actual_return = self.test_manager._process_evm_node_configs(
             sent_configs,
             self.nodes_configs_example['chainlink Binance Smart Chain'][
-                'geth_nodes_config'])
+                'evm_nodes_config'])
         expected_return = copy.deepcopy(sent_configs)
         del expected_return['config_id4']
         self.assertEqual(expected_return, actual_return)
@@ -921,7 +921,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    def test_process_geth_node_configs_deletes_monitors_for_deleted_confs(
+    def test_process_evm_node_configs_deletes_monitors_for_deleted_confs(
             self, startup_mock, mock_terminate, mock_join) -> None:
         # We will check that the running monitors associated with the modified
         # configs are killed.
@@ -931,13 +931,13 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         self.test_manager._nodes_configs = self.nodes_configs_example
-        sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_geth)
+        sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_evm)
         del sent_configs['config_id4']
 
-        self.test_manager._process_geth_node_configs(
+        self.test_manager._process_evm_node_configs(
             sent_configs,
             self.nodes_configs_example['chainlink Binance Smart Chain'][
-                'geth_nodes_config'])
+                'evm_nodes_config'])
         startup_mock.assert_not_called()
         self.assertEqual(1, mock_terminate.call_count)
         self.assertEqual(1, mock_join.call_count)
@@ -947,7 +947,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    def test_process_geth_node_configs_return_if_valid_deleted_confs(
+    def test_process_evm_node_configs_return_if_valid_deleted_confs(
             self, startup_mock, mock_terminate, mock_join) -> None:
         # In this test we will assume that all sent configurations are valid.
         # Thus we need to check that the function returns a dict containing all
@@ -961,13 +961,13 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         self.test_manager._nodes_configs = self.nodes_configs_example
-        sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_geth)
+        sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_evm)
         del sent_configs['config_id4']
 
         actual_return = self.test_manager._process_chainlink_node_configs(
             sent_configs,
             self.nodes_configs_example['chainlink Binance Smart Chain'][
-                'geth_nodes_config'])
+                'evm_nodes_config'])
         self.assertEqual(sent_configs, actual_return)
 
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -1006,14 +1006,14 @@ class TestNodeMonitorsManager(unittest.TestCase):
 
     @parameterized.expand([
         ('self.chainlink_routing_key', 'self.sent_configs_example_chainlink'),
-        ('self.chainlink_geth_routing_key',
-         'self.sent_configs_example_chainlink_geth',),
+        ('self.chainlink_evm_routing_key',
+         'self.sent_configs_example_chainlink_evm',),
     ])
     @mock.patch.object(multiprocessing.Process, 'start')
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_stores_updated_confs_correctly_if_recognized(
             self, routing_key, sent_configs, mock_ack, mock_start) -> None:
-        # For now this test will only be performed for chainlink chains and geth
+        # For now this test will only be performed for chainlink chains and evm
         # node configs as they are the only currently supported configurations
         # for node monitoring
         mock_ack.return_value = None

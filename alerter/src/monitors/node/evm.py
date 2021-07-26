@@ -11,17 +11,17 @@ from requests.exceptions import (ConnectionError as ReqConnectionError,
 from urllib3.exceptions import ProtocolError
 from web3 import Web3
 
-from src.configs.nodes.geth import GethNodeConfig
+from src.configs.nodes.evm import EVMNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
 from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
-                                          GETH_NODE_RAW_DATA_ROUTING_KEY)
+                                          EVM_NODE_RAW_DATA_ROUTING_KEY)
 from src.utils.exceptions import (PANICException, NodeIsDownException,
                                   DataReadingException, InvalidUrlException)
 
 
-class GethNodeMonitor(Monitor):
-    def __init__(self, monitor_name: str, node_config: GethNodeConfig,
+class EVMNodeMonitor(Monitor):
+    def __init__(self, monitor_name: str, node_config: EVMNodeConfig,
                  logger: logging.Logger, monitor_period: int,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(monitor_name, logger, monitor_period, rabbitmq)
@@ -34,7 +34,7 @@ class GethNodeMonitor(Monitor):
             self.node_config.node_http_url, request_kwargs={'timeout': 2}))
 
     @property
-    def node_config(self) -> GethNodeConfig:
+    def node_config(self) -> EVMNodeConfig:
         return self._node_config
 
     @property
@@ -88,7 +88,7 @@ class GethNodeMonitor(Monitor):
     def _send_data(self, data: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
             exchange=RAW_DATA_EXCHANGE,
-            routing_key=GETH_NODE_RAW_DATA_ROUTING_KEY, body=data,
+            routing_key=EVM_NODE_RAW_DATA_ROUTING_KEY, body=data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
         self.logger.debug("Sent data to '%s' exchange", RAW_DATA_EXCHANGE)
