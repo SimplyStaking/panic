@@ -68,20 +68,18 @@ _key_alert_cannot_access_github = 'alert_github2'
 
 # alert_cl_nodeX_<origin_id>
 _key_alert_cl_head_tacker_current_head = 'alert_cl_node1'
-_key_alert_cl_head_tracker_heads_in_queue = 'alert_cl_node2'
-_key_alert_cl_head_tracker_heads_received_total = 'alert_cl_node3'
-_key_alert_cl_head_tracker_num_heads_dropped_total = 'alert_cl_node4'
-_key_alert_cl_max_unconfirmed_blocks = 'alert_cl_node5'
-_key_alert_cl_process_start_time_seconds = 'alert_cl_node6'
-_key_alert_cl_tx_manager_gas_bump_exceeds_limit_total = 'alert_cl_node7'
-_key_alert_cl_unconfirmed_transactions = 'alert_cl_node8'
-_key_alert_cl_run_status_update_total = 'alert_cl_node9'
-_key_alert_cl_eth_balance_amount = 'alert_cl_node10'
-_key_alert_cl_eth_balance_amount_increase = 'alert_cl_node11'
-_key_alert_cl_invalid_url = 'alert_cl_node12'
-_key_alert_cl_metric_not_found = 'alert_cl_node13'
-_key_alert_cl_node_is_down = 'alert_cl_node14'
-_key_alert_cl_prometheus_is_down = 'alert_cl_node15'
+_key_alert_cl_head_tracker_heads_received_total = 'alert_cl_node2'
+_key_alert_cl_max_unconfirmed_blocks = 'alert_cl_node3'
+_key_alert_cl_process_start_time_seconds = 'alert_cl_node4'
+_key_alert_cl_tx_manager_gas_bump_exceeds_limit_total = 'alert_cl_node5'
+_key_alert_cl_unconfirmed_transactions = 'alert_cl_node6'
+_key_alert_cl_run_status_update_total = 'alert_cl_node7'
+_key_alert_cl_eth_balance_amount = 'alert_cl_node8'
+_key_alert_cl_eth_balance_amount_increase = 'alert_cl_node9'
+_key_alert_cl_invalid_url = 'alert_cl_node10'
+_key_alert_cl_metric_not_found = 'alert_cl_node11'
+_key_alert_cl_node_is_down = 'alert_cl_node12'
+_key_alert_cl_prometheus_is_down = 'alert_cl_node13'
 
 
 class Keys:
@@ -340,20 +338,9 @@ class Keys:
             _key_alert_cl_max_unconfirmed_blocks) + origin_id
 
     @staticmethod
-    def get_alert_cl_head_tracker_num_heads_dropped_total(
-            origin_id: str) -> str:
-        return Keys._as_prefix(
-            _key_alert_cl_head_tracker_num_heads_dropped_total) + origin_id
-
-    @staticmethod
     def get_alert_cl_head_tracker_heads_received_total(origin_id: str) -> str:
         return Keys._as_prefix(
             _key_alert_cl_head_tracker_heads_received_total) + origin_id
-
-    @staticmethod
-    def get_alert_cl_head_tracker_heads_in_queue(origin_id: str) -> str:
-        return Keys._as_prefix(
-            _key_alert_cl_head_tracker_heads_in_queue) + origin_id
 
     @staticmethod
     def get_alert_cl_head_tacker_current_head(origin_id: str) -> str:

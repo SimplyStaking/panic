@@ -16,14 +16,10 @@ from src.alerter.alerts.node.chainlink import (
     ReceivedANewHeaderAlert, InvalidUrlAlert, ValidUrlAlert,
     MetricNotFoundErrorAlert, MetricFoundAlert, NoChangeInHeightAlert,
     BlockHeightUpdatedAlert, NoChangeInTotalHeadersReceivedAlert,
-    HeadsInQueueIncreasedAboveThresholdAlert,
-    HeadsInQueueDecreasedBelowThresholdAlert,
     MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
     MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
     NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
     NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
-    DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    DroppedBlockHeadersDecreasedBelowThresholdAlert,
     TotalErroredJobRunsIncreasedAboveThresholdAlert,
     TotalErroredJobRunsDecreasedBelowThresholdAlert,
     EthBalanceIncreasedAboveThresholdAlert,
@@ -769,7 +765,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         self.assertTrue(call_2 in calls)
 
         calls = mock_thresh_win_alert.call_args_list
-        self.assertEqual(3, mock_thresh_win_alert.call_count)
+        self.assertEqual(2, mock_thresh_win_alert.call_count)
         call_1 = call(
             self.test_max_pending_tx_delay_new, configs.max_unconfirmed_blocks,
             MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
@@ -791,7 +787,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         self.assertTrue(call_2 in calls)
 
         calls = mock_thresh_per_alert.call_args_list
-        self.assertEqual(2, mock_thresh_per_alert.call_count)
+        self.assertEqual(1, mock_thresh_per_alert.call_count)
         call_1 = call(
             self.test_total_errored_job_runs_new,
             self.test_total_errored_job_runs, configs.run_status_update_total,

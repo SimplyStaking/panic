@@ -245,12 +245,8 @@ class ChainlinkNodeStore(Store):
                 '$push': {
                     node_id: {
                         'current_height': str(metrics['current_height']),
-                        'eth_blocks_in_queue': str(
-                            metrics['eth_blocks_in_queue']),
                         'total_block_headers_received': str(
                             metrics['total_block_headers_received']),
-                        'total_block_headers_dropped': str(
-                            metrics['total_block_headers_dropped']),
                         'no_of_active_jobs': str(metrics['no_of_active_jobs']),
                         'max_pending_tx_delay': str(
                             metrics['max_pending_tx_delay']),

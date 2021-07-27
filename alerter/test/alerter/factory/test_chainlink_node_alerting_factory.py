@@ -122,11 +122,7 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
 
         warning_critical_sent_dict = {
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value: False,
-            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold.value:
-                False,
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived
-                .value: False,
-            GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold
                 .value: False,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
                 .value: False,

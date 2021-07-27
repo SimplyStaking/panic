@@ -34,34 +34,6 @@ class BlockHeightUpdatedAlert(Alert):
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight)
 
 
-class HeadsInQueueIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: int, severity: str,
-                 timestamp: float, duration: float, threshold_severity: str,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            ChainlinkNodeAlertCode.HeadsInQueueIncreasedAboveThresholdAlert,
-            "{} number of Ethereum blocks in queue INCREASED above {} "
-            "threshold. Current value: {} for at least {}.".format(
-                origin_name, threshold_severity, current_value, strfdelta(
-                    timedelta(seconds=duration),
-                    "{hours}h, {minutes}m, {seconds}s")),
-            severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold)
-
-
-class HeadsInQueueDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: int, severity: str,
-                 timestamp: float, threshold_severity: str, parent_id: str,
-                 origin_id: str) -> None:
-        super().__init__(
-            ChainlinkNodeAlertCode.HeadsInQueueDecreasedBelowThresholdAlert,
-            "{} number of Ethereum blocks in queue DECREASED below {} "
-            "threshold. Current value: {}.".format(
-                origin_name, threshold_severity, current_value), severity,
-            timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.HeadsInQueueThreshold)
-
-
 class NoChangeInTotalHeadersReceivedAlert(Alert):
     def __init__(self, origin_name: str, duration: float, severity: str,
                  timestamp: float, parent_id: str, origin_id: str,
@@ -87,38 +59,6 @@ class ReceivedANewHeaderAlert(Alert):
             "total.".format(origin_name, current_headers_received), severity,
             timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived)
-
-
-class DroppedBlockHeadersIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: int, severity: str,
-                 timestamp: float, duration: float, threshold_severity: str,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            ChainlinkNodeAlertCode
-                .DroppedBlockHeadersIncreasedAboveThresholdAlert,
-            "{} number of block headers dropped INCREASED above {} threshold. "
-            "Dropped {} headers in {}.".format(
-                origin_name, threshold_severity, current_value, strfdelta(
-                    timedelta(seconds=duration),
-                    "{hours}h, {minutes}m, {seconds}s")),
-            severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold)
-
-
-class DroppedBlockHeadersDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: int, severity: str,
-                 timestamp: float, duration: float, threshold_severity: str,
-                 parent_id: str, origin_id: str) -> None:
-        super().__init__(
-            ChainlinkNodeAlertCode
-                .DroppedBlockHeadersDecreasedBelowThresholdAlert,
-            "{} number of block headers dropped DECREASED below {} threshold. "
-            "Dropped {} headers in {}.".format(
-                origin_name, threshold_severity, current_value, strfdelta(
-                    timedelta(seconds=duration),
-                    "{hours}h, {minutes}m, {seconds}s")),
-            severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.DroppedBlockHeadersThreshold)
 
 
 class MaxUnconfirmedBlocksIncreasedAboveThresholdAlert(Alert):
