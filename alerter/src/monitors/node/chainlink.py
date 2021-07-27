@@ -255,9 +255,12 @@ class ChainlinkNodeMonitor(Monitor):
 
         # Add the number of error job runs to the processed data
         no_of_error_job_runs = 0
-        for _, data_subset in enumerate(data_copy['run_status_update_total']):
-            if json.loads(data_subset)['status'] == 'errored':
-                no_of_error_job_runs += 1
+        # If its None then there are no error job runs
+        if data_copy['run_status_update_total'] is not None:
+            for _, data_subset in enumerate(
+                    data_copy['run_status_update_total']):
+                if json.loads(data_subset)['status'] == 'errored':
+                    no_of_error_job_runs += 1
 
         self.logger.debug("%s run_status_update_total_errors: %s",
                           self.node_config, no_of_error_job_runs)

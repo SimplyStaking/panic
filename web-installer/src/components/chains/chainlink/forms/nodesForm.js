@@ -26,8 +26,8 @@ const NodesForm = ({
 }) => {
   const classes = useStyles();
 
-  const updatePrometheusUrl = (event, prometheusUrl) => {
-    setFieldValue('prometheus_url', prometheusUrl);
+  const updatePrometheusUrl = (event, nodePrometheusUrl) => {
+    setFieldValue('node_prometheus_urls', nodePrometheusUrl);
   };
 
   return (
@@ -95,7 +95,7 @@ const NodesForm = ({
                     freeSolo
                     options={[]}
                     onChange={updatePrometheusUrl}
-                    value={values.prometheus_url}
+                    value={values.node_prometheus_urls}
                     renderInput={(params) => (
                       <CssTextField
                         // eslint-disable-next-line react/jsx-props-no-spreading
@@ -104,7 +104,7 @@ const NodesForm = ({
                         label="Prometheus URL"
                         type="text"
                         style={{ margin: 8 }}
-                        name="prometheus_url"
+                        name="node_prometheus_urls"
                         placeholder={data.nodeForm.prometheusHolder}
                         fullWidth
                         margin="normal"
@@ -139,7 +139,7 @@ const NodesForm = ({
                   <Grid container direction="row" justify="flex-end" alignItems="center">
                     <PingPrometheus
                       disabled={false}
-                      prometheusUrl={values.prometheus_url}
+                      prometheusUrl={values.node_prometheus_urls}
                       metric="max_unconfirmed_blocks"
                     />
                   </Grid>
@@ -212,7 +212,7 @@ NodesForm.propTypes = {
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     name: PropTypes.string.isRequired,
-    prometheus_url: PropTypes.arrayOf(PropTypes.string.isRequired),
+    node_prometheus_urls: PropTypes.arrayOf(PropTypes.string.isRequired),
     monitor_prometheus: PropTypes.bool.isRequired,
     monitor_node: PropTypes.bool.isRequired,
   }).isRequired,

@@ -21,7 +21,7 @@ def get_json(endpoint: str, logger: logging.Logger, params=None,
     if params is None:
         params = {}
     get_ret = requests.get(url=endpoint, params=params, timeout=15,
-                           verify=verify)
+                           verify=verify, headers={'Connection': 'close'})
     logger.debug("get_json: get_ret: %s", get_ret)
     return json.loads(get_ret.content.decode('UTF-8'))
 

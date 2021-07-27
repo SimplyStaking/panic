@@ -51,7 +51,7 @@ const NodesTable = ({
                 <StyledTableCell align="center">
                   <div style={{ maxHeight: 70, overflow: 'auto' }}>
                     <List>
-                      {chainlinkNodesConfig.byId[id].prometheus_url.map((url) => (
+                      {chainlinkNodesConfig.byId[id].node_prometheus_urls.map((url) => (
                         <ListItem key={url}>{url}</ListItem>
                       ))}
                     </List>
@@ -93,7 +93,7 @@ NodesTable.propTypes = {
       id: PropTypes.string,
       parent_id: PropTypes.string,
       name: PropTypes.string,
-      prometheus_url: PropTypes.string,
+      node_prometheus_urls: PropTypes.string,
       monitor_prometheus: PropTypes.bool,
       monitor_node: PropTypes.bool,
     }).isRequired,

@@ -539,10 +539,10 @@ class LoadConfig extends Component {
               CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
               Object.values(config.data.result).forEach((value) => {
                 const node = JSON.parse(JSON.stringify(value));
-                if (node.prometheus_url.length === 0) {
-                  node.prometheus_url = [];
+                if (node.node_prometheus_urls.length === 0) {
+                  node.node_prometheus_urls = [];
                 } else {
-                  node.prometheus_url = node.prometheus_url.split(',');
+                  node.node_prometheus_urls = node.node_prometheus_urls.split(',');
                 }
                 node.monitor_prometheus = node.monitor_prometheus === 'true';
                 node.monitor_node = node.monitor_node === 'true';
