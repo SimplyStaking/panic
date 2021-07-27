@@ -30,10 +30,6 @@ const NodesForm = ({
     setFieldValue('prometheus_url', prometheusUrl);
   };
 
-  const updateGethPrometheusUrl = (event, gethPrometheusUrl) => {
-    setFieldValue('geth_prometheus_url', gethPrometheusUrl);
-  };
-
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
@@ -148,61 +144,6 @@ const NodesForm = ({
                     />
                   </Grid>
                 </Grid>
-                <Grid item xs={8}>
-                  <Autocomplete
-                    multiple
-                    freeSolo
-                    options={[]}
-                    onChange={updateGethPrometheusUrl}
-                    value={values.geth_prometheus_url}
-                    renderInput={(params) => (
-                      <CssTextField
-                        // eslint-disable-next-line react/jsx-props-no-spreading
-                        {...params}
-                        id="geth-prometheus-url-outlined-full-width"
-                        label="Ethereum Geth Prometheus URL"
-                        type="text"
-                        style={{ margin: 8 }}
-                        name="geth_prometheus_url"
-                        placeholder={data.nodeForm.gethPrometheusHolder}
-                        fullWidth
-                        margin="normal"
-                        InputLabelProps={{
-                          shrink: true,
-                        }}
-                        variant="outlined"
-                        autoComplete="off"
-                      />
-                    )}
-                  />
-                </Grid>
-                <Grid item xs={2}>
-                  <Grid container direction="row" justify="flex-end" alignItems="center">
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          checked={values.monitor_geth_prometheus}
-                          onClick={() => {
-                            setFieldValue('monitor_geth_prometheus', !values.monitor_geth_prometheus);
-                          }}
-                          name="monitor_geth_prometheus"
-                          color="primary"
-                        />
-                      )}
-                      label="Monitor"
-                      labelPlacement="start"
-                    />
-                  </Grid>
-                </Grid>
-                <Grid item xs={2}>
-                  <Grid container direction="row" justify="flex-end" alignItems="center">
-                    <PingPrometheus
-                      disabled={false}
-                      prometheusUrl={values.geth_prometheus_url}
-                      metric="chain_head_block"
-                    />
-                  </Grid>
-                </Grid>
                 <Grid item xs={2}>
                   <Box pl={1}>
                     <Typography> Monitor Node </Typography>
@@ -272,8 +213,6 @@ NodesForm.propTypes = {
   values: PropTypes.shape({
     name: PropTypes.string.isRequired,
     prometheus_url: PropTypes.arrayOf(PropTypes.string.isRequired),
-    geth_prometheus_url: PropTypes.arrayOf(PropTypes.string.isRequired),
-    monitor_geth_prometheus: PropTypes.bool.isRequired,
     monitor_prometheus: PropTypes.bool.isRequired,
     monitor_node: PropTypes.bool.isRequired,
   }).isRequired,
@@ -287,8 +226,6 @@ NodesForm.propTypes = {
       nameTip: PropTypes.string.isRequired,
       prometheusHolder: PropTypes.string.isRequired,
       prometheusTip: PropTypes.string.isRequired,
-      gethPrometheusHolder: PropTypes.string.isRequired,
-      gethPrometheusTip: PropTypes.string.isRequired,
       monitorNodeTip: PropTypes.string.isRequired,
       backStep: PropTypes.string.isRequired,
       nextStep: PropTypes.string.isRequired,

@@ -256,10 +256,6 @@ class TestAlertingFactory(unittest.TestCase):
         self.test_factory_instance = AlertingFactoryInstance(self.dummy_logger)
         self.test_factory_instance.create_alerting_state(
             self.test_parent_id, self.test_node_id, self.test_alerts_config)
-    # MaxUnconfirmedBlocksIncreasedAboveThresholdAlert   MaxUnconfirmedBlocksThreshold
-    # MaxUnconfirmedBlocksDecreasedBelowThresholdAlert
-    # TotalErroredJobRunsIncreasedAboveThresholdAlert  TotalErroredJobRunsThreshold
-    # TotalErroredJobRunsDecreasedBelowThresholdAlert
 
     def tearDown(self) -> None:
         self.dummy_logger = None
