@@ -23,8 +23,8 @@ from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, SYS_MON_MAN_CONFIGS_QUEUE_NAME,
     SYS_MON_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
-    SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES,
-    SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+    NODES_CONFIGS_ROUTING_KEY_CHAINS, SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import (infinite_fn, connect_to_rabbit,
                               delete_queue_if_exists, delete_exchange_if_exists,
@@ -288,7 +288,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.test_manager.rabbitmq.basic_publish_confirm(
             exchange=CONFIG_EXCHANGE,
-            routing_key=SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES,
+            routing_key=NODES_CONFIGS_ROUTING_KEY_CHAINS,
             body=self.test_data_str, is_body_dict=False,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.test_manager.rabbitmq.basic_publish_confirm(
