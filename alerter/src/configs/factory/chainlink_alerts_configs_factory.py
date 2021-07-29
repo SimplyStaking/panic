@@ -33,12 +33,8 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
             parent_id=parent_id,
             head_tracker_current_head=filtered[
                 'head_tracker_current_head'],
-            head_tracker_heads_in_queue=filtered[
-                'head_tracker_heads_in_queue'],
             head_tracker_heads_received_total=filtered[
                 'head_tracker_heads_received_total'],
-            head_tracker_num_heads_dropped_total=filtered[
-                'head_tracker_num_heads_dropped_total'],
             max_unconfirmed_blocks=filtered['max_unconfirmed_blocks'],
             process_start_time_seconds=filtered[
                 'process_start_time_seconds'],

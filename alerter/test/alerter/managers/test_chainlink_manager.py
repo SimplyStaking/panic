@@ -77,50 +77,38 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
             "7": {
-                "name": "head_tracker_heads_in_queue",
-                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
-            },
-            "8": {
                 "name": "head_tracker_heads_received_total",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
-            "9": {
-                "name": "head_tracker_num_heads_dropped_total",
-                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
-            },
-            "10": {
+            "8": {
                 "name": "max_unconfirmed_blocks",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
-            "11": {
+            "9": {
                 "name": "tx_manager_gas_bump_exceeds_limit_total",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
-            "12": {
+            "10": {
                 "name": "unconfirmed_transactions",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
-            "13": {
+            "11": {
                 "name": "eth_balance_amount",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
-            "14": {
-                "name": "head_tracker_num_heads_dropped_total",
-                "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
-            },
-            "15": {
+            "12": {
                 "name": "run_status_update_total",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
-            "16": {
+            "13": {
                 "name": "process_start_time_seconds",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
-            "17": {
+            "14": {
                 "name": "eth_balance_amount_increase",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             },
-            "18": {
+            "15": {
                 "name": "node_is_down",
                 "parent_id": "chain_name_d21d780d-92cb-42de-a7c1-11b751654510",
             }
@@ -135,50 +123,38 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
             "7": {
-                "name": "head_tracker_heads_in_queue",
-                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
-            },
-            "8": {
                 "name": "head_tracker_heads_received_total",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
-            "9": {
-                "name": "head_tracker_num_heads_dropped_total",
-                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
-            },
-            "10": {
+            "8": {
                 "name": "max_unconfirmed_blocks",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
-            "11": {
+            "9": {
                 "name": "tx_manager_gas_bump_exceeds_limit_total",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
-            "12": {
+            "10": {
                 "name": "unconfirmed_transactions",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
-            "13": {
+            "11": {
                 "name": "eth_balance_amount",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
-            "14": {
-                "name": "head_tracker_num_heads_dropped_total",
-                "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
-            },
-            "15": {
+            "12": {
                 "name": "run_status_update_total",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
-            "16": {
+            "13": {
                 "name": "process_start_time_seconds",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
-            "17": {
+            "14": {
                 "name": "eth_balance_amount_increase",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             },
-            "18": {
+            "15": {
                 "name": "node_is_down",
                 "parent_id": "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4",
             }

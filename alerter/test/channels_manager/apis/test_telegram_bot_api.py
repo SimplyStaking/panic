@@ -50,18 +50,21 @@ class TestTelegramBotApi(unittest.TestCase):
         self.test_telegram_bot_api.send_message(self.test_message)
 
         mock_get.assert_called_once_with(self.test_base_url + "/sendMessage",
-                                         data=data_dict, timeout=10)
+                                         data=data_dict, timeout=10,
+                                         headers={'Connection': 'close'})
 
     @mock.patch.object(requests, "get")
     def test_send_get_updates_sends_request_correctly(self, mock_get) -> None:
         self.test_telegram_bot_api.get_updates()
 
         mock_get.assert_called_once_with(self.test_base_url + "/getUpdates",
-                                         timeout=10)
+                                         timeout=10,
+                                         headers={'Connection': 'close'})
 
     @mock.patch.object(requests, "get")
     def test_send_get_me_sends_request_correctly(self, mock_get) -> None:
         self.test_telegram_bot_api.get_me()
 
         mock_get.assert_called_once_with(self.test_base_url + "/getMe",
-                                         timeout=10)
+                                         timeout=10,
+                                         headers={'Connection': 'close'})

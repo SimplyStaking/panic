@@ -41,9 +41,7 @@ export interface SystemKeys {
 
 export interface ChainlinkNodeKeys {
   current_height: string,
-  eth_blocks_in_queue: string,
   total_block_headers_received: string,
-  total_block_headers_dropped: string,
   no_of_active_jobs: string,
   max_pending_tx_delay: string,
   process_start_time_seconds: string,
@@ -106,9 +104,7 @@ export interface AlertKeysGitHubRepo {
 
 export interface AlertKeysChainlinkNode {
   head_tacker_current_head: string,
-  head_tracker_heads_in_queue: string,
   head_tracker_heads_received_total: string,
-  head_tracker_num_heads_dropped_total: string,
   max_unconfirmed_blocks: string,
   process_start_time_seconds: string,
   tx_manager_gas_bump_exceeds_limit_total: string,

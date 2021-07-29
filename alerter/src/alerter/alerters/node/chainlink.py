@@ -184,20 +184,6 @@ class ChainlinkNodeAlerter(Alerter):
                         MetricCode.NoChangeInHeight.value,
                         meta_data['node_name'], meta_data['last_monitored']
                     )
-            if str_to_bool(configs.head_tracker_heads_in_queue['enabled']):
-                current = data['eth_blocks_in_queue']['current']
-                sub_config = configs.head_tracker_heads_in_queue
-                if current is not None:
-                    self.alerting_factory. \
-                        classify_thresholded_time_window_alert(
-                        current, sub_config,
-                        cl_alerts.HeadsInQueueIncreasedAboveThresholdAlert,
-                        cl_alerts.HeadsInQueueDecreasedBelowThresholdAlert,
-                        data_for_alerting, meta_data['node_parent_id'],
-                        meta_data['node_id'],
-                        MetricCode.HeadsInQueueThreshold.value,
-                        meta_data['node_name'], meta_data['last_monitored']
-                    )
             if str_to_bool(
                     configs.head_tracker_heads_received_total['enabled']):
                 current = data['total_block_headers_received']['current']
@@ -212,40 +198,22 @@ class ChainlinkNodeAlerter(Alerter):
                         MetricCode.NoChangeInTotalHeadersReceived.value,
                         meta_data['node_name'], meta_data['last_monitored']
                     )
-            if str_to_bool(
-                    configs.head_tracker_num_heads_dropped_total['enabled']):
-                current = data['total_block_headers_dropped']['current']
-                previous = data['total_block_headers_dropped']['previous']
-                sub_config = configs.head_tracker_num_heads_dropped_total
-                if current is not None and previous is not None:
-                    self.alerting_factory \
-                        .classify_thresholded_in_time_period_alert(
-                        current, previous, sub_config,
-                        cl_alerts.
-                            DroppedBlockHeadersIncreasedAboveThresholdAlert,
-                        cl_alerts.
-                            DroppedBlockHeadersDecreasedBelowThresholdAlert,
-                        data_for_alerting, meta_data['node_parent_id'],
-                        meta_data['node_id'],
-                        MetricCode.DroppedBlockHeadersThreshold.value,
-                        meta_data['node_name'], meta_data['last_monitored']
-                    )
             if str_to_bool(configs.max_unconfirmed_blocks['enabled']):
                 current = data['max_pending_tx_delay']['current']
                 sub_config = configs.max_unconfirmed_blocks
                 if current is not None:
                     self.alerting_factory. \
                         classify_thresholded_time_window_alert(
-                        current, sub_config,
-                        cl_alerts.
+                            current, sub_config,
+                            cl_alerts.
                             MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
-                        cl_alerts.
+                            cl_alerts.
                             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
-                        data_for_alerting, meta_data['node_parent_id'],
-                        meta_data['node_id'],
-                        MetricCode.MaxUnconfirmedBlocksThreshold.value,
-                        meta_data['node_name'], meta_data['last_monitored']
-                    )
+                            data_for_alerting, meta_data['node_parent_id'],
+                            meta_data['node_id'],
+                            MetricCode.MaxUnconfirmedBlocksThreshold.value,
+                            meta_data['node_name'], meta_data['last_monitored']
+                        )
             if str_to_bool(configs.process_start_time_seconds['enabled']):
                 current = data['process_start_time_seconds']['current']
                 previous = data['process_start_time_seconds']['previous']
@@ -254,7 +222,8 @@ class ChainlinkNodeAlerter(Alerter):
                 if current is not None and previous is not None:
                     self.alerting_factory.classify_conditional_alert(
                         cl_alerts.ChangeInSourceNodeAlert,
-                        self._not_equal_condition_function, [current, previous],
+                        self._not_equal_condition_function, [
+                            current, previous],
                         [
                             meta_data['node_name'], new_source,
                             sub_config['severity'], meta_data['last_monitored'],
@@ -282,16 +251,16 @@ class ChainlinkNodeAlerter(Alerter):
                 if current is not None:
                     self.alerting_factory. \
                         classify_thresholded_time_window_alert(
-                        current, sub_config,
-                        cl_alerts.
+                            current, sub_config,
+                            cl_alerts.
                             NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
-                        cl_alerts.
+                            cl_alerts.
                             NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
-                        data_for_alerting, meta_data['node_parent_id'],
-                        meta_data['node_id'],
-                        MetricCode.NoOfUnconfirmedTxsThreshold.value,
-                        meta_data['node_name'], meta_data['last_monitored']
-                    )
+                            data_for_alerting, meta_data['node_parent_id'],
+                            meta_data['node_id'],
+                            MetricCode.NoOfUnconfirmedTxsThreshold.value,
+                            meta_data['node_name'], meta_data['last_monitored']
+                        )
             if str_to_bool(configs.run_status_update_total['enabled']):
                 current = data['total_errored_job_runs']['current']
                 previous = data['total_errored_job_runs']['previous']
@@ -299,16 +268,16 @@ class ChainlinkNodeAlerter(Alerter):
                 if current is not None and previous is not None:
                     self.alerting_factory \
                         .classify_thresholded_in_time_period_alert(
-                        current, previous, sub_config,
-                        cl_alerts.
+                            current, previous, sub_config,
+                            cl_alerts.
                             TotalErroredJobRunsIncreasedAboveThresholdAlert,
-                        cl_alerts.
+                            cl_alerts.
                             TotalErroredJobRunsDecreasedBelowThresholdAlert,
-                        data_for_alerting, meta_data['node_parent_id'],
-                        meta_data['node_id'],
-                        MetricCode.TotalErroredJobRunsThreshold.value,
-                        meta_data['node_name'], meta_data['last_monitored']
-                    )
+                            data_for_alerting, meta_data['node_parent_id'],
+                            meta_data['node_id'],
+                            MetricCode.TotalErroredJobRunsThreshold.value,
+                            meta_data['node_name'], meta_data['last_monitored']
+                        )
             if str_to_bool(configs.eth_balance_amount['enabled']):
                 current = data['eth_balance_info']['current']
                 sub_config = configs.eth_balance_amount
@@ -363,7 +332,8 @@ class ChainlinkNodeAlerter(Alerter):
                 if current is not None and previous is not None:
                     self.alerting_factory.classify_conditional_alert(
                         cl_alerts.ChangeInSourceNodeAlert,
-                        self._not_equal_condition_function, [current, previous],
+                        self._not_equal_condition_function, [
+                            current, previous],
                         [
                             meta_data['node_name'], current,
                             sub_config['severity'], meta_data['time'],
@@ -449,7 +419,7 @@ class ChainlinkNodeAlerter(Alerter):
                                 else new_went_down
                             monitoring_timestamp = monitoring_timestamp \
                                 if monitoring_timestamp <= \
-                                   new_monitoring_timestamp \
+                                new_monitoring_timestamp \
                                 else new_monitoring_timestamp
 
                     self.alerting_factory.classify_downtime_alert(
@@ -475,7 +445,7 @@ class ChainlinkNodeAlerter(Alerter):
                                 else data['meta_data']['time']
                             monitoring_timestamp = monitoring_timestamp \
                                 if monitoring_timestamp <= \
-                                   new_monitoring_timestamp \
+                                new_monitoring_timestamp \
                                 else new_monitoring_timestamp
 
                     # Classify downtime so that a node back up again alert is
@@ -609,7 +579,8 @@ class ChainlinkNodeAlerter(Alerter):
                 # no storing took place, therefore in that case do nothing.
                 parent_id = self.alerts_configs_factory.get_parent_id(chain)
                 if parent_id:
-                    self.alerting_factory.remove_chain_alerting_state(parent_id)
+                    self.alerting_factory.remove_chain_alerting_state(
+                        parent_id)
                     self.alerts_configs_factory.remove_config(chain)
         except Exception as e:
             # Otherwise log and reject the message

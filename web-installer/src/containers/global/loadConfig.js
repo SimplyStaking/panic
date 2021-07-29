@@ -539,18 +539,12 @@ class LoadConfig extends Component {
               CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
               Object.values(config.data.result).forEach((value) => {
                 const node = JSON.parse(JSON.stringify(value));
-                if (node.prometheus_url.length === 0) {
-                  node.prometheus_url = [];
+                if (node.node_prometheus_urls.length === 0) {
+                  node.node_prometheus_urls = [];
                 } else {
-                  node.prometheus_url = node.prometheus_url.split(',');
-                }
-                if (node.geth_prometheus_url.length === 0) {
-                  node.geth_prometheus_url = [];
-                } else {
-                  node.geth_prometheus_url = node.geth_prometheus_url.split(',');
+                  node.node_prometheus_urls = node.node_prometheus_urls.split(',');
                 }
                 node.monitor_prometheus = node.monitor_prometheus === 'true';
-                node.monitor_geth_prometheus = node.monitor_geth_prometheus === 'true';
                 node.monitor_node = node.monitor_node === 'true';
                 addNodeChainlinkDetails(node);
               });
@@ -779,11 +773,6 @@ class LoadConfig extends Component {
               addSlackDetails(payload);
             });
           }
-          // RESET the current chain for all types so when creating a new you
-          // chain config you do not attempt to load an old one.
-          clearChainIdChainlink();
-          clearChainIdSubstrate();
-          clearChainIdCosmos();
         }
       }
     } catch (err) {
@@ -792,6 +781,11 @@ class LoadConfig extends Component {
         5000,
       );
     }
+    // RESET the current chain for all types so when creating a new you
+    // chain config you do not attempt to load an old one.
+    clearChainIdChainlink();
+    clearChainIdSubstrate();
+    clearChainIdCosmos();
   }
 
   render() {

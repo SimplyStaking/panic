@@ -14,10 +14,8 @@ const Form = withFormik({
   }),
   mapPropsToValues: () => ({
     name: '',
-    prometheus_url: [],
-    geth_prometheus_url: [],
+    node_prometheus_urls: [],
     monitor_prometheus: true,
-    monitor_geth_prometheus: true,
     monitor_node: true,
   }),
   validationSchema: (props) => ChainlinkNodeSchema(props),
@@ -26,10 +24,8 @@ const Form = withFormik({
     const payload = {
       parent_id: currentChain,
       name: values.name,
-      prometheus_url: values.prometheus_url,
-      geth_prometheus_url: values.geth_prometheus_url,
+      node_prometheus_urls: values.node_prometheus_urls,
       monitor_prometheus: values.monitor_prometheus,
-      monitor_geth_prometheus: values.monitor_geth_prometheus,
       monitor_node: values.monitor_node,
     };
     saveNodeDetails(payload);

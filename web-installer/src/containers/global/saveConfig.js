@@ -835,7 +835,7 @@ SaveConfig.propTypes = {
       id: PropTypes.string,
       parent_id: PropTypes.string,
       name: PropTypes.string,
-      prometheus_url: PropTypes.string,
+      node_prometheus_urls: PropTypes.string,
       monitor_prometheus: PropTypes.bool,
       monitor_node: PropTypes.bool,
     }).isRequired,

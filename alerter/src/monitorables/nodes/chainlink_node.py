@@ -14,9 +14,7 @@ class ChainlinkNode(Node):
         # Metrics
         self._went_down_at_prometheus = None
         self._current_height = None
-        self._eth_blocks_in_queue = None
         self._total_block_headers_received = None
-        self._total_block_headers_dropped = None
         self._no_of_active_jobs = None
         self._max_pending_tx_delay = None
         self._process_start_time_seconds = None
@@ -52,16 +50,8 @@ class ChainlinkNode(Node):
         return self._current_height
 
     @property
-    def eth_blocks_in_queue(self) -> Optional[int]:
-        return self._eth_blocks_in_queue
-
-    @property
     def total_block_headers_received(self) -> Optional[int]:
         return self._total_block_headers_received
-
-    @property
-    def total_block_headers_dropped(self) -> Optional[int]:
-        return self._total_block_headers_dropped
 
     @property
     def no_of_active_jobs(self) -> Optional[int]:
@@ -114,8 +104,8 @@ class ChainlinkNode(Node):
                : metrics.
         """
         return [
-            'current_height', 'eth_blocks_in_queue',
-            'total_block_headers_received', 'total_block_headers_dropped',
+            'current_height',
+            'total_block_headers_received',
             'no_of_active_jobs', 'max_pending_tx_delay', 'total_gas_bumps',
             'total_gas_bumps_exceeds_limit', 'no_of_unconfirmed_txs',
             'total_errored_job_runs'
@@ -235,17 +225,9 @@ class ChainlinkNode(Node):
     def set_current_height(self, new_height: Optional[int]) -> None:
         self._current_height = new_height
 
-    def set_eth_blocks_in_queue(
-            self, new_eth_blocks_in_queue: Optional[int]) -> None:
-        self._eth_blocks_in_queue = new_eth_blocks_in_queue
-
     def set_total_block_headers_received(
             self, new_total_block_headers_received: Optional[int]) -> None:
         self._total_block_headers_received = new_total_block_headers_received
-
-    def set_total_block_headers_dropped(
-            self, new_total_block_headers_dropped: Optional[int]) -> None:
-        self._total_block_headers_dropped = new_total_block_headers_dropped
 
     def set_no_of_active_jobs(
             self, new_no_of_active_jobs: Optional[int]) -> None:
@@ -332,9 +314,7 @@ class ChainlinkNode(Node):
         """
         self.set_went_down_at_prometheus(None)
         self.set_current_height(None)
-        self.set_eth_blocks_in_queue(None)
         self.set_total_block_headers_received(None)
-        self.set_total_block_headers_dropped(None)
         self.set_no_of_active_jobs(None)
         self.set_max_pending_tx_delay(None)
         self.set_process_start_time_seconds(None)
