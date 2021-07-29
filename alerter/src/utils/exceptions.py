@@ -148,3 +148,12 @@ class InvalidDictSchemaException(PANICException):
         message = "{} does not obey the valid schema.".format(dict_name)
         code = 5016
         super().__init__(message, code)
+
+
+class ComponentNotGivenEnoughDataSourcesException(PANICException):
+
+    def __init__(self, component: str, field: str) -> None:
+        message = "{} was not given enough data sources. {} is empty.".format(
+            component, field)
+        code = 5017
+        super().__init__(message, code)
