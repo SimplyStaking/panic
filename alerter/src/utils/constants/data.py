@@ -39,3 +39,4 @@ SYSTEM_METRICS_TO_STORE = ['open_file_descriptors',
                            'system_storage_usage',
                            'system_ram_usage',
                            'system_is_down']
+WEI_WATCHERS_URL_TEMPLATE = 'https://weiwatchers.com/feeds-{}-mainnet.json'
