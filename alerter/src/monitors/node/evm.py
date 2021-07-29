@@ -29,7 +29,8 @@ class EVMNodeMonitor(Monitor):
 
         # This interface performs RPC requests, therefore no connection needs
         # to be managed. We can just perform the requests immediately and catch
-        # errors.
+        # errors. DISCLAIMER: There might be an issue with open connections not
+        # being closed.
         self._w3_interface = Web3(Web3.HTTPProvider(
             self.node_config.node_http_url, request_kwargs={'timeout': 2}))
 
