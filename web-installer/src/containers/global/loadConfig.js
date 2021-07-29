@@ -773,11 +773,6 @@ class LoadConfig extends Component {
               addSlackDetails(payload);
             });
           }
-          // RESET the current chain for all types so when creating a new you
-          // chain config you do not attempt to load an old one.
-          clearChainIdChainlink();
-          clearChainIdSubstrate();
-          clearChainIdCosmos();
         }
       }
     } catch (err) {
@@ -786,6 +781,11 @@ class LoadConfig extends Component {
         5000,
       );
     }
+    // RESET the current chain for all types so when creating a new you
+    // chain config you do not attempt to load an old one.
+    clearChainIdChainlink();
+    clearChainIdSubstrate();
+    clearChainIdCosmos();
   }
 
   render() {

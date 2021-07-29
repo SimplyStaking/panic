@@ -442,7 +442,7 @@ function chainlinkChainsById(state = {}, action) {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          githubRepositories: state[action.payload.parent_id].repositories.filter(
+          githubRepositories: state[action.payload.parent_id].githubRepositories.filter(
             (config) => config !== action.payload.id,
           ),
         },

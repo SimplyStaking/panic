@@ -72,10 +72,8 @@ export function addNodeChainlink(payload) {
       id,
       parent_id: payload.parent_id,
       name: payload.name,
-      prometheus_url: payload.prometheus_url,
-      geth_prometheus_url: payload.geth_prometheus_url,
+      node_prometheus_urls: payload.node_prometheus_urls,
       monitor_prometheus: payload.monitor_prometheus,
-      monitor_geth_prometheus: payload.monitor_geth_prometheus,
       monitor_node: payload.monitor_node,
     },
   };
