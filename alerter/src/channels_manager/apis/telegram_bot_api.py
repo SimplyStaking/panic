@@ -25,10 +25,12 @@ class TelegramBotApi:
             'parse_mode': "Markdown"
         }
         return requests.get(self._base_url + "/sendMessage", data=data,
-                            timeout=10).json()
+                            timeout=10, headers={'Connection': 'close'}).json()
 
     def get_updates(self) -> Dict:
-        return requests.get(self._base_url + "/getUpdates", timeout=10).json()
+        return requests.get(self._base_url + "/getUpdates", timeout=10,
+                            headers={'Connection': 'close'}).json()
 
     def get_me(self) -> Dict:
-        return requests.get(self._base_url + "/getMe", timeout=10).json()
+        return requests.get(self._base_url + "/getMe", timeout=10,
+                            headers={'Connection': 'close'}).json()

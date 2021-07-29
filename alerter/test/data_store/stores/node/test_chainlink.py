@@ -81,9 +81,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
         # Some metrics
         self.test_went_down_at_prometheus = None
         self.test_current_height = 50000000000
-        self.test_eth_blocks_in_queue = 3
         self.test_total_block_headers_received = 454545040
-        self.test_total_block_headers_dropped = 4
         self.test_no_of_active_jobs = 10
         self.test_max_pending_tx_delay = 6
         self.test_process_start_time_seconds = 345474.4
@@ -114,11 +112,8 @@ class TestChainlinkNodeStore(unittest.TestCase):
                     "data": {
                         "went_down_at": self.test_went_down_at_prometheus,
                         "current_height": self.test_current_height,
-                        "eth_blocks_in_queue": self.test_eth_blocks_in_queue,
                         "total_block_headers_received":
                             self.test_total_block_headers_received,
-                        "total_block_headers_dropped":
-                            self.test_total_block_headers_dropped,
                         "no_of_active_jobs": self.test_no_of_active_jobs,
                         "max_pending_tx_delay": self.test_max_pending_tx_delay,
                         "process_start_time_seconds":
@@ -156,12 +151,8 @@ class TestChainlinkNodeStore(unittest.TestCase):
                     "data": {
                         "went_down_at": self.test_went_down_at_prometheus,
                         "current_height": self.test_current_height + self.pad,
-                        "eth_blocks_in_queue":
-                            self.test_eth_blocks_in_queue + self.pad,
                         "total_block_headers_received":
                             self.test_total_block_headers_received + self.pad,
-                        "total_block_headers_dropped":
-                            self.test_total_block_headers_dropped + self.pad,
                         "no_of_active_jobs":
                             self.test_no_of_active_jobs + self.pad,
                         "max_pending_tx_delay":
@@ -516,22 +507,10 @@ class TestChainlinkNodeStore(unittest.TestCase):
                                                self.node_id)
                                            ).decode("utf-8"), 'bad_val'))
         self.assertEqual(
-            data['data']['eth_blocks_in_queue'],
-            convert_to_int(self.redis.hget(redis_hash,
-                                           Keys.get_cl_node_eth_blocks_in_queue(
-                                               self.node_id)
-                                           ).decode("utf-8"), 'bad_val'))
-        self.assertEqual(
             data['data']['total_block_headers_received'],
             convert_to_int(self.redis.hget(
                 redis_hash,
                 Keys.get_cl_node_total_block_headers_received(self.node_id)
-            ).decode("utf-8"), 'bad_val'))
-        self.assertEqual(
-            data['data']['total_block_headers_dropped'],
-            convert_to_int(self.redis.hget(
-                redis_hash,
-                Keys.get_cl_node_total_block_headers_dropped(self.node_id)
             ).decode("utf-8"), 'bad_val'))
         self.assertEqual(
             data['data']['no_of_active_jobs'],
@@ -621,17 +600,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
         )
         self.assertEqual(
             None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_eth_blocks_in_queue(
-                                      self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(redis_hash,
                                   Keys.get_cl_node_total_block_headers_received(
-                                      self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_total_block_headers_dropped(
                                       self.node_id))
         )
         self.assertEqual(
@@ -707,17 +676,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
         )
         self.assertEqual(
             None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_eth_blocks_in_queue(
-                                      self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(redis_hash,
                                   Keys.get_cl_node_total_block_headers_received(
-                                      self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_total_block_headers_dropped(
                                       self.node_id))
         )
         self.assertEqual(
@@ -816,9 +775,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
             'node',
             1,
             metrics['current_height'],
-            metrics['eth_blocks_in_queue'],
             metrics['total_block_headers_received'],
-            metrics['total_block_headers_dropped'],
             metrics['no_of_active_jobs'],
             metrics['max_pending_tx_delay'],
             metrics['process_start_time_seconds'],
@@ -836,11 +793,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
             document['doc_type'],
             document['n_entries'],
             convert_to_int(document[node_id][0]['current_height'], 'bad_val'),
-            convert_to_int(document[node_id][0]['eth_blocks_in_queue'],
-                           'bad_val'),
             convert_to_int(document[node_id][0]['total_block_headers_received'],
-                           'bad_val'),
-            convert_to_int(document[node_id][0]['total_block_headers_dropped'],
                            'bad_val'),
             convert_to_int(document[node_id][0]['no_of_active_jobs'],
                            'bad_val'),
@@ -889,9 +842,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
             'node',
             1,
             metrics['current_height'],
-            metrics['eth_blocks_in_queue'],
             metrics['total_block_headers_received'],
-            metrics['total_block_headers_dropped'],
             metrics['no_of_active_jobs'],
             metrics['max_pending_tx_delay'],
             metrics['process_start_time_seconds'],
@@ -909,11 +860,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
             document['doc_type'],
             document['n_entries'],
             convert_to_int(document[node_id][0]['current_height'], 'bad_val'),
-            convert_to_int(document[node_id][0]['eth_blocks_in_queue'],
-                           'bad_val'),
             convert_to_int(document[node_id][0]['total_block_headers_received'],
-                           'bad_val'),
-            convert_to_int(document[node_id][0]['total_block_headers_dropped'],
                            'bad_val'),
             convert_to_int(document[node_id][0]['no_of_active_jobs'],
                            'bad_val'),

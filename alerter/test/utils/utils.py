@@ -177,12 +177,8 @@ def save_chainlink_node_to_redis(redis: RedisApi,
             str(cl_node.went_down_at_prometheus),
         Keys.get_cl_node_current_height(cl_node_id):
             str(cl_node.current_height),
-        Keys.get_cl_node_eth_blocks_in_queue(cl_node_id):
-            str(cl_node.eth_blocks_in_queue),
         Keys.get_cl_node_total_block_headers_received(cl_node_id):
             str(cl_node.total_block_headers_received),
-        Keys.get_cl_node_total_block_headers_dropped(cl_node_id):
-            str(cl_node.total_block_headers_dropped),
         Keys.get_cl_node_no_of_active_jobs(cl_node_id):
             str(cl_node.no_of_active_jobs),
         Keys.get_cl_node_max_pending_tx_delay(cl_node_id):

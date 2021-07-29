@@ -21,8 +21,7 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
             'system_storage_usage', 'system_ram_usage',
             'head_tracker_current_head', 'head_tracker_heads_received_total',
             'tx_manager_gas_bump_exceeds_limit_total', 'eth_balance_amount',
-            'unconfirmed_transactions', 'head_tracker_num_heads_dropped_total',
-            'run_status_update_total', 'head_tracker_heads_in_queue',
+            'unconfirmed_transactions', 'run_status_update_total',
             'max_unconfirmed_blocks', 'eth_balance_amount_increase',
             'process_start_time_seconds', 'node_is_down'
         ]
@@ -49,12 +48,8 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
         self.alerts_config_1 = ChainlinkNodeAlertsConfig(
             parent_id=self.test_parent_id_1,
             head_tracker_current_head=filtered_1['head_tracker_current_head'],
-            head_tracker_heads_in_queue=filtered_1[
-                'head_tracker_heads_in_queue'],
             head_tracker_heads_received_total=filtered_1[
                 'head_tracker_heads_received_total'],
-            head_tracker_num_heads_dropped_total=filtered_1[
-                'head_tracker_num_heads_dropped_total'],
             max_unconfirmed_blocks=filtered_1['max_unconfirmed_blocks'],
             process_start_time_seconds=filtered_1['process_start_time_seconds'],
             tx_manager_gas_bump_exceeds_limit_total=filtered_1[
@@ -69,12 +64,8 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
         self.alerts_config_2 = ChainlinkNodeAlertsConfig(
             parent_id=self.test_parent_id_2,
             head_tracker_current_head=filtered_2['head_tracker_current_head'],
-            head_tracker_heads_in_queue=filtered_2[
-                'head_tracker_heads_in_queue'],
             head_tracker_heads_received_total=filtered_2[
                 'head_tracker_heads_received_total'],
-            head_tracker_num_heads_dropped_total=filtered_2[
-                'head_tracker_num_heads_dropped_total'],
             max_unconfirmed_blocks=filtered_2['max_unconfirmed_blocks'],
             process_start_time_seconds=filtered_2['process_start_time_seconds'],
             tx_manager_gas_bump_exceeds_limit_total=filtered_2[

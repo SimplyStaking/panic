@@ -37,9 +37,7 @@ const NodesTable = ({
             <TableRow>
               <StyledTableCell align="center">Name</StyledTableCell>
               <StyledTableCell align="center">Prometheus URLs</StyledTableCell>
-              <StyledTableCell align="center">Geth Prometheus URLs</StyledTableCell>
               <StyledTableCell align="center">Monitor Prometheus URLs</StyledTableCell>
-              <StyledTableCell align="center">Monitor Geth Prometheus URLs</StyledTableCell>
               <StyledTableCell align="center">Monitor Node</StyledTableCell>
               <StyledTableCell align="center">Delete</StyledTableCell>
             </TableRow>
@@ -53,16 +51,7 @@ const NodesTable = ({
                 <StyledTableCell align="center">
                   <div style={{ maxHeight: 70, overflow: 'auto' }}>
                     <List>
-                      {chainlinkNodesConfig.byId[id].prometheus_url.map((url) => (
-                        <ListItem key={url}>{url}</ListItem>
-                      ))}
-                    </List>
-                  </div>
-                </StyledTableCell>
-                <StyledTableCell align="center">
-                  <div style={{ maxHeight: 70, overflow: 'auto' }}>
-                    <List>
-                      {chainlinkNodesConfig.byId[id].get_prometheus_url.map((url) => (
+                      {chainlinkNodesConfig.byId[id].node_prometheus_urls.map((url) => (
                         <ListItem key={url}>{url}</ListItem>
                       ))}
                     </List>
@@ -70,13 +59,6 @@ const NodesTable = ({
                 </StyledTableCell>
                 <StyledTableCell align="center">
                   {chainlinkNodesConfig.byId[id].monitor_prometheus ? <CheckIcon /> : <ClearIcon />}
-                </StyledTableCell>
-                <StyledTableCell align="center">
-                  {chainlinkNodesConfig.byId[id].geth_monitor_prometheus ? (
-                    <CheckIcon />
-                  ) : (
-                    <ClearIcon />
-                  )}
                 </StyledTableCell>
                 <StyledTableCell align="center">
                   {chainlinkNodesConfig.byId[id].monitor_node ? <CheckIcon /> : <ClearIcon />}
@@ -111,9 +93,7 @@ NodesTable.propTypes = {
       id: PropTypes.string,
       parent_id: PropTypes.string,
       name: PropTypes.string,
-      prometheus_url: PropTypes.string,
-      geth_prometheus_url: PropTypes.string,
-      monitor_geth_prometheus: PropTypes.bool,
+      node_prometheus_urls: PropTypes.string,
       monitor_prometheus: PropTypes.bool,
       monitor_node: PropTypes.bool,
     }).isRequired,

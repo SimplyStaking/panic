@@ -211,54 +211,13 @@ const chainlinkThresholdAlerts = {
       },
       enabled: true,
     },
-    10: {
-      name: 'Ethereum-based node is down.',
-      identifier: 'ethereum_based_node_is_down',
-      description:
-        'All data sources for the node are unreachable therefore the node is is declared to be down.',
-      adornment: 'Seconds',
-      adornment_time: 'Seconds',
-      parent_id: '',
-      warning: {
-        threshold: 10,
-        enabled: true,
-      },
-      critical: {
-        threshold: 200,
-        repeat: 300,
-        repeat_enabled: true,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    11: {
-      name: 'Ethereum-based node: height difference between nodes.',
-      identifier: 'ethereum_based_node_height_difference',
-      description:
-        'Difference in node height between nodes being monitored, if a node is '
-        + 'significantly behind the node with the highest block height.',
-      adornment: 'Blocks',
-      adornment_time: 'Seconds',
-      parent_id: '',
-      warning: {
-        threshold: 1000,
-        enabled: true,
-      },
-      critical: {
-        threshold: 10000,
-        repeat: 300,
-        repeat_enabled: false,
-        enabled: false,
-      },
-      enabled: true,
-    },
   },
-  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
+  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
 };
 
 const chainlinkTimeWindowAlerts = {
   byId: {
-    12: {
+    10: {
       name: 'Chainlink node: Number of unconfirmed transactions.',
       identifier: 'unconfirmed_transactions',
       description:
@@ -282,7 +241,7 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-    13: {
+    11: {
       name: 'Chainlink node: Run status update total.',
       identifier: 'run_status_update_total',
       description: 'Number of jobs that have had an error over a time period.',
@@ -303,7 +262,7 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-    14: {
+    12: {
       name: 'Chainlink node: Max Unconfirmed Blocks.',
       identifier: 'max_unconfirmed_blocks',
       description:
@@ -327,37 +286,13 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-    15: {
-      name: 'Ethereum-based node: Block height.',
-      identifier: 'chain_head_block',
-      description:
-        'Last block processed by an ethereum-based node. Example: If no blocks '
-        + 'are processed in 2 minutes then send a warning alert. If less than 5 '
-        + 'blocks are processed in 5 minutes then send a critical alert.',
-      adornment_threshold: 'Blocks',
-      adornment_time: 'Seconds',
-      parent_id: '',
-      warning: {
-        threshold: 0,
-        time_window: 120,
-        enabled: true,
-      },
-      critical: {
-        threshold: 5,
-        time_window: 300,
-        repeat: 300,
-        repeat_enabled: true,
-        enabled: true,
-      },
-      enabled: true,
-    },
   },
-  allIds: ['12', '13', '14', '15'],
+  allIds: ['10', '11', '12'],
 };
 
 const chainlinkSeverityAlerts = {
   byId: {
-    16: {
+    13: {
       name: 'Chainlink node: Node Switch',
       identifier: 'process_start_time_seconds',
       description:
@@ -367,7 +302,7 @@ const chainlinkSeverityAlerts = {
       parent_id: '',
       enabled: true,
     },
-    17: {
+    14: {
       name: 'Ethereum Balance Topped Up',
       identifier: 'eth_balance_amount_increase',
       description:
@@ -376,7 +311,7 @@ const chainlinkSeverityAlerts = {
       parent_id: '',
       enabled: true,
     },
-    18: {
+    15: {
       name: "Chainlink node: Gas price increases over the node's price limit",
       identifier: 'tx_manager_gas_bump_exceeds_limit_total',
       description:
@@ -389,7 +324,7 @@ const chainlinkSeverityAlerts = {
       enabled: true,
     },
   },
-  allIds: ['16', '17', '18'],
+  allIds: ['13', '14', '15'],
 };
 
 // Reducers to add and remove chainlink node configurations from global state
@@ -507,7 +442,7 @@ function chainlinkChainsById(state = {}, action) {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          githubRepositories: state[action.payload.parent_id].repositories.filter(
+          githubRepositories: state[action.payload.parent_id].githubRepositories.filter(
             (config) => config !== action.payload.id,
           ),
         },

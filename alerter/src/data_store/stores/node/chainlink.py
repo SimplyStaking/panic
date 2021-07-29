@@ -122,18 +122,16 @@ class ChainlinkNodeStore(Store):
         metrics = data['data']
 
         self.logger.debug(
-            "Saving %s state: _current_height=%s, _eth_blocks_in_queue=%s, "
+            "Saving %s state: _current_height=%s, "
             "_total_block_headers_received=%s, "
-            "_total_block_headers_dropped=%s, _no_of_active_jobs=%s, "
+            "_no_of_active_jobs=%s, "
             "_max_pending_tx_delay=%s, _process_start_time_seconds=%s, "
             "_total_gas_bumps=%s, _total_gas_bumps_exceeds_limit=%s, "
             "_no_of_unconfirmed_txs=%s, _total_errored_job_runs=%s, "
             "_current_gas_price_info=%s, _eth_balance_info=%s, "
             "_last_monitored_prometheus=%s, _last_prometheus_source_used=%s, "
             "_went_down_at_prometheus=%s", node_name, metrics['current_height'],
-            metrics['eth_blocks_in_queue'],
             metrics['total_block_headers_received'],
-            metrics['total_block_headers_dropped'],
             metrics['no_of_active_jobs'], metrics['max_pending_tx_delay'],
             metrics['process_start_time_seconds'], metrics['total_gas_bumps'],
             metrics['total_gas_bumps_exceeds_limit'],
@@ -147,12 +145,8 @@ class ChainlinkNodeStore(Store):
                 metrics['went_down_at']),
             Keys.get_cl_node_current_height(node_id):
                 str(metrics['current_height']),
-            Keys.get_cl_node_eth_blocks_in_queue(node_id):
-                str(metrics['eth_blocks_in_queue']),
             Keys.get_cl_node_total_block_headers_received(node_id):
                 str(metrics['total_block_headers_received']),
-            Keys.get_cl_node_total_block_headers_dropped(node_id):
-                str(metrics['total_block_headers_dropped']),
             Keys.get_cl_node_no_of_active_jobs(node_id):
                 str(metrics['no_of_active_jobs']),
             Keys.get_cl_node_max_pending_tx_delay(node_id):
@@ -251,12 +245,8 @@ class ChainlinkNodeStore(Store):
                 '$push': {
                     node_id: {
                         'current_height': str(metrics['current_height']),
-                        'eth_blocks_in_queue': str(
-                            metrics['eth_blocks_in_queue']),
                         'total_block_headers_received': str(
                             metrics['total_block_headers_received']),
-                        'total_block_headers_dropped': str(
-                            metrics['total_block_headers_dropped']),
                         'no_of_active_jobs': str(metrics['no_of_active_jobs']),
                         'max_pending_tx_delay': str(
                             metrics['max_pending_tx_delay']),

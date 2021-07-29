@@ -33,9 +33,7 @@ class ChainlinkNodeMonitor(Monitor):
         self._node_config = node_config
         self._prometheus_metrics = {
             'head_tracker_current_head': 'strict',
-            'head_tracker_heads_in_queue': 'strict',
             'head_tracker_heads_received_total': 'strict',
-            'head_tracker_num_heads_dropped_total': 'strict',
             'job_subscriber_subscriptions': 'strict',
             'max_unconfirmed_blocks': 'strict',
             'process_start_time_seconds': 'strict',
@@ -44,7 +42,7 @@ class ChainlinkNodeMonitor(Monitor):
             'unconfirmed_transactions': 'strict',
             'gas_updater_set_gas_price': 'optional',
             'eth_balance': 'strict',
-            'run_status_update_total': 'strict',
+            'run_status_update_total': 'optional',
         }
         self._last_prometheus_source_used = node_config.node_prometheus_urls[0]
 
@@ -69,9 +67,8 @@ class ChainlinkNodeMonitor(Monitor):
             data_defaultdict[metric] = value
 
         return (
-            "head_tracker_current_head={}, head_tracker_heads_in_queue={}, "
+            "head_tracker_current_head={}, "
             "head_tracker_heads_received_total={}, "
-            "head_tracker_num_heads_dropped_total={}, "
             "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, "
             "process_start_time_seconds={}, tx_manager_num_gas_bumps_total={}, "
             "tx_manager_gas_bump_exceeds_limit_total={}, "
@@ -79,9 +76,7 @@ class ChainlinkNodeMonitor(Monitor):
             "eth_balance={}, run_status_update_total_errors={}"
             "".format(
                 data_defaultdict['head_tracker_current_head'],
-                data_defaultdict['head_tracker_heads_in_queue'],
                 data_defaultdict['head_tracker_heads_received_total'],
-                data_defaultdict['head_tracker_num_heads_dropped_total'],
                 data_defaultdict['job_subscriber_subscriptions'],
                 data_defaultdict['max_unconfirmed_blocks'],
                 data_defaultdict['process_start_time_seconds'],
@@ -260,9 +255,12 @@ class ChainlinkNodeMonitor(Monitor):
 
         # Add the number of error job runs to the processed data
         no_of_error_job_runs = 0
-        for _, data_subset in enumerate(data_copy['run_status_update_total']):
-            if json.loads(data_subset)['status'] == 'errored':
-                no_of_error_job_runs += 1
+        # If its None then there are no error job runs
+        if data_copy['run_status_update_total'] is not None:
+            for _, data_subset in enumerate(
+                    data_copy['run_status_update_total']):
+                if json.loads(data_subset)['status'] == 'errored':
+                    no_of_error_job_runs += 1
 
         self.logger.debug("%s run_status_update_total_errors: %s",
                           self.node_config, no_of_error_job_runs)
@@ -311,7 +309,8 @@ class ChainlinkNodeMonitor(Monitor):
         data_retrieval_failed_list = []
         for _, info in retrieval_info.items():
             if eval(info['monitoring_enabled_var']):
-                data_retrieval_failed_list.append(info['data_retrieval_failed'])
+                data_retrieval_failed_list.append(
+                    info['data_retrieval_failed'])
 
         # ChainMap combines multiple dicts into 1. Note if there are same keys
         # in different dicts, the first occurrence is used. This should never
