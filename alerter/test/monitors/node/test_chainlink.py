@@ -138,6 +138,8 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             self.retrieved_prometheus_data_example)
         self.retrieved_prometheus_data_example_optionals_none[
             'gas_updater_set_gas_price'] = None
+        self.retrieved_prometheus_data_example_optionals_none[
+            'run_status_update_total'] = None
         self.processed_prometheus_data_example = {
             'head_tracker_current_head': 6924314.0,
             'head_tracker_heads_received_total': 26392.0,
@@ -161,6 +163,8 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             self.processed_prometheus_data_example)
         self.processed_prometheus_data_example_optionals_none[
             'gas_updater_set_gas_price'] = None
+        self.processed_prometheus_data_example_optionals_none[
+            'run_status_update_total_errors'] = 0
         self.test_exception = PANICException('test_exception', 1)
         self.node_config = ChainlinkNodeConfig(
             self.node_id, self.parent_id, self.node_name, self.monitor_node,

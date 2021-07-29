@@ -270,7 +270,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.raw_data_example_result_options_None['prometheus'][
             'result']['data']['gas_updater_set_gas_price'] = None
         self.raw_data_example_result_options_None['prometheus'][
-            'result']['data']['run_status_update_total_errors'] = None
+            'result']['data']['run_status_update_total_errors'] = 0
         self.raw_data_example_general_error = {
             'prometheus': {
                 'error': {
@@ -348,7 +348,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.transformed_data_example_result_options_None['prometheus'][
             'result']['data']['current_gas_price_info'] = None
         self.transformed_data_example_result_options_None['prometheus'][
-            'result']['data']['total_errored_job_runs'] = None
+            'result']['data']['total_errored_job_runs'] = 0
         self.transformed_data_example_general_error = {
             'prometheus': {
                 'error': {
@@ -461,7 +461,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.processed_data_example_result_options_None['prometheus'][
             'result']['data']['current_gas_price_info']['current'] = None
         self.processed_data_example_result_options_None['prometheus'][
-            'result']['data']['total_errored_job_runs']['current'] = None
+            'result']['data']['total_errored_job_runs']['current'] = 0
         self.processed_data_example_general_error = {
             'prometheus': {
                 'error': {
@@ -878,7 +878,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
 
         # Check that the nodes's state values have been modified correctly
         self.test_chainlink_node_new.set_current_gas_price_info(None, None)
-        self.test_chainlink_node_new.set_total_errored_job_runs(None)
+        self.test_chainlink_node_new.set_total_errored_job_runs(0)
         self.assertEqual(
             self.test_chainlink_node_new,
             self.test_data_transformer._state[self.test_chainlink_node_id])
