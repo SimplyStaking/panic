@@ -1,4 +1,6 @@
+import json
 import logging
+from datetime import timedelta
 from http.client import IncompleteRead
 from typing import List, Dict, Optional
 
@@ -12,8 +14,13 @@ from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
 from src.utils.constants.data import WEI_WATCHERS_URL_TEMPLATE
-from src.utils.data import get_json
-from src.utils.exceptions import ComponentNotGivenEnoughDataSourcesException
+from src.utils.data import get_json, get_prometheus_metrics_data
+from src.utils.exceptions import ComponentNotGivenEnoughDataSourcesException, \
+    MetricNotFoundException
+from src.utils.timing import TimedTaskLimiter
+
+_PROMETHEUS_RETRIEVAL_TIME_PERIOD = 86400
+_WEI_WATCHERS_RETRIEVAL_TIME_PERIOD = 86400
 
 
 class EVMContractsMonitor(Monitor):
@@ -49,6 +56,24 @@ class EVMContractsMonitor(Monitor):
         url_chain_name = '' if chain_name == 'ethereum' else chain_name
         self._contracts_url = WEI_WATCHERS_URL_TEMPLATE.format(url_chain_name)
 
+        # This dict stores the eth address of a chainlink node indexed by the
+        # node id. The eth address is obtained from prometheus.
+        self._node_eth_address = {}
+
+        # This list stores a list of chain contracts data obtained from the wei
+        # watchers link
+        self._contracts_data = []
+
+        # This dict stores a list of contract addresses that each node
+        # participates on, indexed by the node id.
+        self._node_contracts = {}
+
+        # Data retrieval limiters
+        self._wei_watchers_retrieval_limiter = TimedTaskLimiter(
+            timedelta(seconds=float(_WEI_WATCHERS_RETRIEVAL_TIME_PERIOD)))
+        self._eth_address_retrieval_limiter = TimedTaskLimiter(
+            timedelta(seconds=float(_PROMETHEUS_RETRIEVAL_TIME_PERIOD)))
+
     @property
     def node_configs(self) -> List[ChainlinkNodeConfig]:
         return self._node_configs
@@ -61,14 +86,98 @@ class EVMContractsMonitor(Monitor):
     def contracts_url(self) -> str:
         return self._contracts_url
 
-    def get_chain_contracts(self) -> Dict:
+    @property
+    def node_eth_address(self) -> Dict[str, str]:
+        return self._node_eth_address
+
+    @property
+    def contracts_data(self) -> List[Dict]:
+        return self._contracts_data
+
+    @property
+    def node_contracts(self) -> Dict[str, List[str]]:
+        return self._node_contracts
+
+    @property
+    def wei_watchers_retrieval_limiter(self) -> TimedTaskLimiter:
+        return self._wei_watchers_retrieval_limiter
+
+    @property
+    def eth_address_retrieval_limiter(self) -> TimedTaskLimiter:
+        return self._eth_address_retrieval_limiter
+
+    def _get_chain_contracts(self) -> Dict:
         """
         This functions retrieves all the chain contracts along with some data.
         :return: A list of chain contracts together with data.
         """
         return get_json(self._contracts_url, self.logger, None, True)
 
-    def select_node(self) -> Optional[str]:
+    def _store_chain_contracts(self, contracts_data: List[Dict]) -> None:
+        """
+        This function stores the contracts data in the state
+        :param contracts_data: The retrieved contracts data
+        :return: None
+        """
+        self._contracts_data = contracts_data
+
+    def _get_nodes_eth_address(self) -> Dict:
+        """
+        This function attempts to get all the Ethereum addresses associated with
+        each node from the prometheus endpoints. For each node it attempts to
+        connect with the online source to get the eth address, however if a
+        recognizable error occurs, the node is not added to the output dict.
+        :return: A Dict with the following structure:
+        {
+            node_id: node_eth_address
+        }
+        """
+        metrics_to_retrieve = {
+            'eth_balance': 'strict',
+        }
+        node_eth_address = {}
+        for node_config in self.node_configs:
+            for prom_url in node_config.node_prometheus_urls:
+                try:
+                    metrics = get_prometheus_metrics_data(
+                        prom_url, metrics_to_retrieve, self.logger,
+                        verify=False)
+                    for _, data_subset in enumerate(metrics['eth_balance']):
+                        if "account" in json.loads(data_subset):
+                            eth_address = json.loads(data_subset)['account']
+                            node_eth_address[node_config.node_id] = eth_address
+                            break
+                    break
+                except (ReqConnectionError, ReadTimeout, InvalidURL,
+                        InvalidSchema, MissingSchema, IncompleteRead,
+                        ChunkedEncodingError, ProtocolError) as e:
+                    # If these errors are raised it may still be that another
+                    # source can be accessed
+                    self.logger.error("Error when trying to access %s",
+                                      prom_url)
+                    self.logger.exception(e)
+                except MetricNotFoundException as e:
+                    # If these errors are raised then we can't get valid data
+                    # from any node, as only 1 node is online at the same time.
+                    self.logger.error("Error when trying to access %s",
+                                      prom_url)
+                    self.logger.exception(e)
+                    break
+
+        return node_eth_address
+
+    def _store_nodes_eth_addresses_contracts(self,
+                                             node_eth_address: Dict) -> None:
+        """
+        This function stores the node's associated ethereum addresses obtained
+        from prometheus in the state
+        :param node_eth_address: A dict associating a node's ID to it's ethereum
+                               : address obtained from prometheus
+        :return: None
+        """
+        self._node_eth_address = node_eth_address
+
+    def _select_node(self) -> Optional[str]:
         """
         This function returns the url of the selected node. A node is selected
         if the HttpProvider is connected and the node is not syncing.
@@ -87,7 +196,51 @@ class EVMContractsMonitor(Monitor):
 
         return None
 
+    # TODO: Do a function which filters the contracts a node participates on
+    #     : and store it inside a specialised dict indexed by node_id. Ignore
+    #     : nodes with no eth_addresses stored. Need to check the contract
+    #     : version if v3 or v4.
+
+    def _filter_contracts_by_node(self,
+                                  selected_node: str) -> Dict[str, List[str]]:
+        # TODO: Pydocs
+        node_contracts = {}
+        for node_id, eth_address in self._node_eth_address.items():
+            node_contracts = []
+            for contract_data in self._contracts_data:
+                if contract_data['contractVersion'] == 3:
+                    # TODO: Get contract transmitters, do toCheckSum address
+                    #     : and check if in list of transmitters, if yes add to
+                    #     : list and store
+                    pass
+                elif contract_data['contractVersion'] == 4:
+                    pass
+
+        return node_contracts
+
+    # TODO: Must cater for exceptions in all retrieval fns
+    # TODO: When getting contracts and prom metrics, if the state is still
+    #     : empty perform the retrieval again, anzi if empty don't set the
+    #     : limiter did work. or do, retrieve, save, limiter.did_work
+    # TODO: When formulating the data we need to check if a node has eth address
+    #     : retrieved, if not we retrieve the eth addresses again next round.
+    # TODO: Contracts filtering is also done every 24 hours
+    # TODO: If weiwatchers retrieval successful, set it's limiter to did task.
+    #     : If eth address retrieval successful for all set limiter to did task
+    #     : otherwise do not set to did task and do prom address retrieval again
+    #     : in next monitoring round
+    #     : Do filtering if one of the above functions is called.
+    # TODO: If contracts retrieval fails, stop and re-try to always have the
+    #     : latest contracts
+    # TODO: Select a node, check if None, if yes do nothing as it means no node
+    #     : is available and raise error in logs, or possibly an error alert
+    #     : saying no data source is available.
+
     # def _get_data(self) -> Dict:
+    # TODO: Get contracts, must take contracts as input and process each
+    #     : contract. First must construct a dict node_eth_address which gets
+    #     : ethereum addresses from prometheus (do separate fn for this). Check
+    #     : that this dict is populated or simply don't output the data
     #     return {
     #         'current_height': self.w3_interface.eth.block_number
     #     }
