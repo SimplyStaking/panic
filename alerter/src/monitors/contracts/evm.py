@@ -218,6 +218,15 @@ class EVMContractsMonitor(Monitor):
 
         return node_contracts
 
+    def _store_node_contracts(self,
+                              node_contracts: Dict[str, List[str]]) -> None:
+        """
+        This function stores the retrieved node_contracts inside the state.
+        :param node_contracts: The retrieved node_contracts
+        :return: None
+        """
+        self._node_contracts = node_contracts
+
     # TODO: Must cater for exceptions in all retrieval fns
     # TODO: When getting contracts and prom metrics, if the state is still
     #     : empty perform the retrieval again, anzi if empty don't set the
