@@ -54,7 +54,7 @@ class Monitor(PublisherComponent, ABC):
                                        True, False, False)
 
     @abstractmethod
-    def _get_data(self) -> Dict:
+    def _get_data(self, *args) -> Dict:
         pass
 
     def _process_data(self, data_retrieval_failed: bool,

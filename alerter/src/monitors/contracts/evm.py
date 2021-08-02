@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import timedelta
 from http.client import IncompleteRead
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 
 from requests.exceptions import (ConnectionError as ReqConnectionError,
                                  ReadTimeout, ChunkedEncodingError,
@@ -13,10 +13,11 @@ from web3 import Web3
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
+from src.utils.constants.abis import V3, V4
 from src.utils.constants.data import WEI_WATCHERS_URL_TEMPLATE
 from src.utils.data import get_json, get_prometheus_metrics_data
-from src.utils.exceptions import ComponentNotGivenEnoughDataSourcesException, \
-    MetricNotFoundException
+from src.utils.exceptions import (ComponentNotGivenEnoughDataSourcesException,
+                                  MetricNotFoundException)
 from src.utils.timing import TimedTaskLimiter
 
 _PROMETHEUS_RETRIEVAL_TIME_PERIOD = 86400
@@ -65,7 +66,8 @@ class EVMContractsMonitor(Monitor):
         self._contracts_data = []
 
         # This dict stores a list of contract addresses that each node
-        # participates on, indexed by the node id.
+        # participates on, indexed by the node id. The contracts addresses are
+        # also filtered out according to their version.
         self._node_contracts = {}
 
         # Data retrieval limiters
@@ -95,7 +97,7 @@ class EVMContractsMonitor(Monitor):
         return self._contracts_data
 
     @property
-    def node_contracts(self) -> Dict[str, List[str]]:
+    def node_contracts(self) -> Dict:
         return self._node_contracts
 
     @property
@@ -121,21 +123,22 @@ class EVMContractsMonitor(Monitor):
         """
         self._contracts_data = contracts_data
 
-    def _get_nodes_eth_address(self) -> Dict:
+    def _get_nodes_eth_address(self) -> Tuple[Dict, bool]:
         """
         This function attempts to get all the Ethereum addresses associated with
         each node from the prometheus endpoints. For each node it attempts to
         connect with the online source to get the eth address, however if a
-        recognizable error occurs, the node is not added to the output dict.
-        :return: A Dict with the following structure:
-        {
-            node_id: node_eth_address
-        }
+        recognizable error occurs, the node is not added to the output dict but
+        the second element in the tuple is set to True indicating that an error
+        occurred during the process.
+        :return: A tuple with the following structure:
+                ({ node_id: node_eth_address }, bool)
         """
         metrics_to_retrieve = {
             'eth_balance': 'strict',
         }
         node_eth_address = {}
+        error_occurred = False
         for node_config in self.node_configs:
             for prom_url in node_config.node_prometheus_urls:
                 try:
@@ -147,7 +150,6 @@ class EVMContractsMonitor(Monitor):
                             eth_address = json.loads(data_subset)['account']
                             node_eth_address[node_config.node_id] = eth_address
                             break
-                    break
                 except (ReqConnectionError, ReadTimeout, InvalidURL,
                         InvalidSchema, MissingSchema, IncompleteRead,
                         ChunkedEncodingError, ProtocolError) as e:
@@ -156,15 +158,17 @@ class EVMContractsMonitor(Monitor):
                     self.logger.error("Error when trying to access %s",
                                       prom_url)
                     self.logger.exception(e)
+                    error_occurred = True
                 except MetricNotFoundException as e:
                     # If these errors are raised then we can't get valid data
                     # from any node, as only 1 node is online at the same time.
                     self.logger.error("Error when trying to access %s",
                                       prom_url)
                     self.logger.exception(e)
+                    error_occurred = True
                     break
 
-        return node_eth_address
+        return node_eth_address, error_occurred
 
     def _store_nodes_eth_addresses_contracts(self,
                                              node_eth_address: Dict) -> None:
@@ -196,36 +200,117 @@ class EVMContractsMonitor(Monitor):
 
         return None
 
-    # TODO: Do a function which filters the contracts a node participates on
-    #     : and store it inside a specialised dict indexed by node_id. Ignore
-    #     : nodes with no eth_addresses stored. Need to check the contract
-    #     : version if v3 or v4.
-
-    def _filter_contracts_by_node(self,
-                                  selected_node: str) -> Dict[str, List[str]]:
-        # TODO: Pydocs
+    def _filter_contracts_by_node(self, selected_node: str) -> Dict:
+        """
+        This function checks which contracts a node participates on.
+        :param selected_node: The evm node selected to retrieve the data from
+        :return: A dict indexed by the node_id were each value is another dict
+               : containing a list of v3 and v4 contracts the node participates
+               : on
+        """
+        w3_interface = self.evm_node_w3_interface[selected_node]
         node_contracts = {}
         for node_id, eth_address in self._node_eth_address.items():
-            node_contracts = []
+            transformed_eth_address = w3_interface.toChecksumAddress(
+                eth_address)
+            v3_participating_contracts = []
+            v4_participating_contracts = []
             for contract_data in self._contracts_data:
-                if contract_data['contractVersion'] == 3:
-                    # TODO: Get contract transmitters, do toCheckSum address
-                    #     : and check if in list of transmitters, if yes add to
-                    #     : list and store
-                    pass
-                elif contract_data['contractVersion'] == 4:
-                    pass
+                contract_address = contract_data['contractAddress']
+                contract_version = contract_data['contractVersion']
+                if contract_version == 3:
+                    contract = w3_interface.eth.contract(
+                        address=contract_address, abi=V3)
+                    oracles = contract.functions.getOracles().call()
+                    if transformed_eth_address in oracles:
+                        v3_participating_contracts.append(contract_address)
+                elif contract_version == 4:
+                    contract = w3_interface.eth.contract(
+                        address=contract_address, abi=V4)
+                    transmitters = contract.functions.transmitters().call()
+                    if transformed_eth_address in transmitters:
+                        v4_participating_contracts.append(contract_address)
+
+            node_contracts[node_id] = {}
+            node_contracts['v3'] = v3_participating_contracts
+            node_contracts['v4'] = v4_participating_contracts
 
         return node_contracts
 
-    def _store_node_contracts(self,
-                              node_contracts: Dict[str, List[str]]) -> None:
+    def _store_node_contracts(self, node_contracts: Dict) -> None:
         """
         This function stores the retrieved node_contracts inside the state.
         :param node_contracts: The retrieved node_contracts
         :return: None
         """
         self._node_contracts = node_contracts
+
+    def _get_v3_data(self, w3_interface: Web3, node_eth_address: str,
+                     node_id: str) -> Dict:
+        """
+        This function attempts to retrieve the v3 contract metrics for a node
+        using an evm node as data source.
+        :param w3_interface: The web3 interface used to get the data
+        :param node_eth_address: The ethereum address of the node the metrics
+                               : are associated with.
+        :param node_id: The id of the node the metrics are associated with.
+        :return: A dict with the following structure:
+        {
+            <v3_contract_address>: {
+                'contractVersion': 3,
+                'latestRound': int,
+                'latestAnswer': int,
+                'latestTimestamp': float,
+                'nodeLatestAnswer': int,
+                'withdrawablePayment': int
+            }
+        }
+        """
+
+        # If this is the case, then the node has not associated contracts stored
+        if node_id not in self.node_contracts:
+            return {}
+
+        data = {}
+        v3_contracts = self.node_contracts[node_id]['v3']
+        for contract_address in v3_contracts:
+            contract = w3_interface.eth.contract(address=contract_address,
+                                                 abi=V3)
+            transformed_eth_address = w3_interface.toChecksumAddress(
+                node_eth_address)
+            latest_round = contract.functions.latestRound().call()
+            data[contract_address] = {
+                'contractVersion': 3,
+                'latestRound': latest_round,
+                'latestAnswer': contract.functions.latestAnswer().call(),
+                'latestTimestamp': contract.functions.latestTimestamp().call(),
+                'nodeLatestAnswer': contract.functions.oracleRoundState().call(
+                    transformed_eth_address, latest_round),
+                'withdrawablePayment':
+                    contract.functions.withdrawablePayment().call()
+            }
+
+        return data
+
+    def _get_v4_data(self, w3_inteface: Web3, node_eth_address: str,
+                     node_id: str) -> Dict:
+        # TODO: Pydocs
+        pass
+
+    def _get_data(self, w3_interface: Web3, node_eth_address: str,
+                  node_id: str) -> Dict:
+        """
+        This function retrieves the contracts' v3 and v4 metrics data for a
+        single node using an evm node as data source.
+        :param w3_interface: The web3 interface associated with the evm node
+                           : used as data source
+        :param node_eth_address: The Ethereum address of the node
+        :param node_id: The identifier of the node
+        :return: A dict containing all contract metrics
+        """
+        v3_data = self._get_v3_data(w3_interface, node_eth_address, node_id)
+        v4_data = self._get_v4_data(w3_interface, node_eth_address, node_id)
+        return {**v3_data, **v4_data}
 
     # TODO: Must cater for exceptions in all retrieval fns
     # TODO: When getting contracts and prom metrics, if the state is still
@@ -244,15 +329,6 @@ class EVMContractsMonitor(Monitor):
     # TODO: Select a node, check if None, if yes do nothing as it means no node
     #     : is available and raise error in logs, or possibly an error alert
     #     : saying no data source is available.
-
-    # def _get_data(self) -> Dict:
-    # TODO: Get contracts, must take contracts as input and process each
-    #     : contract. First must construct a dict node_eth_address which gets
-    #     : ethereum addresses from prometheus (do separate fn for this). Check
-    #     : that this dict is populated or simply don't output the data
-    #     return {
-    #         'current_height': self.w3_interface.eth.block_number
-    #     }
 
     #
     # def _display_data(self, data: Dict) -> str:
