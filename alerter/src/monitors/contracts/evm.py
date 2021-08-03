@@ -365,7 +365,10 @@ class EVMContractsMonitor(Monitor):
 
                 # TODO: Need to think well what to do with data which is not
                 #     : consensed yet, modify the comment about the piece of
-                #     : code above and modify pydocs.
+                #     : code above and modify pydocs. What happens if a
+                #     : consensus is never reached in CL? Will a new round start
+                #     : or are we stuck with the previous round. If no round
+                #     : starts keep the implementation above.
 
                 if not consensus_reached:
                     last_block_monitored = event['args']['blockNumber']
