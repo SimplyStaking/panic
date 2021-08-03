@@ -9,6 +9,7 @@ from requests.exceptions import (ConnectionError as ReqConnectionError,
                                  MissingSchema, InvalidSchema, InvalidURL)
 from urllib3.exceptions import ProtocolError
 from web3 import Web3
+from web3.exceptions import ContractLogicError
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -70,6 +71,12 @@ class EVMContractsMonitor(Monitor):
         # also filtered out according to their version.
         self._node_contracts = {}
 
+        # This dict stores the last block height monitored for a node and
+        # contract pair. This will be used to monitored round submissions.
+        # This dict should have the following structure:
+        # {<node_id>: {<contract_address>: <last_block_monitored>}}
+        self._last_block_monitored = {}
+
         # Data retrieval limiters
         self._wei_watchers_retrieval_limiter = TimedTaskLimiter(
             timedelta(seconds=float(_WEI_WATCHERS_RETRIEVAL_TIME_PERIOD)))
@@ -99,6 +106,10 @@ class EVMContractsMonitor(Monitor):
     @property
     def node_contracts(self) -> Dict:
         return self._node_contracts
+
+    @property
+    def last_block_monitored(self) -> Dict:
+        return self._last_block_monitored
 
     @property
     def wei_watchers_retrieval_limiter(self) -> TimedTaskLimiter:
@@ -261,15 +272,28 @@ class EVMContractsMonitor(Monitor):
                 'latestRound': int,
                 'latestAnswer': int,
                 'latestTimestamp': float,
-                'nodeLatestAnswer': int,
-                'withdrawablePayment': int
+                'withdrawablePayment': int,
+                'historicalRounds': {
+                    'roundId': int,
+                    'roundAnswer': int/None (if round consensus not reached
+                                             yet),
+                    'roundTimestamp': float (if round consensus not reached
+                                             yet),
+                    'nodeSubmission': int
+                }
             }
         }
         """
 
-        # If this is the case, then the node has not associated contracts stored
+        # TODO: Need to fix pydocs
+
+        # If this is the case, then the node has no associated contracts stored
         if node_id not in self.node_contracts:
             return {}
+
+        # This is the case for the first monitoring round
+        if node_id not in self.last_block_monitored:
+            self._last_block_monitored[node_id] = {}
 
         data = {}
         v3_contracts = self.node_contracts[node_id]['v3']
@@ -278,17 +302,77 @@ class EVMContractsMonitor(Monitor):
                                                  abi=V3)
             transformed_eth_address = w3_interface.toChecksumAddress(
                 node_eth_address)
-            latest_round = contract.functions.latestRound().call()
+
+            # Get all SubmissionReceived events related to the node in question
+            # from the latest block height monitored until the current block
+            # height
+            current_block_height = w3_interface.eth.get_block('latest')[
+                'number']
+            last_block_monitored = self.last_block_monitored[node_id][
+                contract_address] \
+                if contract_address in self.last_block_monitored \
+                else current_block_height
+            event_filter = contract.events.SubmissionReceived.createFilter(
+                fromBlock=last_block_monitored, toBlock=current_block_height,
+                argument_filters={'oracle': transformed_eth_address})
+            events = event_filter.get_all_entries()
+            latest_round_data = contract.functions.latestRoundData().call()
+
+            # Construct the latest round data
             data[contract_address] = {
                 'contractVersion': 3,
-                'latestRound': latest_round,
-                'latestAnswer': contract.functions.latestAnswer().call(),
-                'latestTimestamp': contract.functions.latestTimestamp().call(),
-                'nodeLatestAnswer': contract.functions.oracleRoundState().call(
-                    transformed_eth_address, latest_round),
+                'latestRound': latest_round_data[0],
+                'latestAnswer': latest_round_data[1],
+                'latestTimestamp': latest_round_data[3],
                 'withdrawablePayment':
-                    contract.functions.withdrawablePayment().call()
+                    contract.functions.withdrawablePayment().call(),
+                'historicalRounds': []
             }
+
+            # Construct the historical data
+            historical_rounds = data[contract_address]['historicalRounds']
+            for event in events:
+                round_id = event['args']['round']
+                round_answer = None
+                round_timestamp = None
+                consensus_reached = True
+
+                # In v3 contracts we may encounter a scenario where a node
+                # submitted their answer but consensus is not reached yet on
+                # the price. If this happens, the last block height processed is
+                # set to the block no of this event, as a result roundAnswer
+                # together with roundTimestamp are set to None. Note that round
+                # data which is yet to be consensed will linger in following
+                # monitoring rounds unless a consensus is reached.
+                try:
+                    round_data = contract.functions.getRoundData(
+                        round_id).call()
+                    round_answer = round_data[1]
+                    round_timestamp = round_data[3]
+                except ContractLogicError as e:
+                    self.logger.error('Error when retrieving round %s data. It '
+                                      'may be that no consensus is reached '
+                                      'yet.')
+                    self.logger.exception(e)
+                    consensus_reached = False
+
+                historical_rounds.append({
+                    'roundId': round_id,
+                    'roundAnswer': round_answer,
+                    'roundTimestamp': round_timestamp,
+                    'nodeSubmission': event['args']['submission']
+                })
+
+                # TODO: Need to think well what to do with data which is not
+                #     : consensed yet, modify the comment about the piece of
+                #     : code above and modify pydocs.
+
+                if not consensus_reached:
+                    last_block_monitored = event['args']['blockNumber']
+                    break
+
+            self._last_block_monitored[node_id][
+                contract_address] = last_block_monitored
 
         return data
 
