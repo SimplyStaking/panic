@@ -305,16 +305,16 @@ class EVMContractsMonitor(Monitor):
                 node_eth_address)
 
             # Get all SubmissionReceived events related to the node in question
-            # from the last block height monitored until the current block
-            # height
+            # from the last block height not monitored until the current block
+            # height. Note fromBlock and toBlock are inclusive.
             current_block_height = w3_interface.eth.get_block('latest')[
                 'number']
-            last_block_monitored = self.last_block_monitored[node_id][
-                contract_address] \
+            first_block_to_monitor = self.last_block_monitored[node_id][
+                                         contract_address] + 1 \
                 if contract_address in self.last_block_monitored[node_id] \
-                else current_block_height - 1
+                else current_block_height
             event_filter = contract.events.SubmissionReceived.createFilter(
-                fromBlock=last_block_monitored, toBlock=current_block_height,
+                fromBlock=first_block_to_monitor, toBlock=current_block_height,
                 argument_filters={'oracle': transformed_eth_address})
             events = event_filter.get_all_entries()
             latest_round_data = contract.functions.latestRoundData().call()
@@ -326,12 +326,10 @@ class EVMContractsMonitor(Monitor):
                 'latestAnswer': latest_round_data[1],
                 'latestTimestamp': latest_round_data[3],
                 'answeredInRound': latest_round_data[4],
-                'withdrawablePayment':
-                    contract.functions.withdrawablePayment().call(),
+                'withdrawablePayment': contract.functions.withdrawablePayment(
+                    transformed_eth_address).call(),
                 'historicalRounds': []
             }
-
-            # TODO: Cont from here
 
             # Construct the historical data
             historical_rounds = data[contract_address]['historicalRounds']
@@ -383,10 +381,121 @@ class EVMContractsMonitor(Monitor):
 
         return data
 
-    def _get_v4_data(self, w3_inteface: Web3, node_eth_address: str,
+    def _get_v4_data(self, w3_interface: Web3, node_eth_address: str,
                      node_id: str) -> Dict:
-        # TODO: Pydocs
-        pass
+        """
+        This function attempts to retrieve the v4 contract metrics for a node
+        using an evm node as data source.
+        :param w3_interface: The web3 interface used to get the data
+        :param node_eth_address: The ethereum address of the node the metrics
+                               : are associated with.
+        :param node_id: The id of the node the metrics are associated with.
+        :return: A dict with the following structure:
+        {
+            <v4_contract_address>: {
+                'contractVersion': 4,
+                'latestRound': int,
+                'latestAnswer': int,
+                'latestTimestamp': float,
+                'answeredInRound': int
+                'owedPayment': int,
+                'historicalRounds': {
+                    'roundId': int,
+                    'roundAnswer': int,
+                    'roundTimestamp': float,
+                    'answeredInRound': int,
+                    'nodeSubmission': int,
+                    'noOfObservations': int,
+                    'noOfTransmitters': int
+                }
+            }
+        }
+        """
+
+        # If this is the case, then the node has no associated contracts stored
+        if node_id not in self.node_contracts:
+            return {}
+
+        # This is the case for the first monitoring round
+        if node_id not in self.last_block_monitored:
+            self._last_block_monitored[node_id] = {}
+
+        data = {}
+        v4_contracts = self.node_contracts[node_id]['v4']
+        for contract_address in v4_contracts:
+            contract = w3_interface.eth.contract(address=contract_address,
+                                                 abi=V4)
+            transformed_eth_address = w3_interface.toChecksumAddress(
+                node_eth_address)
+
+            # Get all NewTransmission events related to the node in question
+            # from the last block height not monitored until the current block
+            # height. Note fromBlock and toBlock are inclusive.
+            current_block_height = w3_interface.eth.get_block('latest')[
+                'number']
+            first_block_to_monitor = self.last_block_monitored[node_id][
+                                         contract_address] + 1 \
+                if contract_address in self.last_block_monitored[node_id] \
+                else current_block_height
+            event_filter = contract.events.NewTransmission.createFilter(
+                fromBlock=first_block_to_monitor, toBlock=current_block_height)
+            events = event_filter.get_all_entries()
+            latest_round_data = contract.functions.latestRoundData().call()
+            transmitters = contract.functions.transmitters().call()
+
+            try:
+                node_transmitter_index = transmitters.index(
+                    transformed_eth_address)
+            except ValueError:
+                # If the node is no longer a transmitter of this contract,
+                # move on to the next contract
+                self.logger.warning("Node %s is no longer participating on "
+                                    "contract %s", node_id, contract_address)
+                continue
+
+            # Construct the latest round data
+            data[contract_address] = {
+                'contractVersion': 4,
+                'latestRound': latest_round_data[0],
+                'latestAnswer': latest_round_data[1],
+                'latestTimestamp': latest_round_data[3],
+                'answeredInRound': latest_round_data[4],
+                'owedPayment': contract.functions.owedPayment(
+                    transformed_eth_address).call(),
+                'historicalRounds': []
+            }
+
+            # Construct the historical data
+            historical_rounds = data[contract_address]['historicalRounds']
+            for event in events:
+                round_id = event['args']['aggregatorRoundId']
+                round_data = contract.functions.getRoundData(round_id).call()
+                observers_list = list(event['args']['observers'])
+
+                try:
+                    answer_index = observers_list.index(node_transmitter_index)
+                    node_submission = event['args']['observations'][
+                        answer_index]
+                except ValueError:
+                    self.logger.warning("Node %s did not send an answer in "
+                                        "round %s for contract %s", node_id,
+                                        round_id, contract_address)
+                    node_submission = None
+
+                historical_rounds.append({
+                    'roundId': round_id,
+                    'roundAnswer': round_data[1],
+                    'roundTimestamp': round_data[3],
+                    'answeredInRound': round_data[4],
+                    'nodeSubmission': node_submission,
+                    'noOfObservations': len(event['args']['observations']),
+                    'noOfTransmitters': len(transmitters),
+                })
+
+            self._last_block_monitored[node_id][
+                contract_address] = current_block_height
+
+        return data
 
     def _get_data(self, w3_interface: Web3, node_eth_address: str,
                   node_id: str) -> Dict:
@@ -420,6 +529,8 @@ class EVMContractsMonitor(Monitor):
     # TODO: Select a node, check if None, if yes do nothing as it means no node
     #     : is available and raise error in logs, or possibly an error alert
     #     : saying no data source is available.
+    # TODO: We may need to filter more often to check that the node is still
+    #     : participating in the contract
 
     #
     # def _display_data(self, data: Dict) -> str:
