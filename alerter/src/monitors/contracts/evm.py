@@ -272,20 +272,21 @@ class EVMContractsMonitor(Monitor):
                 'latestRound': int,
                 'latestAnswer': int,
                 'latestTimestamp': float,
+                'answeredInRound': int
                 'withdrawablePayment': int,
                 'historicalRounds': {
                     'roundId': int,
                     'roundAnswer': int/None (if round consensus not reached
                                              yet),
-                    'roundTimestamp': float (if round consensus not reached
-                                             yet),
+                    'roundTimestamp': float/None (if round consensus not reached
+                                                  yet),
+                    'answeredInRound': int/None (if round consensus not reached
+                                                 yet)
                     'nodeSubmission': int
                 }
             }
         }
         """
-
-        # TODO: Need to fix pydocs
 
         # If this is the case, then the node has no associated contracts stored
         if node_id not in self.node_contracts:
@@ -304,14 +305,14 @@ class EVMContractsMonitor(Monitor):
                 node_eth_address)
 
             # Get all SubmissionReceived events related to the node in question
-            # from the latest block height monitored until the current block
+            # from the last block height monitored until the current block
             # height
             current_block_height = w3_interface.eth.get_block('latest')[
                 'number']
             last_block_monitored = self.last_block_monitored[node_id][
                 contract_address] \
-                if contract_address in self.last_block_monitored \
-                else current_block_height
+                if contract_address in self.last_block_monitored[node_id] \
+                else current_block_height - 1
             event_filter = contract.events.SubmissionReceived.createFilter(
                 fromBlock=last_block_monitored, toBlock=current_block_height,
                 argument_filters={'oracle': transformed_eth_address})
@@ -324,10 +325,13 @@ class EVMContractsMonitor(Monitor):
                 'latestRound': latest_round_data[0],
                 'latestAnswer': latest_round_data[1],
                 'latestTimestamp': latest_round_data[3],
+                'answeredInRound': latest_round_data[4],
                 'withdrawablePayment':
                     contract.functions.withdrawablePayment().call(),
                 'historicalRounds': []
             }
+
+            # TODO: Cont from here
 
             # Construct the historical data
             historical_rounds = data[contract_address]['historicalRounds']
@@ -335,20 +339,26 @@ class EVMContractsMonitor(Monitor):
                 round_id = event['args']['round']
                 round_answer = None
                 round_timestamp = None
+                answered_in_round = None
                 consensus_reached = True
 
                 # In v3 contracts we may encounter a scenario where a node
                 # submitted their answer but consensus is not reached yet on
                 # the price. If this happens, the last block height processed is
-                # set to the block no of this event, as a result roundAnswer
-                # together with roundTimestamp are set to None. Note that round
-                # data which is yet to be consensed will linger in following
-                # monitoring rounds unless a consensus is reached.
+                # set to 1 - the block no of this event. This is done so that in
+                # the next monitoring round we re-check the round again to see
+                # if a consensus was reached. Note, if a consensus is not
+                # reached, the node software establishes the round price to the
+                # price of the previous round, so eventually no round processing
+                # is stuck. Note, until consensus is reached, round data will
+                # still be shown with roundAnswer, roundTimestamp and
+                # answeredInRound set to None.
                 try:
                     round_data = contract.functions.getRoundData(
                         round_id).call()
                     round_answer = round_data[1]
                     round_timestamp = round_data[3]
+                    answered_in_round = round_data[4]
                 except ContractLogicError as e:
                     self.logger.error('Error when retrieving round %s data. It '
                                       'may be that no consensus is reached '
@@ -360,22 +370,16 @@ class EVMContractsMonitor(Monitor):
                     'roundId': round_id,
                     'roundAnswer': round_answer,
                     'roundTimestamp': round_timestamp,
+                    'answeredInRound': answered_in_round,
                     'nodeSubmission': event['args']['submission']
                 })
 
-                # TODO: Need to think well what to do with data which is not
-                #     : consensed yet, modify the comment about the piece of
-                #     : code above and modify pydocs. What happens if a
-                #     : consensus is never reached in CL? Will a new round start
-                #     : or are we stuck with the previous round. If no round
-                #     : starts keep the implementation above.
-
                 if not consensus_reached:
-                    last_block_monitored = event['args']['blockNumber']
+                    current_block_height = event['args']['blockNumber'] - 1
                     break
 
             self._last_block_monitored[node_id][
-                contract_address] = last_block_monitored
+                contract_address] = current_block_height
 
         return data
 
