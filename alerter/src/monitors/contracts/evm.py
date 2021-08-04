@@ -1,9 +1,12 @@
+import copy
 import json
 import logging
+from datetime import datetime
 from datetime import timedelta
 from http.client import IncompleteRead
 from typing import List, Dict, Optional, Tuple
 
+import pika
 from requests.exceptions import (ConnectionError as ReqConnectionError,
                                  ReadTimeout, ChunkedEncodingError,
                                  MissingSchema, InvalidSchema, InvalidURL)
@@ -16,9 +19,11 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
 from src.utils.constants.abis import V3, V4
 from src.utils.constants.data import WEI_WATCHERS_URL_TEMPLATE
+from src.utils.constants.rabbitmq import RAW_DATA_EXCHANGE, \
+    EVM_CONTRACTS_RAW_DATA_ROUTING_KEY
 from src.utils.data import get_json, get_prometheus_metrics_data
 from src.utils.exceptions import (ComponentNotGivenEnoughDataSourcesException,
-                                  MetricNotFoundException)
+                                  MetricNotFoundException, PANICException)
 from src.utils.timing import TimedTaskLimiter
 
 _PROMETHEUS_RETRIEVAL_TIME_PERIOD = 86400
@@ -512,74 +517,68 @@ class EVMContractsMonitor(Monitor):
         v4_data = self._get_v4_data(w3_interface, node_eth_address, node_id)
         return {**v3_data, **v4_data}
 
-    # TODO: Must cater for exceptions in all retrieval fns
-    # TODO: When getting contracts and prom metrics, if the state is still
-    #     : empty perform the retrieval again, anzi if empty don't set the
-    #     : limiter did work. or do, retrieve, save, limiter.did_work
-    # TODO: When formulating the data we need to check if a node has eth address
-    #     : retrieved, if not we retrieve the eth addresses again next round.
-    # TODO: Contracts filtering is also done every 24 hours
-    # TODO: If weiwatchers retrieval successful, set it's limiter to did task.
-    #     : If eth address retrieval successful for all set limiter to did task
-    #     : otherwise do not set to did task and do prom address retrieval again
-    #     : in next monitoring round
-    #     : Do filtering if one of the above functions is called.
-    # TODO: If contracts retrieval fails, stop and re-try to always have the
-    #     : latest contracts
-    # TODO: Select a node, check if None, if yes do nothing as it means no node
-    #     : is available and raise error in logs, or possibly an error alert
-    #     : saying no data source is available.
-    # TODO: We may need to filter more often to check that the node is still
-    #     : participating in the contract
+    def _display_data(self, data: Dict) -> str:
+        # This function assumes that the data has been obtained and processed
+        # successfully by the node monitor
+        return json.dumps(data)
 
-    #
-    # def _display_data(self, data: Dict) -> str:
-    #     # This function assumes that the data has been obtained and processed
-    #     # successfully by the node monitor
-    #     return "current_height={}".format(data['current_height'])
-    #
-    #
-    # def _process_error(self, error: PANICException) -> Dict:
-    #     processed_data = {
-    #         'error': {
-    #             'meta_data': {
-    #                 'monitor_name': self.monitor_name,
-    #                 'node_name': self.node_config.node_name,
-    #                 'node_id': self.node_config.node_id,
-    #                 'node_parent_id': self.node_config.parent_id,
-    #                 'time': datetime.now().timestamp()
-    #             },
-    #             'message': error.message,
-    #             'code': error.code,
-    #         }
-    #     }
-    #
-    #     return processed_data
-    #
-    # def _process_retrieved_data(self, data: Dict) -> Dict:
-    #     # Add some meta-data to the processed data
-    #     processed_data = {
-    #         'result': {
-    #             'meta_data': {
-    #                 'monitor_name': self.monitor_name,
-    #                 'node_name': self.node_config.node_name,
-    #                 'node_id': self.node_config.node_id,
-    #                 'node_parent_id': self.node_config.parent_id,
-    #                 'time': datetime.now().timestamp()
-    #             },
-    #             'data': copy.deepcopy(data),
-    #         }
-    #     }
-    #
-    #     return processed_data
-    #
-    # def _send_data(self, data: Dict) -> None:
-    #     self.rabbitmq.basic_publish_confirm(
-    #         exchange=RAW_DATA_EXCHANGE,
-    #         routing_key=EVM_NODE_RAW_DATA_ROUTING_KEY, body=data,
-    #         is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
-    #         mandatory=True)
-    #     self.logger.debug("Sent data to '%s' exchange", RAW_DATA_EXCHANGE)
+    def _process_error(self, error: PANICException,
+                       node_config: ChainlinkNodeConfig) -> Dict:
+        """
+        This function attempts to process the error which occurred when
+        retrieving data. Note that this function can be applied for any node
+        configuration.
+        :param error: The detected error
+        :param node_config: The configuration of the node in question
+        :return: A dict with the error data together with some meta data
+        """
+        processed_data = {
+            'error': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'node_name': node_config.node_name,
+                    'node_id': node_config.node_id,
+                    'node_parent_id': node_config.parent_id,
+                    'time': datetime.now().timestamp()
+                },
+                'message': error.message,
+                'code': error.code,
+            }
+        }
+
+        return processed_data
+
+    def _process_retrieved_data(self, data: Dict,
+                                node_config: ChainlinkNodeConfig) -> Dict:
+        """
+        This function attempts to process the retrieved data for any node.
+        :param data: The retrieved data
+        :param node_config: The configuration of the node in question
+        :return: A dict with the retrieved data together with some meta data
+        """
+        processed_data = {
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'node_name': node_config.node_name,
+                    'node_id': node_config.node_id,
+                    'node_parent_id': node_config.parent_id,
+                    'time': datetime.now().timestamp()
+                },
+                'data': copy.deepcopy(data),
+            }
+        }
+
+        return processed_data
+
+    def _send_data(self, data: Dict) -> None:
+        self.rabbitmq.basic_publish_confirm(
+            exchange=RAW_DATA_EXCHANGE,
+            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY, body=data,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
+        self.logger.debug("Sent data to '%s' exchange", RAW_DATA_EXCHANGE)
+
     #
     # def _monitor(self) -> None:
     #     data_retrieval_exception = None
@@ -632,6 +631,28 @@ class EVMContractsMonitor(Monitor):
     #         'timestamp': datetime.now().timestamp()
     #     }
     #     self._send_heartbeat(heartbeat)
+
+    # TODO: Must cater for exceptions in all retrieval fns
+    # TODO: When getting contracts and prom metrics, if the state is still
+    #     : empty perform the retrieval again, anzi if empty don't set the
+    #     : limiter did work. or do, retrieve, save, limiter.did_work
+    # TODO: When formulating the data we need to check if a node has eth address
+    #     : retrieved, if not we retrieve the eth addresses again next round.
+    # TODO: Contracts filtering is also done every 24 hours
+    # TODO: If weiwatchers retrieval successful, set it's limiter to did task.
+    #     : If eth address retrieval successful for all set limiter to did task
+    #     : otherwise do not set to did task and do prom address retrieval again
+    #     : in next monitoring round
+    #     : Do filtering if one of the above functions is called.
+    # TODO: If contracts retrieval fails, stop and re-try to always have the
+    #     : latest contracts
+    # TODO: Select a node, check if None, if yes do nothing as it means no node
+    #     : is available and raise error in logs, or possibly an error alert
+    #     : saying no data source is available.
+    # TODO: We may need to filter more often to check that the node is still
+    #     : participating in the contract
+    # TODO: No sources error may be sent by the monitor. I think that it's the
+    #     : only error that should be sent.
 
 # TODO: Add chain_name and list of evm nodes. Aggregate list of evm urls
 #     : in manager. Check if equal.
