@@ -2,6 +2,10 @@ Change the contents of this file to this:
 
 # Change Log
 
+## 0.3.0
+
+ - Updated the Web-Installer to cater for GETH RPC Monitoring
+
 ## Unreleased
 
 - Fixed tests to work with alerter changes. Merged multiple tests into one using parameterization.
