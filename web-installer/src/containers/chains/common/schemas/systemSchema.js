@@ -5,9 +5,14 @@ const SystemSchema = (props) => Yup.object().shape({
     .test('unique-system-name', 'System name is not unique.', (value) => {
       const {
         systemConfig, substrateNodesConfig, cosmosNodesConfig, reposConfig,
-        chainlinkNodesConfig, dockerHubConfig,
+        chainlinkNodesConfig, dockerHubConfig, evmNodesConfig,
       } = props;
 
+      for (let i = 0; i < evmNodesConfig.allIds.length; i += 1) {
+        if (evmNodesConfig.byId[evmNodesConfig.allIds[i]].name === value) {
+          return false;
+        }
+      }
       for (let i = 0; i < chainlinkNodesConfig.allIds.length; i += 1) {
         if (chainlinkNodesConfig.byId[chainlinkNodesConfig.allIds[i]].name === value) {
           return false;

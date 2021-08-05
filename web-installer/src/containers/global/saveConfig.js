@@ -20,6 +20,7 @@ const mapStateToProps = (state) => ({
   // Chainlink related data
   chainlinkChains: state.ChainlinkChainsReducer,
   chainlinkNodes: state.ChainlinkNodesReducer,
+  evmNodes: state.EvmNodesReducer,
 
   // Channels related data
   emails: state.EmailsReducer,
@@ -54,6 +55,7 @@ class SaveConfig extends Component {
       cosmosNodes,
       chainlinkChains,
       chainlinkNodes,
+      evmNodes,
       githubRepositories,
       substrateChains,
       substrateNodes,
@@ -375,12 +377,46 @@ class SaveConfig extends Component {
     // We have to use forEach as await requires the For loop to be async
     chainlinkChains.allIds.forEach(async (currentChainId) => {
       const chainConfig = chainlinkChains.byId[currentChainId];
+      const evmUrls = [];
+      const { weiWatchers } = chainlinkChains.byId[currentChainId];
+
+      await sendConfig(
+        'chain',
+        'weiwatchers_config.ini',
+        chainConfig.chain_name,
+        'chainlink',
+        { weitwatchers: weiWatchers },
+      );
+      if (chainConfig.evmNodes.length !== 0) {
+        const evmNodesToSave = {};
+
+        for (let k = 0; k < chainConfig.evmNodes.length; k += 1) {
+          const currentId = chainConfig.evmNodes[k];
+          evmNodesToSave[currentId] = evmNodes.byId[currentId];
+          evmUrls.push(evmNodes.byId[currentId].node_http_url);
+        }
+
+        // Once the node details are extracted from the list of all nodes, we
+        // save it to it's own file
+        await sendConfig(
+          'chain',
+          'evm_nodes_config.ini',
+          chainConfig.chain_name,
+          'chainlink',
+          evmNodesToSave,
+        );
+      }
+
       // First we will save the nodes pertaining to the substrate based chain
       if (chainConfig.nodes.length !== 0) {
         const nodesToSave = {};
+
         for (let j = 0; j < chainConfig.nodes.length; j += 1) {
           const currentId = chainConfig.nodes[j];
           nodesToSave[currentId] = chainlinkNodes.byId[currentId];
+          nodesToSave[currentId].evm_nodes_urls = evmUrls;
+          nodesToSave[currentId].weiwatchers_url = weiWatchers.weiwatchers_url;
+          nodesToSave[currentId].monitor_contracts = weiWatchers.monitor_contracts;
         }
 
         // Once the node details are extracted from the list of all nodes, we
@@ -837,6 +873,16 @@ SaveConfig.propTypes = {
       name: PropTypes.string,
       node_prometheus_urls: PropTypes.string,
       monitor_prometheus: PropTypes.bool,
+      monitor_node: PropTypes.bool,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  evmNodes: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      parent_id: PropTypes.string,
+      name: PropTypes.string,
+      node_http_url: PropTypes.string,
       monitor_node: PropTypes.bool,
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,

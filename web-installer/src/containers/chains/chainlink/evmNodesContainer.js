@@ -1,12 +1,12 @@
 import { withFormik } from 'formik';
 import { connect } from 'react-redux';
-import NodesForm from 'components/chains/chainlink/forms/nodesForm';
-import NodesTable from 'components/chains/chainlink/tables/nodesTable';
-import { addNodeChainlink, removeNodeChainlink } from 'redux/actions/chainlinkActions';
+import EvmNodesForm from 'components/chains/chainlink/forms/evmNodesForm';
+import EvmNodesTable from 'components/chains/chainlink/tables/evmNodesTable';
+import { addNodeEvm, removeNodeEvm } from 'redux/actions/chainlinkActions';
 import ChainlinkData from 'data/chainlink';
-import ChainlinkNodeSchema from './schemas/chainlinkNodeSchema';
+import EvmNodeSchema from './schemas/evmNodeSchema';
 
-// This performs chainlink node name validation, by checking if the node name
+// This performs evm node name validation, by checking if the node name
 // already exists under the same chain being configured.
 const Form = withFormik({
   mapPropsToErrors: () => ({
@@ -14,28 +14,26 @@ const Form = withFormik({
   }),
   mapPropsToValues: () => ({
     name: '',
-    node_prometheus_urls: [],
-    monitor_prometheus: true,
+    node_http_url: '',
     monitor_node: true,
   }),
-  validationSchema: (props) => ChainlinkNodeSchema(props),
+  validationSchema: (props) => EvmNodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveNodeDetails, currentChain } = props;
     const payload = {
       parent_id: currentChain,
       name: values.name,
-      node_prometheus_urls: values.node_prometheus_urls,
-      monitor_prometheus: values.monitor_prometheus,
+      node_http_url: values.node_http_url,
       monitor_node: values.monitor_node,
     };
     saveNodeDetails(payload);
     resetForm();
   },
-})(NodesForm);
+})(EvmNodesForm);
 
-// ------------------------- Chainlink Based Chain Data --------------------
+// ------------------------- EVM Node Based Chain Data --------------------
 
-// Chainlink redux data that will be used to control the node form.
+// EVM redux data that will be used to control the node form.
 const mapStateToProps = (state) => ({
   currentChain: state.CurrentChainlinkChain,
   chainConfig: state.ChainlinkChainsReducer,
@@ -49,28 +47,28 @@ const mapStateToProps = (state) => ({
   data: ChainlinkData,
 });
 
-// Functions to be used in the Chainlink Node form to save the form's details
+// Functions to be used in the EVM Node form to save the form's details
 function mapDispatchToProps(dispatch) {
   return {
-    saveNodeDetails: (details) => dispatch(addNodeChainlink(details)),
+    saveNodeDetails: (details) => dispatch(addNodeEvm(details)),
   };
 }
 
-// Functions to be used in the Chainlink Nodes table to delete the saved details
+// Functions to be used in the EVM Nodes table to delete the saved details
 // from state
 function mapDispatchToPropsRemove(dispatch) {
   return {
-    removeNodeDetails: (details) => dispatch(removeNodeChainlink(details)),
+    removeNodeDetails: (details) => dispatch(removeNodeEvm(details)),
   };
 }
 
-// Combine chainlink state and dispatch functions to the node form
-const NodesFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
+// Combine evm state and dispatch functions to the node form
+const EvmNodesFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
 
 // Combine chainlink state and dispatch functions to the node table
-const NodesTableContainer = connect(
+const EvmNodesTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
-)(NodesTable);
+)(EvmNodesTable);
 
-export { NodesFormContainer, NodesTableContainer };
+export { EvmNodesFormContainer, EvmNodesTableContainer };

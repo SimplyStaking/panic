@@ -31,6 +31,8 @@ const ChainlinkChainsTable = ({
   removeSlackDetails,
   removeDockerHubDetails,
   removeSystemDetails,
+  removeNodeEvmDetails,
+  removeWeiWatchersDetails,
   telegrams,
   twilios,
   emails,
@@ -157,6 +159,12 @@ const ChainlinkChainsTable = ({
       }
     }
 
+    // Clear all the configured evm nodes from state
+    for (let i = 0; i < currentConfig.evmNodes.length; i += 1) {
+      payload.id = currentConfig.evmNodes[i];
+      removeNodeEvmDetails(payload);
+    }
+
     // Clear all the configured nodes from state
     for (let i = 0; i < currentConfig.nodes.length; i += 1) {
       payload.id = currentConfig.nodes[i];
@@ -180,7 +188,8 @@ const ChainlinkChainsTable = ({
       payload.id = currentConfig.systems[i];
       removeSystemDetails(payload);
     }
-
+    // Clear weiWatchers
+    removeWeiWatchersDetails(payload);
     // Finally clear the chain from the configuration
     payload.id = chainID;
     removeChainDetails(payload);
@@ -210,6 +219,7 @@ const ChainlinkChainsTable = ({
               <StyledTableCell align="center">
                 <Box px={2}>
                   <Button
+                    variant="contained"
                     onClick={() => {
                       loadConfiguration(CHAINLINK_SETUP_PAGE, id);
                     }}
@@ -298,6 +308,8 @@ ChainlinkChainsTable.propTypes = forbidExtraProps({
   removeTwilioDetails: PropTypes.func.isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
   removeSlackDetails: PropTypes.func.isRequired,
+  removeNodeEvmDetails: PropTypes.func.isRequired,
+  removeWeiWatchersDetails: PropTypes.func.isRequired,
 });
 
 export default ChainlinkChainsTable;

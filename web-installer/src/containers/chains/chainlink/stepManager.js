@@ -21,7 +21,12 @@ import {
   DOCKER_STEP,
 } from 'constants/constants';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
-import { SystemChainlinkFormContainer, SystemChainlinkTableContainer } from '../common/systemsContainer';
+import { EvmNodesFormContainer, EvmNodesTableContainer } from './evmNodesContainer';
+import WeiWatchersFormContainer from './weiWatchersContainer';
+import {
+  SystemChainlinkFormContainer,
+  SystemChainlinkTableContainer,
+} from '../common/systemsContainer';
 
 const mapStateToProps = (state) => ({
   step: state.ChangeStepReducer.step,
@@ -41,6 +46,9 @@ function getStep(stepName) {
         <div>
           <NodesFormContainer />
           <NodesTableContainer />
+          <EvmNodesFormContainer />
+          <EvmNodesTableContainer />
+          <WeiWatchersFormContainer />
           <SystemChainlinkFormContainer />
           <SystemChainlinkTableContainer />
         </div>

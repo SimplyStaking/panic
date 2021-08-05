@@ -10,8 +10,14 @@ const ChainlinkNodeSchema = (props) => Yup.object().shape({
         reposConfig,
         chainlinkNodesConfig,
         dockerHubConfig,
+        evmNodesConfig,
       } = props;
 
+      for (let i = 0; i < evmNodesConfig.allIds.length; i += 1) {
+        if (evmNodesConfig.byId[evmNodesConfig.allIds[i]].name === value) {
+          return false;
+        }
+      }
       for (let i = 0; i < chainlinkNodesConfig.allIds.length; i += 1) {
         if (chainlinkNodesConfig.byId[chainlinkNodesConfig.allIds[i]].name === value) {
           return false;

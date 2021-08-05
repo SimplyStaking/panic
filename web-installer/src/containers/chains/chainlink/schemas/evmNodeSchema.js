@@ -1,11 +1,16 @@
 import * as Yup from 'yup';
 
-const NodeSchema = (props) => Yup.object().shape({
+const EvmNodeSchema = (props) => Yup.object().shape({
   name: Yup.string()
     .test('unique-node-name', 'Node name is not unique.', (value) => {
       const {
-        cosmosNodesConfig, substrateNodesConfig, systemConfig, reposConfig,
-        chainlinkNodesConfig, dockerHubConfig, evmNodesConfig,
+        cosmosNodesConfig,
+        substrateNodesConfig,
+        systemConfig,
+        reposConfig,
+        chainlinkNodesConfig,
+        dockerHubConfig,
+        evmNodesConfig,
       } = props;
 
       for (let i = 0; i < evmNodesConfig.allIds.length; i += 1) {
@@ -39,7 +44,7 @@ const NodeSchema = (props) => Yup.object().shape({
         }
       }
       for (let i = 0; i < dockerHubConfig.allIds.length; i += 1) {
-        if (dockerHubConfig.byId[dockerHubConfig.allIds[i]].name === value) {
+        if (dockerHubConfig.byId[dockerHubConfig.allIds[i]].repo_name === value) {
           return false;
         }
       }
@@ -48,4 +53,4 @@ const NodeSchema = (props) => Yup.object().shape({
     .required('Node name is required.'),
 });
 
-export default NodeSchema;
+export default EvmNodeSchema;
