@@ -2,7 +2,7 @@ Change the contents of this file to this:
 
 # Change Log
 
-## Unreleased
+## 0.2.0
 
 - Fixed tests to work with alerter changes. Merged multiple tests into one using parameterization.
 - Updated Alerter to fix bugs with regards to metric changes in thresholds.
