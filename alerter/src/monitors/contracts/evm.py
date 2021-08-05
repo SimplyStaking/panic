@@ -24,7 +24,7 @@ from src.utils.data import get_json, get_prometheus_metrics_data
 from src.utils.exceptions import (ComponentNotGivenEnoughDataSourcesException,
                                   MetricNotFoundException, PANICException,
                                   CouldNotRetrieveContractsException,
-                                  NoDataSourceWasAccessibleException)
+                                  NoSyncedDataSourceWasAccessibleException)
 from src.utils.timing import TimedTaskLimiter
 
 _PROMETHEUS_RETRIEVAL_TIME_PERIOD = 86400
@@ -577,14 +577,26 @@ class EVMContractsMonitor(Monitor):
             mandatory=True)
         self.logger.debug("Sent data to '%s' exchange", RAW_DATA_EXCHANGE)
 
+    def _get_node_config_by_node_id(
+            self, node_id: str) -> Optional[ChainlinkNodeConfig]:
+        """
+        Given a node_id, this function attempts to return the first node
+        configuration it finds with the queried node_id.
+        :param node_id: The node id to be matched
+        :return: A node config from self.node_configs having node id node_id
+        """
+        for node_config in self.node_configs:
+            if node_id == node_config.node_id:
+                return node_config
+
+        return None
+
     def _monitor(self) -> None:
-        data = None
         data_retrieval_failed = False
         data_retrieval_exception = None
         re_filter = False
-
-        # Retrieve the contracts data every time period.
         try:
+            # Retrieve the contracts data every time period.
             if self.wei_watchers_retrieval_limiter.can_do_task():
                 contracts_data = self._get_chain_contracts()
                 self._store_chain_contracts(contracts_data)
@@ -593,10 +605,11 @@ class EVMContractsMonitor(Monitor):
         except (ReqConnectionError, ReadTimeout, IncompleteRead,
                 ChunkedEncodingError, ProtocolError, InvalidURL, InvalidSchema,
                 MissingSchema) as e:
-            self.logger.exception(e)
             data_retrieval_failed = True
             data_retrieval_exception = CouldNotRetrieveContractsException(
                 self.monitor_name, self.contracts_url)
+            self.logger.error(data_retrieval_exception.message)
+            self.logger.exception(e)
 
         # Retrieve the eth address of the node every time period
         if self.eth_address_retrieval_limiter.can_do_task():
@@ -609,54 +622,85 @@ class EVMContractsMonitor(Monitor):
             if not error_occurred:
                 self.eth_address_retrieval_limiter.did_task()
 
-        # Select an evm node for contract metrics retrieval if no data
-        # retrieval error already occurred.
-        selected_node_url = None
         if not data_retrieval_failed:
+            # Select an evm node for contract metrics retrieval if no data
+            # retrieval error already occurred.
             selected_node_url = self._select_node()
             if selected_node_url is None:
-                # If no url was selected, then no evm node was accessible
-                data_retrieval_failed = True
-                data_retrieval_exception = NoDataSourceWasAccessibleException(
-                    self.monitor_name, 'EVM node')
+                # If no url was selected, then no synced evm node was
+                # accessible. Hence, raise a meaningful error. Here we are
+                # assuming that all nodes have the same parent_id
+                data_retrieval_exception = \
+                    NoSyncedDataSourceWasAccessibleException(self.monitor_name,
+                                                             'EVM node')
+                try:
+                    processed_data = self._process_error(
+                        data_retrieval_exception,
+                        self.node_configs[0].parent_id,
+                    )
+                except Exception as error:
+                    # Do not send data if we experienced processing errors
+                    self.logger.error("Could not process error %r",
+                                      data_retrieval_exception)
+                    self.logger.exception(error)
+                    return
+
+                self._send_data(processed_data)
             else:
                 # If a url was selected, we need to retrieve the contract's
                 # metrics
                 if re_filter:
-                    # If a url was selected and contracts or eth addresses were
-                    # retrieved, then the filtering must be updated.
+                    # If contracts or eth addresses were retrieved in this
+                    # round, then we must do the re-filtering.
                     node_contracts = self._filter_contracts_by_node(
                         selected_node_url)
                     self._store_node_contracts(node_contracts)
 
-        # TODO: If there are errors, process the data and send error. If there
-        #     : are no errors, for each node, get_data (with exception
-        #     : handling that moves onto the next node), process the data, log
-        #     : it and send it
+                w3_interface = self.evm_node_w3_interface[selected_node_url]
+                for node_id, node_eth_address in self.node_eth_address.items():
+                    try:
+                        data = self._get_data(w3_interface, node_eth_address,
+                                              node_id)
+                    except (ReqConnectionError, ReadTimeout, IncompleteRead,
+                            ChunkedEncodingError, ProtocolError, InvalidURL,
+                            InvalidSchema, MissingSchema) as e:
+                        self.logger.error("Could not retrieve contract metrics"
+                                          "from %s for node %s",
+                                          selected_node_url, node_id)
+                        self.logger.exception(e)
+                        continue
 
+                    try:
+                        node_config = self._get_node_config_by_node_id(node_id)
+                        processed_data = self._process_retrieved_data(
+                            data, node_config
+                        )
+                    except Exception as error:
+                        # Do not send data if we experienced processing errors,
+                        # and move on to the next node
+                        self.logger.error("Could not process data %s", data)
+                        self.logger.exception(error)
+                        continue
 
+                    self._send_data(processed_data)
 
+                    self.logger.info(self._display_data(processed_data))
+        else:
+            # If an error occurred before retrieving any metrics, process the
+            # error and send it. Here we are assuming that all nodes have the
+            # same parent_id
+            try:
+                processed_data = self._process_error(
+                    data_retrieval_exception, self.node_configs[0].parent_id,
+                )
+            except Exception as error:
+                # Do not send data if we experienced processing errors
+                self.logger.error("Could not process error %r",
+                                  data_retrieval_exception)
+                self.logger.exception(error)
+                return
 
-
-
-
-        try:
-            processed_data = self._process_data(data_retrieval_failed,
-                                                [data_retrieval_exception],
-                                                [data])
-        except Exception as error:
-            self.logger.error("Error when processing data obtained from %s",
-                              self.node_config.node_http_url)
-            self.logger.exception(error)
-            # Do not send data if we experienced processing errors
-            return
-
-        self._send_data(processed_data)
-
-        if not data_retrieval_failed:
-            # Only output the gathered data if there was no error
-            self.logger.info(self._display_data(
-                processed_data['result']['data']))
+            self._send_data(processed_data)
 
         # Send a heartbeat only if the entire round was successful
         heartbeat = {
@@ -665,28 +709,6 @@ class EVMContractsMonitor(Monitor):
             'timestamp': datetime.now().timestamp()
         }
         self._send_heartbeat(heartbeat)
-
-    # TODO: Must cater for exceptions in all retrieval fns
-    # TODO: When getting contracts and prom metrics, if the state is still
-    #     : empty perform the retrieval again, anzi if empty don't set the
-    #     : limiter did work. or do, retrieve, save, limiter.did_work
-    # TODO: When formulating the data we need to check if a node has eth address
-    #     : retrieved, if not we retrieve the eth addresses again next round.
-    # TODO: Contracts filtering is also done every 24 hours
-    # TODO: If weiwatchers retrieval successful, set it's limiter to did task.
-    #     : If eth address retrieval successful for all set limiter to did task
-    #     : otherwise do not set to did task and do prom address retrieval again
-    #     : in next monitoring round
-    #     : Do filtering if one of the above functions is called.
-    # TODO: If contracts retrieval fails, stop and re-try to always have the
-    #     : latest contracts
-    # TODO: Select a node, check if None, if yes do nothing as it means no node
-    #     : is available and raise error in logs, or possibly an error alert
-    #     : saying no data source is available.
-    # TODO: We may need to filter more often to check that the node is still
-    #     : participating in the contract
-    # TODO: No sources error may be sent by the monitor. I think that it's the
-    #     : only error that should be sent.
 
 # TODO: Add weiwatchers_url and list of evm nodes. Aggregate list of evm urls
 #     : in manager. Check if equal.

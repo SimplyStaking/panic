@@ -168,9 +168,10 @@ class CouldNotRetrieveContractsException(PANICException):
         super().__init__(message, code)
 
 
-class NoDataSourceWasAccessibleException(PANICException):
+class NoSyncedDataSourceWasAccessibleException(PANICException):
 
     def __init__(self, component: str, sources_type: str) -> None:
-        message = "{} could not access any {}.".format(component, sources_type)
+        message = "{} could not access any synced {}.".format(component,
+                                                              sources_type)
         code = 5019
         super().__init__(message, code)
