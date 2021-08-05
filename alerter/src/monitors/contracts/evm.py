@@ -249,8 +249,8 @@ class EVMContractsMonitor(Monitor):
                         v4_participating_contracts.append(contract_address)
 
             node_contracts[node_id] = {}
-            node_contracts['v3'] = v3_participating_contracts
-            node_contracts['v4'] = v4_participating_contracts
+            node_contracts[node_id]['v3'] = v3_participating_contracts
+            node_contracts[node_id]['v4'] = v4_participating_contracts
 
         return node_contracts
 
