@@ -157,3 +157,20 @@ class ComponentNotGivenEnoughDataSourcesException(PANICException):
             component, field)
         code = 5017
         super().__init__(message, code)
+
+
+class CouldNotRetrieveContractsException(PANICException):
+
+    def __init__(self, component: str, url: str) -> None:
+        message = "{} could not retrieve contracts data from {}.".format(
+            component, url)
+        code = 5018
+        super().__init__(message, code)
+
+
+class NoDataSourceWasAccessibleException(PANICException):
+
+    def __init__(self, component: str, sources_type: str) -> None:
+        message = "{} could not access any {}.".format(component, sources_type)
+        code = 5019
+        super().__init__(message, code)

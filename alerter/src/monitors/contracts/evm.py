@@ -18,12 +18,13 @@ from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
 from src.utils.constants.abis import V3, V4
-from src.utils.constants.data import WEI_WATCHERS_URL_TEMPLATE
-from src.utils.constants.rabbitmq import RAW_DATA_EXCHANGE, \
-    EVM_CONTRACTS_RAW_DATA_ROUTING_KEY
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
+                                          EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
 from src.utils.data import get_json, get_prometheus_metrics_data
 from src.utils.exceptions import (ComponentNotGivenEnoughDataSourcesException,
-                                  MetricNotFoundException, PANICException)
+                                  MetricNotFoundException, PANICException,
+                                  CouldNotRetrieveContractsException,
+                                  NoDataSourceWasAccessibleException)
 from src.utils.timing import TimedTaskLimiter
 
 _PROMETHEUS_RETRIEVAL_TIME_PERIOD = 86400
@@ -36,32 +37,28 @@ class EVMContractsMonitor(Monitor):
     For now, only chainlink chains are supported.
     """
 
-    def __init__(self, monitor_name: str, chain_name: str, evm_nodes: List[str],
-                 node_configs: List[ChainlinkNodeConfig],
+    def __init__(self, monitor_name: str, weiwatchers_url: str,
+                 evm_nodes: List[str], node_configs: List[ChainlinkNodeConfig],
                  logger: logging.Logger, monitor_period: int,
                  rabbitmq: RabbitMQApi) -> None:
         # An exception is raised if the monitor is not given enough data
         # sources. The callee must also make sure that the given node_configs
-        # have valid prometheus urls, and that prometheus is enabled.
+        # have valid prometheus urls, and that prometheus and contracts
+        # monitoring is enabled.
         if len(evm_nodes) == 0 or len(node_configs) == 0:
-            field = 'data_sources' if len(
-                evm_nodes) == 0 else 'node_configs'
+            field = 'evm_nodes' if len(evm_nodes) == 0 else 'node_configs'
             raise ComponentNotGivenEnoughDataSourcesException(
                 monitor_name, field)
 
         super().__init__(monitor_name, logger, monitor_period, rabbitmq)
         self._node_configs = node_configs
+        self._contracts_url = weiwatchers_url
 
         # Construct the Web3 interfaces
         self._evm_node_w3_interface = {}
         for evm_node_url in evm_nodes:
             self._evm_node_w3_interface[evm_node_url] = Web3(Web3.HTTPProvider(
                 evm_node_url, request_kwargs={'timeout': 2}))
-
-        # Construct the wei-watchers url. This url will be used to get all
-        # chain contracts. Note, for ethereum no chain is supplied to the url.
-        url_chain_name = '' if chain_name == 'ethereum' else chain_name
-        self._contracts_url = WEI_WATCHERS_URL_TEMPLATE.format(url_chain_name)
 
         # This dict stores the eth address of a chainlink node indexed by the
         # node id. The eth address is obtained from prometheus.
@@ -124,7 +121,7 @@ class EVMContractsMonitor(Monitor):
     def eth_address_retrieval_limiter(self) -> TimedTaskLimiter:
         return self._eth_address_retrieval_limiter
 
-    def _get_chain_contracts(self) -> Dict:
+    def _get_chain_contracts(self) -> List[Dict]:
         """
         This functions retrieves all the chain contracts along with some data.
         :return: A list of chain contracts together with data.
@@ -143,10 +140,10 @@ class EVMContractsMonitor(Monitor):
         """
         This function attempts to get all the Ethereum addresses associated with
         each node from the prometheus endpoints. For each node it attempts to
-        connect with the online source to get the eth address, however if a
-        recognizable error occurs, the node is not added to the output dict but
-        the second element in the tuple is set to True indicating that an error
-        occurred during the process.
+        connect with the online source to get the eth address, however if the
+        required data cannot be obtained from any source, the node is not added
+        to the output dict, and the second element in the tuple is set to True
+        indicating that the dict does not contain all node ids.
         :return: A tuple with the following structure:
                 ({ node_id: node_eth_address }, bool)
         """
@@ -166,6 +163,7 @@ class EVMContractsMonitor(Monitor):
                             eth_address = json.loads(data_subset)['account']
                             node_eth_address[node_config.node_id] = eth_address
                             break
+                    break
                 except (ReqConnectionError, ReadTimeout, InvalidURL,
                         InvalidSchema, MissingSchema, IncompleteRead,
                         ChunkedEncodingError, ProtocolError) as e:
@@ -174,15 +172,18 @@ class EVMContractsMonitor(Monitor):
                     self.logger.error("Error when trying to access %s",
                                       prom_url)
                     self.logger.exception(e)
-                    error_occurred = True
                 except MetricNotFoundException as e:
                     # If these errors are raised then we can't get valid data
                     # from any node, as only 1 node is online at the same time.
                     self.logger.error("Error when trying to access %s",
                                       prom_url)
                     self.logger.exception(e)
-                    error_occurred = True
                     break
+
+            # If no ethereum address was added for a node, then an error has
+            # occurred
+            if node_config.node_id not in node_eth_address:
+                error_occurred = True
 
         return node_eth_address, error_occurred
 
@@ -522,23 +523,20 @@ class EVMContractsMonitor(Monitor):
         # successfully by the node monitor
         return json.dumps(data)
 
-    def _process_error(self, error: PANICException,
-                       node_config: ChainlinkNodeConfig) -> Dict:
+    def _process_error(self, error: PANICException, parent_id: str) -> Dict:
         """
         This function attempts to process the error which occurred when
-        retrieving data. Note that this function can be applied for any node
-        configuration.
+        retrieving data. Note that since an error will only be generated for an
+        entire group of nodes, there is no node specific meta_data added.
         :param error: The detected error
-        :param node_config: The configuration of the node in question
+        :param parent_id: The ID of the chain
         :return: A dict with the error data together with some meta data
         """
         processed_data = {
             'error': {
                 'meta_data': {
                     'monitor_name': self.monitor_name,
-                    'node_name': node_config.node_name,
-                    'node_id': node_config.node_id,
-                    'node_parent_id': node_config.parent_id,
+                    'parent_id': parent_id,
                     'time': datetime.now().timestamp()
                 },
                 'message': error.message,
@@ -579,58 +577,94 @@ class EVMContractsMonitor(Monitor):
             mandatory=True)
         self.logger.debug("Sent data to '%s' exchange", RAW_DATA_EXCHANGE)
 
-    #
-    # def _monitor(self) -> None:
-    #     data_retrieval_exception = None
-    #     data = None
-    #     data_retrieval_failed = True
-    #     try:
-    #         data = self._get_data()
-    #         data_retrieval_failed = False
-    #     except (ReqConnectionError, ReadTimeout):
-    #         data_retrieval_exception = NodeIsDownException(
-    #             self.node_config.node_name)
-    #         self.logger.error("Error when retrieving data from %s",
-    #                           self.node_config.node_http_url)
-    #         self.logger.exception(data_retrieval_exception)
-    #     except (IncompleteRead, ChunkedEncodingError, ProtocolError):
-    #         data_retrieval_exception = DataReadingException(
-    #             self.monitor_name, self.node_config.node_name)
-    #         self.logger.error("Error when retrieving data from %s",
-    #                           self.node_config.node_http_url)
-    #         self.logger.exception(data_retrieval_exception)
-    #     except (InvalidURL, InvalidSchema, MissingSchema):
-    #         data_retrieval_exception = InvalidUrlException(
-    #             self.node_config.node_http_url)
-    #         self.logger.error("Error when retrieving data from %s",
-    #                           self.node_config.node_http_url)
-    #         self.logger.exception(data_retrieval_exception)
-    #
-    #     try:
-    #         processed_data = self._process_data(data_retrieval_failed,
-    #                                             [data_retrieval_exception],
-    #                                             [data])
-    #     except Exception as error:
-    #         self.logger.error("Error when processing data obtained from %s",
-    #                           self.node_config.node_http_url)
-    #         self.logger.exception(error)
-    #         # Do not send data if we experienced processing errors
-    #         return
-    #
-    #     self._send_data(processed_data)
-    #
-    #     if not data_retrieval_failed:
-    #         # Only output the gathered data if there was no error
-    #         self.logger.info(self._display_data(
-    #             processed_data['result']['data']))
-    #
-    #     # Send a heartbeat only if the entire round was successful
-    #     heartbeat = {
-    #         'component_name': self.monitor_name,
-    #         'is_alive': True,
-    #         'timestamp': datetime.now().timestamp()
-    #     }
-    #     self._send_heartbeat(heartbeat)
+    def _monitor(self) -> None:
+        data = None
+        data_retrieval_failed = False
+        data_retrieval_exception = None
+        re_filter = False
+
+        # Retrieve the contracts data every time period.
+        try:
+            if self.wei_watchers_retrieval_limiter.can_do_task():
+                contracts_data = self._get_chain_contracts()
+                self._store_chain_contracts(contracts_data)
+                self.wei_watchers_retrieval_limiter.did_task()
+                re_filter = True
+        except (ReqConnectionError, ReadTimeout, IncompleteRead,
+                ChunkedEncodingError, ProtocolError, InvalidURL, InvalidSchema,
+                MissingSchema) as e:
+            self.logger.exception(e)
+            data_retrieval_failed = True
+            data_retrieval_exception = CouldNotRetrieveContractsException(
+                self.monitor_name, self.contracts_url)
+
+        # Retrieve the eth address of the node every time period
+        if self.eth_address_retrieval_limiter.can_do_task():
+            node_eth_address, error_occurred = self._get_nodes_eth_address()
+            self._store_nodes_eth_addresses_contracts(node_eth_address)
+            re_filter = True
+
+            # If an error occurred we want to get the eth address again in the
+            # next monitoring round
+            if not error_occurred:
+                self.eth_address_retrieval_limiter.did_task()
+
+        # Select an evm node for contract metrics retrieval if no data
+        # retrieval error already occurred.
+        selected_node_url = None
+        if not data_retrieval_failed:
+            selected_node_url = self._select_node()
+            if selected_node_url is None:
+                # If no url was selected, then no evm node was accessible
+                data_retrieval_failed = True
+                data_retrieval_exception = NoDataSourceWasAccessibleException(
+                    self.monitor_name, 'EVM node')
+            else:
+                # If a url was selected, we need to retrieve the contract's
+                # metrics
+                if re_filter:
+                    # If a url was selected and contracts or eth addresses were
+                    # retrieved, then the filtering must be updated.
+                    node_contracts = self._filter_contracts_by_node(
+                        selected_node_url)
+                    self._store_node_contracts(node_contracts)
+
+        # TODO: If there are errors, process the data and send error. If there
+        #     : are no errors, for each node, get_data (with exception
+        #     : handling that moves onto the next node), process the data, log
+        #     : it and send it
+
+
+
+
+
+
+
+        try:
+            processed_data = self._process_data(data_retrieval_failed,
+                                                [data_retrieval_exception],
+                                                [data])
+        except Exception as error:
+            self.logger.error("Error when processing data obtained from %s",
+                              self.node_config.node_http_url)
+            self.logger.exception(error)
+            # Do not send data if we experienced processing errors
+            return
+
+        self._send_data(processed_data)
+
+        if not data_retrieval_failed:
+            # Only output the gathered data if there was no error
+            self.logger.info(self._display_data(
+                processed_data['result']['data']))
+
+        # Send a heartbeat only if the entire round was successful
+        heartbeat = {
+            'component_name': self.monitor_name,
+            'is_alive': True,
+            'timestamp': datetime.now().timestamp()
+        }
+        self._send_heartbeat(heartbeat)
 
     # TODO: Must cater for exceptions in all retrieval fns
     # TODO: When getting contracts and prom metrics, if the state is still
@@ -654,9 +688,9 @@ class EVMContractsMonitor(Monitor):
     # TODO: No sources error may be sent by the monitor. I think that it's the
     #     : only error that should be sent.
 
-# TODO: Add chain_name and list of evm nodes. Aggregate list of evm urls
+# TODO: Add weiwatchers_url and list of evm nodes. Aggregate list of evm urls
 #     : in manager. Check if equal.
 # TODO: Manager should not start contracts monitor if list of evm nodes
 #     : empty or list of chainlink node configs empty. For every node config
 #     : we must also check that prometheus is enabled, and the list of
-#     : http sources is non empty.
+#     : http sources is non empty, monitor_contracts=True.
