@@ -13,6 +13,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.channels_manager.handlers.starters import (
     start_telegram_alerts_handler, start_telegram_commands_handler,
+    start_slack_alerts_handler,
     start_twilio_alerts_handler, start_console_alerts_handler,
     start_log_alerts_handler, start_email_alerts_handler,
     start_pagerduty_alerts_handler, start_opsgenie_alerts_handler)
@@ -23,6 +24,7 @@ from src.utils.configs import (get_newly_added_configs, get_modified_configs,
 from src.utils.constants.names import (
     TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
     TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
+    SLACK_ALERTS_HANDLER_NAME_TEMPLATE,
     TWILIO_ALERTS_HANDLER_NAME_TEMPLATE, EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
     PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
     OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE, CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
@@ -176,6 +178,31 @@ class ChannelsManager(PublisherSubscriberComponent):
         process_details['channel_name'] = channel_name
         process_details['associated_chains'] = associated_chains
         process_details['channel_type'] = ChannelTypes.TELEGRAM.value
+
+    def _create_and_start_slack_alerts_handler(
+            self, webhook_url: str, channel_id: str,
+            channel_name: str) -> None:
+        process = multiprocessing.Process(target=start_slack_alerts_handler,
+                                          args=(webhook_url,
+                                                channel_id, channel_name))
+        process.daemon = True
+        log_and_print("Creating a new process for the alerts handler of "
+                      "Slack channel {}".format(channel_name), self.logger)
+        process.start()
+
+        if channel_id not in self._channel_process_dict:
+            self._channel_process_dict[channel_id] = {}
+
+        handler_type = ChannelHandlerTypes.ALERTS.value
+        self._channel_process_dict[channel_id][handler_type] = {}
+        process_details = self._channel_process_dict[channel_id][handler_type]
+        process_details['component_name'] = \
+            SLACK_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
+        process_details['process'] = process
+        process_details['webhook_url'] = webhook_url
+        process_details['channel_id'] = channel_id
+        process_details['channel_name'] = channel_name
+        process_details['channel_type'] = ChannelTypes.SLACK.value
 
     def _create_and_start_twilio_alerts_handler(
             self, account_sid: str, auth_token: str, channel_id: str,
@@ -368,7 +395,8 @@ class ChannelsManager(PublisherSubscriberComponent):
         # case an error occurs.
         correct_configs = copy.deepcopy(current_configs)
         try:
-            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            new_configs = get_newly_added_configs(
+                sent_configs, current_configs)
             for config_id in new_configs:
                 config = new_configs[config_id]
                 channel_id = config['id']
@@ -475,7 +503,8 @@ class ChannelsManager(PublisherSubscriberComponent):
                 else:
                     correct_configs[config_id] = config
 
-            removed_configs = get_removed_configs(sent_configs, current_configs)
+            removed_configs = get_removed_configs(
+                sent_configs, current_configs)
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 channel_id = config['id']
@@ -511,6 +540,161 @@ class ChannelsManager(PublisherSubscriberComponent):
 
         return correct_configs
 
+    def _process_slack_configs(self, sent_configs: Dict) -> Dict:
+        if ChannelTypes.SLACK.value in self.channel_configs:
+            current_configs = self.channel_configs[ChannelTypes.SLACK.value]
+        else:
+            current_configs = {}
+
+        # This contains all the correct latest channel configs. All current
+        # configs are correct configs, therefore start from the current and
+        # modify as we go along according to the updates. This is done just in
+        # case an error occurs.
+        correct_configs = copy.deepcopy(current_configs)
+        try:
+            new_configs = get_newly_added_configs(
+                sent_configs, current_configs)
+            for config_id in new_configs:
+                config = new_configs[config_id]
+                channel_id = config['id']
+                channel_name = config['channel_name']
+                webhook_url = config['webhook_url']
+                alerts = str_to_bool(config['alerts'])
+                commands = str_to_bool(config['commands'])
+                parent_ids = config['parent_ids'].split(',')
+                chain_names = config['parent_names'].split(',')
+                associated_chains = dict(zip(parent_ids, chain_names))
+
+                # If Slack Alerts are enabled on this channel, start an
+                # alerts handler for this channel
+                if alerts:
+                    self._create_and_start_slack_alerts_handler(
+                        webhook_url, channel_id, channel_name)
+                    correct_configs[config_id] = config
+
+                # If Slack Commands are enabled on this channel, start a
+                # commands handler for this channel
+                # if commands:
+                #     self._create_and_start_slack_cmds_handler(
+                #         webhook_url, channel_id, channel_name,
+                #         associated_chains)
+                #     correct_configs[config_id] = config
+
+            modified_configs = get_modified_configs(sent_configs,
+                                                    current_configs)
+            for config_id in modified_configs:
+                # Get the latest updates
+                config = sent_configs[config_id]
+                channel_id = config['id']
+                channel_name = config['channel_name']
+                webhook_url = config['webhook_url']
+                alerts = str_to_bool(config['alerts'])
+                commands = str_to_bool(config['commands'])
+                parent_ids = config['parent_ids'].split(',')
+                chain_names = config['parent_names'].split(',')
+                associated_chains = dict(zip(parent_ids, chain_names))
+
+                alerts_handler_type = ChannelHandlerTypes.ALERTS.value
+                if alerts_handler_type in self.channel_process_dict[channel_id]:
+                    previous_alerts_process = self.channel_process_dict[
+                        channel_id][alerts_handler_type]['process']
+                    previous_alerts_process.terminate()
+                    previous_alerts_process.join()
+
+                    if not alerts:
+                        del self.channel_process_dict[channel_id][
+                            alerts_handler_type]
+                        log_and_print("Killed the alerts handler of {} "
+                                      .format(channel_name), self.logger)
+                    else:
+                        log_and_print(
+                            "Restarting the alerts handler of {} with latest "
+                            "configuration".format(channel_name), self.logger)
+                        self._create_and_start_slack_alerts_handler(
+                            webhook_url, channel_id, channel_name)
+                else:
+                    if alerts:
+                        log_and_print(
+                            "Starting a new alerts handler for {}.".format(
+                                channel_name), self.logger)
+                        self._create_and_start_slack_alerts_handler(
+                            webhook_url, channel_id, channel_name)
+
+                # commands_handler_type = ChannelHandlerTypes.COMMANDS.value
+                # if commands_handler_type in \
+                #         self.channel_process_dict[channel_id]:
+                #     previous_commands_process = self.channel_process_dict[
+                #         channel_id][commands_handler_type]['process']
+                #     previous_commands_process.terminate()
+                #     previous_commands_process.join()
+
+                #     if not commands:
+                #         del self.channel_process_dict[channel_id][
+                #             commands_handler_type]
+                #         log_and_print("Killed the commands handler of {} "
+                #                       .format(channel_name), self.logger)
+                #     else:
+                #         log_and_print(
+                #             "Restarting the commands handler of {} with latest "
+                #             "configuration".format(channel_name), self.logger)
+                #         self._create_and_start_slack_cmds_handler(
+                #             webhook_url, channel_id, channel_name,
+                #             associated_chains)
+                # else:
+                #     if commands:
+                #         log_and_print(
+                #             "Starting a new commands handler for {}.".format(
+                #                 channel_name), self.logger)
+                #         self._create_and_start_slack_cmds_handler(
+                #             webhook_url, channel_id, channel_name,
+                #             associated_chains)
+
+                # Delete the state entries if both commands and alerts are
+                # disabled on the Slack channel. Otherwise, save the config
+                # as a process must be running
+                if not commands and not alerts:
+                    del self.channel_process_dict[channel_id]
+                    del correct_configs[config_id]
+                else:
+                    correct_configs[config_id] = config
+
+            removed_configs = get_removed_configs(
+                sent_configs, current_configs)
+            for config_id in removed_configs:
+                config = removed_configs[config_id]
+                channel_id = config['id']
+                channel_name = config['channel_name']
+
+                alerts_handler_type = ChannelHandlerTypes.ALERTS.value
+                if alerts_handler_type in self.channel_process_dict[channel_id]:
+                    previous_alerts_process = self.channel_process_dict[
+                        channel_id][alerts_handler_type]['process']
+                    previous_alerts_process.terminate()
+                    previous_alerts_process.join()
+                    log_and_print("Killed the alerts handler of {} ".format(
+                        channel_name), self.logger)
+
+                # commands_handler_type = ChannelHandlerTypes.COMMANDS.value
+                # if commands_handler_type in \
+                #         self.channel_process_dict[channel_id]:
+                #     previous_commands_process = self.channel_process_dict[
+                #         channel_id][commands_handler_type]['process']
+                #     previous_commands_process.terminate()
+                #     previous_commands_process.join()
+                #     log_and_print("Killed the commands handler of {} ".format(
+                #         channel_name), self.logger)
+
+                del self.channel_process_dict[channel_id]
+                del correct_configs[config_id]
+        except Exception as e:
+            # If we encounter an error during processing, this error must be
+            # logged and the message must be acknowledged so that it is removed
+            # from the queue
+            self.logger.error("Error when processing {}".format(sent_configs))
+            self.logger.exception(e)
+
+        return correct_configs
+
     def _process_twilio_configs(self, sent_configs: Dict) -> Dict:
         if ChannelTypes.TWILIO.value in self.channel_configs:
             current_configs = self.channel_configs[ChannelTypes.TWILIO.value]
@@ -523,7 +707,8 @@ class ChannelsManager(PublisherSubscriberComponent):
         # case an error occurs.
         correct_configs = copy.deepcopy(current_configs)
         try:
-            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            new_configs = get_newly_added_configs(
+                sent_configs, current_configs)
             for config_id in new_configs:
                 config = new_configs[config_id]
                 channel_id = config['id']
@@ -572,7 +757,8 @@ class ChannelsManager(PublisherSubscriberComponent):
                     twiml_is_url)
                 correct_configs[config_id] = config
 
-            removed_configs = get_removed_configs(sent_configs, current_configs)
+            removed_configs = get_removed_configs(
+                sent_configs, current_configs)
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 channel_id = config['id']
@@ -610,7 +796,8 @@ class ChannelsManager(PublisherSubscriberComponent):
         # case an error occurs.
         correct_configs = copy.deepcopy(current_configs)
         try:
-            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            new_configs = get_newly_added_configs(
+                sent_configs, current_configs)
             for config_id in new_configs:
                 config = new_configs[config_id]
                 channel_id = config['id']
@@ -656,7 +843,8 @@ class ChannelsManager(PublisherSubscriberComponent):
                     username, password, port)
                 correct_configs[config_id] = config
 
-            removed_configs = get_removed_configs(sent_configs, current_configs)
+            removed_configs = get_removed_configs(
+                sent_configs, current_configs)
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 channel_id = config['id']
@@ -694,7 +882,8 @@ class ChannelsManager(PublisherSubscriberComponent):
         # case an error occurs.
         correct_configs = copy.deepcopy(current_configs)
         try:
-            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            new_configs = get_newly_added_configs(
+                sent_configs, current_configs)
             for config_id in new_configs:
                 config = new_configs[config_id]
                 channel_id = config['id']
@@ -728,7 +917,8 @@ class ChannelsManager(PublisherSubscriberComponent):
                     integration_key, channel_id, channel_name)
                 correct_configs[config_id] = config
 
-            removed_configs = get_removed_configs(sent_configs, current_configs)
+            removed_configs = get_removed_configs(
+                sent_configs, current_configs)
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 channel_id = config['id']
@@ -766,7 +956,8 @@ class ChannelsManager(PublisherSubscriberComponent):
         # case an error occurs.
         correct_configs = copy.deepcopy(current_configs)
         try:
-            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            new_configs = get_newly_added_configs(
+                sent_configs, current_configs)
             for config_id in new_configs:
                 config = new_configs[config_id]
                 channel_id = config['id']
@@ -802,7 +993,8 @@ class ChannelsManager(PublisherSubscriberComponent):
                     api_key, eu_host, channel_id, channel_name)
                 correct_configs[config_id] = config
 
-            removed_configs = get_removed_configs(sent_configs, current_configs)
+            removed_configs = get_removed_configs(
+                sent_configs, current_configs)
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 channel_id = config['id']
@@ -841,6 +1033,9 @@ class ChannelsManager(PublisherSubscriberComponent):
         if method.routing_key == 'channels.telegram_config':
             updated_configs = self._process_telegram_configs(sent_configs)
             self._channel_configs[ChannelTypes.TELEGRAM.value] = updated_configs
+        elif method.routing_key == 'channels.slack_config':
+            updated_configs = self._process_slack_configs(sent_configs)
+            self._channel_configs[ChannelTypes.SLACK.value] = updated_configs
         elif method.routing_key == 'channels.twilio_config':
             updated_configs = self._process_twilio_configs(sent_configs)
             self._channel_configs[ChannelTypes.TWILIO.value] = updated_configs
@@ -895,6 +1090,18 @@ class ChannelsManager(PublisherSubscriberComponent):
                                     process_details['channel_id'],
                                     process_details['channel_name'],
                                     process_details['associated_chains'])
+                        elif channel_type == ChannelTypes.SLACK.value:
+                            if handler == ChannelHandlerTypes.ALERTS.value:
+                                self._create_and_start_slack_alerts_handler(
+                                    process_details['webhook_url'],
+                                    process_details['channel_id'],
+                                    process_details['channel_name'])
+                            # elif handler == ChannelHandlerTypes.COMMANDS.value:
+                            #     self._create_and_start_slack_cmds_handler(
+                            #         process_details['webhook_url'],
+                            #         process_details['channel_id'],
+                            #         process_details['channel_name'],
+                            #         process_details['associated_chains'])
                         elif channel_type == ChannelTypes.TWILIO.value:
                             self._create_and_start_twilio_alerts_handler(
                                 process_details['account_sid'],

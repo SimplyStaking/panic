@@ -109,6 +109,7 @@ class PagerDutySeverities(Enum):
 
 class ChannelTypes(Enum):
     TELEGRAM = 'telegram'
+    SLACK = 'slack'
     TWILIO = 'twilio'
     EMAIL = 'email'
     OPSGENIE = 'opsgenie'

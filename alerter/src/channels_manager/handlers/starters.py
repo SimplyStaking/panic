@@ -8,6 +8,7 @@ from src.channels_manager.apis.email_api import EmailApi
 from src.channels_manager.apis.opsgenie_api import OpsgenieApi
 from src.channels_manager.apis.pagerduty_api import PagerDutyApi
 from src.channels_manager.apis.telegram_bot_api import TelegramBotApi
+from src.channels_manager.apis.slack_bot_api import SlackBotApi
 from src.channels_manager.apis.twilio_api import TwilioApi
 from src.channels_manager.channels import PagerDutyChannel
 from src.channels_manager.channels.console import ConsoleChannel
@@ -15,6 +16,7 @@ from src.channels_manager.channels.email import EmailChannel
 from src.channels_manager.channels.log import LogChannel
 from src.channels_manager.channels.opsgenie import OpsgenieChannel
 from src.channels_manager.channels.telegram import TelegramChannel
+from src.channels_manager.channels.slack import SlackChannel
 from src.channels_manager.channels.twilio import TwilioChannel
 from src.channels_manager.commands.handlers.telegram_cmd_handlers import (
     TelegramCommandHandlers)
@@ -26,6 +28,7 @@ from src.channels_manager.handlers.opsgenie.alerts import OpsgenieAlertsHandler
 from src.channels_manager.handlers.pagerduty.alerts import (
     PagerDutyAlertsHandler)
 from src.channels_manager.handlers.telegram.alerts import TelegramAlertsHandler
+from src.channels_manager.handlers.telegram.alerts import SlackAlertsHandler
 from src.channels_manager.handlers.telegram.commands import (
     TelegramCommandsHandler)
 from src.channels_manager.handlers.twilio.alerts import TwilioAlertsHandler
@@ -36,6 +39,7 @@ from src.utils import env
 from src.utils.constants.names import (TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
                                        TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
                                        TELEGRAM_COMMAND_HANDLERS_NAME,
+                                       SLACK_ALERTS_HANDLER_NAME_TEMPLATE,
                                        TWILIO_ALERTS_HANDLER_NAME_TEMPLATE,
                                        PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
                                        EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
@@ -196,6 +200,50 @@ def start_telegram_commands_handler(
     telegram_commands_handler = _initialise_telegram_commands_handler(
         bot_token, bot_chat_id, channel_id, channel_name, associated_chains)
     start_handler(telegram_commands_handler)
+
+
+def _initialise_slack_alerts_handler(
+        webhook_url: str, channel_id: str,
+        channel_name: str) -> SlackAlertsHandler:
+    # Handler display name based on channel name
+    handler_display_name = SLACK_ALERTS_HANDLER_NAME_TEMPLATE.format(
+        channel_name)
+    handler_logger = _initialise_channel_handler_logger(
+        handler_display_name, SlackAlertsHandler.__name__)
+
+    # Try initialising handler until successful
+    while True:
+        try:
+            slack_bot = SlackBotApi(webhook_url)
+
+            slack_channel = SlackChannel(
+                channel_name, channel_id, handler_logger.getChild(
+                    SlackChannel.__name__), slack_bot)
+
+            rabbitmq = RabbitMQApi(
+                logger=handler_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+
+            slack_alerts_handler = SlackAlertsHandler(
+                handler_display_name, handler_logger, rabbitmq,
+                slack_channel, env.CHANNELS_MANAGER_PUBLISHING_QUEUE_SIZE)
+            log_and_print("Successfully initialised {}".format(
+                handler_display_name), handler_logger)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(handler_display_name, e)
+            log_and_print(msg, handler_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return slack_alerts_handler
+
+
+def start_slack_alerts_handler(webhook_url: str, channel_id: str,
+                               channel_name: str) -> None:
+    slack_alerts_handler = _initialise_slack_alerts_handler(
+        webhook_url, channel_id, channel_name)
+    start_handler(slack_alerts_handler)
 
 
 def _initialise_twilio_alerts_handler(
@@ -424,7 +472,8 @@ def start_console_alerts_handler(channel_id: str, channel_name: str) -> None:
 def _initialise_log_alerts_handler(
         channel_id: str, channel_name: str) -> LogAlertsHandler:
     # Handler display name based on channel name
-    handler_display_name = LOG_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
+    handler_display_name = LOG_ALERTS_HANDLER_NAME_TEMPLATE.format(
+        channel_name)
     handler_logger = _initialise_channel_handler_logger(
         handler_display_name, LogAlertsHandler.__name__)
     alerts_logger = _initialise_alerts_logger()
