@@ -38,7 +38,7 @@ const SlackForm = ({
       </Typography>
       <Divider />
       <form onSubmit={handleSubmit} className="root">
-        <Box m={2} p={3}>
+        <Box m={2} p={2}>
           <Grid container spacing={1} justify="center" alignItems="center">
             <Grid item xs={12}>
               <CssTextField
@@ -75,14 +75,14 @@ const SlackForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="token-outlined-full-width"
-                error={!!(errors.token)}
-                value={values.token}
-                label="Token"
+                error={!!(errors.webhook_url)}
+                value={values.webhook_url}
+                label="Webhook URL"
                 type="text"
                 style={{ margin: 8 }}
-                name="token"
-                placeholder={Data.slack.tokenPlaceholder}
-                helperText={errors.token ? errors.token : ''}
+                name="webhook_url"
+                placeholder={Data.slack.webhookUrlPlaceholder}
+                helperText={errors.webhook_url ? errors.webhook_url : ''}
                 onChange={handleChange}
                 fullWidth
                 margin="normal"
@@ -95,39 +95,7 @@ const SlackForm = ({
                   endAdornment: (
                     <InputAdornment position="end">
                       <MuiThemeProvider theme={theme}>
-                        <Tooltip title={Data.slack.token} placement="left">
-                          <InfoIcon />
-                        </Tooltip>
-                      </MuiThemeProvider>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <CssTextField
-                id="slack-chat-name-outlined-full-width"
-                error={!!(errors.chat_name)}
-                value={values.chat_name}
-                label="Chat Name"
-                type="text"
-                style={{ margin: 8 }}
-                name="chat_name"
-                placeholder={Data.slack.chatNamePlaceholder}
-                helperText={errors.chat_name ? errors.chat_name : ''}
-                onChange={handleChange}
-                fullWidth
-                margin="normal"
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                variant="outlined"
-                autoComplete="off"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <MuiThemeProvider theme={theme}>
-                        <Tooltip title={Data.slack.chatName} placement="left">
+                        <Tooltip title={Data.slack.webhookUrl} placement="left">
                           <InfoIcon />
                         </Tooltip>
                       </MuiThemeProvider>
@@ -264,8 +232,8 @@ const SlackForm = ({
               <Grid container direction="row" justify="flex-end" alignItems="center">
                 <SendTestSlackButton
                   disabled={Object.keys(errors).length !== 0}
-                  chatName={values.chat_name}
-                  token={values.token}
+                  channelName={values.channel_name}
+                  webhookUrl={values.webhook_url}
                 />
                 <Button
                   color="primary"
@@ -287,14 +255,12 @@ const SlackForm = ({
 SlackForm.propTypes = {
   errors: PropTypes.shape({
     channel_name: PropTypes.string,
-    chat_name: PropTypes.string,
-    token: PropTypes.string,
+    webhook_url: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     channel_name: PropTypes.string.isRequired,
-    chat_name: PropTypes.string.isRequired,
-    token: PropTypes.string.isRequired,
+    webhook_url: PropTypes.string.isRequired,
     info: PropTypes.bool.isRequired,
     warning: PropTypes.bool.isRequired,
     critical: PropTypes.bool.isRequired,

@@ -650,8 +650,7 @@ SaveConfig.propTypes = {
     byId: PropTypes.shape({
       id: PropTypes.string,
       channel_name: PropTypes.string,
-      bot_token: PropTypes.string,
-      chat_id: PropTypes.string,
+      webhook_url: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,

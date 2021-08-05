@@ -94,9 +94,28 @@ function refreshAccessToken() {
   return sendData('/server/refresh', {}, {});
 }
 
+// This function is used to send POST requests
+// to the Slack API. This format is required
+// since CORS was intervening with the post request.
+// An OPTIONS request was being sent by axion
+// which is not supported in the Slack API.
+// This is explained further below:
+// https://stackoverflow.com/questions/41042786/cors-issue-using-axios-with-slack-api
+function sendSlackMessage(url, data) {
+  return axios.post(url, JSON.stringify(data), {
+    withCredentials: false,
+    // eslint-disable-next-line no-shadow
+    transformRequest: [(data, headers) => {
+      // eslint-disable-next-line no-param-reassign
+      delete headers.post['Content-Type'];
+      return data;
+    }],
+  });
+}
+
 export {
   fetchData, testCall, sendData, sendTestEmail, pingTendermint, pingRepo,
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
   sendConfig, saveAccount, deleteAccount, getConfigPaths, getConfig,
-  loadAccounts, deleteConfigs, pingDockerHub, pingPrometheus,
+  loadAccounts, deleteConfigs, pingDockerHub, pingPrometheus, sendSlackMessage,
 };

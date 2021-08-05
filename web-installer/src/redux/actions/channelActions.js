@@ -29,8 +29,7 @@ export function addSlack(payload) {
     payload: {
       id,
       channel_name: payload.channel_name,
-      token: payload.token,
-      chat_name: payload.chat_name,
+      webhook_url: payload.webhook_url,
       info: payload.info,
       warning: payload.warning,
       critical: payload.critical,
