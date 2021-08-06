@@ -28,7 +28,7 @@ from src.channels_manager.handlers.opsgenie.alerts import OpsgenieAlertsHandler
 from src.channels_manager.handlers.pagerduty.alerts import (
     PagerDutyAlertsHandler)
 from src.channels_manager.handlers.telegram.alerts import TelegramAlertsHandler
-from src.channels_manager.handlers.telegram.alerts import SlackAlertsHandler
+from src.channels_manager.handlers.slack.alerts import SlackAlertsHandler
 from src.channels_manager.handlers.telegram.commands import (
     TelegramCommandsHandler)
 from src.channels_manager.handlers.twilio.alerts import TwilioAlertsHandler

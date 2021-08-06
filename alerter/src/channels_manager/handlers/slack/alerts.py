@@ -11,7 +11,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.alerter.alert_code import AlertCode
 from src.alerter.alerts.alert import Alert
 from src.alerter.grouped_alerts_metric_code import GroupedAlertsMetricCode
-from src.channels_manager.channels.telegram import TelegramChannel
+from src.channels_manager.channels.slack import SlackChannel
 from src.channels_manager.handlers.handler import ChannelHandler
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
@@ -24,27 +24,27 @@ from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
 
-class TelegramAlertsHandler(ChannelHandler):
+class SlackAlertsHandler(ChannelHandler):
     def __init__(self, handler_name: str, logger: logging.Logger,
-                 rabbitmq: RabbitMQApi, telegram_channel: TelegramChannel,
+                 rabbitmq: RabbitMQApi, slack_channel: SlackChannel,
                  queue_size: int = 0, max_attempts: int = 6,
                  alert_validity_threshold: int = 600) -> None:
         super().__init__(handler_name, logger, rabbitmq)
 
-        self._telegram_channel = telegram_channel
+        self._slack_channel = slack_channel
         self._alerts_queue = Queue(queue_size)
         self._max_attempts = max_attempts
         self._alert_validity_threshold = alert_validity_threshold
-        self._telegram_alerts_handler_queue = \
+        self._slack_alerts_handler_queue = \
             CHAN_ALERTS_HAN_INPUT_QUEUE_NAME_TEMPLATE.format(
-                self.telegram_channel.channel_id)
-        self._telegram_channel_routing_key = \
+                self.slack_channel.channel_id)
+        self._slack_channel_routing_key = \
             CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE.format(
-                self.telegram_channel.channel_id)
+                self.slack_channel.channel_id)
 
     @property
-    def telegram_channel(self) -> TelegramChannel:
-        return self._telegram_channel
+    def slack_channel(self) -> SlackChannel:
+        return self._slack_channel
 
     @property
     def alerts_queue(self) -> Queue:
@@ -58,21 +58,21 @@ class TelegramAlertsHandler(ChannelHandler):
         self.rabbitmq.exchange_declare(ALERT_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'",
-                         self._telegram_alerts_handler_queue)
-        self.rabbitmq.queue_declare(self._telegram_alerts_handler_queue, False,
+                         self._slack_alerts_handler_queue)
+        self.rabbitmq.queue_declare(self._slack_alerts_handler_queue, False,
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", self._telegram_alerts_handler_queue,
-                         ALERT_EXCHANGE, self._telegram_channel_routing_key)
-        self.rabbitmq.queue_bind(self._telegram_alerts_handler_queue,
+                         "'%s'", self._slack_alerts_handler_queue,
+                         ALERT_EXCHANGE, self._slack_channel_routing_key)
+        self.rabbitmq.queue_bind(self._slack_alerts_handler_queue,
                                  ALERT_EXCHANGE,
-                                 self._telegram_channel_routing_key)
+                                 self._slack_channel_routing_key)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.alerts_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume(self._telegram_alerts_handler_queue,
+        self.rabbitmq.basic_consume(self._slack_alerts_handler_queue,
                                     self._process_alert, False, False, None)
 
         # Set producing configuration for heartbeat publishing
@@ -188,14 +188,14 @@ class TelegramAlertsHandler(ChannelHandler):
                 continue
 
             attempts = 1
-            ret = self.telegram_channel.alert(alert)
+            ret = self.slack_channel.alert(alert)
             while ret != RequestStatus.SUCCESS and \
                     attempts < self._max_attempts:
                 self.logger.debug("Will re-try sending in 10 seconds. "
                                   "Attempts left: %s",
                                   self._max_attempts - attempts)
                 self.rabbitmq.connection.sleep(10)
-                ret = self.telegram_channel.alert(alert)
+                ret = self.slack_channel.alert(alert)
                 attempts += 1
 
             if ret == RequestStatus.SUCCESS:
@@ -243,7 +243,7 @@ class TelegramAlertsHandler(ChannelHandler):
     def _send_data(self, alert: Alert) -> None:
         """
         We are not implementing the _send_data function because wih respect to
-        rabbit, the telegram alerts handler only sends heartbeats. Alerts are
+        rabbit, the slack alerts handler only sends heartbeats. Alerts are
         sent through the third party channel.
         """
         pass
