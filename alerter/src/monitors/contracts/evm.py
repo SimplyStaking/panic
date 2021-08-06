@@ -126,7 +126,7 @@ class EVMContractsMonitor(Monitor):
         This functions retrieves all the chain contracts along with some data.
         :return: A list of chain contracts together with data.
         """
-        return get_json(self._contracts_url, self.logger, None, True)
+        return get_json(self.contracts_url, self.logger, None, True)
 
     def _store_chain_contracts(self, contracts_data: List[Dict]) -> None:
         """
@@ -187,8 +187,7 @@ class EVMContractsMonitor(Monitor):
 
         return node_eth_address, error_occurred
 
-    def _store_nodes_eth_addresses_contracts(self,
-                                             node_eth_address: Dict) -> None:
+    def _store_nodes_eth_addresses(self, node_eth_address: Dict) -> None:
         """
         This function stores the node's associated ethereum addresses obtained
         from prometheus in the state
@@ -614,7 +613,7 @@ class EVMContractsMonitor(Monitor):
         # Retrieve the eth address of the node every time period
         if self.eth_address_retrieval_limiter.can_do_task():
             node_eth_address, error_occurred = self._get_nodes_eth_address()
-            self._store_nodes_eth_addresses_contracts(node_eth_address)
+            self._store_nodes_eth_addresses(node_eth_address)
             re_filter = True
 
             # If an error occurred we want to get the eth address again in the
