@@ -17,6 +17,7 @@ from urllib3.exceptions import ProtocolError
 from web3 import Web3
 from web3.contract import ContractFunction, ContractEvent
 from web3.eth import Eth
+from web3.exceptions import ContractLogicError
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -124,7 +125,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
         self.contract_2_oracles = [
             self.eth_address_1, 'irrelevant_address_1', 'irrelevant_address_2']
         self.contract_3_transmitters = [
-            self.eth_address_1, self.eth_address_2, 'irrelevant_address_1',
+            self.eth_address_2, self.eth_address_1, 'irrelevant_address_1',
             'irrelevant_address_2'
         ]
         self.contract_4_transmitters = [
@@ -591,18 +592,16 @@ class TestEVMContractsMonitor(unittest.TestCase):
         In this test we will check that the create_filter function which
         retrieves round events is called correctly when called the first time
         (the first block to query is the current). For this test we will use
-        the first node which has 2 v3 contracts associated with it.
+        the first node, which has 2 v3 contracts associated with it.
         """
         mock_to_checksum.return_value = self.eth_address_1
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
             [self.current_block, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round],
-            self.withdrawable_payment,
+             self.answered_in_round], self.withdrawable_payment,
             [self.current_block, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round],
-            self.withdrawable_payment,
+             self.answered_in_round], self.withdrawable_payment,
         ]
         self.test_monitor._node_contracts = self.filtered_contracts_example
         selected_node = self.evm_nodes[0]
@@ -612,335 +611,689 @@ class TestEVMContractsMonitor(unittest.TestCase):
             self.eth_address_1, self.node_id_1)
         actual_calls = mock_create_filter.call_args_list
         expected_calls = [
-            call(fromBlock=1000, toBlock=1000,
+            call(fromBlock=self.current_block, toBlock=self.current_block,
                  argument_filters={'oracle': self.eth_address_1}),
-            call(fromBlock=1000, toBlock=1000,
+            call(fromBlock=self.current_block, toBlock=self.current_block,
                  argument_filters={'oracle': self.eth_address_1})
         ]
         self.assertEqual(expected_calls, actual_calls)
 
+    @mock.patch.object(ContractFunction, "call")
+    @mock.patch.object(ContractEvent, 'createFilter')
+    @mock.patch.object(Eth, 'get_block')
+    @mock.patch.object(Web3, 'toChecksumAddress')
     def test_get_v3_data_calls_filter_correctly_second_time_round(
-            self) -> None:
-        pass
+            self, mock_to_checksum, mock_get_block, mock_create_filter,
+            mock_call) -> None:
+        """
+        In this test we will check that the create_filter function which
+        retrieves round events is called correctly when called the second time
+        (the first block to query is + 1 last monitored). We will automate this
+        scenario by pre-setting self.last_block_monitored. For this test we will
+        use the first node, which has 2 v3 contracts associated with it.
+        """
+        self.test_monitor._last_block_monitored[self.node_id_1] = {}
+        self.test_monitor._last_block_monitored[self.node_id_1][
+            self.contract_address_1] = self.current_block - 2
+        self.test_monitor._last_block_monitored[self.node_id_1][
+            self.contract_address_2] = self.current_block - 2
+        mock_to_checksum.return_value = self.eth_address_1
+        mock_get_block.return_value = {'number': self.current_block}
+        mock_create_filter.return_value = TestEventsClass([])
+        mock_call.side_effect = [
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.withdrawable_payment,
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.withdrawable_payment,
+        ]
+        self.test_monitor._node_contracts = self.filtered_contracts_example
+        selected_node = self.evm_nodes[0]
 
-    def test_get_v3_data_return_if_no_rounds_recorded(self) -> None:
-        pass
+        self.test_monitor._get_v3_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_1, self.node_id_1)
+        actual_calls = mock_create_filter.call_args_list
+        expected_calls = [
+            call(fromBlock=self.current_block - 1, toBlock=self.current_block,
+                 argument_filters={'oracle': self.eth_address_1}),
+            call(fromBlock=self.current_block - 1, toBlock=self.current_block,
+                 argument_filters={'oracle': self.eth_address_1})
+        ]
+        self.assertEqual(expected_calls, actual_calls)
 
+    @mock.patch.object(ContractFunction, "call")
+    @mock.patch.object(ContractEvent, 'createFilter')
+    @mock.patch.object(Eth, 'get_block')
+    @mock.patch.object(Web3, 'toChecksumAddress')
+    def test_get_v3_data_return_if_no_rounds_recorded(
+            self, mock_to_checksum, mock_get_block, mock_create_filter,
+            mock_call) -> None:
+        """
+        This test covers the scenario where no round answers were submitted
+        by the node in-between blocks
+        """
+        mock_to_checksum.return_value = self.eth_address_1
+        mock_get_block.return_value = {'number': self.current_block}
+        mock_create_filter.return_value = TestEventsClass([])
+        mock_call.side_effect = [
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.withdrawable_payment,
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.withdrawable_payment,
+        ]
+        self.test_monitor._node_contracts = self.filtered_contracts_example
+        selected_node = self.evm_nodes[0]
+
+        actual_return = self.test_monitor._get_v3_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_1, self.node_id_1)
+        expected_return = {
+            self.contract_address_1: {
+                'contractVersion': 3,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'withdrawablePayment': self.withdrawable_payment,
+                'historicalRounds': []
+            },
+            self.contract_address_2: {
+                'contractVersion': 3,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'withdrawablePayment': self.withdrawable_payment,
+                'historicalRounds': []
+            }
+        }
+        self.assertEqual(expected_return, actual_return)
+
+    @mock.patch.object(ContractFunction, "call")
+    @mock.patch.object(ContractEvent, 'createFilter')
+    @mock.patch.object(Eth, 'get_block')
+    @mock.patch.object(Web3, 'toChecksumAddress')
     def test_get_v3_data_return_if_some_rounds_with_consensus_recorded(
-            self) -> None:
-        pass
+            self, mock_to_checksum, mock_get_block, mock_create_filter,
+            mock_call) -> None:
+        """
+        This test covers the scenario where round answers were submitted
+        by the node in-between blocks, and a round consensus was reached
+        already.
+        """
+        mock_to_checksum.return_value = self.eth_address_1
+        mock_get_block.return_value = {'number': self.current_block}
+        mock_create_filter.return_value = TestEventsClass([
+            {
+                'args': {
+                    'round': self.current_round - 1,
+                    'submission': self.answer - 10
+                }
+            },
+            {
+                'args': {
+                    'round': self.current_round - 2,
+                    'submission': self.answer - 20
+                }
+            }
+        ])
+        mock_call.side_effect = [
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.withdrawable_payment,
+            [self.current_round - 1, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 1],
+            [self.current_round - 2, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 2],
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.withdrawable_payment,
+            [self.current_round - 1, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 1],
+            [self.current_round - 2, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 2],
+        ]
+        self.test_monitor._node_contracts = self.filtered_contracts_example
+        selected_node = self.evm_nodes[0]
 
+        actual_return = self.test_monitor._get_v3_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_1, self.node_id_1)
+        expected_return = {
+            self.contract_address_1: {
+                'contractVersion': 3,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'withdrawablePayment': self.withdrawable_payment,
+                'historicalRounds': [
+                    {
+                        'roundId': self.current_round - 1,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 1,
+                        'nodeSubmission': self.answer - 10
+                    },
+                    {
+                        'roundId': self.current_round - 2,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 2,
+                        'nodeSubmission': self.answer - 20
+                    }
+                ]
+            },
+            self.contract_address_2: {
+                'contractVersion': 3,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'withdrawablePayment': self.withdrawable_payment,
+                'historicalRounds': [
+                    {
+                        'roundId': self.current_round - 1,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 1,
+                        'nodeSubmission': self.answer - 10
+                    },
+                    {
+                        'roundId': self.current_round - 2,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 2,
+                        'nodeSubmission': self.answer - 20
+                    }
+                ]
+            }
+        }
+        self.assertEqual(expected_return, actual_return)
+
+    @mock.patch.object(ContractFunction, "call")
+    @mock.patch.object(ContractEvent, 'createFilter')
+    @mock.patch.object(Eth, 'get_block')
+    @mock.patch.object(Web3, 'toChecksumAddress')
     def test_get_v3_data_return_if_some_rounds_without_consensus_recorded(
-            self) -> None:
-        pass
+            self, mock_to_checksum, mock_get_block, mock_create_filter,
+            mock_call) -> None:
+        """
+        This test covers the scenario where round answers were submitted
+        by the node in-between blocks, and a round consensus has not been
+        reached yet.
+        """
+        mock_to_checksum.return_value = self.eth_address_1
+        mock_get_block.return_value = {'number': self.current_block}
+        mock_create_filter.return_value = TestEventsClass([
+            {
+                'args': {
+                    'round': self.current_round,
+                    'submission': self.answer - 10
+                },
+                'blockNumber': self.current_block
+            },
+        ])
+        mock_call.side_effect = [
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.withdrawable_payment,
+            ContractLogicError('test'),
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.withdrawable_payment,
+            ContractLogicError('test'),
+        ]
+        self.test_monitor._node_contracts = self.filtered_contracts_example
+        selected_node = self.evm_nodes[0]
 
-    # def test_display_data_returns_the_correct_string(self) -> None:
-    #     expected_output = "current_height={}".format(
-    #         self.retrieved_metrics_example['current_height'])
-    #     actual_output = self.test_monitor._display_data(
-    #         self.retrieved_metrics_example)
-    #     self.assertEqual(expected_output, actual_output)
-    #
-    # @freeze_time("2012-01-01")
-    # def test_process_error_returns_expected_data(self) -> None:
-    #     expected_output = {
-    #         'error': {
-    #             'meta_data': {
-    #                 'monitor_name': self.test_monitor.monitor_name,
-    #                 'node_name': self.test_monitor.node_config.node_name,
-    #                 'node_id': self.test_monitor.node_config.node_id,
-    #                 'node_parent_id': self.test_monitor.node_config.parent_id,
-    #                 'time': datetime(2012, 1, 1).timestamp()
-    #             },
-    #             'message': self.test_exception.message,
-    #             'code': self.test_exception.code,
-    #         }
-    #     }
-    #     actual_output = self.test_monitor._process_error(self.test_exception)
-    #     self.assertEqual(actual_output, expected_output)
-    #
-    # @freeze_time("2012-01-01")
-    # def test_process_retrieved_data_returns_expected_data(self) -> None:
-    #     expected_output = {
-    #         'result': {
-    #             'meta_data': {
-    #                 'monitor_name': self.test_monitor.monitor_name,
-    #                 'node_name': self.test_monitor.node_config.node_name,
-    #                 'node_id': self.test_monitor.node_config.node_id,
-    #                 'node_parent_id': self.test_monitor.node_config.parent_id,
-    #                 'time': datetime(2012, 1, 1).timestamp()
-    #             },
-    #             'data': self.retrieved_metrics_example,
-    #         }
-    #     }
-    #
-    #     actual_output = self.test_monitor._process_retrieved_data(
-    #         self.retrieved_metrics_example)
-    #     self.assertEqual(expected_output, actual_output)
-    #
-    # def test_send_data_sends_data_correctly(self) -> None:
-    #     # This test creates a queue which receives messages with the same
-    #     # routing key as the ones sent by send_data, and checks that the data is
-    #     # received
-    #     self.test_monitor._initialise_rabbitmq()
-    #
-    #     # Delete the queue before to avoid messages in the queue on error.
-    #     self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
-    #
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=False
-    #     )
-    #     self.assertEqual(0, res.method.message_count)
-    #     self.test_monitor.rabbitmq.queue_bind(
-    #         queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-    #         routing_key=EVM_NODE_RAW_DATA_ROUTING_KEY)
-    #
-    #     self.test_monitor._send_data(self.test_data_dict)
-    #
-    #     # By re-declaring the queue again we can get the number of messages in
-    #     # the queue.
-    #     res = self.test_monitor.rabbitmq.queue_declare(
-    #         queue=self.test_queue_name, durable=True, exclusive=False,
-    #         auto_delete=False, passive=True
-    #     )
-    #     self.assertEqual(1, res.method.message_count)
-    #
-    #     # Check that the message received is actually the processed data
-    #     _, _, body = self.test_monitor.rabbitmq.basic_get(self.test_queue_name)
-    #     self.assertEqual(self.test_data_dict, json.loads(body))
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(EVMNodeMonitor, "_send_data")
-    # @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
-    # @mock.patch.object(EVMNodeMonitor, "_get_data")
-    # def test_monitor_sends_data_and_hb_if_data_retrieve_and_processing_success(
-    #         self, mock_get_data, mock_send_hb, mock_send_data) -> None:
-    #     expected_output_data = {
-    #         'result': {
-    #             'meta_data': {
-    #                 'monitor_name': self.test_monitor.monitor_name,
-    #                 'node_name': self.test_monitor.node_config.node_name,
-    #                 'node_id': self.test_monitor.node_config.node_id,
-    #                 'node_parent_id': self.test_monitor.node_config.parent_id,
-    #                 'time': datetime(2012, 1, 1).timestamp()
-    #             },
-    #             'data': self.retrieved_metrics_example,
-    #         }
-    #     }
-    #     expected_output_hb = {
-    #         'component_name': self.test_monitor.monitor_name,
-    #         'is_alive': True,
-    #         'timestamp': datetime(2012, 1, 1).timestamp()
-    #     }
-    #
-    #     mock_get_data.return_value = self.retrieved_metrics_example
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.return_value = None
-    #
-    #     self.test_monitor._monitor()
-    #
-    #     mock_send_hb.assert_called_once_with(expected_output_hb)
-    #     mock_send_data.assert_called_once_with(expected_output_data)
-    #
-    # @mock.patch.object(EVMNodeMonitor, "_process_data")
-    # @mock.patch.object(EVMNodeMonitor, "_send_data")
-    # @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
-    # @mock.patch.object(EVMNodeMonitor, "_get_data")
-    # def test_monitor_sends_no_data_and_hb_if_data_ret_success_and_proc_fails(
-    #         self, mock_get_data, mock_send_hb, mock_send_data,
-    #         mock_process_data) -> None:
-    #     mock_process_data.side_effect = self.test_exception
-    #     mock_get_data.return_value = self.retrieved_metrics_example
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.return_value = None
-    #     self.test_monitor._initialise_rabbitmq()
-    #
-    #     self.test_monitor._monitor()
-    #
-    #     mock_send_hb.assert_not_called()
-    #     mock_send_data.assert_not_called()
-    #
-    # @mock.patch.object(EVMNodeMonitor, "_send_data")
-    # @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
-    # @mock.patch.object(EVMNodeMonitor, "_get_data")
-    # def test_monitor_sends_no_data_and_no_hb_on_get_data_unexpected_exception(
-    #         self, mock_get_data, mock_send_hb, mock_send_data) -> None:
-    #     mock_get_data.side_effect = self.test_exception
-    #     mock_send_hb.return_value = None
-    #     mock_send_data.return_value = None
-    #
-    #     self.assertRaises(PANICException, self.test_monitor._monitor)
-    #
-    #     mock_send_data.assert_not_called()
-    #     mock_send_hb.assert_not_called()
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(EVMNodeMonitor, "_send_data")
-    # @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
-    # @mock.patch.object(EVMNodeMonitor, "_get_data")
-    # def test_monitor_sends_exception_data_and_hb_on_expected_exceptions(
-    #         self, mock_get_data, mock_send_hb, mock_send_data) -> None:
-    #     errors_exceptions_dict = {
-    #         ReqConnectionError('test'): NodeIsDownException(
-    #             self.test_monitor.node_config.node_name),
-    #         ReadTimeout('test'): NodeIsDownException(
-    #             self.test_monitor.node_config.node_name),
-    #         IncompleteRead('test'): DataReadingException(
-    #             self.test_monitor.monitor_name,
-    #             self.test_monitor.node_config.node_name),
-    #         ChunkedEncodingError('test'): DataReadingException(
-    #             self.test_monitor.monitor_name,
-    #             self.test_monitor.node_config.node_name),
-    #         ProtocolError('test'): DataReadingException(
-    #             self.test_monitor.monitor_name,
-    #             self.test_monitor.node_config.node_name),
-    #         InvalidURL('test'): InvalidUrlException(
-    #             self.test_monitor.node_config.node_http_url),
-    #         InvalidSchema('test'): InvalidUrlException(
-    #             self.test_monitor.node_config.node_http_url),
-    #         MissingSchema('test'): InvalidUrlException(
-    #             self.test_monitor.node_config.node_http_url),
-    #     }
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.return_value = None
-    #     for error, data_ret_exception in errors_exceptions_dict.items():
-    #         mock_get_data.side_effect = error
-    #         expected_output_data = {
-    #             'error': {
-    #                 'meta_data': {
-    #                     'monitor_name': self.test_monitor.monitor_name,
-    #                     'node_name': self.test_monitor.node_config.node_name,
-    #                     'node_id': self.test_monitor.node_config.node_id,
-    #                     'node_parent_id':
-    #                         self.test_monitor.node_config.parent_id,
-    #                     'time': datetime(2012, 1, 1).timestamp()
-    #                 },
-    #                 'message': data_ret_exception.message,
-    #                 'code': data_ret_exception.code,
-    #             }
-    #         }
-    #         expected_output_hb = {
-    #             'component_name': self.test_monitor.monitor_name,
-    #             'is_alive': True,
-    #             'timestamp': datetime(2012, 1, 1).timestamp()
-    #         }
-    #
-    #         self.test_monitor._monitor()
-    #
-    #         mock_send_data.assert_called_once_with(expected_output_data)
-    #         mock_send_hb.assert_called_once_with(expected_output_hb)
-    #
-    #         # Reset for next test
-    #         mock_send_hb.reset_mock()
-    #         mock_send_data.reset_mock()
-    #
-    # @parameterized.expand([
-    #     (AMQPConnectionError, AMQPConnectionError('test'),),
-    #     (AMQPChannelError, AMQPChannelError('test'),),
-    #     (Exception, Exception('test'),),
-    #     (MessageWasNotDeliveredException,
-    #      MessageWasNotDeliveredException('test'))
-    # ])
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(EVMNodeMonitor, "_send_data")
-    # @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
-    # @mock.patch.object(EVMNodeMonitor, "_get_data")
-    # def test_monitor_raises_error_if_raised_by_send_hb_and_sends_data(
-    #         self, exception_class, exception_instance, mock_get_data,
-    #         mock_send_hb, mock_send_data) -> None:
-    #     mock_get_data.return_value = self.retrieved_metrics_example
-    #     mock_send_data.return_value = None
-    #     expected_output_data = {
-    #         'result': {
-    #             'meta_data': {
-    #                 'monitor_name': self.test_monitor.monitor_name,
-    #                 'node_name': self.test_monitor.node_config.node_name,
-    #                 'node_id': self.test_monitor.node_config.node_id,
-    #                 'node_parent_id': self.test_monitor.node_config.parent_id,
-    #                 'time': datetime(2012, 1, 1).timestamp()
-    #             },
-    #             'data': self.retrieved_metrics_example,
-    #         }
-    #     }
-    #     expected_output_hb = {
-    #         'component_name': self.test_monitor.monitor_name,
-    #         'is_alive': True,
-    #         'timestamp': datetime(2012, 1, 1).timestamp()
-    #     }
-    #     mock_send_hb.side_effect = exception_instance
-    #
-    #     self.assertRaises(exception_class, self.test_monitor._monitor)
-    #
-    #     mock_send_hb.assert_called_once_with(expected_output_hb)
-    #     mock_send_data.assert_called_once_with(expected_output_data)
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(EVMNodeMonitor, "_send_data")
-    # @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
-    # @mock.patch.object(EVMNodeMonitor, "_get_data")
-    # def test_monitor_does_not_send_hb_and_data_if_send_data_fails(
-    #         self, mock_get_data, mock_send_hb, mock_send_data) -> None:
-    #     mock_get_data.return_value = self.retrieved_metrics_example
-    #     mock_send_hb.return_value = None
-    #     exception_types_dict = {
-    #         Exception('test'): Exception,
-    #         pika.exceptions.AMQPConnectionError('test'):
-    #             pika.exceptions.AMQPConnectionError,
-    #         pika.exceptions.AMQPChannelError('test'):
-    #             pika.exceptions.AMQPChannelError,
-    #         MessageWasNotDeliveredException('test'):
-    #             MessageWasNotDeliveredException
-    #     }
-    #     expected_output_data = {
-    #         'result': {
-    #             'meta_data': {
-    #                 'monitor_name': self.test_monitor.monitor_name,
-    #                 'node_name': self.test_monitor.node_config.node_name,
-    #                 'node_id': self.test_monitor.node_config.node_id,
-    #                 'node_parent_id': self.test_monitor.node_config.parent_id,
-    #                 'time': datetime(2012, 1, 1).timestamp()
-    #             },
-    #             'data': self.retrieved_metrics_example,
-    #         }
-    #     }
-    #     for exception, exception_type in exception_types_dict.items():
-    #         mock_send_data.side_effect = exception
-    #         self.assertRaises(exception_type, self.test_monitor._monitor)
-    #         mock_send_data.assert_called_once_with(expected_output_data)
-    #         mock_send_hb.assert_not_called()
-    #
-    #         # Reset for next test
-    #         mock_send_hb.reset_mock()
-    #         mock_send_data.reset_mock()
-    #
-    # @mock.patch.object(logging.Logger, "info")
-    # @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
-    # @mock.patch.object(EVMNodeMonitor, "_send_data")
-    # @mock.patch.object(EVMNodeMonitor, "_get_data")
-    # def test_monitor_logs_data_if_no_retrieval_error(
-    #         self, mock_get_data, mock_send_data, mock_send_hb,
-    #         mock_log) -> None:
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.return_value = None
-    #     mock_get_data.return_value = self.retrieved_metrics_example
-    #
-    #     self.test_monitor._monitor()
-    #
-    #     mock_log.assert_called_with(self.test_monitor._display_data(
-    #         self.retrieved_metrics_example))
-    #
-    # @mock.patch.object(logging.Logger, "info")
-    # @mock.patch.object(EVMNodeMonitor, "_process_data")
-    # @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
-    # @mock.patch.object(EVMNodeMonitor, "_send_data")
-    # @mock.patch.object(EVMNodeMonitor, "_get_data")
-    # def test_monitor_does_not_log_if_retrieval_error(
-    #         self, mock_get_data, mock_send_data, mock_send_hb,
-    #         mock_process_data, mock_log) -> None:
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.return_value = None
-    #     mock_process_data.return_value = None
-    #     mock_get_data.side_effect = ReqConnectionError('test')
-    #     self.test_monitor._monitor()
-    #     mock_log.assert_not_called()
+        actual_return = self.test_monitor._get_v3_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_1, self.node_id_1)
+        expected_return = {
+            self.contract_address_1: {
+                'contractVersion': 3,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'withdrawablePayment': self.withdrawable_payment,
+                'historicalRounds': [
+                    {
+                        'roundId': self.current_round,
+                        'roundAnswer': None,
+                        'roundTimestamp': None,
+                        'answeredInRound': None,
+                        'nodeSubmission': self.answer - 10
+                    },
+                ]
+            },
+            self.contract_address_2: {
+                'contractVersion': 3,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'withdrawablePayment': self.withdrawable_payment,
+                'historicalRounds': [
+                    {
+                        'roundId': self.current_round,
+                        'roundAnswer': None,
+                        'roundTimestamp': None,
+                        'answeredInRound': None,
+                        'nodeSubmission': self.answer - 10
+                    },
+                ]
+            }
+        }
+        self.assertEqual(expected_return, actual_return)
+        self.assertEqual(self.test_monitor.last_block_monitored[self.node_id_1][
+                             self.contract_address_1], self.current_block - 1)
+        self.assertEqual(self.test_monitor.last_block_monitored[self.node_id_1][
+                             self.contract_address_2], self.current_block - 1)
+
+    def test_get_v4_data_returns_empty_dict_if_node_id_was_not_filtered(
+            self) -> None:
+        """
+        This scenario could occur if some recognized error was raised while
+        getting the eth address of a node, resulting into that node to not be
+        included in filtering.
+        """
+        selected_node = self.evm_nodes[0]
+        actual = self.test_monitor._get_v4_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_2, self.node_id_2)
+        self.assertEqual({}, actual)
+
+    @mock.patch.object(ContractFunction, "call")
+    @mock.patch.object(ContractEvent, 'createFilter')
+    @mock.patch.object(Eth, 'get_block')
+    @mock.patch.object(Web3, 'toChecksumAddress')
+    def test_get_v4_data_creates_filter_correctly_first_time_round(
+            self, mock_to_checksum, mock_get_block, mock_create_filter,
+            mock_call) -> None:
+        """
+        In this test we will check that the create_filter function which
+        retrieves round events is called correctly when called the first time
+        (the first block to query is the current). For this test we will use
+        the second node, which has 2 v4 contracts associated with it.
+        """
+        mock_to_checksum.return_value = self.eth_address_2
+        mock_get_block.return_value = {'number': self.current_block}
+        mock_create_filter.return_value = TestEventsClass([])
+        mock_call.side_effect = [
+            [self.current_block, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.contract_3_transmitters,
+            self.withdrawable_payment,
+            [self.current_block, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.contract_4_transmitters,
+            self.withdrawable_payment,
+        ]
+        self.test_monitor._node_contracts = self.filtered_contracts_example
+        selected_node = self.evm_nodes[0]
+
+        self.test_monitor._get_v4_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_2, self.node_id_2)
+        actual_calls = mock_create_filter.call_args_list
+        expected_calls = [
+            call(fromBlock=self.current_block, toBlock=self.current_block),
+            call(fromBlock=self.current_block, toBlock=self.current_block)
+        ]
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(ContractFunction, "call")
+    @mock.patch.object(ContractEvent, 'createFilter')
+    @mock.patch.object(Eth, 'get_block')
+    @mock.patch.object(Web3, 'toChecksumAddress')
+    def test_get_v4_data_calls_filter_correctly_second_time_round(
+            self, mock_to_checksum, mock_get_block, mock_create_filter,
+            mock_call) -> None:
+        """
+        In this test we will check that the create_filter function which
+        retrieves round events is called correctly when called the second time
+        (the first block to query is + 1 last monitored). We will automate this
+        scenario by pre-setting self.last_block_monitored. For this test we will
+        use the second node, which has 2 v4 contracts associated with it.
+        """
+        self.test_monitor._last_block_monitored[self.node_id_2] = {}
+        self.test_monitor._last_block_monitored[self.node_id_2][
+            self.contract_address_3] = self.current_block - 2
+        self.test_monitor._last_block_monitored[self.node_id_2][
+            self.contract_address_4] = self.current_block - 2
+        mock_to_checksum.return_value = self.eth_address_2
+        mock_get_block.return_value = {'number': self.current_block}
+        mock_create_filter.return_value = TestEventsClass([])
+        mock_call.side_effect = [
+            [self.current_block, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.contract_3_transmitters,
+            self.withdrawable_payment,
+            [self.current_block, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.contract_4_transmitters,
+            self.withdrawable_payment,
+        ]
+        self.test_monitor._node_contracts = self.filtered_contracts_example
+        selected_node = self.evm_nodes[0]
+
+        self.test_monitor._get_v4_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_2, self.node_id_2)
+        actual_calls = mock_create_filter.call_args_list
+        expected_calls = [
+            call(fromBlock=self.current_block - 1, toBlock=self.current_block),
+            call(fromBlock=self.current_block - 1, toBlock=self.current_block)
+        ]
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(ContractFunction, "call")
+    @mock.patch.object(ContractEvent, 'createFilter')
+    @mock.patch.object(Eth, 'get_block')
+    @mock.patch.object(Web3, 'toChecksumAddress')
+    def test_get_v4_data_return_if_no_rounds_transmitted(
+            self, mock_to_checksum, mock_get_block, mock_create_filter,
+            mock_call) -> None:
+        """
+        This test covers the scenario where no round results were transmitted
+        yet in-between blocks
+        """
+        mock_to_checksum.return_value = self.eth_address_2
+        mock_get_block.return_value = {'number': self.current_block}
+        mock_create_filter.return_value = TestEventsClass([])
+        mock_call.side_effect = [
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.contract_3_transmitters,
+            self.withdrawable_payment,
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.contract_4_transmitters,
+            self.withdrawable_payment,
+        ]
+        self.test_monitor._node_contracts = self.filtered_contracts_example
+        selected_node = self.evm_nodes[0]
+
+        actual_return = self.test_monitor._get_v4_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_2, self.node_id_2)
+        expected_return = {
+            self.contract_address_3: {
+                'contractVersion': 4,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'owedPayment': self.withdrawable_payment,
+                'historicalRounds': []
+            },
+            self.contract_address_4: {
+                'contractVersion': 4,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'owedPayment': self.withdrawable_payment,
+                'historicalRounds': []
+            }
+        }
+        self.assertEqual(expected_return, actual_return)
+
+    @mock.patch.object(ContractFunction, "call")
+    @mock.patch.object(ContractEvent, 'createFilter')
+    @mock.patch.object(Eth, 'get_block')
+    @mock.patch.object(Web3, 'toChecksumAddress')
+    def test_get_v4_data_ignores_contracts_if_node_no_longer_participating(
+            self, mock_to_checksum, mock_get_block, mock_create_filter,
+            mock_call) -> None:
+        """
+        In this test we will check that if a node is no longer a participant of
+        a contract, then it is ignored such that no data is returned for it.
+        """
+        self.contract_3_transmitters.remove(self.eth_address_2)
+        mock_to_checksum.return_value = self.eth_address_2
+        mock_get_block.return_value = {'number': self.current_block}
+        mock_create_filter.return_value = TestEventsClass([])
+        mock_call.side_effect = [
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.contract_3_transmitters,
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.contract_4_transmitters,
+            self.withdrawable_payment,
+        ]
+        self.test_monitor._node_contracts = self.filtered_contracts_example
+        selected_node = self.evm_nodes[0]
+
+        actual_return = self.test_monitor._get_v4_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_2, self.node_id_2)
+        expected_return = {
+            self.contract_address_4: {
+                'contractVersion': 4,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'owedPayment': self.withdrawable_payment,
+                'historicalRounds': []
+            }
+        }
+        self.assertEqual(expected_return, actual_return)
+
+    @mock.patch.object(ContractFunction, "call")
+    @mock.patch.object(ContractEvent, 'createFilter')
+    @mock.patch.object(Eth, 'get_block')
+    @mock.patch.object(Web3, 'toChecksumAddress')
+    def test_get_v4_data_return_if_some_rounds_recorded_and_node_sent_answer(
+            self, mock_to_checksum, mock_get_block, mock_create_filter,
+            mock_call) -> None:
+        """
+        This test covers the scenario where round answers were transmitted
+        in-between blocks, and the node has submitted an answer.
+        """
+        mock_to_checksum.return_value = self.eth_address_2
+        mock_get_block.return_value = {'number': self.current_block}
+        mock_create_filter.return_value = TestEventsClass([
+            {
+                'args': {
+                    'aggregatorRoundId': self.current_round - 1,
+                    'observers': b'\x02\x03\x04\x00',
+                    'observations': [self.answer - 1, self.answer - 2,
+                                     self.answer - 3, self.answer - 10]
+                }
+            },
+            {
+                'args': {
+                    'aggregatorRoundId': self.current_round - 2,
+                    'observers': b'\x02\x03\x04\x00',
+                    'observations': [self.answer - 1, self.answer - 2,
+                                     self.answer - 3, self.answer - 20]
+                }
+            }
+        ])
+        mock_call.side_effect = [
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.contract_3_transmitters,
+            self.withdrawable_payment,
+            [self.current_round - 1, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 1],
+            [self.current_round - 2, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 2],
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.contract_4_transmitters,
+            self.withdrawable_payment,
+            [self.current_round - 1, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 1],
+            [self.current_round - 2, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 2],
+        ]
+        self.test_monitor._node_contracts = self.filtered_contracts_example
+        selected_node = self.evm_nodes[0]
+
+        actual_return = self.test_monitor._get_v4_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_2, self.node_id_2)
+        expected_return = {
+            self.contract_address_3: {
+                'contractVersion': 4,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'owedPayment': self.withdrawable_payment,
+                'historicalRounds': [
+                    {
+                        'roundId': self.current_round - 1,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 1,
+                        'nodeSubmission': self.answer - 10,
+                        'noOfObservations': 4,
+                        'noOfTransmitters': 4,
+                    },
+                    {
+                        'roundId': self.current_round - 2,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 2,
+                        'nodeSubmission': self.answer - 20,
+                        'noOfObservations': 4,
+                        'noOfTransmitters': 4,
+                    }
+                ]
+            },
+            self.contract_address_4: {
+                'contractVersion': 4,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'owedPayment': self.withdrawable_payment,
+                'historicalRounds': [
+                    {
+                        'roundId': self.current_round - 1,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 1,
+                        'nodeSubmission': self.answer - 10,
+                        'noOfObservations': 4,
+                        'noOfTransmitters': 3,
+                    },
+                    {
+                        'roundId': self.current_round - 2,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 2,
+                        'nodeSubmission': self.answer - 20,
+                        'noOfObservations': 4,
+                        'noOfTransmitters': 3,
+                    }
+                ]
+            }
+        }
+        self.assertEqual(expected_return, actual_return)
+
+    @mock.patch.object(ContractFunction, "call")
+    @mock.patch.object(ContractEvent, 'createFilter')
+    @mock.patch.object(Eth, 'get_block')
+    @mock.patch.object(Web3, 'toChecksumAddress')
+    def test_get_v4_data_return_if_some_rounds_recorded_and_node_node_answer(
+            self, mock_to_checksum, mock_get_block, mock_create_filter,
+            mock_call) -> None:
+        """
+        This test covers the scenario where round answers were transmitted
+        in-between blocks, and the node did not submit its answer.
+        """
+        mock_to_checksum.return_value = self.eth_address_2
+        mock_get_block.return_value = {'number': self.current_block}
+        mock_create_filter.return_value = TestEventsClass([
+            {
+                'args': {
+                    'aggregatorRoundId': self.current_round - 1,
+                    'observers': b'\x02\x03\x04\x01',
+                    'observations': [self.answer - 1, self.answer - 2,
+                                     self.answer - 3, self.answer - 10]
+                }
+            },
+            {
+                'args': {
+                    'aggregatorRoundId': self.current_round - 2,
+                    'observers': b'\x02\x03\x04\x01',
+                    'observations': [self.answer - 1, self.answer - 2,
+                                     self.answer - 3, self.answer - 20]
+                }
+            }
+        ])
+        mock_call.side_effect = [
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.contract_3_transmitters,
+            self.withdrawable_payment,
+            [self.current_round - 1, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 1],
+            [self.current_round - 2, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 2],
+            [self.current_round, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round], self.contract_4_transmitters,
+            self.withdrawable_payment,
+            [self.current_round - 1, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 1],
+            [self.current_round - 2, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 2],
+        ]
+        self.test_monitor._node_contracts = self.filtered_contracts_example
+        selected_node = self.evm_nodes[0]
+
+        actual_return = self.test_monitor._get_v4_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_2, self.node_id_2)
+        expected_return = {
+            self.contract_address_3: {
+                'contractVersion': 4,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'owedPayment': self.withdrawable_payment,
+                'historicalRounds': [
+                    {
+                        'roundId': self.current_round - 1,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 1,
+                        'nodeSubmission': None,
+                        'noOfObservations': 4,
+                        'noOfTransmitters': 4,
+                    },
+                    {
+                        'roundId': self.current_round - 2,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 2,
+                        'nodeSubmission': None,
+                        'noOfObservations': 4,
+                        'noOfTransmitters': 4,
+                    }
+                ]
+            },
+            self.contract_address_4: {
+                'contractVersion': 4,
+                'latestRound': self.current_round,
+                'latestAnswer': self.answer,
+                'latestTimestamp': self.updated_at,
+                'answeredInRound': self.answered_in_round,
+                'owedPayment': self.withdrawable_payment,
+                'historicalRounds': [
+                    {
+                        'roundId': self.current_round - 1,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 1,
+                        'nodeSubmission': None,
+                        'noOfObservations': 4,
+                        'noOfTransmitters': 3,
+                    },
+                    {
+                        'roundId': self.current_round - 2,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 2,
+                        'nodeSubmission': None,
+                        'noOfObservations': 4,
+                        'noOfTransmitters': 3,
+                    }
+                ]
+            }
+        }
+        self.assertEqual(expected_return, actual_return)

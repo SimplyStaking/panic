@@ -378,7 +378,7 @@ class EVMContractsMonitor(Monitor):
                 })
 
                 if not consensus_reached:
-                    current_block_height = event['args']['blockNumber'] - 1
+                    current_block_height = event['blockNumber'] - 1
                     break
 
             self._last_block_monitored[node_id][
