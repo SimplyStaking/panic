@@ -4,7 +4,9 @@ import unittest
 from datetime import datetime
 from datetime import timedelta
 from http.client import IncompleteRead
+from typing import Any
 from unittest import mock
+from unittest.mock import call
 
 import pika
 from parameterized import parameterized
@@ -13,6 +15,7 @@ from requests.exceptions import (ConnectionError as ReqConnectionError,
                                  MissingSchema, InvalidSchema, InvalidURL)
 from urllib3.exceptions import ProtocolError
 from web3 import Web3
+from web3.contract import ContractFunction, ContractEvent
 from web3.eth import Eth
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
@@ -27,6 +30,14 @@ from src.utils.exceptions import (PANICException,
                                   MetricNotFoundException)
 from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
                               delete_exchange_if_exists, disconnect_from_rabbit)
+
+
+class TestEventsClass:
+    def __init__(self, events: Any):
+        self._events = events
+
+    def get_all_entries(self):
+        return self._events
 
 
 class TestEVMContractsMonitor(unittest.TestCase):
@@ -67,14 +78,75 @@ class TestEVMContractsMonitor(unittest.TestCase):
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.test_queue_name = 'Test Queue'
-        self.eth_address_1 = "eth_add_1"
+        self.eth_address_1 = "0x4562845f37813a201b9ddb52e57a902659b7ae6a"
         self.retrieved_prom_data_1 = {
-            'eth_balance': {'{"account": "eth_add_1"}': 26.043292035081947},
+            'eth_balance': {
+                '{"account": "0x4562845f37813a201b9ddb52e57a902659b7ae6a"}':
+                    26.043292035081947
+            },
         }
-        self.eth_address_2 = "eth_add_2"
+        self.eth_address_2 = "0x2607e6f021922a5483d64935f87e15ea797fe8d4"
         self.retrieved_prom_data_2 = {
-            'eth_balance': {'{"account": "eth_add_2"}': 45.043292035081947},
+            'eth_balance': {
+                '{"account": "0x2607e6f021922a5483d64935f87e15ea797fe8d4"}':
+                    45.043292035081947
+            },
         }
+        self.node_eth_address_example = {
+            self.node_id_1: self.eth_address_1,
+            self.node_id_2: self.eth_address_2
+        }
+        self.contract_address_1 = '0x05883D24a5712c04f1b843C4839dC93073A56Ef4'
+        self.contract_address_2 = '0x12A6B73A568f8DC3D24DA1654079343f18f69236'
+        self.contract_address_3 = '0x01A1F73b1f4726EB6EB189FFA5CBB91AF8E14025'
+        self.contract_address_4 = '0x02F878A94a1AE1B15705aCD65b5519A46fe3517e'
+        self.retrieved_contracts_example = [
+            {
+                'contractAddress': self.contract_address_1,
+                'contractVersion': 3,
+            },
+            {
+                'contractAddress': self.contract_address_2,
+                'contractVersion': 3,
+            },
+            {
+                'contractAddress': self.contract_address_3,
+                'contractVersion': 4,
+            },
+            {
+                'contractAddress': self.contract_address_4,
+                'contractVersion': 4,
+            }
+        ]
+        self.contract_1_oracles = [
+            self.eth_address_1, self.eth_address_2, 'irrelevant_address_1',
+            'irrelevant_address_2']
+        self.contract_2_oracles = [
+            self.eth_address_1, 'irrelevant_address_1', 'irrelevant_address_2']
+        self.contract_3_transmitters = [
+            self.eth_address_1, self.eth_address_2, 'irrelevant_address_1',
+            'irrelevant_address_2'
+        ]
+        self.contract_4_transmitters = [
+            self.eth_address_2, 'irrelevant_address_1', 'irrelevant_address_2'
+        ]
+        self.filtered_contracts_example = {
+            self.node_id_1: {
+                'v3': [self.contract_address_1, self.contract_address_2],
+                'v4': [self.contract_address_3]
+            },
+            self.node_id_2: {
+                'v3': [self.contract_address_1],
+                'v4': [self.contract_address_3, self.contract_address_4]
+            }
+        }
+        self.current_block = 1000
+        self.current_round = 95
+        self.answer = 345783563784
+        self.started_at = 4545654
+        self.updated_at = 4545674
+        self.answered_in_round = 95
+        self.withdrawable_payment = 4356546893693
 
         # Dummy objects
         self.test_exception = PANICException('test_exception', 1)
@@ -389,35 +461,177 @@ class TestEVMContractsMonitor(unittest.TestCase):
         actual = self.test_monitor._select_node()
         self.assertEqual(self.evm_nodes[0], actual)
 
-    def test_select_node_does_not_select_syncing_nodes(self) -> None:
+    @mock.patch.object(Eth, 'is_syncing')
+    @mock.patch.object(Web3, 'isConnected')
+    def test_select_node_does_not_select_syncing_nodes(
+            self, mock_is_connected, mock_syncing) -> None:
         """
         In this test we will set the first two nodes to be syncing, and the
-        last node as synced to check that the third node is selected.
+        last node as synced to check that the third node is selected. Note, all
+        nodes are set to be connected.
         """
-        pass
+        mock_syncing.side_effect = [True, True, False]
+        mock_is_connected.return_value = True
+        actual = self.test_monitor._select_node()
+        self.assertEqual(self.evm_nodes[2], actual)
 
-    def test_select_node_does_not_select_disconnected_nodes(self) -> None:
+    @mock.patch.object(Eth, 'is_syncing')
+    @mock.patch.object(Web3, 'isConnected')
+    def test_select_node_does_not_select_disconnected_nodes(
+            self, mock_is_connected, mock_syncing) -> None:
         """
         In this test we will set the first two nodes to be disconnected, and the
-        last node as connected to check that the third node is selected.
+        last node as connected to check that the third node is selected. Note,
+        all nodes will be set as synced.
         """
-        pass
+        mock_syncing.return_value = False
+        mock_is_connected.side_effect = [False, False, True]
+        actual = self.test_monitor._select_node()
+        self.assertEqual(self.evm_nodes[2], actual)
 
+    @parameterized.expand([
+        (ReqConnectionError('test'),),
+        (ReadTimeout('test'),),
+        (IncompleteRead('test'),),
+        (ChunkedEncodingError('test'),),
+        (ProtocolError('test'),),
+        (InvalidURL('test'),),
+        (InvalidSchema('test'),),
+        (MissingSchema('test'),),
+    ])
+    @mock.patch.object(Eth, 'is_syncing')
+    @mock.patch.object(Web3, 'isConnected')
     def test_select_node_does_not_select_nodes_raising_recognizable_errors(
+            self, exception_instance, mock_is_connected, mock_syncing) -> None:
+        """
+        In this test we will set the first two nodes to return one of the
+        recognizable errors above, and the third to be connected and synced,
+        to demonstrate that the third node is selected if no recognizable error
+        is raised.
+        """
+        mock_syncing.return_value = False
+        mock_is_connected.side_effect = [exception_instance, exception_instance,
+                                         True]
+        actual = self.test_monitor._select_node()
+        self.assertEqual(self.evm_nodes[2], actual)
+
+    @parameterized.expand([
+        (ReqConnectionError('test'),),
+        (ReadTimeout('test'),),
+        (IncompleteRead('test'),),
+        (ChunkedEncodingError('test'),),
+        (ProtocolError('test'),),
+        (InvalidURL('test'),),
+        (InvalidSchema('test'),),
+        (MissingSchema('test'),),
+    ])
+    @mock.patch.object(Eth, 'is_syncing')
+    @mock.patch.object(Web3, 'isConnected')
+    def test_select_node_returns_None_if_no_node_satisfies_the_requirements(
+            self, exception_instance, mock_is_connected, mock_syncing) -> None:
+        """
+        In this test we will check that if neither node is connected, synced,
+        and does not raise errors, then select_node returns None. Note, we will
+        set the first node to be disconnected, the second to be syncing and the
+        third to raise an error.
+        """
+        mock_syncing.return_value = True
+        mock_is_connected.side_effect = [False, True, exception_instance]
+        actual = self.test_monitor._select_node()
+        self.assertEqual(None, actual)
+
+    @mock.patch.object(ContractFunction, "call")
+    @mock.patch.object(Web3, 'toChecksumAddress')
+    def test_filter_contracts_by_node_filters_correctly(
+            self, mock_to_checksum, mock_call) -> None:
+        """
+        In this test we we assume that the data retrieved from the chain is the
+        one declared in the setUp function. This is used to check if contracts
+        are filtered according to which nodes are participating on them.
+        """
+        self.test_monitor._node_eth_address = self.node_eth_address_example
+        self.test_monitor._contracts_data = self.retrieved_contracts_example
+        mock_to_checksum.side_effect = [self.eth_address_1, self.eth_address_2]
+        mock_call.side_effect = [
+            self.contract_1_oracles, self.contract_2_oracles,
+            self.contract_3_transmitters, self.contract_4_transmitters,
+            self.contract_1_oracles, self.contract_2_oracles,
+            self.contract_3_transmitters, self.contract_4_transmitters]
+
+        actual = self.test_monitor._filter_contracts_by_node(self.evm_nodes[0])
+        self.assertEqual(self.filtered_contracts_example, actual)
+
+    def test_store_node_contracts_stores_node_contracts(self) -> None:
+        self.assertEqual({}, self.test_monitor.node_contracts)
+        self.test_monitor._store_node_contracts(self.filtered_contracts_example)
+        self.assertEqual(self.filtered_contracts_example,
+                         self.test_monitor.node_contracts)
+
+    def test_get_v3_data_returns_empty_dict_if_node_id_was_not_filtered(
             self) -> None:
         """
-        In this test we will set the first two nodes to returns one of the
-        recognizable errors above, and the third to be connected and synced,
-        to demonstrate that the third node is selected
+        This scenario could occur if some recognized error was raised while
+        getting the eth address of a node, resulting into that node to not be
+        included in filtering.
         """
+        selected_node = self.evm_nodes[0]
+        actual = self.test_monitor._get_v3_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_1, self.node_id_1)
+        self.assertEqual({}, actual)
+
+    @mock.patch.object(ContractFunction, "call")
+    @mock.patch.object(ContractEvent, 'createFilter')
+    @mock.patch.object(Eth, 'get_block')
+    @mock.patch.object(Web3, 'toChecksumAddress')
+    def test_get_v3_data_creates_filter_correctly_first_time_round(
+            self, mock_to_checksum, mock_get_block, mock_create_filter,
+            mock_call) -> None:
+        """
+        In this test we will check that the create_filter function which
+        retrieves round events is called correctly when called the first time
+        (the first block to query is the current). For this test we will use
+        the first node which has 2 v3 contracts associated with it.
+        """
+        mock_to_checksum.return_value = self.eth_address_1
+        mock_get_block.return_value = {'number': self.current_block}
+        mock_create_filter.return_value = TestEventsClass([])
+        mock_call.side_effect = [
+            [self.current_block, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round],
+            self.withdrawable_payment,
+            [self.current_block, self.answer, self.started_at, self.updated_at,
+             self.answered_in_round],
+            self.withdrawable_payment,
+        ]
+        self.test_monitor._node_contracts = self.filtered_contracts_example
+        selected_node = self.evm_nodes[0]
+
+        self.test_monitor._get_v3_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_1, self.node_id_1)
+        actual_calls = mock_create_filter.call_args_list
+        expected_calls = [
+            call(fromBlock=1000, toBlock=1000,
+                 argument_filters={'oracle': self.eth_address_1}),
+            call(fromBlock=1000, toBlock=1000,
+                 argument_filters={'oracle': self.eth_address_1})
+        ]
+        self.assertEqual(expected_calls, actual_calls)
+
+    def test_get_v3_data_calls_filter_correctly_second_time_round(
+            self) -> None:
         pass
 
-    def test_select_node_returns_None_if_no_node_satisfies_the_requirements(
+    def test_get_v3_data_return_if_no_rounds_recorded(self) -> None:
+        pass
+
+    def test_get_v3_data_return_if_some_rounds_with_consensus_recorded(
             self) -> None:
-        """
-        In this test we will check that if neither node is connected and synced,
-        then select_node returns None
-        """
+        pass
+
+    def test_get_v3_data_return_if_some_rounds_without_consensus_recorded(
+            self) -> None:
         pass
 
     # def test_display_data_returns_the_correct_string(self) -> None:
