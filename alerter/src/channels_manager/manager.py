@@ -180,10 +180,10 @@ class ChannelsManager(PublisherSubscriberComponent):
         process_details['channel_type'] = ChannelTypes.TELEGRAM.value
 
     def _create_and_start_slack_alerts_handler(
-            self, webhook_url: str, channel_id: str,
-            channel_name: str) -> None:
+            self, bot_token: str, slack_channel_name: str,
+            channel_id: str, channel_name: str) -> None:
         process = multiprocessing.Process(target=start_slack_alerts_handler,
-                                          args=(webhook_url,
+                                          args=(bot_token, slack_channel_name,
                                                 channel_id, channel_name))
         process.daemon = True
         log_and_print("Creating a new process for the alerts handler of "
@@ -199,7 +199,8 @@ class ChannelsManager(PublisherSubscriberComponent):
         process_details['component_name'] = \
             SLACK_ALERTS_HANDLER_NAME_TEMPLATE.format(channel_name)
         process_details['process'] = process
-        process_details['webhook_url'] = webhook_url
+        process_details['bot_token'] = bot_token
+        process_details['bot_channel_name'] = slack_channel_name
         process_details['channel_id'] = channel_id
         process_details['channel_name'] = channel_name
         process_details['channel_type'] = ChannelTypes.SLACK.value
@@ -558,7 +559,8 @@ class ChannelsManager(PublisherSubscriberComponent):
                 config = new_configs[config_id]
                 channel_id = config['id']
                 channel_name = config['channel_name']
-                webhook_url = config['webhook_url']
+                bot_token = config['bot_token']
+                slack_channel_name = config['bot_channel_name']
                 alerts = str_to_bool(config['alerts'])
                 commands = str_to_bool(config['commands'])
                 parent_ids = config['parent_ids'].split(',')
@@ -569,15 +571,15 @@ class ChannelsManager(PublisherSubscriberComponent):
                 # alerts handler for this channel
                 if alerts:
                     self._create_and_start_slack_alerts_handler(
-                        webhook_url, channel_id, channel_name)
+                        bot_token, slack_channel_name, channel_id, channel_name)
                     correct_configs[config_id] = config
 
                 # If Slack Commands are enabled on this channel, start a
                 # commands handler for this channel
                 # if commands:
                 #     self._create_and_start_slack_cmds_handler(
-                #         webhook_url, channel_id, channel_name,
-                #         associated_chains)
+                #         bot_token, slack_channel_name, channel_id,
+                #         channel_name, associated_chains)
                 #     correct_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
@@ -587,7 +589,8 @@ class ChannelsManager(PublisherSubscriberComponent):
                 config = sent_configs[config_id]
                 channel_id = config['id']
                 channel_name = config['channel_name']
-                webhook_url = config['webhook_url']
+                bot_token = config['bot_token']
+                slack_channel_name = config['bot_channel_name']
                 alerts = str_to_bool(config['alerts'])
                 commands = str_to_bool(config['commands'])
                 parent_ids = config['parent_ids'].split(',')
@@ -611,14 +614,14 @@ class ChannelsManager(PublisherSubscriberComponent):
                             "Restarting the alerts handler of {} with latest "
                             "configuration".format(channel_name), self.logger)
                         self._create_and_start_slack_alerts_handler(
-                            webhook_url, channel_id, channel_name)
+                            bot_token, slack_channel_name, channel_id, channel_name)
                 else:
                     if alerts:
                         log_and_print(
                             "Starting a new alerts handler for {}.".format(
                                 channel_name), self.logger)
                         self._create_and_start_slack_alerts_handler(
-                            webhook_url, channel_id, channel_name)
+                            bot_token, slack_channel_name, channel_id, channel_name)
 
                 # commands_handler_type = ChannelHandlerTypes.COMMANDS.value
                 # if commands_handler_type in \
@@ -638,7 +641,7 @@ class ChannelsManager(PublisherSubscriberComponent):
                 #             "Restarting the commands handler of {} with latest "
                 #             "configuration".format(channel_name), self.logger)
                 #         self._create_and_start_slack_cmds_handler(
-                #             webhook_url, channel_id, channel_name,
+                #             bot_token, slack_channel_name, channel_id, channel_name,
                 #             associated_chains)
                 # else:
                 #     if commands:
@@ -646,7 +649,7 @@ class ChannelsManager(PublisherSubscriberComponent):
                 #             "Starting a new commands handler for {}.".format(
                 #                 channel_name), self.logger)
                 #         self._create_and_start_slack_cmds_handler(
-                #             webhook_url, channel_id, channel_name,
+                #             bot_token, slack_channel_name, channel_id, channel_name,
                 #             associated_chains)
 
                 # Delete the state entries if both commands and alerts are
@@ -1093,12 +1096,14 @@ class ChannelsManager(PublisherSubscriberComponent):
                         elif channel_type == ChannelTypes.SLACK.value:
                             if handler == ChannelHandlerTypes.ALERTS.value:
                                 self._create_and_start_slack_alerts_handler(
-                                    process_details['webhook_url'],
+                                    process_details['bot_token'],
+                                    process_details['bot_channel_name'],
                                     process_details['channel_id'],
                                     process_details['channel_name'])
                             # elif handler == ChannelHandlerTypes.COMMANDS.value:
                             #     self._create_and_start_slack_cmds_handler(
-                            #         process_details['webhook_url'],
+                            #         process_details['bot_token'],
+                            #         process_details['bot_channel_name'],
                             #         process_details['channel_id'],
                             #         process_details['channel_name'],
                             #         process_details['associated_chains'])

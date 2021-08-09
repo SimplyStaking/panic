@@ -203,8 +203,8 @@ def start_telegram_commands_handler(
 
 
 def _initialise_slack_alerts_handler(
-        webhook_url: str, channel_id: str,
-        channel_name: str) -> SlackAlertsHandler:
+        bot_token: str, slack_channel_name: str,
+        channel_id: str, channel_name: str) -> SlackAlertsHandler:
     # Handler display name based on channel name
     handler_display_name = SLACK_ALERTS_HANDLER_NAME_TEMPLATE.format(
         channel_name)
@@ -214,7 +214,7 @@ def _initialise_slack_alerts_handler(
     # Try initialising handler until successful
     while True:
         try:
-            slack_bot = SlackBotApi(webhook_url)
+            slack_bot = SlackBotApi(bot_token, slack_channel_name)
 
             slack_channel = SlackChannel(
                 channel_name, channel_id, handler_logger.getChild(
@@ -239,10 +239,10 @@ def _initialise_slack_alerts_handler(
     return slack_alerts_handler
 
 
-def start_slack_alerts_handler(webhook_url: str, channel_id: str,
-                               channel_name: str) -> None:
+def start_slack_alerts_handler(bot_token: str, slack_channel_name: str,
+                               channel_id: str, channel_name: str) -> None:
     slack_alerts_handler = _initialise_slack_alerts_handler(
-        webhook_url, channel_id, channel_name)
+        bot_token, slack_channel_name, channel_id, channel_name)
     start_handler(slack_alerts_handler)
 
 

@@ -77,7 +77,8 @@ class TestChannelsManager(unittest.TestCase):
         self.telegram_bot_chat_id = 'test_bot_chat_id'
         self.slack_channel_name = 'test_slack_channel'
         self.slack_channel_id = 'test_slack_id12345'
-        self.slack_webhook_url = 'slack_webhook_url'
+        self.slack_bot_token = 'slack_bot_token'
+        self.slack_bot_channel_name = 'test-slack-channel'
         self.test_chain_1 = 'Kusama'
         self.test_chain_2 = 'Cosmos'
         self.test_chain_3 = 'Test_Chain'
@@ -230,7 +231,8 @@ class TestChannelsManager(unittest.TestCase):
                         SLACK_ALERTS_HANDLER_NAME_TEMPLATE.format(
                             self.slack_channel_name),
                     'process': self.dummy_process1,
-                    'webhook_url': self.slack_webhook_url,
+                    'bot_token': self.slack_bot_token,
+                    'bot_channel_name': self.slack_bot_channel_name,
                     'channel_id': self.slack_channel_id,
                     'channel_name': self.slack_channel_name,
                     'channel_type': ChannelTypes.SLACK.value,
@@ -350,7 +352,8 @@ class TestChannelsManager(unittest.TestCase):
                         SLACK_ALERTS_HANDLER_NAME_TEMPLATE.format(
                             self.slack_channel_name),
                     'process': self.dummy_process1,
-                    'webhook_url': self.slack_webhook_url,
+                    'bot_token': self.slack_bot_token,
+                    'bot_channel_name': self.slack_bot_channel_name,
                     'channel_id': self.slack_channel_id,
                     'channel_name': self.slack_channel_name,
                     'channel_type': ChannelTypes.SLACK.value,
@@ -457,7 +460,8 @@ class TestChannelsManager(unittest.TestCase):
                 self.slack_channel_id: {
                     'id': self.slack_channel_id,
                     'channel_name': self.slack_channel_name,
-                    'webhook_url': self.slack_webhook_url,
+                    'bot_token': self.slack_bot_token,
+                    'bot_channel_name': self.slack_bot_channel_name,
                     'info': 'True',
                     'warning': 'True',
                     'critical': 'True',
@@ -477,7 +481,8 @@ class TestChannelsManager(unittest.TestCase):
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         connect_to_rabbit(self.test_manager.rabbitmq)
-        delete_queue_if_exists(self.test_manager.rabbitmq, self.test_queue_name)
+        delete_queue_if_exists(
+            self.test_manager.rabbitmq, self.test_queue_name)
         delete_queue_if_exists(self.test_manager.rabbitmq,
                                CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME)
         delete_queue_if_exists(self.test_manager.rabbitmq,
@@ -506,7 +511,8 @@ class TestChannelsManager(unittest.TestCase):
 
     def test_channel_process_dict_returns_channel_process_dict(self) -> None:
         self.test_manager._channel_process_dict = self.test_dict
-        self.assertEqual(self.test_dict, self.test_manager.channel_process_dict)
+        self.assertEqual(
+            self.test_dict, self.test_manager.channel_process_dict)
 
     def test_initialise_rabbitmq_initializes_everything_as_expected(
             self) -> None:
@@ -630,7 +636,8 @@ class TestChannelsManager(unittest.TestCase):
             self.telegram_channel_name), process_details['component_name'])
         self.assertEqual(self.dummy_process1, process_details['process'])
         self.assertEqual(self.telegram_bot_token, process_details['bot_token'])
-        self.assertEqual(self.telegram_bot_chat_id, process_details['bot_chat_id'])
+        self.assertEqual(self.telegram_bot_chat_id,
+                         process_details['bot_chat_id'])
         self.assertEqual(self.telegram_channel_id,
                          process_details['channel_id'])
         self.assertEqual(self.telegram_channel_name,
@@ -685,7 +692,8 @@ class TestChannelsManager(unittest.TestCase):
             self.telegram_channel_name), process_details['component_name'])
         self.assertEqual(self.dummy_process1, process_details['process'])
         self.assertEqual(self.telegram_bot_token, process_details['bot_token'])
-        self.assertEqual(self.telegram_bot_chat_id, process_details['bot_chat_id'])
+        self.assertEqual(self.telegram_bot_chat_id,
+                         process_details['bot_chat_id'])
         self.assertEqual(self.telegram_channel_id,
                          process_details['channel_id'])
         self.assertEqual(self.telegram_channel_name,
@@ -733,15 +741,17 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_process_dict = copy.deepcopy(self.test_dict)
 
         self.test_manager._create_and_start_slack_alerts_handler(
-            self.slack_webhook_url, self.slack_channel_id,
-            self.slack_channel_name)
+            self.slack_bot_token, self.slack_bot_channel_name,
+            self.slack_channel_id, self.slack_channel_name)
 
         process_details = self.test_manager.channel_process_dict[
             self.slack_channel_id][handler_type]
         self.assertEqual(SLACK_ALERTS_HANDLER_NAME_TEMPLATE.format(
             self.slack_channel_name), process_details['component_name'])
         self.assertEqual(self.dummy_process1, process_details['process'])
-        self.assertEqual(self.slack_webhook_url, process_details['webhook_url'])
+        self.assertEqual(self.slack_bot_token, process_details['bot_token'])
+        self.assertEqual(self.slack_bot_channel_name,
+                         process_details['bot_channel_name'])
         self.assertEqual(self.slack_channel_id,
                          process_details['channel_id'])
         self.assertEqual(self.slack_channel_name,
@@ -764,15 +774,15 @@ class TestChannelsManager(unittest.TestCase):
         handler_type = ChannelHandlerTypes.ALERTS.value
 
         self.test_manager._create_and_start_slack_alerts_handler(
-            self.slack_webhook_url, self.slack_channel_id,
-            self.slack_channel_name)
+            self.slack_bot_token, self.slack_bot_channel_name,
+            self.slack_channel_id, self.slack_channel_name)
 
         process = self.test_manager.channel_process_dict[
             self.slack_channel_id][handler_type]['process']
         self.assertTrue(process.daemon)
-        self.assertEqual(3, len(process._args))
-        self.assertEqual((self.slack_webhook_url, self.slack_channel_id,
-                          self.slack_channel_name), process._args)
+        self.assertEqual(4, len(process._args))
+        self.assertEqual((self.slack_bot_token, self.slack_bot_channel_name,
+                          self.slack_channel_id, self.slack_channel_name), process._args)
         self.assertEqual(start_slack_alerts_handler, process._target)
         mock_start.assert_called_once_with()
 
@@ -1009,7 +1019,8 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE.format(
             self.console_channel_name), process_details['component_name'])
         self.assertEqual(self.dummy_process1, process_details['process'])
-        self.assertEqual(self.console_channel_id, process_details['channel_id'])
+        self.assertEqual(self.console_channel_id,
+                         process_details['channel_id'])
         self.assertEqual(self.console_channel_name,
                          process_details['channel_name'])
         self.assertEqual(ChannelTypes.CONSOLE.value,
@@ -1056,7 +1067,8 @@ class TestChannelsManager(unittest.TestCase):
             self.log_channel_name), process_details['component_name'])
         self.assertEqual(self.dummy_process1, process_details['process'])
         self.assertEqual(self.log_channel_id, process_details['channel_id'])
-        self.assertEqual(self.log_channel_name, process_details['channel_name'])
+        self.assertEqual(self.log_channel_name,
+                         process_details['channel_name'])
         self.assertEqual(ChannelTypes.LOG.value,
                          process_details['channel_type'])
         expected_channel_process_dict = self.test_dict
@@ -1129,7 +1141,8 @@ class TestChannelsManager(unittest.TestCase):
         mock_start_cah.return_value = None
         mock_start_lah.return_value = None
         self.test_manager._start_persistent_channels()
-        mock_start_lah.assert_called_once_with(LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
+        mock_start_lah.assert_called_once_with(
+            LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
 
     @mock.patch.object(multiprocessing.Process, 'is_alive')
     @mock.patch.object(ChannelsManager, "_create_and_start_log_alerts_handler")
@@ -1365,7 +1378,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_configs = current_configs
         self.test_manager._channel_process_dict = self.test_channel_process_dict
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         expected_confs = copy.deepcopy(
             current_configs[ChannelTypes.TELEGRAM.value])
@@ -1395,7 +1409,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_process_dict = \
             self.test_channel_process_dict_copy
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         expected_confs = copy.deepcopy(
             self.test_channel_configs[ChannelTypes.TELEGRAM.value])
@@ -1449,7 +1464,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_configs = current_configs
         self.test_manager._channel_process_dict = self.test_channel_process_dict
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         expected_confs = copy.deepcopy(
             current_configs[ChannelTypes.TELEGRAM.value])
@@ -1479,7 +1495,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_process_dict = \
             self.test_channel_process_dict_copy
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         expected_confs = copy.deepcopy(
             self.test_channel_configs[ChannelTypes.TELEGRAM.value])
@@ -1533,7 +1550,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_configs = current_configs
         self.test_manager._channel_process_dict = self.test_channel_process_dict
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         self.assertEqual({}, actual_confs)
         self.assertEqual(2, len(mock_terminate.call_args_list))
@@ -1561,7 +1579,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_process_dict = \
             self.test_channel_process_dict_copy
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         self.assertEqual({}, actual_confs)
         self.assertEqual(2, len(mock_terminate.call_args_list))
@@ -1612,7 +1631,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_configs = current_configs
         self.test_manager._channel_process_dict = self.test_channel_process_dict
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         expected_confs = {'Another_Telegram_Config': self.test_dict}
         self.assertEqual(expected_confs, actual_confs)
@@ -1666,10 +1686,10 @@ class TestChannelsManager(unittest.TestCase):
 
         # Check that the calls to start the processes were done correctly.
         expected_calls = [
-            call(self.slack_webhook_url, self.slack_channel_id,
-                 self.slack_channel_name),
-            call(self.slack_webhook_url, self.slack_channel_id,
-                 self.slack_channel_name),
+            call(self.slack_bot_token, self.slack_bot_channel_name,
+                 self.slack_channel_id, self.slack_channel_name),
+            call(self.slack_bot_token, self.slack_bot_channel_name,
+                 self.slack_channel_id, self.slack_channel_name),
         ]
         actual_calls = mock_start_sah.call_args_list
         self.assertEqual(expected_calls, actual_calls)
@@ -1708,8 +1728,8 @@ class TestChannelsManager(unittest.TestCase):
         mock_terminate.assert_called_once()
         mock_join.assert_called_once()
         expected_calls = [
-            call(self.slack_webhook_url, self.slack_channel_id,
-                 new_channel_name),
+            call(self.slack_bot_token, self.slack_bot_channel_name,
+                 self.slack_channel_id, new_channel_name),
         ]
         actual_calls = mock_start_tah.call_args_list
         self.assertEqual(expected_calls, actual_calls)
@@ -1754,11 +1774,13 @@ class TestChannelsManager(unittest.TestCase):
 
         # Test with no twilio configs in the state
         current_configs = copy.deepcopy(self.test_channel_configs)
-        sent_configs = copy.deepcopy(current_configs[ChannelTypes.TWILIO.value])
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TWILIO.value])
         del current_configs[ChannelTypes.TWILIO.value]
         self.test_manager._channel_configs = current_configs
 
-        actual_configs = self.test_manager._process_twilio_configs(sent_configs)
+        actual_configs = self.test_manager._process_twilio_configs(
+            sent_configs)
 
         expected_configs = copy.deepcopy(
             self.test_channel_configs[ChannelTypes.TWILIO.value])
@@ -1768,11 +1790,13 @@ class TestChannelsManager(unittest.TestCase):
         current_configs = copy.deepcopy(self.test_channel_configs)
         current_configs[ChannelTypes.TWILIO.value][
             'Another_Twilio_Config'] = self.test_dict
-        sent_configs = copy.deepcopy(current_configs[ChannelTypes.TWILIO.value])
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TWILIO.value])
         del current_configs[ChannelTypes.TWILIO.value][self.twilio_channel_id]
         self.test_manager._channel_configs = current_configs
 
-        actual_configs = self.test_manager._process_twilio_configs(sent_configs)
+        actual_configs = self.test_manager._process_twilio_configs(
+            sent_configs)
 
         expected_configs = copy.deepcopy(
             self.test_channel_configs[ChannelTypes.TWILIO.value])
@@ -1807,12 +1831,14 @@ class TestChannelsManager(unittest.TestCase):
         current_configs = copy.deepcopy(self.test_channel_configs)
         current_configs[ChannelTypes.TWILIO.value][
             'Another_Twilio_Config'] = self.test_dict
-        sent_configs = copy.deepcopy(current_configs[ChannelTypes.TWILIO.value])
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TWILIO.value])
         sent_configs[self.twilio_channel_id]['channel_name'] = new_channel_name
         self.test_manager._channel_configs = current_configs
         self.test_manager._channel_process_dict = self.test_channel_process_dict
 
-        actual_configs = self.test_manager._process_twilio_configs(sent_configs)
+        actual_configs = self.test_manager._process_twilio_configs(
+            sent_configs)
 
         expected_configs = copy.deepcopy(
             self.test_channel_configs[ChannelTypes.TWILIO.value])
@@ -1847,12 +1873,14 @@ class TestChannelsManager(unittest.TestCase):
         current_configs = copy.deepcopy(self.test_channel_configs)
         current_configs[ChannelTypes.TWILIO.value][
             'Another_Twilio_Config'] = self.test_dict
-        sent_configs = copy.deepcopy(current_configs[ChannelTypes.TWILIO.value])
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TWILIO.value])
         del sent_configs[self.twilio_channel_id]
         self.test_manager._channel_configs = current_configs
         self.test_manager._channel_process_dict = self.test_channel_process_dict
 
-        actual_configs = self.test_manager._process_twilio_configs(sent_configs)
+        actual_configs = self.test_manager._process_twilio_configs(
+            sent_configs)
 
         expected_configs = {'Another_Twilio_Config': self.test_dict}
         self.assertEqual(expected_configs, actual_configs)
@@ -2554,7 +2582,7 @@ class TestChannelsManager(unittest.TestCase):
                     for channel_id in self.test_channel_process_dict
                     for handler in self.test_channel_process_dict[channel_id]
                     if self.test_channel_process_dict[channel_id][handler][
-                           'component_name'] != dead_process
+                        'component_name'] != dead_process
                 ],
                 'dead_processes': [dead_process],
                 'timestamp': datetime.now().timestamp()
@@ -2666,7 +2694,8 @@ class TestChannelsManager(unittest.TestCase):
                 process_details = self.test_channel_process_dict[
                     self.slack_channel_id][ChannelHandlerTypes.ALERTS.value]
                 mock_slack_alerts.assert_called_once_with(
-                    process_details['webhook_url'],
+                    process_details['bot_token'],
+                    process_details['bot_channel_name'],
                     process_details['channel_id'],
                     process_details['channel_name'])
                 mock_telegram_alerts.assert_not_called()

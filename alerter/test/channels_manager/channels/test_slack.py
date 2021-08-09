@@ -2,6 +2,8 @@ import logging
 import unittest
 from unittest import mock
 
+from slack_sdk.web import SlackResponse
+
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
 from src.channels_manager.apis.slack_bot_api import SlackBotApi
@@ -15,9 +17,10 @@ class TestSlackChannel(unittest.TestCase):
         self.test_channel_id = 'test_slack_id12345'
         self.dummy_logger = logging.getLogger('Dummy')
         self.dummy_logger.disabled = True
-        self.test_bot_webhook_url = 'test_bot_webhook_url'
+        self.test_bot_token = 'test_bot_token'
+        self.test_slack_channel_name = 'test_slack_channel_name'
 
-        self.test_slack_bot_api = SlackBotApi(self.test_bot_webhook_url)
+        self.test_slack_bot_api = SlackBotApi(self.test_bot_token, self.test_slack_channel_name)
         self.test_slack_channel = SlackChannel(
             self.test_channel_name, self.test_channel_id, self.dummy_logger,
             self.test_slack_bot_api)
@@ -72,7 +75,15 @@ class TestSlackChannel(unittest.TestCase):
     @mock.patch.object(SlackBotApi, "send_message")
     def test_alert_returns_success_if_api_request_ok(self,
                                                      mock_send_message) -> None:
-        mock_send_message.return_value = 'ok'
+        mock_send_message.return_value = SlackResponse(
+            client=None,
+            http_verb="POST",
+            api_url='',
+            req_args={},
+            data={'ok': True},
+            headers={},
+            status_code=200,
+        )
         actual_ret = self.test_slack_channel.alert(self.test_alert)
         self.assertEqual(RequestStatus.SUCCESS, actual_ret)
 
