@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import unittest
@@ -9,6 +10,7 @@ from unittest import mock
 from unittest.mock import call
 
 import pika
+from freezegun import freeze_time
 from parameterized import parameterized
 from requests.exceptions import (ConnectionError as ReqConnectionError,
                                  ReadTimeout, ChunkedEncodingError,
@@ -25,7 +27,8 @@ from src.monitors.contracts.evm import EVMContractsMonitor
 from src.utils import env
 from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           RAW_DATA_EXCHANGE,
-                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
 from src.utils.exceptions import (PANICException,
                                   ComponentNotGivenEnoughDataSourcesException,
                                   MetricNotFoundException)
@@ -148,6 +151,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
         self.updated_at = 4545674
         self.answered_in_round = 95
         self.withdrawable_payment = 4356546893693
+        self.test_parent_id = 'test_parent_id'
 
         # Dummy objects
         self.test_exception = PANICException('test_exception', 1)
@@ -1297,3 +1301,94 @@ class TestEVMContractsMonitor(unittest.TestCase):
             }
         }
         self.assertEqual(expected_return, actual_return)
+
+    @mock.patch.object(EVMContractsMonitor, '_get_v4_data')
+    @mock.patch.object(EVMContractsMonitor, '_get_v3_data')
+    def test_get_data_return(self, mock_get_v3_data, mock_get_v4_data) -> None:
+        """
+        In this test we will check that the get_data function will return the
+        expected data, i.e. v3 contracts data followed by v4 contracts data.
+        """
+        v3_data = {'v3_data_key': 'v3_data_value'}
+        v4_data = {'v4_data_key': 'v4_data_value'}
+        mock_get_v3_data.return_value = v3_data
+        mock_get_v4_data.return_value = v4_data
+        selected_node = self.evm_nodes[0]
+
+        actual_return = self.test_monitor._get_data(
+            self.test_monitor.evm_node_w3_interface[selected_node],
+            self.eth_address_1, self.node_id_1)
+        expected_return = {
+            'v3_data_key': 'v3_data_value',
+            'v4_data_key': 'v4_data_value'
+        }
+        self.assertEqual(expected_return, actual_return)
+
+    @freeze_time("2012-01-01")
+    def test_process_error_returns_expected_processed_data(self) -> None:
+        actual_return = self.test_monitor._process_error(self.test_exception,
+                                                         self.test_parent_id)
+        expected_return = {
+            'error': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'parent_id': self.test_parent_id,
+                    'time': datetime.now().timestamp()
+                },
+                'message': self.test_exception.message,
+                'code': self.test_exception.code,
+            }
+        }
+        self.assertEqual(expected_return, actual_return)
+
+    @freeze_time("2012-01-01")
+    def test_process_retrieved_data_returns_expected_processed_data(
+            self) -> None:
+        actual_return = self.test_monitor._process_retrieved_data(
+            self.test_data_dict, self.node_config_1)
+        expected_return = {
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'node_name': self.node_config_1.node_name,
+                    'node_id': self.node_config_1.node_id,
+                    'node_parent_id': self.node_config_1.parent_id,
+                    'time': datetime.now().timestamp()
+                },
+                'data': copy.deepcopy(self.test_data_dict),
+            }
+        }
+        self.assertEqual(expected_return, actual_return)
+
+    def test_send_data_sends_data_correctly(self) -> None:
+        """
+        This test creates a queue which receives messages with the same routing
+        key as the ones sent by send_data, and checks that the data is received
+        """
+        self.test_monitor._initialise_rabbitmq()
+
+        # Delete the queue before to avoid messages in the queue on error.
+        self.test_monitor.rabbitmq.queue_delete(self.test_queue_name)
+
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=False
+        )
+        self.assertEqual(0, res.method.message_count)
+        self.test_monitor.rabbitmq.queue_bind(
+            queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
+            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+
+        self.test_monitor._send_data(self.test_data_dict)
+
+        # By re-declaring the queue again we can get the number of messages
+        # in the queue.
+        res = self.test_monitor.rabbitmq.queue_declare(
+            queue=self.test_queue_name, durable=True, exclusive=False,
+            auto_delete=False, passive=True
+        )
+        self.assertEqual(1, res.method.message_count)
+
+        # Check that the message received is actually the processed data
+        _, _, body = self.test_monitor.rabbitmq.basic_get(self.test_queue_name)
+        self.assertEqual(self.test_data_dict, json.loads(body))
