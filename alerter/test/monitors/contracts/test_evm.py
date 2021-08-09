@@ -1189,7 +1189,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
     @mock.patch.object(ContractEvent, 'createFilter')
     @mock.patch.object(Eth, 'get_block')
     @mock.patch.object(Web3, 'toChecksumAddress')
-    def test_get_v4_data_return_if_some_rounds_recorded_and_node_node_answer(
+    def test_get_v4_data_return_if_some_rounds_recorded_and_no_node_answer(
             self, mock_to_checksum, mock_get_block, mock_create_filter,
             mock_call) -> None:
         """
