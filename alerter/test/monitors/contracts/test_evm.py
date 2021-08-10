@@ -23,7 +23,8 @@ from web3.exceptions import ContractLogicError
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitors.contracts.evm import EVMContractsMonitor
+from src.monitors.contracts.evm import EVMContractsMonitor, \
+    _WEI_WATCHERS_RETRIEVAL_TIME_PERIOD, _PROMETHEUS_RETRIEVAL_TIME_PERIOD
 from src.utils import env
 from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           RAW_DATA_EXCHANGE,
@@ -31,7 +32,9 @@ from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
 from src.utils.exceptions import (PANICException,
                                   ComponentNotGivenEnoughDataSourcesException,
-                                  MetricNotFoundException)
+                                  MetricNotFoundException,
+                                  CouldNotRetrieveContractsException,
+                                  NoSyncedDataSourceWasAccessibleException)
 from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
                               delete_exchange_if_exists, disconnect_from_rabbit)
 
@@ -1392,3 +1395,372 @@ class TestEVMContractsMonitor(unittest.TestCase):
         # Check that the message received is actually the processed data
         _, _, body = self.test_monitor.rabbitmq.basic_get(self.test_queue_name)
         self.assertEqual(self.test_data_dict, json.loads(body))
+
+    def test_get_node_config_by_node_id_returns_correctly(self) -> None:
+        """
+        In this test we will check that if a node_config with the given node_id
+        is stored in the state, that node_config is returned by the
+        get_node_config_by_node_id function. If such a node_config does not
+        exist we will check that the function returns None.
+        """
+        # Test for when a config with the given node_id exists in the state
+        actual = self.test_monitor._get_node_config_by_node_id(self.node_id_1)
+        self.assertEqual(self.node_config_1, actual)
+
+        # Test for when a config with the given node_id does not exist in the
+        # state
+        actual = self.test_monitor._get_node_config_by_node_id('bad_id')
+        self.assertIsNone(actual)
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(EVMContractsMonitor, '_send_data')
+    @mock.patch.object(EVMContractsMonitor, '_select_node')
+    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(EVMContractsMonitor, '_store_chain_contracts')
+    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    def test_monitor_retrieves_data_from_weiwatchers_periodically(
+            self, mock_get_chain_contracts, mock_store_chain_contracts,
+            mock_get_nodes_eth_address, mock_select_node, mock_send_data,
+            mock_send_heartbeat) -> None:
+        """
+        In this test we will check that wei-watchers data is retrieved
+        periodically by the self._monitor fn. In addition to this we will check
+        that on start, data is retrieved.
+        """
+        mock_get_chain_contracts.return_value = self.test_data_dict
+        mock_store_chain_contracts.return_value = None
+        mock_get_nodes_eth_address.return_value = (None, True)
+        mock_select_node.return_value = None
+        mock_send_data.return_value = None
+        mock_send_heartbeat.return_value = None
+        period = _WEI_WATCHERS_RETRIEVAL_TIME_PERIOD
+
+        # Check that data from wei-watchers is retrieved and stored first time
+        # round
+        self.test_monitor._monitor()
+        mock_get_chain_contracts.assert_called_once()
+        mock_store_chain_contracts.assert_called_once_with(self.test_data_dict)
+        mock_get_chain_contracts.reset_mock()
+        mock_store_chain_contracts.reset_mock()
+
+        # Check that data from wei-watchers is not retrieved if not enough time
+        # passes
+        self.test_monitor.wei_watchers_retrieval_limiter. \
+            _last_time_that_did_task = \
+            datetime.fromtimestamp(datetime.now().timestamp() - period + 1)
+        self.test_monitor._monitor()
+        mock_get_chain_contracts.assert_not_called()
+        mock_store_chain_contracts.assert_not_called()
+        mock_get_chain_contracts.reset_mock()
+        mock_store_chain_contracts.reset_mock()
+
+        # Check that data from wei-watchers is retrieved if enough time passes
+        self.test_monitor.wei_watchers_retrieval_limiter. \
+            _last_time_that_did_task = \
+            datetime.fromtimestamp(datetime.now().timestamp() - period - 1)
+        self.test_monitor._monitor()
+        mock_get_chain_contracts.assert_called_once()
+        mock_store_chain_contracts.assert_called_once_with(self.test_data_dict)
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(EVMContractsMonitor, '_send_data')
+    @mock.patch.object(EVMContractsMonitor, '_select_node')
+    @mock.patch.object(EVMContractsMonitor, '_store_nodes_eth_addresses')
+    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(EVMContractsMonitor, '_store_chain_contracts')
+    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    def test_monitor_retrieves_nodes_eth_address_periodically(
+            self, mock_get_chain_contracts, mock_store_chain_contracts,
+            mock_get_nodes_eth_address, mock_store_nodes_eth_addresses,
+            mock_select_node, mock_send_data, mock_send_heartbeat) -> None:
+        """
+        In this test we will check that prometheus data is retrieved
+        periodically by the self._monitor fn. In addition to this we will check
+        that prometheus data is retrieved on start.
+        """
+        mock_get_chain_contracts.return_value = None
+        mock_store_chain_contracts.return_value = None
+        mock_get_nodes_eth_address.return_value = (self.test_data_dict, False)
+        mock_store_nodes_eth_addresses.return_value = None
+        mock_select_node.return_value = None
+        mock_send_data.return_value = None
+        mock_send_heartbeat.return_value = None
+        period = _PROMETHEUS_RETRIEVAL_TIME_PERIOD
+
+        # Check that data from prometheus is retrieved and stored first time
+        # round
+        self.test_monitor._monitor()
+        mock_get_nodes_eth_address.assert_called_once()
+        mock_store_nodes_eth_addresses.assert_called_once_with(
+            self.test_data_dict)
+        mock_get_nodes_eth_address.reset_mock()
+        mock_store_nodes_eth_addresses.reset_mock()
+
+        # Check that data from prometheus is not retrieved if not enough time
+        # passes
+        self.test_monitor.eth_address_retrieval_limiter. \
+            _last_time_that_did_task = \
+            datetime.fromtimestamp(datetime.now().timestamp() - period + 1)
+        self.test_monitor._monitor()
+        mock_get_nodes_eth_address.assert_not_called()
+        mock_store_nodes_eth_addresses.assert_not_called()
+        mock_get_nodes_eth_address.reset_mock()
+        mock_store_nodes_eth_addresses.reset_mock()
+
+        # Check that data from prometheus is retrieved if enough time passes
+        self.test_monitor.eth_address_retrieval_limiter. \
+            _last_time_that_did_task = \
+            datetime.fromtimestamp(datetime.now().timestamp() - period - 1)
+        self.test_monitor._monitor()
+        mock_get_nodes_eth_address.assert_called_once()
+        mock_store_nodes_eth_addresses.assert_called_once_with(
+            self.test_data_dict)
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(EVMContractsMonitor, '_send_data')
+    @mock.patch.object(EVMContractsMonitor, '_select_node')
+    @mock.patch.object(EVMContractsMonitor, '_store_nodes_eth_addresses')
+    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(EVMContractsMonitor, '_store_chain_contracts')
+    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    def test_monitor_retrieves_prometheus_data_if_previous_retrieval_failed(
+            self, mock_get_chain_contracts, mock_store_chain_contracts,
+            mock_get_nodes_eth_address, mock_store_nodes_eth_addresses,
+            mock_select_node, mock_send_data, mock_send_heartbeat) -> None:
+        """
+        In this test we will check that if the self._monitor function fails in
+        retrieving the full prometheus data, then in the next round it
+        re-attempts the retrieval.
+        """
+        mock_get_chain_contracts.return_value = None
+        mock_store_chain_contracts.return_value = None
+        mock_get_nodes_eth_address.return_value = (self.test_data_dict, True)
+        mock_store_nodes_eth_addresses.return_value = None
+        mock_select_node.return_value = None
+        mock_send_data.return_value = None
+        mock_send_heartbeat.return_value = None
+
+        # Check that data from prometheus is retrieved and stored first time
+        # round
+        self.test_monitor._monitor()
+        mock_get_nodes_eth_address.assert_called_once()
+        mock_store_nodes_eth_addresses.assert_called_once_with(
+            self.test_data_dict)
+        mock_get_nodes_eth_address.reset_mock()
+        mock_store_nodes_eth_addresses.reset_mock()
+
+        # Check that data from prometheus is retrieved again since retrieval
+        # has failed
+        self.test_monitor._monitor()
+        mock_get_nodes_eth_address.assert_called_once()
+        mock_store_nodes_eth_addresses.assert_called_once_with(
+            self.test_data_dict)
+        mock_get_nodes_eth_address.reset_mock()
+        mock_store_nodes_eth_addresses.reset_mock()
+
+    @parameterized.expand([
+        (ReqConnectionError('test'),), (ReadTimeout('test'),),
+        (InvalidURL('test'),), (InvalidSchema('test'),),
+        (MissingSchema('test'),), (IncompleteRead('test'),),
+        (ChunkedEncodingError('test'),), (ProtocolError('test'),),
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(EVMContractsMonitor, '_send_data')
+    @mock.patch.object(EVMContractsMonitor, '_select_node')
+    @mock.patch.object(EVMContractsMonitor, '_store_nodes_eth_addresses')
+    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(EVMContractsMonitor, '_store_chain_contracts')
+    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    def test_monitor_processes_and_sends_error_and_hb_if_weiwatchers_exception(
+            self, exception, mock_get_chain_contracts,
+            mock_store_chain_contracts, mock_get_nodes_eth_address,
+            mock_store_nodes_eth_addresses, mock_select_node, mock_send_data,
+            mock_send_heartbeat) -> None:
+        """
+        In this test we will check that if data from wei-watchers could not be
+        retrieved, then a CouldNotRetrieveContractsException is processed and
+        sent together with a heartbeat.
+        """
+        mock_get_chain_contracts.side_effect = exception
+        mock_store_chain_contracts.return_value = None
+        mock_get_nodes_eth_address.return_value = (self.test_data_dict, False)
+        mock_store_nodes_eth_addresses.return_value = None
+        mock_select_node.return_value = None
+        mock_send_data.return_value = None
+        mock_send_heartbeat.return_value = None
+        expected_raised_exception = CouldNotRetrieveContractsException(
+            self.monitor_name, self.test_monitor.contracts_url)
+        expected_processed_data = {
+            'error': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'parent_id': self.parent_id_1,
+                    'time': datetime.now().timestamp()
+                },
+                'message': expected_raised_exception.message,
+                'code': expected_raised_exception.code,
+            }
+        }
+        expected_heartbeat = {
+            'component_name': self.monitor_name,
+            'is_alive': True,
+            'timestamp': datetime.now().timestamp()
+        }
+
+        self.test_monitor._monitor()
+        mock_send_data.assert_called_once_with(expected_processed_data)
+        mock_send_heartbeat.assert_called_once_with(expected_heartbeat)
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(EVMContractsMonitor, '_send_data')
+    @mock.patch.object(EVMContractsMonitor, '_select_node')
+    @mock.patch.object(EVMContractsMonitor, '_store_nodes_eth_addresses')
+    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(EVMContractsMonitor, '_store_chain_contracts')
+    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    def test_monitor_processes_and_sends_error_and_hb_if_no_evm_node_selected(
+            self, mock_get_chain_contracts, mock_store_chain_contracts,
+            mock_get_nodes_eth_address, mock_store_nodes_eth_addresses,
+            mock_select_node, mock_send_data, mock_send_heartbeat) -> None:
+        """
+        In this test we will check that if no evm node is selected, then a
+        NoSyncedDataSourceWasAccessibleException is processed and sent together
+        with a heartbeat.
+        """
+        mock_get_chain_contracts.return_value = None
+        mock_store_chain_contracts.return_value = None
+        mock_get_nodes_eth_address.return_value = (self.test_data_dict, False)
+        mock_store_nodes_eth_addresses.return_value = None
+        mock_select_node.return_value = None
+        mock_send_data.return_value = None
+        mock_send_heartbeat.return_value = None
+        expected_raised_exception = NoSyncedDataSourceWasAccessibleException(
+            self.monitor_name, 'EVM node')
+        expected_processed_data = {
+            'error': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'parent_id': self.parent_id_1,
+                    'time': datetime.now().timestamp()
+                },
+                'message': expected_raised_exception.message,
+                'code': expected_raised_exception.code,
+            }
+        }
+        expected_heartbeat = {
+            'component_name': self.monitor_name,
+            'is_alive': True,
+            'timestamp': datetime.now().timestamp()
+        }
+
+        self.test_monitor._monitor()
+        mock_send_data.assert_called_once_with(expected_processed_data)
+        mock_send_heartbeat.assert_called_once_with(expected_heartbeat)
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(EVMContractsMonitor, '_filter_contracts_by_node')
+    @mock.patch.object(EVMContractsMonitor, '_get_data')
+    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(EVMContractsMonitor, '_send_data')
+    @mock.patch.object(EVMContractsMonitor, '_select_node')
+    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    def test_monitor_gets_data_for_each_node_processes_it_and_sends_it_and_hb(
+            self, mock_get_chain_contracts, mock_get_nodes_eth_address,
+            mock_select_node, mock_send_data, mock_send_heartbeat,
+            mock_get_data, mock_filter_contracts_by_node) -> None:
+        mock_get_chain_contracts.return_value = self.retrieved_contracts_example
+        mock_get_nodes_eth_address.return_value = (
+            self.node_eth_address_example,
+            False
+        )
+        mock_select_node.return_value = self.evm_nodes[0]
+        mock_filter_contracts_by_node.return_value = \
+            self.filtered_contracts_example
+        mock_get_data.return_value = self.test_data_dict
+        expected_heartbeat = {
+            'component_name': self.monitor_name,
+            'is_alive': True,
+            'timestamp': datetime.now().timestamp()
+        }
+
+        self.test_monitor._monitor()
+
+        calls = mock_send_data.call_args_list
+        self.assertEqual(2, len(calls))
+        mock_send_data.assert_any_call({
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'node_name': self.node_config_1.node_name,
+                    'node_id': self.node_config_1.node_id,
+                    'node_parent_id': self.node_config_1.parent_id,
+                    'time': datetime.now().timestamp()
+                },
+                'data': copy.deepcopy(self.test_data_dict),
+            }
+        })
+        mock_send_data.assert_any_call({
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'node_name': self.node_config_2.node_name,
+                    'node_id': self.node_config_2.node_id,
+                    'node_parent_id': self.node_config_2.parent_id,
+                    'time': datetime.now().timestamp()
+                },
+                'data': copy.deepcopy(self.test_data_dict),
+            }
+        })
+        mock_send_heartbeat.assert_called_once_with(expected_heartbeat)
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(EVMContractsMonitor, '_filter_contracts_by_node')
+    @mock.patch.object(EVMContractsMonitor, '_get_data')
+    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(EVMContractsMonitor, '_send_data')
+    @mock.patch.object(EVMContractsMonitor, '_select_node')
+    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    def test_monitor_skips_node_if_data_retrieval_fails_for_node(
+            self, mock_get_chain_contracts, mock_get_nodes_eth_address,
+            mock_select_node, mock_send_data, mock_send_heartbeat,
+            mock_get_data, mock_filter_contracts_by_node) -> None:
+        mock_get_chain_contracts.return_value = self.retrieved_contracts_example
+        mock_get_nodes_eth_address.return_value = (
+            self.node_eth_address_example,
+            False
+        )
+        mock_select_node.return_value = self.evm_nodes[0]
+        mock_filter_contracts_by_node.return_value = \
+            self.filtered_contracts_example
+        mock_get_data.side_effect = [self.test_data_dict,
+                                     ReqConnectionError('test')]
+        expected_heartbeat = {
+            'component_name': self.monitor_name,
+            'is_alive': True,
+            'timestamp': datetime.now().timestamp()
+        }
+
+        self.test_monitor._monitor()
+
+        calls = mock_send_data.call_args_list
+        self.assertEqual(1, len(calls))
+        mock_send_data.assert_any_call({
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'node_name': self.node_config_1.node_name,
+                    'node_id': self.node_config_1.node_id,
+                    'node_parent_id': self.node_config_1.parent_id,
+                    'time': datetime.now().timestamp()
+                },
+                'data': copy.deepcopy(self.test_data_dict),
+            }
+        })
+        mock_send_heartbeat.assert_called_once_with(expected_heartbeat)
