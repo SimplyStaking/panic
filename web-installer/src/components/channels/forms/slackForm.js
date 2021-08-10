@@ -38,14 +38,14 @@ const SlackForm = ({
       </Typography>
       <Divider />
       <form onSubmit={handleSubmit} className="root">
-        <Box m={2} p={2}>
+        <Box m={2} p={3}>
           <Grid container spacing={1} justify="center" alignItems="center">
             <Grid item xs={12}>
               <CssTextField
                 id="channel-name-outlined-full-width"
                 error={!!(errors.channel_name)}
                 value={values.channel_name}
-                label="Channel Name"
+                label="Bot Name"
                 type="text"
                 style={{ margin: 8 }}
                 name="channel_name"
@@ -75,14 +75,14 @@ const SlackForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="token-outlined-full-width"
-                error={!!(errors.webhook_url)}
-                value={values.webhook_url}
-                label="Webhook URL"
+                error={!!(errors.bot_token)}
+                value={values.bot_token}
+                label="Bot Token"
                 type="text"
                 style={{ margin: 8 }}
-                name="webhook_url"
-                placeholder={Data.slack.webhookUrlPlaceholder}
-                helperText={errors.webhook_url ? errors.webhook_url : ''}
+                name="bot_token"
+                placeholder={Data.slack.botTokenPlaceholder}
+                helperText={errors.bot_token ? errors.bot_token : ''}
                 onChange={handleChange}
                 fullWidth
                 margin="normal"
@@ -95,7 +95,39 @@ const SlackForm = ({
                   endAdornment: (
                     <InputAdornment position="end">
                       <MuiThemeProvider theme={theme}>
-                        <Tooltip title={Data.slack.webhookUrl} placement="left">
+                        <Tooltip title={Data.slack.botToken} placement="left">
+                          <InfoIcon />
+                        </Tooltip>
+                      </MuiThemeProvider>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <CssTextField
+                id="slack-chat-name-outlined-full-width"
+                error={!!(errors.bot_channel_name)}
+                value={values.bot_channel_name}
+                label="Bot Channel Name"
+                type="text"
+                style={{ margin: 8 }}
+                name="bot_channel_name"
+                placeholder={Data.slack.botChannelNamePlaceholder}
+                helperText={errors.bot_channel_name ? errors.bot_channel_name : ''}
+                onChange={handleChange}
+                fullWidth
+                margin="normal"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                autoComplete="off"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <MuiThemeProvider theme={theme}>
+                        <Tooltip title={Data.slack.botChannelName} placement="left">
                           <InfoIcon />
                         </Tooltip>
                       </MuiThemeProvider>
@@ -233,7 +265,8 @@ const SlackForm = ({
                 <SendTestSlackButton
                   disabled={Object.keys(errors).length !== 0}
                   channelName={values.channel_name}
-                  webhookUrl={values.webhook_url}
+                  botToken={values.bot_token}
+                  botChannelName={values.bot_channel_name}
                 />
                 <Button
                   color="primary"
@@ -255,12 +288,14 @@ const SlackForm = ({
 SlackForm.propTypes = {
   errors: PropTypes.shape({
     channel_name: PropTypes.string,
-    webhook_url: PropTypes.string,
+    bot_token: PropTypes.string,
+    bot_channel_name: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     channel_name: PropTypes.string.isRequired,
-    webhook_url: PropTypes.string.isRequired,
+    bot_token: PropTypes.string.isRequired,
+    bot_channel_name: PropTypes.string.isRequired,
     info: PropTypes.bool.isRequired,
     warning: PropTypes.bool.isRequired,
     critical: PropTypes.bool.isRequired,

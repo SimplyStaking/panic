@@ -17,9 +17,10 @@ import {
   saveAccount,
   deleteAccount,
   pingDockerHub,
-  sendSlackMessage,
 } from './data';
 import sleep from './time';
+
+const { WebClient, LogLevel } = require('@slack/web-api');
 
 // Sends test emails to every email provided in the "to" array.
 function SendTestEmailButton({
@@ -142,21 +143,49 @@ function SendTestPagerDutyButton({ disabled, apiToken, integrationKey }) {
   );
 }
 
-function SendTestSlackButton({ disabled, webhookUrl, channelName }) {
+function SendTestSlackButton({ disabled, botToken, botChannelName }) {
   const onClick = async () => {
     try {
       ToastsStore.info(
-        'Sending test alert. Make sure to check the slack channel corresponding'
-        + ` with channel name: ${channelName}`,
-        5000,
+        'Sending test alert. Make sure to check the name of the slack channel is'
+        + ` ${botChannelName}`, 5000,
       );
-      await sendSlackMessage(webhookUrl, {
-        text: '*Test Alert*',
-        type: 'mrkdwn',
+
+      // WebClient instantiates a client that can call API methods
+      // When using Bolt, you can use either `app.client` or the `client`
+      // passed to listeners.
+      const client = new WebClient(botToken, {
+        // LogLevel can be imported and used to make debugging simpler
+        logLevel: LogLevel.DEBUG,
       });
+
+      // Return the conversation ID of the channel name
+      // Call the conversations.list method using the built-in WebClient
+      let result = await client.conversations.list({ botToken });
+      let conversationId;
+      Object.values(result.channels).forEach((value) => {
+        if (value.name === botChannelName) {
+          conversationId = value.id;
+        }
+      });
+
+      // Call the chat.postMessage method using the built-in WebClient
+      result = await client.chat.postMessage({
+        botToken,
+        channel: conversationId,
+        text: '*Test Alert*',
+      });
+
       ToastsStore.success('Test alert sent successfully', 5000);
     } catch (e) {
-      ToastsStore.error(`Could not send test alert. Error: ${e.response.text}`, 5000);
+      if (e.response) {
+        // The request was made and the server responded with a status code that
+        // falls out of the range of 2xx
+        ToastsStore.error(`Could not send test alert. Error: ${e.response.data.description}`, 5000);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(`Could not send test alert. Error: ${e.message}`, 5000);
+      }
     }
   };
   return (
@@ -478,8 +507,8 @@ SendTestTelegramButton.propTypes = forbidExtraProps({
 
 SendTestSlackButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
-  webhookUrl: PropTypes.string.isRequired,
-  channelName: PropTypes.string.isRequired,
+  botToken: PropTypes.string.isRequired,
+  botChannelName: PropTypes.string.isRequired,
 });
 
 SaveConfigButton.propTypes = forbidExtraProps({

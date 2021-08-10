@@ -52,7 +52,8 @@ const SlackSchema = (props) => Yup.object().shape({
       return true;
     })
     .required('Slack Bot Name is required.'),
-  webhook_url: Yup.string().required('Webhook URL is required.'),
+  bot_token: Yup.string().required('Bot token is required.'),
+  bot_channel_name: Yup.string().required('Bot channel name is required.'),
 });
 
 export default SlackSchema;

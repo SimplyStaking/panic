@@ -27,7 +27,8 @@ const SlackTable = ({ slacks, removeSlackDetails }) => {
           <TableHead>
             <TableRow>
               <StyledTableCell align="center">Slack Name</StyledTableCell>
-              <StyledTableCell align="center">Webhook URL</StyledTableCell>
+              <StyledTableCell align="center">Bot Token</StyledTableCell>
+              <StyledTableCell align="center">Bot Channel Name</StyledTableCell>
               <StyledTableCell align="center">Info</StyledTableCell>
               <StyledTableCell align="center">Warning</StyledTableCell>
               <StyledTableCell align="center">Critical</StyledTableCell>
@@ -44,7 +45,10 @@ const SlackTable = ({ slacks, removeSlackDetails }) => {
                   {slacks.byId[slack].channel_name}
                 </StyledTableCell>
                 <StyledTableCell align="center">
-                  {slacks.byId[slack].webhook_url}
+                  {slacks.byId[slack].bot_token}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {slacks.byId[slack].bot_channel_name}
                 </StyledTableCell>
                 <StyledTableCell align="center">
                   {slacks.byId[slack].info ? (
@@ -111,7 +115,8 @@ SlackTable.propTypes = {
     byId: PropTypes.shape({
       id: PropTypes.string,
       channel_name: PropTypes.string,
-      webhook_url: PropTypes.string,
+      bot_token: PropTypes.string,
+      bot_channel_name: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,
