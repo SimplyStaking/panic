@@ -13,7 +13,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.channels_manager.handlers.starters import (
     start_telegram_alerts_handler, start_telegram_commands_handler,
-    start_slack_alerts_handler,
+    start_slack_alerts_handler, start_slack_commands_handler,
     start_twilio_alerts_handler, start_console_alerts_handler,
     start_log_alerts_handler, start_email_alerts_handler,
     start_pagerduty_alerts_handler, start_opsgenie_alerts_handler)
@@ -22,9 +22,8 @@ from src.utils import env
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
 from src.utils.constants.names import (
-    TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
-    TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
-    SLACK_ALERTS_HANDLER_NAME_TEMPLATE,
+    TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE, TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
+    SLACK_ALERTS_HANDLER_NAME_TEMPLATE, SLACK_COMMANDS_HANDLER_NAME_TEMPLATE,
     TWILIO_ALERTS_HANDLER_NAME_TEMPLATE, EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
     PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
     OPSGENIE_ALERTS_HANDLER_NAME_TEMPLATE, CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE,
@@ -203,6 +202,35 @@ class ChannelsManager(PublisherSubscriberComponent):
         process_details['bot_channel_name'] = slack_channel_name
         process_details['channel_id'] = channel_id
         process_details['channel_name'] = channel_name
+        process_details['channel_type'] = ChannelTypes.SLACK.value
+
+    def _create_and_start_slack_cmds_handler(
+            self, bot_token: str, bot_channel_name: str, channel_id: str,
+            channel_name: str, associated_chains: Dict) -> None:
+        process = multiprocessing.Process(
+            target=start_slack_commands_handler,
+            args=(bot_token, bot_channel_name, channel_id, channel_name,
+                  associated_chains))
+        process.daemon = True
+        log_and_print("Creating a new process for the commands handler of "
+                      "Slack channel {}".format(channel_name), self.logger)
+        process.start()
+
+        if channel_id not in self._channel_process_dict:
+            self._channel_process_dict[channel_id] = {}
+
+        commands_handler_type = ChannelHandlerTypes.COMMANDS.value
+        self._channel_process_dict[channel_id][commands_handler_type] = {}
+        process_details = self._channel_process_dict[channel_id][
+            commands_handler_type]
+        process_details['component_name'] = \
+            SLACK_COMMANDS_HANDLER_NAME_TEMPLATE.format(channel_name)
+        process_details['process'] = process
+        process_details['bot_token'] = bot_token
+        process_details['bot_channel_name'] = bot_channel_name
+        process_details['channel_id'] = channel_id
+        process_details['channel_name'] = channel_name
+        process_details['associated_chains'] = associated_chains
         process_details['channel_type'] = ChannelTypes.SLACK.value
 
     def _create_and_start_twilio_alerts_handler(
@@ -560,7 +588,7 @@ class ChannelsManager(PublisherSubscriberComponent):
                 channel_id = config['id']
                 channel_name = config['channel_name']
                 bot_token = config['bot_token']
-                slack_channel_name = config['bot_channel_name']
+                bot_channel_name = config['bot_channel_name']
                 alerts = str_to_bool(config['alerts'])
                 commands = str_to_bool(config['commands'])
                 parent_ids = config['parent_ids'].split(',')
@@ -571,16 +599,16 @@ class ChannelsManager(PublisherSubscriberComponent):
                 # alerts handler for this channel
                 if alerts:
                     self._create_and_start_slack_alerts_handler(
-                        bot_token, slack_channel_name, channel_id, channel_name)
+                        bot_token, bot_channel_name, channel_id, channel_name)
                     correct_configs[config_id] = config
 
                 # If Slack Commands are enabled on this channel, start a
                 # commands handler for this channel
-                # if commands:
-                #     self._create_and_start_slack_cmds_handler(
-                #         bot_token, slack_channel_name, channel_id,
-                #         channel_name, associated_chains)
-                #     correct_configs[config_id] = config
+                if commands:
+                    self._create_and_start_slack_cmds_handler(
+                        bot_token, bot_channel_name, channel_id,
+                        channel_name, associated_chains)
+                    correct_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
                                                     current_configs)
@@ -590,7 +618,7 @@ class ChannelsManager(PublisherSubscriberComponent):
                 channel_id = config['id']
                 channel_name = config['channel_name']
                 bot_token = config['bot_token']
-                slack_channel_name = config['bot_channel_name']
+                bot_channel_name = config['bot_channel_name']
                 alerts = str_to_bool(config['alerts'])
                 commands = str_to_bool(config['commands'])
                 parent_ids = config['parent_ids'].split(',')
@@ -614,43 +642,43 @@ class ChannelsManager(PublisherSubscriberComponent):
                             "Restarting the alerts handler of {} with latest "
                             "configuration".format(channel_name), self.logger)
                         self._create_and_start_slack_alerts_handler(
-                            bot_token, slack_channel_name, channel_id, channel_name)
+                            bot_token, bot_channel_name, channel_id, channel_name)
                 else:
                     if alerts:
                         log_and_print(
                             "Starting a new alerts handler for {}.".format(
                                 channel_name), self.logger)
                         self._create_and_start_slack_alerts_handler(
-                            bot_token, slack_channel_name, channel_id, channel_name)
+                            bot_token, bot_channel_name, channel_id, channel_name)
 
-                # commands_handler_type = ChannelHandlerTypes.COMMANDS.value
-                # if commands_handler_type in \
-                #         self.channel_process_dict[channel_id]:
-                #     previous_commands_process = self.channel_process_dict[
-                #         channel_id][commands_handler_type]['process']
-                #     previous_commands_process.terminate()
-                #     previous_commands_process.join()
+                commands_handler_type = ChannelHandlerTypes.COMMANDS.value
+                if commands_handler_type in \
+                        self.channel_process_dict[channel_id]:
+                    previous_commands_process = self.channel_process_dict[
+                        channel_id][commands_handler_type]['process']
+                    previous_commands_process.terminate()
+                    previous_commands_process.join()
 
-                #     if not commands:
-                #         del self.channel_process_dict[channel_id][
-                #             commands_handler_type]
-                #         log_and_print("Killed the commands handler of {} "
-                #                       .format(channel_name), self.logger)
-                #     else:
-                #         log_and_print(
-                #             "Restarting the commands handler of {} with latest "
-                #             "configuration".format(channel_name), self.logger)
-                #         self._create_and_start_slack_cmds_handler(
-                #             bot_token, slack_channel_name, channel_id, channel_name,
-                #             associated_chains)
-                # else:
-                #     if commands:
-                #         log_and_print(
-                #             "Starting a new commands handler for {}.".format(
-                #                 channel_name), self.logger)
-                #         self._create_and_start_slack_cmds_handler(
-                #             bot_token, slack_channel_name, channel_id, channel_name,
-                #             associated_chains)
+                    if not commands:
+                        del self.channel_process_dict[channel_id][
+                            commands_handler_type]
+                        log_and_print("Killed the commands handler of {} "
+                                      .format(channel_name), self.logger)
+                    else:
+                        log_and_print(
+                            "Restarting the commands handler of {} with latest "
+                            "configuration".format(channel_name), self.logger)
+                        self._create_and_start_slack_cmds_handler(
+                            bot_token, bot_channel_name, channel_id, channel_name,
+                            associated_chains)
+                else:
+                    if commands:
+                        log_and_print(
+                            "Starting a new commands handler for {}.".format(
+                                channel_name), self.logger)
+                        self._create_and_start_slack_cmds_handler(
+                            bot_token, bot_channel_name, channel_id, channel_name,
+                            associated_chains)
 
                 # Delete the state entries if both commands and alerts are
                 # disabled on the Slack channel. Otherwise, save the config
@@ -677,15 +705,15 @@ class ChannelsManager(PublisherSubscriberComponent):
                     log_and_print("Killed the alerts handler of {} ".format(
                         channel_name), self.logger)
 
-                # commands_handler_type = ChannelHandlerTypes.COMMANDS.value
-                # if commands_handler_type in \
-                #         self.channel_process_dict[channel_id]:
-                #     previous_commands_process = self.channel_process_dict[
-                #         channel_id][commands_handler_type]['process']
-                #     previous_commands_process.terminate()
-                #     previous_commands_process.join()
-                #     log_and_print("Killed the commands handler of {} ".format(
-                #         channel_name), self.logger)
+                commands_handler_type = ChannelHandlerTypes.COMMANDS.value
+                if commands_handler_type in \
+                        self.channel_process_dict[channel_id]:
+                    previous_commands_process = self.channel_process_dict[
+                        channel_id][commands_handler_type]['process']
+                    previous_commands_process.terminate()
+                    previous_commands_process.join()
+                    log_and_print("Killed the commands handler of {} ".format(
+                        channel_name), self.logger)
 
                 del self.channel_process_dict[channel_id]
                 del correct_configs[config_id]
@@ -1100,13 +1128,13 @@ class ChannelsManager(PublisherSubscriberComponent):
                                     process_details['bot_channel_name'],
                                     process_details['channel_id'],
                                     process_details['channel_name'])
-                            # elif handler == ChannelHandlerTypes.COMMANDS.value:
-                            #     self._create_and_start_slack_cmds_handler(
-                            #         process_details['bot_token'],
-                            #         process_details['bot_channel_name'],
-                            #         process_details['channel_id'],
-                            #         process_details['channel_name'],
-                            #         process_details['associated_chains'])
+                            elif handler == ChannelHandlerTypes.COMMANDS.value:
+                                self._create_and_start_slack_cmds_handler(
+                                    process_details['bot_token'],
+                                    process_details['bot_channel_name'],
+                                    process_details['channel_id'],
+                                    process_details['channel_name'],
+                                    process_details['associated_chains'])
                         elif channel_type == ChannelTypes.TWILIO.value:
                             self._create_and_start_twilio_alerts_handler(
                                 process_details['account_sid'],

@@ -20,6 +20,7 @@ from src.channels_manager.channels.slack import SlackChannel
 from src.channels_manager.channels.twilio import TwilioChannel
 from src.channels_manager.commands.handlers.telegram_cmd_handlers import (
     TelegramCommandHandlers)
+from src.channels_manager.commands.handlers.slack_cmd_handlers import SlackCommandHandlers
 from src.channels_manager.handlers import EmailAlertsHandler
 from src.channels_manager.handlers.console.alerts import ConsoleAlertsHandler
 from src.channels_manager.handlers.handler import ChannelHandler
@@ -28,9 +29,10 @@ from src.channels_manager.handlers.opsgenie.alerts import OpsgenieAlertsHandler
 from src.channels_manager.handlers.pagerduty.alerts import (
     PagerDutyAlertsHandler)
 from src.channels_manager.handlers.telegram.alerts import TelegramAlertsHandler
-from src.channels_manager.handlers.slack.alerts import SlackAlertsHandler
 from src.channels_manager.handlers.telegram.commands import (
     TelegramCommandsHandler)
+from src.channels_manager.handlers.slack.alerts import SlackAlertsHandler
+from src.channels_manager.handlers.slack.commands import SlackCommandsHandler
 from src.channels_manager.handlers.twilio.alerts import TwilioAlertsHandler
 from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi
@@ -40,6 +42,8 @@ from src.utils.constants.names import (TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
                                        TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
                                        TELEGRAM_COMMAND_HANDLERS_NAME,
                                        SLACK_ALERTS_HANDLER_NAME_TEMPLATE,
+                                       SLACK_COMMANDS_HANDLER_NAME_TEMPLATE,
+                                       SLACK_COMMAND_HANDLERS_NAME,
                                        TWILIO_ALERTS_HANDLER_NAME_TEMPLATE,
                                        PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
                                        EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
@@ -244,6 +248,68 @@ def start_slack_alerts_handler(bot_token: str, slack_channel_name: str,
     slack_alerts_handler = _initialise_slack_alerts_handler(
         bot_token, slack_channel_name, channel_id, channel_name)
     start_handler(slack_alerts_handler)
+
+
+def _initialise_slack_commands_handler(
+        bot_token: str, bot_channel_name: str, channel_id: str, channel_name: str,
+        associated_chains: Dict) -> SlackCommandsHandler:
+    # Handler display name based on channel name
+    handler_display_name = SLACK_COMMANDS_HANDLER_NAME_TEMPLATE.format(
+        channel_name)
+    handler_logger = _initialise_channel_handler_logger(
+        handler_display_name, SlackCommandsHandler.__name__)
+
+    # Try initialising handler until successful
+    while True:
+        try:
+            slack_bot = SlackBotApi(bot_token, bot_channel_name)
+
+            slack_channel = SlackChannel(
+                channel_name, channel_id, handler_logger.getChild(
+                    SlackChannel.__name__), slack_bot)
+
+            cmd_handlers_logger = handler_logger.getChild(
+                SlackCommandHandlers.__name__)
+            cmd_handlers_rabbitmq = RabbitMQApi(
+                logger=cmd_handlers_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+            cmd_handlers_redis = RedisApi(
+                logger=cmd_handlers_logger.getChild(RedisApi.__name__),
+                host=env.REDIS_IP, db=env.REDIS_DB, port=env.REDIS_PORT,
+                namespace=env.UNIQUE_ALERTER_IDENTIFIER)
+            cmd_handlers_mongo = MongoApi(
+                logger=cmd_handlers_logger.getChild(MongoApi.__name__),
+                host=env.DB_IP, db_name=env.DB_NAME, port=env.DB_PORT)
+
+            cmd_handlers = SlackCommandHandlers(
+                SLACK_COMMAND_HANDLERS_NAME, cmd_handlers_logger,
+                associated_chains, slack_channel, cmd_handlers_rabbitmq,
+                cmd_handlers_redis, cmd_handlers_mongo)
+            handler_rabbitmq = RabbitMQApi(
+                logger=handler_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+
+            slack_commands_handler = SlackCommandsHandler(
+                handler_display_name, handler_logger, handler_rabbitmq,
+                slack_channel, cmd_handlers)
+            log_and_print("Successfully initialised {}".format(
+                handler_display_name), handler_logger)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(handler_display_name, e)
+            log_and_print(msg, handler_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return slack_commands_handler
+
+
+def start_slack_commands_handler(
+        bot_token: str, bot_channel_name: str, channel_id: str, channel_name: str,
+        associated_chains: Dict) -> None:
+    slack_commands_handler = _initialise_slack_commands_handler(
+        bot_token, bot_channel_name, channel_id, channel_name, associated_chains)
+    start_handler(slack_commands_handler)
 
 
 def _initialise_twilio_alerts_handler(

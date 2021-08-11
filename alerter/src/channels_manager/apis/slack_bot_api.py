@@ -23,7 +23,7 @@ class SlackBotApi:
         try:
             self._app = App(token=self.bot_token)
             for channel in self._app.client.conversations_list().get('channels', []):
-                if channel['name'] == 'panic-notifications':
+                if channel['name'] == self.bot_channel_name:
                     self._slack_channel_id = channel['id']
                     break
         except BoltError:
