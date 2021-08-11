@@ -18,6 +18,7 @@ from src.config_manager import ConfigsManager
 from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.monitors.managers.contracts import ContractMonitorsManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.node import NodeMonitorsManager
@@ -29,7 +30,7 @@ from src.utils.constants.names import (
     DATA_TRANSFORMERS_MANAGER_NAME, CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME,
     CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME, NODE_MONITORS_MANAGER_NAME,
     CHAINLINK_ALERTER_MANAGER_NAME,
-)
+    CONTRACT_MONITORS_MANAGER_NAME)
 from src.utils.constants.rabbitmq import (
     ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
     SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
@@ -44,7 +45,8 @@ from src.utils.constants.rabbitmq import (
     ALERTS_CONFIGS_ROUTING_KEY_GEN, ALERT_ROUTER_CONFIGS_ROUTING_KEY,
     CONFIGS_STORE_INPUT_ROUTING_KEY, CHANNELS_MANAGER_CONFIGS_ROUTING_KEY,
     TOPIC, CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
-    CL_ALERTS_CONFIGS_ROUTING_KEY, CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME)
+    CL_ALERTS_CONFIGS_ROUTING_KEY, CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+    CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME)
 from src.utils.constants.starters import (
     RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD,
 )
@@ -251,6 +253,36 @@ def _initialise_node_monitors_manager() -> NodeMonitorsManager:
     return node_monitors_manager
 
 
+def _initialise_contract_monitors_manager() -> ContractMonitorsManager:
+    manager_display_name = CONTRACT_MONITORS_MANAGER_NAME
+
+    contract_monitors_manager_logger = _initialise_logger(
+        manager_display_name, ContractMonitorsManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialise the contract monitors manager
+    while True:
+        try:
+            rabbit_ip = env.RABBIT_IP
+            rabbitmq = RabbitMQApi(
+                logger=contract_monitors_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=rabbit_ip)
+            contract_monitors_manager = ContractMonitorsManager(
+                contract_monitors_manager_logger, manager_display_name,
+                rabbitmq)
+            break
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), contract_monitors_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          contract_monitors_manager_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return contract_monitors_manager
+
+
 def _initialise_data_transformers_manager() -> DataTransformersManager:
     manager_display_name = DATA_TRANSFORMERS_MANAGER_NAME
 
@@ -444,6 +476,11 @@ def run_node_monitors_manager() -> None:
     run_monitors_manager(node_monitors_manager)
 
 
+def run_contract_monitors_manager() -> None:
+    contract_monitors_manager = _initialise_contract_monitors_manager()
+    run_monitors_manager(contract_monitors_manager)
+
+
 def run_system_alerters_manager() -> None:
     system_alerters_manager = _initialise_system_alerters_manager()
     run_alerters_manager(system_alerters_manager)
@@ -607,6 +644,9 @@ def on_terminate(signum: int, stack: FrameType) -> None:
 
     terminate_and_join_process(github_monitors_manager_process,
                                GITHUB_MONITORS_MANAGER_NAME)
+
+    terminate_and_join_process(contract_monitors_manager_process,
+                               CONTRACT_MONITORS_MANAGER_NAME)
 
     terminate_and_join_process(data_transformers_manager_process,
                                DATA_TRANSFORMERS_MANAGER_NAME)
@@ -815,6 +855,21 @@ def _initialise_and_declare_config_queues() -> None:
                                 CONFIG_EXCHANGE,
                                 EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS)
 
+            # Contract Monitors Manager queues
+            log_and_print("Creating queue '{}'".format(
+                CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(NODE_MON_MAN_CONFIGS_QUEUE_NAME, False, True,
+                                   False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 NODES_CONFIGS_ROUTING_KEY_CHAINS),
+                dummy_logger)
+            rabbitmq.queue_bind(CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                NODES_CONFIGS_ROUTING_KEY_CHAINS)
+
             # Config Store queues
             log_and_print("Creating queue '{}'".format(
                 CONFIGS_STORE_INPUT_QUEUE_NAME), dummy_logger)
@@ -930,6 +985,10 @@ if __name__ == '__main__':
         target=run_node_monitors_manager, args=())
     node_monitors_manager_process.start()
 
+    contract_monitors_manager_process = multiprocessing.Process(
+        target=run_contract_monitors_manager, args=())
+    contract_monitors_manager_process.start()
+
     signal.signal(signal.SIGTERM, on_terminate)
     signal.signal(signal.SIGINT, on_terminate)
     signal.signal(signal.SIGHUP, on_terminate)
@@ -940,6 +999,7 @@ if __name__ == '__main__':
     github_monitors_manager_process.join()
     node_monitors_manager_process.join()
     system_monitors_manager_process.join()
+    contract_monitors_manager_process.join()
     system_alerters_manager_process.join()
     github_alerter_manager_process.join()
     chainlink_alerter_manager_process.join()

@@ -708,10 +708,3 @@ class EVMContractsMonitor(Monitor):
             'timestamp': datetime.now().timestamp()
         }
         self._send_heartbeat(heartbeat)
-
-# TODO: Add weiwatchers_url and list of evm nodes. Aggregate list of evm urls
-#     : in manager. Check if equal.
-# TODO: Manager should not start contracts monitor if list of evm nodes
-#     : empty or list of chainlink node configs empty. For every node config
-#     : we must also check that prometheus is enabled, and the list of
-#     : http sources is non empty, monitor_contracts=True.
