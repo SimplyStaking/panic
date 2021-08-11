@@ -858,8 +858,8 @@ def _initialise_and_declare_config_queues() -> None:
             # Contract Monitors Manager queues
             log_and_print("Creating queue '{}'".format(
                 CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(NODE_MON_MAN_CONFIGS_QUEUE_NAME, False, True,
-                                   False, False)
+            rabbitmq.queue_declare(CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME, False,
+                                   True, False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
