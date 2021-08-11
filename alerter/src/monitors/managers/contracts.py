@@ -30,7 +30,6 @@ class ContractMonitorsManager(MonitorsManager):
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(logger, manager_name, rabbitmq)
 
-        # TODO: Should be `chain_name: {extracted_fields}`
         self._contracts_configs = {}
 
     @property
