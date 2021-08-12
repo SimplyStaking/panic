@@ -169,9 +169,9 @@ class EVMContractsMonitor(Monitor):
                         ChunkedEncodingError, ProtocolError) as e:
                     # If these errors are raised it may still be that another
                     # source can be accessed
-                    self.logger.error("Error when trying to access %s",
+                    self.logger.debug("Error when trying to access %s",
                                       prom_url)
-                    self.logger.exception(e)
+                    self.logger.debug(e)
                 except MetricNotFoundException as e:
                     # If these errors are raised then we can't get valid data
                     # from any node, as only 1 node is online at the same time.
@@ -211,8 +211,8 @@ class EVMContractsMonitor(Monitor):
             except (ReqConnectionError, ReadTimeout, IncompleteRead,
                     ChunkedEncodingError, ProtocolError, InvalidURL,
                     InvalidSchema, MissingSchema) as e:
-                self.logger.error("Error when trying to access %s", node_url)
-                self.logger.exception(e)
+                self.logger.debug("Error when trying to access %s", node_url)
+                self.logger.debug(e)
 
         return None
 
