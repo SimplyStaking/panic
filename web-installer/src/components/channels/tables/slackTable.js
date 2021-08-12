@@ -48,7 +48,10 @@ const SlackTable = ({ slacks, removeSlackDetails }) => {
                   {slacks.byId[slack].bot_token}
                 </StyledTableCell>
                 <StyledTableCell align="center">
-                  {slacks.byId[slack].bot_channel_name}
+                  {slacks.byId[slack].app_token}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {slacks.byId[slack].bot_channel_id}
                 </StyledTableCell>
                 <StyledTableCell align="center">
                   {slacks.byId[slack].info ? (
@@ -116,7 +119,8 @@ SlackTable.propTypes = {
       id: PropTypes.string,
       channel_name: PropTypes.string,
       bot_token: PropTypes.string,
-      bot_channel_name: PropTypes.string,
+      app_token: PropTypes.string,
+      bot_channel_id: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,

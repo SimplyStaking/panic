@@ -9,12 +9,14 @@ const Form = withFormik({
   mapPropsToErrors: () => ({
     channel_name: '',
     bot_token: '',
-    bot_channel_name: '',
+    app_token: '',
+    bot_channel_id: '',
   }),
   mapPropsToValues: () => ({
     channel_name: '',
     bot_token: '',
-    bot_channel_name: '',
+    app_token: '',
+    bot_channel_id: '',
     info: false,
     warning: false,
     critical: false,
@@ -28,7 +30,8 @@ const Form = withFormik({
     const payload = {
       channel_name: values.channel_name,
       bot_token: values.bot_token,
-      bot_channel_name: values.bot_channel_name,
+      app_token: values.app_token,
+      bot_channel_id: values.bot_channel_id,
       info: values.info,
       warning: values.warning,
       critical: values.critical,

@@ -53,7 +53,8 @@ const SlackSchema = (props) => Yup.object().shape({
     })
     .required('Slack Bot Name is required.'),
   bot_token: Yup.string().required('Bot token is required.'),
-  bot_channel_name: Yup.string().required('Bot channel name is required.'),
+  app_token: Yup.string().required('App-Level token is required.'),
+  bot_channel_id: Yup.string().required('Bot channel ID is required.'),
 });
 
 export default SlackSchema;
