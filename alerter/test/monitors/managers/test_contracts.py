@@ -1,16 +1,22 @@
+import copy
 import json
 import logging
+import multiprocessing
 import unittest
 from datetime import timedelta, datetime
 from multiprocessing import Process
 from unittest import mock
+from unittest.mock import call
 
 import pika
+import pika.exceptions
+from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.contracts import ContractMonitorsManager
+from src.monitors.starters import start_evm_contracts_monitor
 from src.utils import env
 from src.utils.constants.names import EVM_CONTRACTS_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
@@ -18,7 +24,7 @@ from src.utils.constants.rabbitmq import (
     CONTRACT_MON_MAN_HEARTBEAT_QUEUE_NAME,
     CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
     PING_ROUTING_KEY, NODES_CONFIGS_ROUTING_KEY_CHAINS)
-from src.utils.exceptions import PANICException
+from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import (infinite_fn, connect_to_rabbit,
                               delete_queue_if_exists, delete_exchange_if_exists,
                               disconnect_from_rabbit)
@@ -368,1154 +374,514 @@ class TestContractMonitorsManager(unittest.TestCase):
         self.assertEqual(eval(expected_evm_nodes), evm_nodes)
         self.assertEqual(eval(expected_cl_nodes), cl_nodes)
 
-    #
-    # @mock.patch.object(multiprocessing.Process, "start")
-    # @mock.patch.object(multiprocessing, 'Process')
-    # def test_create_and_start_monitor_process_stores_the_correct_process_info(
-    #         self, mock_init, mock_start) -> None:
-    #     mock_start.return_value = None
-    #     mock_init.return_value = self.dummy_process3
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #     expected_output = {
-    #         self.system_id_1: {
-    #             'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
-    #                 self.system_name_1),
-    #             'process': self.dummy_process1,
-    #             'chain': self.chain_1
-    #         },
-    #         self.system_id_2: {
-    #             'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
-    #                 self.system_name_2),
-    #             'process': self.dummy_process2,
-    #             'chain': self.chain_2
-    #         },
-    #         self.system_id_3: {
-    #             'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
-    #                 self.system_name_3),
-    #             'process': self.dummy_process3,
-    #             'chain': self.chain_3
-    #         },
-    #         self.system_id_4: {
-    #             'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
-    #                 self.system_name_4),
-    #             'process': self.dummy_process4,
-    #             'chain': self.chain_4
-    #         }
-    #     }
-    #
-    #     self.test_manager._create_and_start_monitor_process(
-    #         self.system_config_3, self.system_id_3, self.chain_3)
-    #
-    #     self.assertEqual(expected_output, self.test_manager.config_process_dict)
-    #
-    # @mock.patch.object(multiprocessing.Process, "start")
-    # def test_create_and_start_monitor_process_creates_the_correct_process(
-    #         self, mock_start) -> None:
-    #     mock_start.return_value = None
-    #
-    #     self.test_manager._create_and_start_monitor_process(
-    #         self.system_config_3, self.system_id_3, self.chain_3)
-    #
-    #     new_entry = self.test_manager.config_process_dict[self.system_id_3]
-    #     new_entry_process = new_entry['process']
-    #     self.assertTrue(new_entry_process.daemon)
-    #     self.assertEqual(1, len(new_entry_process._args))
-    #     self.assertEqual(self.system_config_3, new_entry_process._args[0])
-    #     self.assertEqual(start_system_monitor, new_entry_process._target)
-    #
-    # @mock.patch.object(multiprocessing.Process, "start")
-    # def test_create_and_start_monitor_process_starts_the_process(
-    #         self, mock_start) -> None:
-    #     self.test_manager._create_and_start_monitor_process(
-    #         self.system_config_3, self.system_id_3, self.chain_3)
-    #     mock_start.assert_called_once()
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_configs_ignores_default_key(self, mock_ack) -> None:
-    #     # This test will pass if the stored systems config does not change.
-    #     # This would mean that the DEFAULT key was ignored, otherwise, it would
-    #     # have been included as a new config.
-    #     mock_ack.return_value = None
-    #     old_systems_configs = copy.deepcopy(self.systems_configs_example)
-    #     self.test_manager._systems_configs = self.systems_configs_example
-    #
-    #     # We will pass the acceptable schema as a value with all possible
-    #     # routing keys to make sure that the default key will never be added.
-    #     # By passing the schema we will also prevent processing errors from
-    #     # happening.
-    #     self.sent_configs_example_chain_nodes['DEFAULT'] = {
-    #         'id': 'default_id1',
-    #         'parent_id': 'chain_1',
-    #         'name': 'default_system_1',
-    #         'exporter_url': 'default_dummy_url1',
-    #         'monitor_system': "True",
-    #     }
-    #     self.sent_configs_example_general['DEFAULT'] = {
-    #         'id': 'default_id2',
-    #         'parent_id': 'GENERAL',
-    #         'name': 'default_system_2',
-    #         'exporter_url': 'default_dummy_url2',
-    #         'monitor_system': "True",
-    #     }
-    #     self.sent_configs_example_chain_sys['DEFAULT'] = {
-    #         'id': 'default_id3',
-    #         'parent_id': 'chain_3',
-    #         'name': 'default_system_3',
-    #         'exporter_url': 'default_dummy_url3',
-    #         'monitor_system': "True",
-    #     }
-    #
-    #     # Must create a connection so that the blocking channel is passed
-    #     self.test_manager.rabbitmq.connect()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method_chains_nodes = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_nodes)
-    #     method_chains_sys = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_sys)
-    #     method_general = pika.spec.Basic.Deliver(
-    #         routing_key=self.general_routing_key)
-    #     body_chain_nodes = json.dumps(self.sent_configs_example_chain_nodes)
-    #     body_chain_sys = json.dumps(self.sent_configs_example_chain_sys)
-    #     body_general = json.dumps(self.sent_configs_example_general)
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_general,
-    #                                        properties, body_general)
-    #     self.assertEqual(old_systems_configs, self.test_manager.systems_configs)
-    #     self.test_manager._process_configs(blocking_channel,
-    #                                        method_chains_nodes, properties,
-    #                                        body_chain_nodes)
-    #     self.assertEqual(old_systems_configs, self.test_manager.systems_configs)
-    #     self.test_manager._process_configs(blocking_channel, method_chains_sys,
-    #                                        properties, body_chain_sys)
-    #     self.assertEqual(old_systems_configs, self.test_manager.systems_configs)
-    #     self.assertEqual(3, mock_ack.call_count)
-    #
-    # @parameterized.expand([
-    #     ('chains.Chainlink.chainlink.nodes_config',),
-    #     ('chains.chainlink.binance smart chain.nodes_config',)
-    # ])
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_proc_confs_ignores_nodes_confs_from_chains_with_separate_sys_confs(
-    #         self, routing_key, mock_ack) -> None:
-    #     # This test will pass if the stored systems config does not change.
-    #     mock_ack.return_value = None
-    #     old_systems_configs = copy.deepcopy(self.systems_configs_example)
-    #     self.test_manager._systems_configs = self.systems_configs_example
-    #     sent_configs = {
-    #         'config_id5': {
-    #             'id': 'config_id5',
-    #             'parent_id': self.parent_id_4,
-    #             'name': 'system_5',
-    #             'exporter_url': 'url_5',
-    #             'monitor_system': "True",
-    #         }
-    #     }
-    #
-    #     # Must create a connection so that the blocking channel is passed
-    #     self.test_manager.rabbitmq.connect()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method = pika.spec.Basic.Deliver(routing_key=routing_key)
-    #     body = json.dumps(sent_configs)
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     self.test_manager._process_configs(blocking_channel, method, properties,
-    #                                        body)
-    #     self.assertEqual(old_systems_configs, self.test_manager.systems_configs)
-    #     mock_ack.assert_called_once()
-    #
-    # '''
-    # In the tests below we will assume that configs are sent with the acceptable
-    # routing keys
-    # '''
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # @mock.patch.object(SystemMonitorsManager,
-    #                    "_create_and_start_monitor_process")
-    # def test_process_configs_stores_new_configs_to_be_monitored_correctly(
-    #         self, startup_mock, mock_ack) -> None:
-    #     # We will check whether new configs are added to the state. Since some
-    #     # new configs have `monitor_system = False` we are also testing that
-    #     # new configs are ignored if they should not be monitored.
-    #     mock_ack.return_value = None
-    #     startup_mock.return_value = None
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #     self.test_manager._systems_configs = self.systems_configs_example
-    #     new_configs_chain_nodes = {
-    #         self.system_id_1: {
-    #             'id': self.system_id_1,
-    #             'parent_id': self.parent_id_1,
-    #             'name': self.system_name_1,
-    #             'exporter_url': self.node_exporter_url_1,
-    #             'monitor_system': str(self.monitor_system_1),
-    #         },
-    #         self.system_id_3: {
-    #             'id': self.system_id_3,
-    #             'parent_id': self.parent_id_3,
-    #             'name': self.system_name_3,
-    #             'exporter_url': self.node_exporter_url_3,
-    #             'monitor_system': str(self.monitor_system_3),
-    #         },
-    #         'config_id5': {
-    #             'id': 'config_id5',
-    #             'parent_id': self.parent_id_1,
-    #             'name': 'system_5',
-    #             'exporter_url': 'url_5',
-    #             'monitor_system': "False",
-    #         }
-    #     }
-    #     new_configs_chain_sys = {
-    #         self.system_id_4: {
-    #             'id': self.system_id_4,
-    #             'parent_id': self.parent_id_4,
-    #             'name': self.system_name_4,
-    #             'exporter_url': self.node_exporter_url_4,
-    #             'monitor_system': str(self.monitor_system_4),
-    #         },
-    #         'config_id6': {
-    #             'id': 'config_id6',
-    #             'parent_id': self.parent_id_4,
-    #             'name': 'system_6',
-    #             'exporter_url': 'url_6',
-    #             'monitor_system': "True",
-    #         },
-    #         'config_id7': {
-    #             'id': 'config_id7',
-    #             'parent_id': self.parent_id_4,
-    #             'name': 'system_7',
-    #             'exporter_url': 'url_7',
-    #             'monitor_system': "False",
-    #         }
-    #     }
-    #     new_configs_general = {
-    #         self.system_id_2: {
-    #             'id': self.system_id_2,
-    #             'parent_id': self.parent_id_2,
-    #             'name': self.system_name_2,
-    #             'exporter_url': self.node_exporter_url_2,
-    #             'monitor_system': str(self.monitor_system_2),
-    #         },
-    #         'config_id8': {
-    #             'id': 'config_id8',
-    #             'parent_id': self.parent_id_2,
-    #             'name': 'system_8',
-    #             'exporter_url': 'url_8',
-    #             'monitor_system': "True",
-    #         },
-    #         'config_id9': {
-    #             'id': 'config_id9',
-    #             'parent_id': self.parent_id_2,
-    #             'name': 'system_9',
-    #             'exporter_url': 'url_9',
-    #             'monitor_system': "False",
-    #         }
-    #     }
-    #     # Must create a connection so that the blocking channel is passed
-    #     self.test_manager.rabbitmq.connect()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #
-    #     # We will send new configs through both the existing and
-    #     # non-existing chain and general paths to make sure that all routes
-    #     # work as expected.
-    #     method_chains_sys = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_sys)
-    #     method_chains_nodes = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_nodes)
-    #     method_general = pika.spec.Basic.Deliver(
-    #         routing_key=self.general_routing_key)
-    #     body_new_configs_chain_sys = json.dumps(new_configs_chain_sys)
-    #     body_new_configs_chain_nodes = json.dumps(new_configs_chain_nodes)
-    #     body_new_configs_general = json.dumps(new_configs_general)
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_chains_sys,
-    #                                        properties,
-    #                                        body_new_configs_chain_sys)
-    #     self.test_manager._process_configs(blocking_channel,
-    #                                        method_chains_nodes, properties,
-    #                                        body_new_configs_chain_nodes)
-    #     self.test_manager._process_configs(blocking_channel, method_general,
-    #                                        properties,
-    #                                        body_new_configs_general)
-    #
-    #     expected_sys_confs = copy.deepcopy(self.systems_configs_example)
-    #     expected_sys_confs[self.chain_1][self.system_id_3] = \
-    #         new_configs_chain_nodes[self.system_id_3]
-    #     expected_sys_confs[self.chain_2]['config_id8'] = \
-    #         new_configs_general['config_id8']
-    #     expected_sys_confs[self.chain_4]['config_id6'] = \
-    #         new_configs_chain_sys['config_id6']
-    #     self.assertEqual(expected_sys_confs, self.test_manager.systems_configs)
-    #     self.assertEqual(3, mock_ack.call_count)
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # @mock.patch.object(SystemMonitorsManager,
-    #                    "_create_and_start_monitor_process")
-    # @mock.patch.object(multiprocessing.Process, "terminate")
-    # @mock.patch.object(multiprocessing.Process, "join")
-    # def test_process_configs_stores_modified_configs_to_be_monitored_correctly(
-    #         self, join_mock, terminate_mock, startup_mock, mock_ack) -> None:
-    #     # In this test we will check that modified configurations with
-    #     # `monitor_system = True` are stored correctly in the state. Some
-    #     # configurations will have `monitor_system = False` to check whether the
-    #     # monitor associated with the previous configuration is terminated.
-    #     mock_ack.return_value = None
-    #     startup_mock.return_value = None
-    #     join_mock.return_value = None
-    #     terminate_mock.return_value = None
-    #     self.test_manager._systems_configs = self.systems_configs_example
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #
-    #     new_configs_chain_nodes_monitor_true = {
-    #         self.system_id_1: {
-    #             'id': self.system_id_1,
-    #             'parent_id': self.parent_id_1,
-    #             'name': 'new_system_name_chain',
-    #             'exporter_url': self.node_exporter_url_1,
-    #             'monitor_system': str(self.monitor_system_1),
-    #         },
-    #     }
-    #     new_configs_chain_nodes_monitor_false = {
-    #         self.system_id_1: {
-    #             'id': self.system_id_1,
-    #             'parent_id': self.parent_id_1,
-    #             'name': 'new_system_name_chain',
-    #             'exporter_url': self.node_exporter_url_1,
-    #             'monitor_system': "False",
-    #         },
-    #     }
-    #     new_configs_chain_sys_monitor_true = {
-    #         self.system_id_4: {
-    #             'id': self.system_id_4,
-    #             'parent_id': self.parent_id_4,
-    #             'name': 'new_system_name_chain',
-    #             'exporter_url': self.node_exporter_url_4,
-    #             'monitor_system': str(self.monitor_system_4),
-    #         },
-    #     }
-    #     new_configs_chain_sys_monitor_false = {
-    #         self.system_id_4: {
-    #             'id': self.system_id_4,
-    #             'parent_id': self.parent_id_4,
-    #             'name': 'new_system_name_chain',
-    #             'exporter_url': self.node_exporter_url_4,
-    #             'monitor_system': "False",
-    #         },
-    #     }
-    #     new_configs_general_monitor_true = {
-    #         self.system_id_2: {
-    #             'id': self.system_id_2,
-    #             'parent_id': self.parent_id_2,
-    #             'name': 'new_system_name_general',
-    #             'exporter_url': self.node_exporter_url_2,
-    #             'monitor_system': str(self.monitor_system_2),
-    #         },
-    #     }
-    #     new_configs_general_monitor_false = {
-    #         self.system_id_2: {
-    #             'id': self.system_id_2,
-    #             'parent_id': self.parent_id_2,
-    #             'name': 'new_system_name_general',
-    #             'exporter_url': self.node_exporter_url_2,
-    #             'monitor_system': "False",
-    #         },
-    #     }
-    #     # Must create a connection so that the blocking channel is passed
-    #     self.test_manager.rabbitmq.connect()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method_chains_nodes = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_nodes)
-    #     method_chains_sys = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_sys)
-    #     method_general = pika.spec.Basic.Deliver(
-    #         routing_key=self.general_routing_key)
-    #     body_chain_nodes_mon_true = json.dumps(
-    #         new_configs_chain_nodes_monitor_true)
-    #     body_chain_sys_mon_true = json.dumps(
-    #         new_configs_chain_sys_monitor_true)
-    #     body_general_mon_true = json.dumps(new_configs_general_monitor_true)
-    #     body_chain_nodes_mon_false = json.dumps(
-    #         new_configs_chain_nodes_monitor_false)
-    #     body_chain_sys_mon_false = json.dumps(
-    #         new_configs_chain_sys_monitor_false)
-    #     body_general_mon_false = json.dumps(
-    #         new_configs_general_monitor_false)
-    #     properties = pika.spec.BasicProperties()
-    #     expected_output = copy.deepcopy(self.systems_configs_example)
-    #
-    #     self.test_manager._process_configs(blocking_channel,
-    #                                        method_chains_nodes, properties,
-    #                                        body_chain_nodes_mon_true)
-    #     expected_output[self.chain_1][self.system_id_1] = \
-    #         new_configs_chain_nodes_monitor_true[self.system_id_1]
-    #     self.assertEqual(expected_output, self.test_manager.systems_configs)
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_chains_sys,
-    #                                        properties,
-    #                                        body_chain_sys_mon_true)
-    #     expected_output[self.chain_4][self.system_id_4] = \
-    #         new_configs_chain_sys_monitor_true[self.system_id_4]
-    #     self.assertEqual(expected_output, self.test_manager.systems_configs)
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_general,
-    #                                        properties, body_general_mon_true)
-    #     expected_output[self.chain_2][self.system_id_2] = \
-    #         new_configs_general_monitor_true[self.system_id_2]
-    #     self.assertEqual(expected_output, self.test_manager.systems_configs)
-    #
-    #     self.test_manager._process_configs(blocking_channel,
-    #                                        method_chains_nodes, properties,
-    #                                        body_chain_nodes_mon_false)
-    #     expected_output[self.chain_1] = {}
-    #     self.assertEqual(expected_output, self.test_manager.systems_configs)
-    #     self.assertTrue(
-    #         self.system_id_1 not in self.test_manager.config_process_dict)
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_chains_sys,
-    #                                        properties, body_chain_sys_mon_false)
-    #     expected_output[self.chain_4] = {}
-    #     self.assertEqual(expected_output, self.test_manager.systems_configs)
-    #     self.assertTrue(
-    #         self.system_id_4 not in self.test_manager.config_process_dict)
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_general,
-    #                                        properties, body_general_mon_false)
-    #     expected_output[self.chain_2] = {}
-    #     self.assertEqual(expected_output, self.test_manager.systems_configs)
-    #     self.assertTrue(
-    #         self.system_id_2 not in self.test_manager.config_process_dict)
-    #
-    #     self.assertEqual(6, mock_ack.call_count)
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # @mock.patch.object(multiprocessing.Process, "terminate")
-    # @mock.patch.object(multiprocessing.Process, "join")
-    # def test_process_configs_removes_deleted_configs_from_state_correctly(
-    #         self, join_mock, terminate_mock, mock_ack) -> None:
-    #     # In this test we will check that removed configurations are actually
-    #     # removed from the state
-    #     mock_ack.return_value = None
-    #     join_mock.return_value = None
-    #     terminate_mock.return_value = None
-    #     self.test_manager._systems_configs = self.systems_configs_example
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #
-    #     new_configs_chain_sys = {}
-    #     new_configs_chain_nodes = {}
-    #     new_configs_general = {}
-    #
-    #     # Must create a connection so that the blocking channel is passed
-    #     self.test_manager.rabbitmq.connect()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method_chains_sys = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_sys)
-    #     method_chains_nodes = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_nodes)
-    #     method_general = pika.spec.Basic.Deliver(
-    #         routing_key=self.general_routing_key)
-    #     body_chain_sys = json.dumps(new_configs_chain_sys)
-    #     body_chain_nodes = json.dumps(new_configs_chain_nodes)
-    #     body_general = json.dumps(new_configs_general)
-    #     properties = pika.spec.BasicProperties()
-    #     expected_output = copy.deepcopy(self.systems_configs_example)
-    #
-    #     self.test_manager._process_configs(blocking_channel,
-    #                                        method_chains_nodes, properties,
-    #                                        body_chain_nodes)
-    #     expected_output[self.chain_1] = {}
-    #     self.assertEqual(expected_output, self.test_manager.systems_configs)
-    #     self.assertTrue(
-    #         self.system_id_1 not in self.test_manager.config_process_dict)
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_chains_sys,
-    #                                        properties, body_chain_sys)
-    #     expected_output[self.chain_4] = {}
-    #     self.assertEqual(expected_output, self.test_manager.systems_configs)
-    #     self.assertTrue(
-    #         self.system_id_4 not in self.test_manager.config_process_dict)
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_general,
-    #                                        properties, body_general)
-    #     expected_output[self.chain_2] = {}
-    #     self.assertEqual(expected_output, self.test_manager.systems_configs)
-    #     self.assertTrue(
-    #         self.system_id_2 not in self.test_manager.config_process_dict)
-    #     self.assertEqual(3, mock_ack.call_count)
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # @mock.patch.object(SystemMonitorsManager,
-    #                    "_create_and_start_monitor_process")
-    # def test_proc_configs_starts_new_monitors_for_new_configs_to_be_monitored(
-    #         self, startup_mock, mock_ack) -> None:
-    #     # We will check whether _create_and_start_monitor_process is called
-    #     # correctly on each newly added configuration if
-    #     # `monitor_system = True`. Implicitly we will be also testing that if
-    #     # `monitor_system = False` no new monitor is created.
-    #     mock_ack.return_value = None
-    #     startup_mock.return_value = None
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #     self.test_manager._systems_configs = self.systems_configs_example
-    #     new_configs_chain_nodes = {
-    #         self.system_id_1: {
-    #             'id': self.system_id_1,
-    #             'parent_id': self.parent_id_1,
-    #             'name': self.system_name_1,
-    #             'exporter_url': self.node_exporter_url_1,
-    #             'monitor_system': str(self.monitor_system_1),
-    #         },
-    #         self.system_id_3: {
-    #             'id': self.system_id_3,
-    #             'parent_id': self.parent_id_3,
-    #             'name': self.system_name_3,
-    #             'exporter_url': self.node_exporter_url_3,
-    #             'monitor_system': str(self.monitor_system_3),
-    #         },
-    #         'config_id5': {
-    #             'id': 'config_id5',
-    #             'parent_id': self.parent_id_1,
-    #             'name': 'system_5',
-    #             'exporter_url': 'url_5',
-    #             'monitor_system': "False",
-    #         }
-    #     }
-    #     new_configs_chain_sys = {
-    #         self.system_id_4: {
-    #             'id': self.system_id_4,
-    #             'parent_id': self.parent_id_4,
-    #             'name': self.system_name_4,
-    #             'exporter_url': self.node_exporter_url_4,
-    #             'monitor_system': str(self.monitor_system_4),
-    #         },
-    #         'config_id6': {
-    #             'id': 'config_id6',
-    #             'parent_id': self.parent_id_4,
-    #             'name': 'system_6',
-    #             'exporter_url': 'url_6',
-    #             'monitor_system': "True",
-    #         },
-    #         'config_id7': {
-    #             'id': 'config_id7',
-    #             'parent_id': self.parent_id_4,
-    #             'name': 'system_7',
-    #             'exporter_url': 'url_7',
-    #             'monitor_system': "False",
-    #         }
-    #     }
-    #     new_configs_general = {
-    #         self.system_id_2: {
-    #             'id': self.system_id_2,
-    #             'parent_id': self.parent_id_2,
-    #             'name': self.system_name_2,
-    #             'exporter_url': self.node_exporter_url_2,
-    #             'monitor_system': str(self.monitor_system_2),
-    #         },
-    #         'config_id8': {
-    #             'id': 'config_id8',
-    #             'parent_id': self.parent_id_2,
-    #             'name': 'system_8',
-    #             'exporter_url': 'url_8',
-    #             'monitor_system': "True",
-    #         },
-    #         'config_id9': {
-    #             'id': 'config_id9',
-    #             'parent_id': self.parent_id_2,
-    #             'name': 'system_9',
-    #             'exporter_url': 'url_9',
-    #             'monitor_system': "False",
-    #         }
-    #     }
-    #     # Must create a connection so that the blocking channel is passed
-    #     self.test_manager.rabbitmq.connect()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #
-    #     # We will send new configs through both the existing and
-    #     # non-existing chain and general paths to make sure that all routes
-    #     # work as expected.
-    #     method_chains_sys = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_sys)
-    #     method_chains_nodes = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_nodes)
-    #     method_general = pika.spec.Basic.Deliver(
-    #         routing_key=self.general_routing_key)
-    #     body_new_configs_chain_sys = json.dumps(new_configs_chain_sys)
-    #     body_new_configs_chain_nodes = json.dumps(new_configs_chain_nodes)
-    #     body_new_configs_general = json.dumps(new_configs_general)
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     self.test_manager._process_configs(blocking_channel,
-    #                                        method_chains_nodes, properties,
-    #                                        body_new_configs_chain_nodes)
-    #     startup_mock.assert_called_once_with(self.system_config_3,
-    #                                          self.system_id_3, self.chain_3)
-    #
-    #     self.test_manager._process_configs(blocking_channel,
-    #                                        method_chains_sys, properties,
-    #                                        body_new_configs_chain_sys)
-    #     new_sys_config = SystemConfig('config_id6', self.parent_id_4,
-    #                                   'system_6', True, 'url_6')
-    #     self.assertEqual(2, startup_mock.call_count)
-    #     args, _ = startup_mock.call_args
-    #     self.assertEqual(new_sys_config, args[0])
-    #     self.assertEqual('config_id6', args[1])
-    #     self.assertEqual(self.chain_4, args[2])
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_general,
-    #                                        properties,
-    #                                        body_new_configs_general)
-    #     new_sys_config = SystemConfig('config_id8', self.parent_id_2,
-    #                                   'system_8', True, 'url_8')
-    #     self.assertEqual(3, startup_mock.call_count)
-    #     args, _ = startup_mock.call_args
-    #     self.assertEqual(new_sys_config, args[0])
-    #     self.assertEqual('config_id8', args[1])
-    #     self.assertEqual(self.chain_2, args[2])
-    #
-    #     self.assertEqual(3, mock_ack.call_count)
-    #
-    # @mock.patch.object(multiprocessing.Process, "join")
-    # @mock.patch.object(multiprocessing.Process, "terminate")
-    # @mock.patch.object(multiprocessing.Process, "start")
-    # @mock.patch.object(SystemMonitorsManager,
-    #                    "_create_and_start_monitor_process")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_proc_confs_term_and_starts_monitors_for_modified_confs_to_be_mon(
-    #         self, mock_ack, mock_startup, mock_start, mock_terminate,
-    #         mock_join) -> None:
-    #     # In this test we will check that modified configurations with
-    #     # `monitor_system = True` will have new monitors started. Implicitly
-    #     # we will be checking that modified configs with
-    #     # `monitor_system = False` will only have their previous processes
-    #     # terminated.
-    #     mock_ack.return_value = None
-    #     mock_startup.return_value = None
-    #     mock_start.return_value = None
-    #     mock_terminate.return_value = None
-    #     mock_join.return_value = None
-    #     self.test_manager._systems_configs = self.systems_configs_example
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #
-    #     new_configs_chain_nodes_monitor_true = {
-    #         self.system_id_1: {
-    #             'id': self.system_id_1,
-    #             'parent_id': self.parent_id_1,
-    #             'name': 'new_system_name_chain',
-    #             'exporter_url': self.node_exporter_url_1,
-    #             'monitor_system': str(self.monitor_system_1),
-    #         },
-    #     }
-    #     new_configs_chain_nodes_monitor_false = {
-    #         self.system_id_1: {
-    #             'id': self.system_id_1,
-    #             'parent_id': self.parent_id_1,
-    #             'name': 'new_system_name_chain',
-    #             'exporter_url': self.node_exporter_url_1,
-    #             'monitor_system': "False",
-    #         },
-    #     }
-    #     new_configs_chain_sys_monitor_true = {
-    #         self.system_id_4: {
-    #             'id': self.system_id_4,
-    #             'parent_id': self.parent_id_4,
-    #             'name': 'new_system_name_chain',
-    #             'exporter_url': self.node_exporter_url_4,
-    #             'monitor_system': str(self.monitor_system_4),
-    #         },
-    #     }
-    #     new_configs_chain_sys_monitor_false = {
-    #         self.system_id_4: {
-    #             'id': self.system_id_4,
-    #             'parent_id': self.parent_id_4,
-    #             'name': 'new_system_name_chain',
-    #             'exporter_url': self.node_exporter_url_4,
-    #             'monitor_system': "False",
-    #         },
-    #     }
-    #     new_configs_general_monitor_true = {
-    #         self.system_id_2: {
-    #             'id': self.system_id_2,
-    #             'parent_id': self.parent_id_2,
-    #             'name': 'new_system_name_general',
-    #             'exporter_url': self.node_exporter_url_2,
-    #             'monitor_system': str(self.monitor_system_2),
-    #         },
-    #     }
-    #     new_configs_general_monitor_false = {
-    #         self.system_id_2: {
-    #             'id': self.system_id_2,
-    #             'parent_id': self.parent_id_2,
-    #             'name': 'new_system_name_general',
-    #             'exporter_url': self.node_exporter_url_2,
-    #             'monitor_system': "False",
-    #         },
-    #     }
-    #     # Must create a connection so that the blocking channel is passed
-    #     self.test_manager.rabbitmq.connect()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method_chains_nodes = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_nodes)
-    #     method_chains_sys = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_sys)
-    #     method_general = pika.spec.Basic.Deliver(
-    #         routing_key=self.general_routing_key)
-    #     body_chain_nodes_mon_true = json.dumps(
-    #         new_configs_chain_nodes_monitor_true)
-    #     body_chain_sys_mon_true = json.dumps(
-    #         new_configs_chain_sys_monitor_true)
-    #     body_general_mon_true = json.dumps(new_configs_general_monitor_true)
-    #     body_chain_nodes_mon_false = json.dumps(
-    #         new_configs_chain_nodes_monitor_false)
-    #     body_chain_sys_mon_false = json.dumps(
-    #         new_configs_chain_sys_monitor_false)
-    #     body_general_mon_false = json.dumps(new_configs_general_monitor_false)
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     self.test_manager._process_configs(blocking_channel,
-    #                                        method_chains_nodes, properties,
-    #                                        body_chain_nodes_mon_true)
-    #     self.system_config_1.set_system_name('new_system_name_chain')
-    #     mock_startup.assert_called_once_with(self.system_config_1,
-    #                                          self.system_id_1, self.chain_1)
-    #     mock_terminate.assert_called_once()
-    #     mock_join.assert_called_once()
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_chains_sys,
-    #                                        properties, body_chain_sys_mon_true)
-    #     args, _ = mock_startup.call_args
-    #     self.system_config_4.set_system_name('new_system_name_chain')
-    #     self.assertEqual(self.system_config_4, args[0])
-    #     self.assertEqual(self.system_id_4, args[1])
-    #     self.assertEqual(self.chain_4, args[2])
-    #     self.assertEqual(2, mock_terminate.call_count)
-    #     self.assertEqual(2, mock_join.call_count)
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_general,
-    #                                        properties, body_general_mon_true)
-    #     args, _ = mock_startup.call_args
-    #     self.system_config_2.set_system_name('new_system_name_general')
-    #     self.assertEqual(self.system_config_2, args[0])
-    #     self.assertEqual(self.system_id_2, args[1])
-    #     self.assertEqual(self.chain_2, args[2])
-    #     self.assertEqual(3, mock_terminate.call_count)
-    #     self.assertEqual(3, mock_join.call_count)
-    #
-    #     self.test_manager._process_configs(blocking_channel,
-    #                                        method_chains_nodes, properties,
-    #                                        body_chain_nodes_mon_false)
-    #     self.assertEqual(3, mock_startup.call_count)
-    #     self.assertEqual(4, mock_terminate.call_count)
-    #     self.assertEqual(4, mock_join.call_count)
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_chains_sys,
-    #                                        properties, body_chain_sys_mon_false)
-    #     self.assertEqual(3, mock_startup.call_count)
-    #     self.assertEqual(5, mock_terminate.call_count)
-    #     self.assertEqual(5, mock_join.call_count)
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_general,
-    #                                        properties, body_general_mon_false)
-    #     self.assertEqual(3, mock_startup.call_count)
-    #     self.assertEqual(6, mock_terminate.call_count)
-    #     self.assertEqual(6, mock_join.call_count)
-    #     self.assertEqual(6, mock_ack.call_count)
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # @mock.patch.object(multiprocessing.Process, "terminate")
-    # @mock.patch.object(multiprocessing.Process, "join")
-    # @mock.patch.object(multiprocessing.Process, "start")
-    # @mock.patch.object(SystemMonitorsManager,
-    #                    "_create_and_start_monitor_process")
-    # def test_process_configs_terminates_monitors_for_removed_configs(
-    #         self, mock_startup, mock_start, mock_join, mock_terminate,
-    #         mock_ack) -> None:
-    #     # In this test we will check that the monitors associated with removed
-    #     # configurations are terminated.
-    #     mock_ack.return_value = None
-    #     mock_join.return_value = None
-    #     mock_terminate.return_value = None
-    #     mock_startup.return_value = None
-    #     mock_start.return_value = None
-    #     self.test_manager._systems_configs = self.systems_configs_example
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #
-    #     new_configs_chain_sys = {}
-    #     new_configs_chain_nodes = {}
-    #     new_configs_general = {}
-    #
-    #     # Must create a connection so that the blocking channel is passed
-    #     self.test_manager.rabbitmq.connect()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method_chains_sys = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_sys)
-    #     method_chains_nodes = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_nodes)
-    #     method_general = pika.spec.Basic.Deliver(
-    #         routing_key=self.general_routing_key)
-    #     body_chain_sys = json.dumps(new_configs_chain_sys)
-    #     body_chain_nodes = json.dumps(new_configs_chain_nodes)
-    #     body_general = json.dumps(new_configs_general)
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     self.test_manager._process_configs(blocking_channel,
-    #                                        method_chains_nodes, properties,
-    #                                        body_chain_nodes)
-    #     mock_start.assert_not_called()
-    #     mock_startup.assert_not_called()
-    #     mock_join.assert_called_once()
-    #     mock_terminate.assert_called_once()
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_chains_sys,
-    #                                        properties, body_chain_sys)
-    #     mock_start.assert_not_called()
-    #     mock_startup.assert_not_called()
-    #     self.assertEqual(2, mock_join.call_count)
-    #     self.assertEqual(2, mock_terminate.call_count)
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_general,
-    #                                        properties, body_general)
-    #     mock_start.assert_not_called()
-    #     mock_startup.assert_not_called()
-    #     self.assertEqual(3, mock_join.call_count)
-    #     self.assertEqual(3, mock_terminate.call_count)
-    #
-    #     self.assertEqual(3, mock_ack.call_count)
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_configs_ignores_new_configs_with_missing_keys(
-    #         self, mock_ack) -> None:
-    #     # We will check whether the state is kept intact if new configurations
-    #     # with missing keys are sent. Exceptions should never be raised in this
-    #     # case, and basic_ack must be called to ignore the message.
-    #     mock_ack.return_value = None
-    #     new_configs_chain_nodes = {
-    #         self.system_id_3: {
-    #             'id': self.system_id_3,
-    #             'parentfg_id': self.parent_id_3,
-    #             'namfge': self.system_name_3,
-    #             'exporfgter_url': self.node_exporter_url_3,
-    #             'monitorfg_system': str(self.monitor_system_3),
-    #         },
-    #     }
-    #     new_configs_chain_sys = {
-    #         'config_id5': {
-    #             'id': 'config_id5',
-    #             'parentfg_id': self.parent_id_4,
-    #             'namfge': 'system_5',
-    #             'exporfgter_url': 'url5',
-    #             'monitorfg_system': "True",
-    #         },
-    #     }
-    #     new_configs_general = {
-    #         'config_id6': {
-    #             'id': 'config_id6',
-    #             'parentfg_id': self.parent_id_2,
-    #             'namfge': 'system_6',
-    #             'exporfgter_url': 'url6',
-    #             'monitorfg_system': "True",
-    #         },
-    #     }
-    #     self.test_manager._systems_configs = self.systems_configs_example
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #
-    #     # Must create a connection so that the blocking channel is passed
-    #     self.test_manager.rabbitmq.connect()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #
-    #     # We will send new configs through both the existing and
-    #     # non-existing chain and general paths to make sure that all routes
-    #     # work as expected.
-    #     method_chains_sys = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_sys)
-    #     method_chains_nodes = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_nodes)
-    #     method_general = pika.spec.Basic.Deliver(
-    #         routing_key=self.general_routing_key)
-    #     body_new_configs_chain_nodes = json.dumps(new_configs_chain_nodes)
-    #     body_new_configs_chain_sys = json.dumps(new_configs_chain_sys)
-    #     body_new_configs_general = json.dumps(new_configs_general)
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_general,
-    #                                        properties,
-    #                                        body_new_configs_general)
-    #     self.assertEqual(1, mock_ack.call_count)
-    #     self.assertEqual(self.config_process_dict_example,
-    #                      self.test_manager.config_process_dict)
-    #     self.assertEqual(self.systems_configs_example,
-    #                      self.test_manager.systems_configs)
-    #
-    #     self.test_manager._process_configs(blocking_channel,
-    #                                        method_chains_nodes, properties,
-    #                                        body_new_configs_chain_nodes)
-    #     self.assertEqual(2, mock_ack.call_count)
-    #     self.assertEqual(self.config_process_dict_example,
-    #                      self.test_manager.config_process_dict)
-    #     self.assertEqual(self.systems_configs_example,
-    #                      self.test_manager.systems_configs)
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_chains_sys,
-    #                                        properties,
-    #                                        body_new_configs_chain_sys)
-    #     self.assertEqual(3, mock_ack.call_count)
-    #     self.assertEqual(self.config_process_dict_example,
-    #                      self.test_manager.config_process_dict)
-    #     self.assertEqual(self.systems_configs_example,
-    #                      self.test_manager.systems_configs)
-    #
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_configs_ignores_modified_configs_with_missing_keys(
-    #         self, mock_ack) -> None:
-    #     # We will check whether the state is kept intact if modified
-    #     # configurations with missing keys are sent. Exceptions should never be
-    #     # raised in this case, and basic_ack must be called to ignore the
-    #     # message.
-    #     mock_ack.return_value = None
-    #     updated_configs_chain_nodes = {
-    #         self.system_id_1: {
-    #             'id': self.system_id_1,
-    #             'parentfg_id': self.parent_id_1,
-    #             'namfge': 'new_name',
-    #             'exporfgter_url': self.node_exporter_url_1,
-    #             'monitorfg_system': str(self.monitor_system_1),
-    #         },
-    #     }
-    #     updated_configs_chain_sys = {
-    #         self.system_id_4: {
-    #             'id': self.system_id_4,
-    #             'parentfg_id': self.parent_id_4,
-    #             'namfge': 'new_name',
-    #             'exporfgter_url': self.node_exporter_url_4,
-    #             'monitorfg_system': str(self.monitor_system_4),
-    #         },
-    #     }
-    #     updated_configs_general = {
-    #         self.system_id_2: {
-    #             'id': self.system_id_2,
-    #             'parentdfg_id': self.parent_id_2,
-    #             'namdfge': 'new_name',
-    #             'exporter_urdfgl': self.node_exporter_url_2,
-    #             'monitor_systdfgem': str(self.monitor_system_2),
-    #         },
-    #     }
-    #     self.test_manager._systems_configs = self.systems_configs_example
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #
-    #     # Must create a connection so that the blocking channel is passed
-    #     self.test_manager.rabbitmq.connect()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #
-    #     # We will send new configs through both the existing and
-    #     # non-existing chain and general paths to make sure that all routes
-    #     # work as expected.
-    #     method_chains_nodes = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_nodes)
-    #     method_chains_sys = pika.spec.Basic.Deliver(
-    #         routing_key=self.chains_routing_key_sys)
-    #     method_general = pika.spec.Basic.Deliver(
-    #         routing_key=self.general_routing_key)
-    #     body_updated_configs_chain_nodes = json.dumps(
-    #         updated_configs_chain_nodes)
-    #     body_updated_configs_chain_sys = json.dumps(
-    #         updated_configs_chain_sys)
-    #     body_updated_configs_general = json.dumps(updated_configs_general)
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_general,
-    #                                        properties,
-    #                                        body_updated_configs_general)
-    #     self.assertEqual(1, mock_ack.call_count)
-    #     self.assertEqual(self.config_process_dict_example,
-    #                      self.test_manager.config_process_dict)
-    #     self.assertEqual(self.systems_configs_example,
-    #                      self.test_manager.systems_configs)
-    #
-    #     self.test_manager._process_configs(blocking_channel,
-    #                                        method_chains_nodes, properties,
-    #                                        body_updated_configs_chain_nodes)
-    #     self.assertEqual(2, mock_ack.call_count)
-    #     self.assertEqual(self.config_process_dict_example,
-    #                      self.test_manager.config_process_dict)
-    #     self.assertEqual(self.systems_configs_example,
-    #                      self.test_manager.systems_configs)
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_chains_sys,
-    #                                        properties,
-    #                                        body_updated_configs_chain_sys)
-    #     self.assertEqual(3, mock_ack.call_count)
-    #     self.assertEqual(self.config_process_dict_example,
-    #                      self.test_manager.config_process_dict)
-    #     self.assertEqual(self.systems_configs_example,
-    #                      self.test_manager.systems_configs)
-    #
-    # @parameterized.expand([
-    #     ([True, True, True], [],),
-    #     ([True, False, True], ['self.system_id_2'],),
-    #     ([False, False, False], ['self.system_id_1', 'self.system_id_2',
-    #                              'self.system_id_4'],),
-    # ])
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(multiprocessing.Process, "join")
-    # @mock.patch.object(multiprocessing.Process, "is_alive")
-    # @mock.patch.object(SystemMonitorsManager,
-    #                    "_create_and_start_monitor_process")
-    # @mock.patch.object(SystemMonitorsManager, "_send_heartbeat")
-    # def test_process_ping_sends_a_valid_hb(
-    #         self, is_alive_side_effect, dead_configs, mock_send_hb,
-    #         mock_create_and_start, mock_is_alive, mock_join) -> None:
-    #     mock_send_hb.return_value = None
-    #     mock_join.return_value = None
-    #     mock_create_and_start.return_value = None
-    #     mock_is_alive.side_effect = is_alive_side_effect
-    #     dead_configs_eval = list(map(eval, dead_configs))
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #     self.test_manager._systems_configs = self.systems_configs_example
-    #
-    #     # Some of the variables below are needed as parameters for the
-    #     # process_ping function
-    #     self.test_manager._initialise_rabbitmq()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
-    #     body = 'ping'
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     self.test_manager._process_ping(blocking_channel, method,
-    #                                     properties, body)
-    #
-    #     expected_hb = {
-    #         'component_name': self.manager_name,
-    #         'running_processes': [
-    #             self.config_process_dict_example[config_id]['component_name']
-    #             for config_id in self.config_process_dict_example
-    #             if config_id not in dead_configs_eval
-    #         ],
-    #         'dead_processes': [
-    #             self.config_process_dict_example[config_id]['component_name']
-    #             for config_id in self.config_process_dict_example
-    #             if config_id in dead_configs_eval
-    #         ],
-    #         'timestamp': datetime.now().timestamp()
-    #     }
-    #     mock_send_hb.assert_called_once_with(expected_hb)
-    #
-    # @parameterized.expand([
-    #     ([True, True, True], [],),
-    #     ([True, False, True], ['self.system_id_2'],),
-    #     ([False, False, False], ['self.system_id_1', 'self.system_id_2',
-    #                              'self.system_id_4'],),
-    # ])
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(multiprocessing.Process, "join")
-    # @mock.patch.object(multiprocessing.Process, "is_alive")
-    # @mock.patch.object(SystemMonitorsManager,
-    #                    "_create_and_start_monitor_process")
-    # @mock.patch.object(SystemMonitorsManager, "_send_heartbeat")
-    # def test_process_ping_restarts_dead_processes_correctly(
-    #         self, is_alive_side_effect, dead_configs, mock_send_hb,
-    #         mock_create_and_start, mock_is_alive, mock_join) -> None:
-    #     mock_send_hb.return_value = None
-    #     mock_join.return_value = None
-    #     mock_create_and_start.return_value = None
-    #     mock_is_alive.side_effect = is_alive_side_effect
-    #     dead_configs_eval = list(map(eval, dead_configs))
-    #     system_ids_configs_dict = {
-    #         self.system_id_1: self.system_config_1,
-    #         self.system_id_2: self.system_config_2,
-    #         self.system_id_3: self.system_config_3,
-    #         self.system_id_4: self.system_config_4
-    #     }
-    #
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #     self.test_manager._systems_configs = self.systems_configs_example
-    #
-    #     # Some of the variables below are needed as parameters for the
-    #     # process_ping function
-    #     self.test_manager._initialise_rabbitmq()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
-    #     body = 'ping'
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     self.test_manager._process_ping(blocking_channel, method, properties,
-    #                                     body)
-    #
-    #     expected_calls = [
-    #         call(system_ids_configs_dict[config_id], config_id,
-    #              self.config_process_dict_example[config_id]['chain'])
-    #         for config_id in self.config_process_dict_example
-    #         if config_id in dead_configs_eval
-    #     ]
-    #     actual_calls = mock_create_and_start.call_args_list
-    #     self.assertEqual(expected_calls, actual_calls)
-    #
-    # @mock.patch.object(multiprocessing.Process, "is_alive")
-    # @mock.patch.object(SystemMonitorsManager, "_send_heartbeat")
-    # def test_process_ping_does_not_send_hb_if_processing_fails(
-    #         self, mock_send_hb, mock_is_alive) -> None:
-    #     mock_is_alive.side_effect = self.test_exception
-    #     mock_send_hb.return_value = None
-    #     self.test_manager._config_process_dict = \
-    #         self.config_process_dict_example
-    #
-    #     # Some of the variables below are needed as parameters for the
-    #     # process_ping function
-    #     self.test_manager._initialise_rabbitmq()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
-    #     body = 'ping'
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     self.test_manager._process_ping(blocking_channel, method,
-    #                                     properties, body)
-    #
-    #     mock_send_hb.assert_not_called()
-    #
-    # def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
-    #         self) -> None:
-    #     # In this test we are assuming that no configs have been set, this is
-    #     # done to keep the test as simple as possible. We are also assuming that
-    #     # a MsgWasNotDeliveredException will be raised automatically because
-    #     # we are deleting the HealthExchange after every test, and thus there
-    #     # are no consumers of the heartbeat.
-    #     self.test_manager._initialise_rabbitmq()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
-    #     body = 'ping'
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     try:
-    #         self.test_manager._process_ping(blocking_channel, method,
-    #                                         properties, body)
-    #     except MessageWasNotDeliveredException:
-    #         self.fail('A MessageWasNotDeliveredException should not have been '
-    #                   'raised')
-    #
-    # @parameterized.expand([
-    #     (pika.exceptions.AMQPConnectionError,
-    #      pika.exceptions.AMQPConnectionError('test'),),
-    #     (pika.exceptions.AMQPChannelError,
-    #      pika.exceptions.AMQPChannelError('test'),),
-    #     (Exception, Exception('test'),),
-    # ])
-    # @mock.patch.object(SystemMonitorsManager, "_send_heartbeat")
-    # def test_process_ping_raises_unrecognised_error_if_raised_by_send_heartbeat(
-    #         self, exception_class, exception_instance, mock_send_hb) -> None:
-    #     mock_send_hb.side_effect = exception_instance
-    #
-    #     self.test_manager._initialise_rabbitmq()
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
-    #     body = 'ping'
-    #     properties = pika.spec.BasicProperties()
-    #
-    #     self.assertRaises(exception_class, self.test_manager._process_ping,
-    #                       blocking_channel, method, properties, body)
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(multiprocessing, 'Process')
+    def test_create_and_start_evm_contracts_monitor_process_stores_correctly(
+            self, mock_init, mock_start) -> None:
+        mock_start.return_value = None
+        mock_init.return_value = self.dummy_process2
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+        expected_state = {
+            self.chain_1: {
+                'component_name': EVM_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
+                    self.parent_id_1),
+                'process': self.dummy_process1,
+                'weiwatchers_url': self.weiwatchers_url_1,
+                'evm_nodes': self.evm_nodes_1,
+                'node_configs': self.chainlink_node_configs_1,
+                'parent_id': self.parent_id_1,
+                'chain_name': self.chain_1,
+            },
+            self.chain_2: {
+                'component_name': EVM_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
+                    self.parent_id_2),
+                'process': self.dummy_process2,
+                'weiwatchers_url': self.weiwatchers_url_2,
+                'evm_nodes': self.evm_nodes_2,
+                'node_configs': self.chainlink_node_configs_2,
+                'parent_id': self.parent_id_2,
+                'chain_name': self.chain_2,
+            }
+        }
+
+        self.test_manager._create_and_start_evm_contracts_monitor_process(
+            self.weiwatchers_url_2, self.evm_nodes_2,
+            self.chainlink_node_configs_2, self.parent_id_2, self.chain_2)
+
+        self.assertEqual(expected_state, self.test_manager.config_process_dict)
+
+    @mock.patch.object(multiprocessing.Process, "start")
+    def test_create_and_start_evm_contr_monitor_proc_creates_process_correctly(
+            self, mock_start) -> None:
+        mock_start.return_value = None
+
+        self.test_manager._create_and_start_evm_contracts_monitor_process(
+            self.weiwatchers_url_2, self.evm_nodes_2,
+            self.chainlink_node_configs_2, self.parent_id_2, self.chain_2)
+
+        new_entry = self.test_manager.config_process_dict[self.chain_2]
+        new_entry_process = new_entry['process']
+        self.assertTrue(new_entry_process.daemon)
+        self.assertEqual(4, len(new_entry_process._args))
+        self.assertEqual(self.weiwatchers_url_2, new_entry_process._args[0])
+        self.assertEqual(self.evm_nodes_2, new_entry_process._args[1])
+        self.assertEqual(self.chainlink_node_configs_2,
+                         new_entry_process._args[2])
+        self.assertEqual(self.parent_id_2, new_entry_process._args[3])
+        self.assertEqual(start_evm_contracts_monitor, new_entry_process._target)
+
+    @mock.patch.object(multiprocessing.Process, "start")
+    def test_create_and_start_evm_contracts_monitor_process_starts_the_process(
+            self, mock_start) -> None:
+        self.test_manager._create_and_start_evm_contracts_monitor_process(
+            self.weiwatchers_url_2, self.evm_nodes_2,
+            self.chainlink_node_configs_2, self.parent_id_2, self.chain_2)
+        mock_start.assert_called_once()
+
+    @mock.patch.object(ContractMonitorsManager,
+                       "_create_and_start_evm_contracts_monitor_process")
+    def test_process_chainlink_node_configs_creates_new_monitor_if_none_running(
+            self, mock_create_and_start) -> None:
+        """
+        In this test we will check that if a valid nodes configuration for
+        contracts monitoring is received and no EVM contracts monitor has been
+        started for that chain, a new one is started. In addition to this we
+        will check that the function outputs the correct contracts configuration
+        """
+        mock_create_and_start.return_value = None
+        expected_confs = {
+            'parent_id': self.parent_id_1,
+            'weiwatchers_url': self.weiwatchers_url_1,
+            'evm_nodes_urls': self.evm_nodes_1,
+            'chainlink_node_configs': self.chainlink_node_configs_1
+        }
+
+        actual_confs = self.test_manager._process_chainlink_node_configs(
+            self.sent_configs_example, {}, self.chain_1)
+
+        mock_create_and_start.assert_called_once_with(
+            self.weiwatchers_url_1, self.evm_nodes_1,
+            self.chainlink_node_configs_1, self.parent_id_1, self.chain_1)
+        self.assertEqual(expected_confs, actual_confs)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ContractMonitorsManager,
+                       "_create_and_start_evm_contracts_monitor_process")
+    def test_process_chainlink_node_configs_stops_and_creates_new_monitor_if_newer_confs(
+            self, mock_create_and_start, mock_join, mock_terminate) -> None:
+        """
+        In this test we will check that if a new valid nodes configuration for
+        contracts monitoring is received and an EVM contracts monitor has
+        already been started for that chain, the old is stopped and a new one is
+        started. In addition to this we will check that the function outputs the
+        correct contracts configuration
+        """
+        mock_create_and_start.return_value = None
+        mock_terminate.return_value = None
+        mock_join.return_value = None
+        expected_confs = {
+            'parent_id': self.parent_id_1,
+            'weiwatchers_url': self.weiwatchers_url_1,
+            'evm_nodes_urls': self.evm_nodes_1,
+            'chainlink_node_configs': self.chainlink_node_configs_1
+        }
+        current_confgs = {
+            self.chain_1: {
+                'parent_id': self.parent_id_1,
+                'weiwatchers_url': self.weiwatchers_url_1,
+                'evm_nodes_urls': self.evm_nodes_1,
+                'chainlink_node_configs': [self.chainlink_node_configs_1]
+            },
+        }
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+
+        actual_confs = self.test_manager._process_chainlink_node_configs(
+            self.sent_configs_example, current_confgs[self.chain_1],
+            self.chain_1)
+
+        mock_terminate.assert_called_once()
+        mock_join.assert_called_once()
+        mock_create_and_start.assert_called_once_with(
+            self.weiwatchers_url_1, self.evm_nodes_1,
+            self.chainlink_node_configs_1, self.parent_id_1, self.chain_1)
+        self.assertEqual(expected_confs, actual_confs)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ContractMonitorsManager,
+                       "_create_and_start_evm_contracts_monitor_process")
+    def test_process_chainlink_node_configs_stops_monitor_if_confs_removed(
+            self, mock_create_and_start, mock_join, mock_terminate) -> None:
+        """
+        In this test we will check that if configurations for contracts
+        monitoring have been removed for a chain and an EVM contracts monitor
+        has already been started for that chain, the old is stopped. In addition
+        to this we will check that the function outputs the correct contracts
+        configuration
+        """
+        mock_create_and_start.return_value = None
+        mock_terminate.return_value = None
+        mock_join.return_value = None
+        current_confgs = {
+            self.chain_1: {
+                'parent_id': self.parent_id_1,
+                'weiwatchers_url': self.weiwatchers_url_1,
+                'evm_nodes_urls': self.evm_nodes_1,
+                'chainlink_node_configs': [self.chainlink_node_configs_1]
+            },
+        }
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+
+        actual_confs = self.test_manager._process_chainlink_node_configs(
+            {}, current_confgs[self.chain_1], self.chain_1)
+
+        mock_terminate.assert_called_once()
+        mock_join.assert_called_once()
+        mock_create_and_start.assert_not_called()
+        self.assertEqual({}, actual_confs)
+        self.assertTrue(
+            self.chain_1 not in self.test_manager.config_process_dict)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ContractMonitorsManager,
+                       "_create_and_start_evm_contracts_monitor_process")
+    def test_process_chainlink_node_configs_does_nothing_if_unchanged_confs(
+            self, mock_create_and_start, mock_join, mock_terminate) -> None:
+        """
+        In this test we will check that if we receive unchanged configurations
+        for contracts monitoring and an EVM contracts monitor has already been
+        started for that chain, nothing is done. In addition to this we will
+        check that the function outputs the correct contracts configuration
+        """
+        mock_create_and_start.return_value = None
+        mock_terminate.return_value = None
+        mock_join.return_value = None
+        current_confgs = {
+            self.chain_1: {
+                'parent_id': self.parent_id_1,
+                'weiwatchers_url': self.weiwatchers_url_1,
+                'evm_nodes_urls': self.evm_nodes_1,
+                'chainlink_node_configs': self.chainlink_node_configs_1
+            },
+        }
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+
+        actual_confs = self.test_manager._process_chainlink_node_configs(
+            self.sent_configs_example, current_confgs[self.chain_1],
+            self.chain_1)
+
+        mock_terminate.assert_not_called()
+        mock_join.assert_not_called()
+        mock_create_and_start.assert_not_called()
+        self.assertEqual(current_confgs[self.chain_1], actual_confs)
+        self.assertTrue(self.chain_1 in self.test_manager.config_process_dict)
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(ContractMonitorsManager,
+                       "_process_chainlink_node_configs")
+    def test_process_configs_ignores_default_key(
+            self, mock_process_cl_confs, mock_basic_ack) -> None:
+        """
+        In this test we will check that DEFAULT keys are removed from the
+        sent_configs when we process the new configurations
+        """
+        mock_process_cl_confs.return_value = None
+        mock_basic_ack.return_value = None
+        self.sent_configs_example['DEFAULT'] = {'key': 12}
+
+        # Must create a connection so that the blocking channel is passed
+        self.test_manager.rabbitmq.connect()
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(routing_key=self.routing_key_bsc)
+        body = json.dumps(self.sent_configs_example)
+        properties = pika.spec.BasicProperties()
+
+        self.test_manager._process_configs(blocking_channel, method, properties,
+                                           body)
+
+        configs_to_be_processed = copy.deepcopy(self.sent_configs_example)
+        del configs_to_be_processed['DEFAULT']
+        mock_process_cl_confs.assert_called_once_with(configs_to_be_processed,
+                                                      {}, self.chain_1)
+        mock_basic_ack.assert_called_once()
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(ContractMonitorsManager,
+                       "_process_chainlink_node_configs")
+    def test_process_configs_calls_process_chainlink_node_configs_correctly(
+            self, mock_process_cl_confs, mock_basic_ack) -> None:
+        """
+        In this test we will check that if chainlink configs are received,
+        self._process_chainlink_node_configs is called correctly irrelevant if
+        there is state already stored or not
+        """
+        mock_process_cl_confs.return_value = None
+        mock_basic_ack.return_value = None
+
+        # Must create a connection so that the blocking channel is passed
+        self.test_manager.rabbitmq.connect()
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(routing_key=self.routing_key_bsc)
+        body = json.dumps(self.sent_configs_example)
+        properties = pika.spec.BasicProperties()
+
+        # Test with no state
+        self.test_manager._process_configs(blocking_channel, method, properties,
+                                           body)
+        mock_process_cl_confs.assert_called_once_with(self.sent_configs_example,
+                                                      {}, self.chain_1)
+        mock_basic_ack.assert_called_once()
+        mock_process_cl_confs.reset_mock()
+        mock_basic_ack.reset_mock()
+
+        # Test with state already saved
+        self.test_manager._contracts_configs = copy.deepcopy(
+            self.contract_configs_example)
+        self.test_manager._process_configs(blocking_channel, method, properties,
+                                           body)
+        mock_process_cl_confs.assert_called_once_with(
+            self.sent_configs_example,
+            self.contract_configs_example[self.chain_1], self.chain_1)
+        mock_basic_ack.assert_called_once()
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(ContractMonitorsManager,
+                       "_process_chainlink_node_configs")
+    def test_process_configs_stores_contracts_configs_if_chainlink_configs(
+            self, mock_process_cl_confs, mock_basic_ack) -> None:
+        """
+        In this test we will check that if chainlink configs are received, they
+        are stored correctly after processing.
+        """
+        mock_process_cl_confs.return_value = self.test_data_str
+        mock_basic_ack.return_value = None
+
+        # Must create a connection so that the blocking channel is passed
+        self.test_manager.rabbitmq.connect()
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(routing_key=self.routing_key_bsc)
+        body = json.dumps(self.sent_configs_example)
+        properties = pika.spec.BasicProperties()
+
+        self.test_manager._process_configs(blocking_channel, method, properties,
+                                           body)
+        expected_confs = {
+            self.chain_1: self.test_data_str
+        }
+        self.assertEqual(expected_confs, self.test_manager.contracts_configs)
+        mock_basic_ack.assert_called_once()
+
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(ContractMonitorsManager,
+                       "_process_chainlink_node_configs")
+    def test_process_configs_no_proc_and_stores_empty_dict_for_non_chainlink_configs(
+            self, mock_process_cl_confs, mock_basic_ack) -> None:
+        """
+        In this test we will check that if non chainlink configs are received,
+        no processing is conducted and an empty dict is stored for that chain.
+        """
+        mock_process_cl_confs.return_value = None
+        mock_basic_ack.return_value = None
+
+        # Must create a connection so that the blocking channel is passed
+        self.test_manager.rabbitmq.connect()
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key='chains.substrate.kusama.nodes_config')
+        body = json.dumps(self.sent_configs_example)
+        properties = pika.spec.BasicProperties()
+
+        self.test_manager._process_configs(blocking_channel, method, properties,
+                                           body)
+        expected_confs = {
+            'substrate kusama': {}
+        }
+        self.assertEqual(expected_confs, self.test_manager.contracts_configs)
+        mock_process_cl_confs.assert_not_called()
+        mock_basic_ack.assert_called_once()
+
+    @parameterized.expand([
+        ([True, True], [],),
+        ([True, False], ['self.chain_2'],),
+        ([False, False], ['self.chain_1', 'self.chain_2'],),
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(ContractMonitorsManager,
+                       "_create_and_start_evm_contracts_monitor_process")
+    @mock.patch.object(ContractMonitorsManager, "_send_heartbeat")
+    def test_process_ping_sends_a_valid_hb(
+            self, is_alive_side_effect, dead_configs, mock_send_hb,
+            mock_create_and_start, mock_is_alive, mock_join) -> None:
+        mock_send_hb.return_value = None
+        mock_join.return_value = None
+        mock_create_and_start.return_value = None
+        mock_is_alive.side_effect = is_alive_side_effect
+        dead_configs_eval = list(map(eval, dead_configs))
+        self.config_process_dict_example[self.chain_2] = {
+            'component_name': EVM_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
+                self.parent_id_2),
+            'process': self.dummy_process2,
+            'weiwatchers_url': self.weiwatchers_url_2,
+            'evm_nodes': self.evm_nodes_2,
+            'node_configs': self.chainlink_node_configs_2,
+            'parent_id': self.parent_id_2,
+            'chain_name': self.chain_2,
+        }
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+
+        # Some of the variables below are needed as parameters for the
+        # process_ping function
+        self.test_manager._initialise_rabbitmq()
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
+        body = 'ping'
+        properties = pika.spec.BasicProperties()
+
+        self.test_manager._process_ping(blocking_channel, method, properties,
+                                        body)
+
+        expected_hb = {
+            'component_name': self.manager_name,
+            'running_processes': [
+                self.config_process_dict_example[chain_name]['component_name']
+                for chain_name in self.config_process_dict_example
+                if chain_name not in dead_configs_eval
+            ],
+            'dead_processes': [
+                self.config_process_dict_example[chain_name]['component_name']
+                for chain_name in self.config_process_dict_example
+                if chain_name in dead_configs_eval
+            ],
+            'timestamp': datetime.now().timestamp()
+        }
+        mock_send_hb.assert_called_once_with(expected_hb)
+
+    @parameterized.expand([
+        ([True, True], [],),
+        ([True, False], ['self.chain_2'],),
+        ([False, False], ['self.chain_1', 'self.chain_2'],),
+    ])
+    @freeze_time("2012-01-01")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(ContractMonitorsManager,
+                       "_create_and_start_evm_contracts_monitor_process")
+    @mock.patch.object(ContractMonitorsManager, "_send_heartbeat")
+    def test_process_ping_restarts_dead_processes_correctly(
+            self, is_alive_side_effect, dead_configs, mock_send_hb,
+            mock_create_and_start, mock_is_alive, mock_join) -> None:
+        mock_send_hb.return_value = None
+        mock_join.return_value = None
+        mock_create_and_start.return_value = None
+        mock_is_alive.side_effect = is_alive_side_effect
+        dead_configs_eval = list(map(eval, dead_configs))
+        self.config_process_dict_example[self.chain_2] = {
+            'component_name': EVM_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
+                self.parent_id_2),
+            'process': self.dummy_process2,
+            'weiwatchers_url': self.weiwatchers_url_2,
+            'evm_nodes': self.evm_nodes_2,
+            'node_configs': self.chainlink_node_configs_2,
+            'parent_id': self.parent_id_2,
+            'chain_name': self.chain_2,
+        }
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+
+        # Some of the variables below are needed as parameters for the
+        # process_ping function
+        self.test_manager._initialise_rabbitmq()
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
+        body = 'ping'
+        properties = pika.spec.BasicProperties()
+
+        self.test_manager._process_ping(blocking_channel, method, properties,
+                                        body)
+
+        expected_calls = [
+            call(self.config_process_dict_example[chain_name][
+                     'weiwatchers_url'],
+                 self.config_process_dict_example[chain_name]['evm_nodes'],
+                 self.config_process_dict_example[chain_name]['node_configs'],
+                 self.config_process_dict_example[chain_name]['parent_id'],
+                 self.config_process_dict_example[chain_name]['chain_name'])
+            for chain_name in self.config_process_dict_example
+            if chain_name in dead_configs_eval
+        ]
+        actual_calls = mock_create_and_start.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(multiprocessing.Process, "is_alive")
+    @mock.patch.object(ContractMonitorsManager, "_send_heartbeat")
+    def test_process_ping_does_not_send_hb_if_processing_fails(
+            self, mock_send_hb, mock_is_alive) -> None:
+        mock_is_alive.side_effect = self.test_exception
+        mock_send_hb.return_value = None
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+
+        # Some of the variables below are needed as parameters for the
+        # process_ping function
+        self.test_manager._initialise_rabbitmq()
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
+        body = 'ping'
+        properties = pika.spec.BasicProperties()
+
+        self.test_manager._process_ping(blocking_channel, method,
+                                        properties, body)
+
+        mock_send_hb.assert_not_called()
+
+    def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
+            self) -> None:
+        """
+        In this test we are assuming that no configs have been set, this is done
+        to keep the test as simple as possible. We are also assuming that a
+        MsgWasNotDeliveredException will be raised automatically because we are
+        deleting the HealthExchange after every test, and thus there are no
+        consumers of the heartbeat.
+        """
+        self.test_manager._initialise_rabbitmq()
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
+        body = 'ping'
+        properties = pika.spec.BasicProperties()
+
+        try:
+            self.test_manager._process_ping(blocking_channel, method,
+                                            properties, body)
+        except MessageWasNotDeliveredException:
+            self.fail('A MessageWasNotDeliveredException should not have been '
+                      'raised')
+
+    @parameterized.expand([
+        (pika.exceptions.AMQPConnectionError,
+         pika.exceptions.AMQPConnectionError('test'),),
+        (pika.exceptions.AMQPChannelError,
+         pika.exceptions.AMQPChannelError('test'),),
+        (Exception, Exception('test'),),
+    ])
+    @mock.patch.object(ContractMonitorsManager, "_send_heartbeat")
+    def test_process_ping_raises_unrecognised_error_if_raised_by_send_heartbeat(
+            self, exception_class, exception_instance, mock_send_hb) -> None:
+        mock_send_hb.side_effect = exception_instance
+
+        self.test_manager._initialise_rabbitmq()
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(routing_key=PING_ROUTING_KEY)
+        body = 'ping'
+        properties = pika.spec.BasicProperties()
+
+        self.assertRaises(exception_class, self.test_manager._process_ping,
+                          blocking_channel, method, properties, body)

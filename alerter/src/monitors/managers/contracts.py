@@ -114,7 +114,7 @@ class ContractMonitorsManager(MonitorsManager):
             parent_id = parent_ids_list[0]
         else:
             self.logger.error("The following config does not have identical "
-                              "parent_ids: %s".format(json.dumps(configs)))
+                              "parent_ids: {}".format(json.dumps(configs)))
 
         # Extract weiwatchers_url from configs. Return None if not all
         # weiwatchers_urls are equal.
@@ -127,7 +127,7 @@ class ContractMonitorsManager(MonitorsManager):
         else:
             self.logger.error(
                 "The following config does not have identical "
-                "weiwatchers_urls: %s".format(json.dumps(configs)))
+                "weiwatchers_urls: {}".format(json.dumps(configs)))
 
         # Extract evm_nodes_urls from configs. Return None if not all
         # evm_nodes_urls are equal.
@@ -139,7 +139,7 @@ class ContractMonitorsManager(MonitorsManager):
             evm_nodes_urls = evm_nodes_urls_list[0].split(',')
         else:
             self.logger.error("The following config does not have identical "
-                              "evm_node_urls: %s".format(json.dumps(configs)))
+                              "evm_node_urls: {}".format(json.dumps(configs)))
 
         # Extract the valid sub-configurations. A sub-configuration is valid
         # if monitoring is set, and there are valid prometheus url entries.
@@ -169,13 +169,13 @@ class ContractMonitorsManager(MonitorsManager):
             else:
                 self.logger.error(
                     "The following config was not enabled for contracts "
-                    "monitoring: %s".format(json.dumps(configs)))
+                    "monitoring: {}".format(json.dumps(configs)))
         if valid_node_configs:
             cl_node_configs = valid_node_configs
         else:
             self.logger.error("The following config does not have valid "
                               "chainlink node configs for contracts "
-                              "monitoring: %s".format(json.dumps(configs)))
+                              "monitoring: {}".format(json.dumps(configs)))
 
         return parent_id, weiwatchers_url, evm_nodes_urls, cl_node_configs
 
@@ -232,7 +232,8 @@ class ContractMonitorsManager(MonitorsManager):
             if current_configs:
                 # If there is an EVM Contracts Monitor running for the chain
                 # check if the configurations have been modified. If yes first
-                # terminate the monitor.
+                # terminate the monitor, if no it means that we can return as
+                # the current state is the correct one
                 if potential_configs != current_configs:
                     previous_process = self.config_process_dict[chain_name][
                         'process']
@@ -241,7 +242,11 @@ class ContractMonitorsManager(MonitorsManager):
                     del self.config_process_dict[chain_name]
                     correct_configs = {}
                     log_and_print("Killed the EVM Contracts monitor of "
-                                  "%s".format(chain_name), self.logger)
+                                  "{}".format(chain_name), self.logger)
+                else:
+                    # This case may occur if config keys which are irrelevant
+                    # for contract monitoring are modified
+                    return correct_configs
 
             # Check if potentially there could be any EVM Contracts Monitor that
             # could be started for the chain. This is True if valid monitoring
@@ -252,7 +257,7 @@ class ContractMonitorsManager(MonitorsManager):
                     weiwatchers_url, evm_nodes_urls, cl_node_configs,
                     parent_id, chain_name
                 )
-                correct_configs[chain_name] = potential_configs
+                correct_configs = potential_configs
 
         except Exception as e:
             # If we encounter an error during processing, this error must be
