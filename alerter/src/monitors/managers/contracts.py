@@ -145,19 +145,21 @@ class ContractMonitorsManager(MonitorsManager):
         # if monitoring is set, and there are valid prometheus url entries.
         valid_node_configs = []
         for _, config in configs.items():
-            node_id = config['id']
-            parent_id = config['parent_id']
-            node_name = config['name']
-            node_prometheus_urls = config['node_prometheus_urls'].split(',')
-            monitor_node = str_to_bool(config['monitor_node'])
-            monitor_prometheus = str_to_bool(config['monitor_prometheus'])
-            monitor_contracts = str_to_bool(config['monitor_contracts'])
+            conf_node_id = config['id']
+            conf_parent_id = config['parent_id']
+            conf_node_name = config['name']
+            conf_node_prometheus_urls = config['node_prometheus_urls'].split(
+                ',')
+            conf_monitor_node = str_to_bool(config['monitor_node'])
+            conf_monitor_prometheus = str_to_bool(config['monitor_prometheus'])
+            conf_monitor_contracts = str_to_bool(config['monitor_contracts'])
 
-            if self._sub_chainlink_config_to_be_monitored(monitor_contracts,
-                                                          monitor_prometheus):
+            if self._sub_chainlink_config_to_be_monitored(
+                    conf_monitor_contracts, conf_monitor_prometheus):
                 node_config = ChainlinkNodeConfig(
-                    node_id, parent_id, node_name, monitor_node,
-                    monitor_prometheus, node_prometheus_urls)
+                    conf_node_id, conf_parent_id, conf_node_name,
+                    conf_monitor_node, conf_monitor_prometheus,
+                    conf_node_prometheus_urls)
                 try:
                     node_config.enabled_sources_non_empty()
                     valid_node_configs.append(node_config)
