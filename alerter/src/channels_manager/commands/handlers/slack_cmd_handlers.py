@@ -2,7 +2,7 @@ import copy
 import json
 import logging
 from datetime import datetime
-from typing import Tuple, Dict, Callable, Optional, Any
+from typing import Tuple, Dict, Optional, Any
 
 import pika
 import pika.exceptions
@@ -71,7 +71,8 @@ class SlackCommandHandlers(CommandHandler):
         return self._app
 
     def _execute_safely(function):
-        def execute_callback_safely(self, ack: Ack, say: Say, command: Optional[Dict[str, Any]]) -> None:
+        def execute_callback_safely(self, ack: Ack, say: Say,
+                                    command: Optional[Dict[str, Any]]) -> None:
             try:
                 function(self, ack, say, command)
             except Exception as e:
@@ -120,7 +121,8 @@ class SlackCommandHandlers(CommandHandler):
         return False
 
     @_execute_safely
-    def ping_callback(self, ack: Ack, say: Say, command: Optional[Dict[str, Any]]) -> None:
+    def ping_callback(self, ack: Ack, say: Say,
+                      command: Optional[Dict[str, Any]]) -> None:
         self.logger.info("/ping: command=%s", command)
 
         # Acknowledge command request
@@ -426,7 +428,8 @@ class SlackCommandHandlers(CommandHandler):
         return redis_accessible_status
 
     @_execute_safely
-    def status_callback(self, ack: Ack, say: Say, command: Optional[Dict[str, Any]]) -> None:
+    def status_callback(self, ack: Ack, say: Say,
+                        command: Optional[Dict[str, Any]]) -> None:
         self._logger.info("/panicstatus: command=%s", command)
 
         # Acknowledge command request
@@ -444,7 +447,8 @@ class SlackCommandHandlers(CommandHandler):
         say(status[:-1] if status.endswith('\n') else status)
 
     @_execute_safely
-    def unmute_callback(self, ack: Ack, say: Say, command: Optional[Dict[str, Any]]) -> None:
+    def unmute_callback(self, ack: Ack, say: Say,
+                        command: Optional[Dict[str, Any]]) -> None:
         self._logger.info("/unmute: command=%s", command)
 
         # Acknowledge command request
@@ -486,7 +490,8 @@ class SlackCommandHandlers(CommandHandler):
                 say(
                     "Unrecognized error. Please debug the issue by looking at "
                     "the logs. Unmuting may not have been successful for all "
-                    "chains. Please check /panicstatus or the logs to see which "
+                    "chains. Please check /panicstatus or the logs to see "
+                    "which "
                     "chains were unmuted (if any) and that Redis is online. "
                     "Re-try again when the issue is solved.")
                 return
@@ -503,7 +508,8 @@ class SlackCommandHandlers(CommandHandler):
         say(res[:-1] if res.endswith('\n') else res)
 
     @_execute_safely
-    def mute_callback(self, ack: Ack, say: Say, command: Optional[Dict[str, Any]]) -> None:
+    def mute_callback(self, ack: Ack, say: Say,
+                      command: Optional[Dict[str, Any]]) -> None:
         self._logger.info("/panicmute: command=%s", command)
 
         # Acknowledge command request
@@ -572,7 +578,8 @@ class SlackCommandHandlers(CommandHandler):
                                   "error: %s", chain_name, e)
                 say(
                     "Redis error. Muting may not have been successful for all "
-                    "chains. Please check /panicstatus or the logs to see which "
+                    "chains. Please check /panicstatus or the logs to see "
+                    "which "
                     "chains were muted (if any) and that Redis is online. "
                     "Re-try again when the issue is solved.")
                 return
@@ -583,7 +590,8 @@ class SlackCommandHandlers(CommandHandler):
                 say(
                     "Unrecognized error. Please debug the issue by looking at "
                     "the logs. Muting may not have been successful for all "
-                    "chains. Please check /panicstatus or the logs to see which "
+                    "chains. Please check /panicstatus or the logs to see "
+                    "which "
                     "chains were muted (if any) and that Redis is online. "
                     "Re-try again when the issue is solved.")
                 return
@@ -594,7 +602,8 @@ class SlackCommandHandlers(CommandHandler):
                 ', '.join(recognized_severities), ', '.join(chain_names)))
 
     @_execute_safely
-    def muteall_callback(self, ack: Ack, say: Say, command: Optional[Dict[str, Any]]) \
+    def muteall_callback(self, ack: Ack, say: Say,
+                         command: Optional[Dict[str, Any]]) \
             -> None:
         self._logger.info("/muteall: command=%s", command)
 
@@ -670,7 +679,8 @@ class SlackCommandHandlers(CommandHandler):
                               "error.", ', '.join(recognized_severities))
             say(
                 "I could not mute all {} alerts due to a Redis error. Please "
-                "check /panicstatus or the logs to see if Redis is online and/or "
+                "check /panicstatus or the logs to see if Redis is online "
+                "and/or "
                 "re-try again.".format(', '.join(recognized_severities)))
         except Exception as e:
             self.logger.exception(e)
@@ -679,12 +689,14 @@ class SlackCommandHandlers(CommandHandler):
                               ', '.join(recognized_severities))
             say(
                 "Unrecognized error, please check the logs to debug the "
-                "issue. Please also check /panicstatus to see if the muting was "
+                "issue. Please also check /panicstatus to see if the muting "
+                "was "
                 "successful and that Redis is online. Re-try again when the "
                 "issue is solved.")
 
     @_execute_safely
-    def unmuteall_callback(self, ack: Ack, say: Say, command: Optional[Dict[str, Any]]) \
+    def unmuteall_callback(self, ack: Ack, say: Say,
+                           command: Optional[Dict[str, Any]]) \
             -> None:
         self.logger.info("/unmuteall: command=%s", command)
 
@@ -709,7 +721,8 @@ class SlackCommandHandlers(CommandHandler):
                               "redis %s", e)
             say(
                 "Unmuting unsuccessful due to an issue with Redis. Check "
-                "/panicstatus or the logs to see if Redis is online and/or re-try "
+                "/panicstatus or the logs to see if Redis is online and/or "
+                "re-try "
                 "again.")
             return
         except Exception as e:
@@ -718,7 +731,8 @@ class SlackCommandHandlers(CommandHandler):
                               "due to an unrecognized issue: %s", e)
             say(
                 "Unrecognized error, please check the logs to debug the "
-                "issue. Please also check /panicstatus to see if the unmuting was "
+                "issue. Please also check /panicstatus to see if the unmuting "
+                "was "
                 "successful and that Redis is online. Re-try again when the "
                 "issue is solved.")
             return
@@ -752,7 +766,8 @@ class SlackCommandHandlers(CommandHandler):
                               "due to an unrecognized issue: %s", e)
             say(
                 "It may be that not all chains were unmuted due to an "
-                "unrecognized error. Check /panicstatus or the logs to see if the "
+                "unrecognized error. Check /panicstatus or the logs to see if "
+                "the "
                 "unmuting was successful and that redis is online. Re-try "
                 "again when the issue is solved.")
             return
@@ -767,7 +782,8 @@ class SlackCommandHandlers(CommandHandler):
                 "chain.")
 
     @_execute_safely
-    def help_callback(self, ack: Ack, say: Say, command: Optional[Dict[str, Any]]) -> None:
+    def help_callback(self, ack: Ack, say: Say,
+                      command: Optional[Dict[str, Any]]) -> None:
         self._logger.info("/help: command=%s", command)
 
         # Acknowledge command request
@@ -782,7 +798,8 @@ class SlackCommandHandlers(CommandHandler):
         msg = "Hey! These are the available commands:\n" \
               "  /start: Welcome message\n" \
               "  /ping: Ping the Slack Commands Handler\n" \
-              "  /panicmute List(<severity>) (*Example*: /panicmute INFO CRITICAL): " \
+              "  /panicmute List(<severity>) (*Example*: /panicmute INFO " \
+              "CRITICAL): " \
               "Mutes List(<severity>) on all channels for chains {}. If the " \
               "list of severities is not given, all alerts for chains {} are " \
               "muted on all channels.\n" \
@@ -802,7 +819,8 @@ class SlackCommandHandlers(CommandHandler):
         say(msg[:-1] if msg.endswith('\n') else msg)
 
     @_execute_safely
-    def start_callback(self, ack: Ack, say: Say, command: Optional[Dict[str, Any]]) -> None:
+    def start_callback(self, ack: Ack, say: Say,
+                       command: Optional[Dict[str, Any]]) -> None:
         self.logger.info("/start: command=%s", command)
 
         # Acknowledge command request
