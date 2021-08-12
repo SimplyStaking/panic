@@ -4,10 +4,11 @@ from slack_sdk.web import SlackResponse
 
 
 class SlackBotApi:
-    def __init__(self, bot_token: str, bot_channel_name: str) -> None:
+    def __init__(self, bot_token: str, app_token: str, bot_channel_id: str) \
+            -> None:
         self._bot_token = bot_token
-        self._bot_channel_name = bot_channel_name
-        self._slack_channel_id = None
+        self._app_token = app_token
+        self._bot_channel_id = bot_channel_id
         self._app = None
 
     @property
@@ -15,24 +16,24 @@ class SlackBotApi:
         return self._bot_token
 
     @property
-    def bot_channel_name(self) -> str:
-        return self._bot_channel_name
+    def app_token(self) -> str:
+        return self._app_token
+
+    @property
+    def bot_channel_id(self) -> str:
+        return self._bot_channel_id
 
     def initialize_app(self) -> bool:
-        # Initialize Slack Bolt App and get channel ID
+        # Initialize Slack Bolt App
         try:
             self._app = App(token=self.bot_token)
-            for channel in self._app.client.conversations_list().get('channels', []):
-                if channel['name'] == self.bot_channel_name:
-                    self._slack_channel_id = channel['id']
-                    break
         except BoltError:
             return False
 
-        return self._slack_channel_id is not None
+        return True
 
     def send_message(self, message: str) -> SlackResponse:
-        if self._app is None or self._slack_channel_id is None:
+        if self._app is None:
             if not self.initialize_app():
                 return SlackResponse(
                     client=None,
@@ -40,9 +41,10 @@ class SlackBotApi:
                     api_url='',
                     req_args={},
                     data={'ok': False,
-                          'error': 'Invalid Slack token or Slack channel name'},
+                          'error': 'Invalid Slack bot token'},
                     headers={},
                     status_code=500,
                 )
 
-        return self._app.client.chat_postMessage(channel=self._slack_channel_id, text=message)
+        return self._app.client.chat_postMessage(channel=self.bot_channel_id,
+                                                 text=message)

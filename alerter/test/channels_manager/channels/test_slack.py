@@ -17,10 +17,13 @@ class TestSlackChannel(unittest.TestCase):
         self.test_channel_id = 'test_slack_id12345'
         self.dummy_logger = logging.getLogger('Dummy')
         self.dummy_logger.disabled = True
-        self.test_bot_token = 'test_bot_token'
-        self.test_slack_channel_name = 'test_slack_channel_name'
+        self.test_bot_token = 'xoxb-XXXXXXXXXXXX-TTTTTTTTTTTTTT'
+        self.test_app_token = 'xapp-Y-XXXXXXXXXXXX-TTTTTTTTTTTTT-LLLLLLLLLLLLL'
+        self.test_bot_channel_id = 'test_bot_channel_id'
 
-        self.test_slack_bot_api = SlackBotApi(self.test_bot_token, self.test_slack_channel_name)
+        self.test_slack_bot_api = SlackBotApi(self.test_bot_token,
+                                              self.test_app_token,
+                                              self.test_bot_channel_id)
         self.test_slack_channel = SlackChannel(
             self.test_channel_name, self.test_channel_id, self.dummy_logger,
             self.test_slack_bot_api)

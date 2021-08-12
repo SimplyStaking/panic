@@ -20,7 +20,8 @@ from src.channels_manager.channels.slack import SlackChannel
 from src.channels_manager.channels.twilio import TwilioChannel
 from src.channels_manager.commands.handlers.telegram_cmd_handlers import (
     TelegramCommandHandlers)
-from src.channels_manager.commands.handlers.slack_cmd_handlers import SlackCommandHandlers
+from src.channels_manager.commands.handlers.slack_cmd_handlers import \
+    SlackCommandHandlers
 from src.channels_manager.handlers import EmailAlertsHandler
 from src.channels_manager.handlers.console.alerts import ConsoleAlertsHandler
 from src.channels_manager.handlers.handler import ChannelHandler
@@ -207,7 +208,7 @@ def start_telegram_commands_handler(
 
 
 def _initialise_slack_alerts_handler(
-        bot_token: str, slack_channel_name: str,
+        bot_token: str, app_token: str, bot_channel_id: str,
         channel_id: str, channel_name: str) -> SlackAlertsHandler:
     # Handler display name based on channel name
     handler_display_name = SLACK_ALERTS_HANDLER_NAME_TEMPLATE.format(
@@ -218,7 +219,7 @@ def _initialise_slack_alerts_handler(
     # Try initialising handler until successful
     while True:
         try:
-            slack_bot = SlackBotApi(bot_token, slack_channel_name)
+            slack_bot = SlackBotApi(bot_token, app_token, bot_channel_id)
 
             slack_channel = SlackChannel(
                 channel_name, channel_id, handler_logger.getChild(
@@ -243,15 +244,17 @@ def _initialise_slack_alerts_handler(
     return slack_alerts_handler
 
 
-def start_slack_alerts_handler(bot_token: str, slack_channel_name: str,
-                               channel_id: str, channel_name: str) -> None:
+def start_slack_alerts_handler(bot_token: str, app_token: str,
+                               bot_channel_id: str, channel_id: str,
+                               channel_name: str) -> None:
     slack_alerts_handler = _initialise_slack_alerts_handler(
-        bot_token, slack_channel_name, channel_id, channel_name)
+        bot_token, app_token, bot_channel_id, channel_id, channel_name)
     start_handler(slack_alerts_handler)
 
 
 def _initialise_slack_commands_handler(
-        bot_token: str, bot_channel_name: str, channel_id: str, channel_name: str,
+        bot_token: str, app_token: str, bot_channel_id: str, channel_id: str,
+        channel_name: str,
         associated_chains: Dict) -> SlackCommandsHandler:
     # Handler display name based on channel name
     handler_display_name = SLACK_COMMANDS_HANDLER_NAME_TEMPLATE.format(
@@ -262,7 +265,7 @@ def _initialise_slack_commands_handler(
     # Try initialising handler until successful
     while True:
         try:
-            slack_bot = SlackBotApi(bot_token, bot_channel_name)
+            slack_bot = SlackBotApi(bot_token, app_token, bot_channel_id)
 
             slack_channel = SlackChannel(
                 channel_name, channel_id, handler_logger.getChild(
@@ -305,10 +308,12 @@ def _initialise_slack_commands_handler(
 
 
 def start_slack_commands_handler(
-        bot_token: str, bot_channel_name: str, channel_id: str, channel_name: str,
+        bot_token: str, app_token: str, bot_channel_id: str, channel_id: str,
+        channel_name: str,
         associated_chains: Dict) -> None:
     slack_commands_handler = _initialise_slack_commands_handler(
-        bot_token, bot_channel_name, channel_id, channel_name, associated_chains)
+        bot_token, app_token, bot_channel_id, channel_id, channel_name,
+        associated_chains)
     start_handler(slack_commands_handler)
 
 
