@@ -123,12 +123,11 @@ class SlackCommandHandlers(CommandHandler):
     @_execute_safely
     def ping_callback(self, ack: Ack, say: Say,
                       command: Optional[Dict[str, Any]]) -> None:
-        self.logger.info("/ping: command=%s", command)
-
         # Check that authorised
         if not self._authorise(ack, say, command):
             return
 
+        self.logger.info("/ping: command=%s", command)
         say("PONG!")
 
     @staticmethod
@@ -432,12 +431,11 @@ class SlackCommandHandlers(CommandHandler):
     @_execute_safely
     def status_callback(self, ack: Ack, say: Say,
                         command: Optional[Dict[str, Any]]) -> None:
-        self._logger.info("/panicstatus: command=%s", command)
-
         # Check that authorised
         if not self._authorise(ack, say, command):
             return
 
+        self._logger.info("/panicstatus: command=%s", command)
         # Start forming the status message
         say("Generating status...")
 
@@ -453,12 +451,11 @@ class SlackCommandHandlers(CommandHandler):
     @_execute_safely
     def unmute_callback(self, ack: Ack, say: Say,
                         command: Optional[Dict[str, Any]]) -> None:
-        self._logger.info("/unmute: command=%s", command)
-
         # Check that authorised
         if not self._authorise(ack, say, command):
             return
 
+        self._logger.info("/unmute: command=%s", command)
         say("Performing unmute...")
 
         associated_chains = self.associated_chains
@@ -515,12 +512,11 @@ class SlackCommandHandlers(CommandHandler):
     @_execute_safely
     def mute_callback(self, ack: Ack, say: Say,
                       command: Optional[Dict[str, Any]]) -> None:
-        self._logger.info("/panicmute: command=%s", command)
-
         # Check that authorised
         if not self._authorise(ack, say, command):
             return
 
+        self._logger.info("/panicmute: command=%s", command)
         say("Performing mute...")
 
         # Expected: /panicmute or /panicmute List[<severity>]
@@ -611,12 +607,11 @@ class SlackCommandHandlers(CommandHandler):
     def muteall_callback(self, ack: Ack, say: Say,
                          command: Optional[Dict[str, Any]]) \
             -> None:
-        self._logger.info("/muteall: command=%s", command)
-
         # Check that authorised
         if not self._authorise(ack, say, command):
             return
 
+        self._logger.info("/muteall: command=%s", command)
         say("Performing muteall...")
 
         # Expected: /muteall or /muteall List[<severity>]
@@ -705,12 +700,11 @@ class SlackCommandHandlers(CommandHandler):
     def unmuteall_callback(self, ack: Ack, say: Say,
                            command: Optional[Dict[str, Any]]) \
             -> None:
-        self.logger.info("/unmuteall: command=%s", command)
-
         # Check that authorised
         if not self._authorise(ack, say, command):
             return
 
+        self.logger.info("/unmuteall: command=%s", command)
         say("Performing unmuteall...")
 
         at_least_one_chain_was_muted = False
@@ -792,11 +786,11 @@ class SlackCommandHandlers(CommandHandler):
     @_execute_safely
     def help_callback(self, ack: Ack, say: Say,
                       command: Optional[Dict[str, Any]]) -> None:
-        self._logger.info("/help: command=%s", command)
-
         # Check that authorised
         if not self._authorise(ack, say, command):
             return
+
+        self._logger.info("/help: command=%s", command)
 
         associated_chains = self.associated_chains
         chain_names = \
@@ -830,12 +824,11 @@ class SlackCommandHandlers(CommandHandler):
     @_execute_safely
     def start_callback(self, ack: Ack, say: Say,
                        command: Optional[Dict[str, Any]]) -> None:
-        self.logger.info("/start: command=%s", command)
-
         # Check that authorised
         if not self._authorise(ack, say, command):
             return
 
+        self.logger.info("/start: command=%s", command)
         # Send welcome message
         say("Welcome to PANIC's Slack commands!\n"
             "Type /help for more information.")
