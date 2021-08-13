@@ -125,8 +125,10 @@ class SlackCommandHandlers(CommandHandler):
                       command: Optional[Dict[str, Any]]) -> None:
         self.logger.info("/ping: command=%s", command)
 
-        # Acknowledge command request
-        ack()
+        # Check that authorised
+        if not self._authorise(ack, say, command):
+            return
+
         say("PONG!")
 
     @staticmethod
@@ -432,8 +434,10 @@ class SlackCommandHandlers(CommandHandler):
                         command: Optional[Dict[str, Any]]) -> None:
         self._logger.info("/panicstatus: command=%s", command)
 
-        # Acknowledge command request
-        ack()
+        # Check that authorised
+        if not self._authorise(ack, say, command):
+            return
+
         # Start forming the status message
         say("Generating status...")
 
@@ -451,8 +455,9 @@ class SlackCommandHandlers(CommandHandler):
                         command: Optional[Dict[str, Any]]) -> None:
         self._logger.info("/unmute: command=%s", command)
 
-        # Acknowledge command request
-        ack()
+        # Check that authorised
+        if not self._authorise(ack, say, command):
+            return
 
         say("Performing unmute...")
 
@@ -512,8 +517,9 @@ class SlackCommandHandlers(CommandHandler):
                       command: Optional[Dict[str, Any]]) -> None:
         self._logger.info("/panicmute: command=%s", command)
 
-        # Acknowledge command request
-        ack()
+        # Check that authorised
+        if not self._authorise(ack, say, command):
+            return
 
         say("Performing mute...")
 
@@ -607,8 +613,9 @@ class SlackCommandHandlers(CommandHandler):
             -> None:
         self._logger.info("/muteall: command=%s", command)
 
-        # Acknowledge command request
-        ack()
+        # Check that authorised
+        if not self._authorise(ack, say, command):
+            return
 
         say("Performing muteall...")
 
@@ -700,8 +707,9 @@ class SlackCommandHandlers(CommandHandler):
             -> None:
         self.logger.info("/unmuteall: command=%s", command)
 
-        # Acknowledge command request
-        ack()
+        # Check that authorised
+        if not self._authorise(ack, say, command):
+            return
 
         say("Performing unmuteall...")
 
@@ -786,8 +794,9 @@ class SlackCommandHandlers(CommandHandler):
                       command: Optional[Dict[str, Any]]) -> None:
         self._logger.info("/help: command=%s", command)
 
-        # Acknowledge command request
-        ack()
+        # Check that authorised
+        if not self._authorise(ack, say, command):
+            return
 
         associated_chains = self.associated_chains
         chain_names = \
@@ -823,8 +832,10 @@ class SlackCommandHandlers(CommandHandler):
                        command: Optional[Dict[str, Any]]) -> None:
         self.logger.info("/start: command=%s", command)
 
-        # Acknowledge command request
-        ack()
+        # Check that authorised
+        if not self._authorise(ack, say, command):
+            return
+
         # Send welcome message
         say("Welcome to PANIC's Slack commands!\n"
             "Type /help for more information.")
@@ -835,5 +846,16 @@ class SlackCommandHandlers(CommandHandler):
         Slack handles unknown/invalid commands automatically.
         """
         pass
+
+    def _authorise(self, ack: Ack, say: Say,
+                   command: Optional[Dict[str, Any]]) -> bool:
+        authorised_bot_channel_id = \
+            self.slack_channel.slack_bot.bot_channel_id
+        if authorised_bot_channel_id in [None, command.get('channel_id', '')]:
+            # Acknowledge command request
+            ack()
+            return True
+        else:
+            return False
 
     _execute_safely = staticmethod(_execute_safely)

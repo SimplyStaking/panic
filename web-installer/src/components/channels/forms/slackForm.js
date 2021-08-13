@@ -159,7 +159,7 @@ const SlackForm = ({
                   endAdornment: (
                     <InputAdornment position="end">
                       <MuiThemeProvider theme={theme}>
-                        <Tooltip title={Data.slack.botChannelName} placement="left">
+                        <Tooltip title={Data.slack.botChannelId} placement="left">
                           <InfoIcon />
                         </Tooltip>
                       </MuiThemeProvider>
@@ -296,7 +296,6 @@ const SlackForm = ({
               <Grid container direction="row" justify="flex-end" alignItems="center">
                 <SendTestSlackButton
                   disabled={Object.keys(errors).length !== 0}
-                  channelName={values.channel_name}
                   botToken={values.bot_token}
                   botChannelId={values.bot_channel_id}
                 />

@@ -28,7 +28,8 @@ const SlackTable = ({ slacks, removeSlackDetails }) => {
             <TableRow>
               <StyledTableCell align="center">Slack Name</StyledTableCell>
               <StyledTableCell align="center">Bot Token</StyledTableCell>
-              <StyledTableCell align="center">Bot Channel Name</StyledTableCell>
+              <StyledTableCell align="center">App Token</StyledTableCell>
+              <StyledTableCell align="center">Bot Channel ID</StyledTableCell>
               <StyledTableCell align="center">Info</StyledTableCell>
               <StyledTableCell align="center">Warning</StyledTableCell>
               <StyledTableCell align="center">Critical</StyledTableCell>

@@ -143,12 +143,12 @@ function SendTestPagerDutyButton({ disabled, apiToken, integrationKey }) {
   );
 }
 
-function SendTestSlackButton({ disabled, botToken, botChannelName }) {
+function SendTestSlackButton({ disabled, botToken, botChannelId }) {
   const onClick = async () => {
     try {
       ToastsStore.info(
-        'Sending test alert. Make sure to check the name of the slack channel is'
-        + ` ${botChannelName}`, 5000,
+        'Sending test alert. Make sure to check the ID of the slack channel is'
+        + ` ${botChannelId}`, 5000,
       );
 
       // WebClient instantiates a client that can call API methods
@@ -159,20 +159,9 @@ function SendTestSlackButton({ disabled, botToken, botChannelName }) {
         logLevel: LogLevel.DEBUG,
       });
 
-      // Return the conversation ID of the channel name
-      // Call the conversations.list method using the built-in WebClient
-      let result = await client.conversations.list({ botToken });
-      let conversationId;
-      Object.values(result.channels).forEach((value) => {
-        if (value.name === botChannelName) {
-          conversationId = value.id;
-        }
-      });
-
       // Call the chat.postMessage method using the built-in WebClient
-      result = await client.chat.postMessage({
-        botToken,
-        channel: conversationId,
+      await client.chat.postMessage({
+        channel: botChannelId,
         text: '*Test Alert*',
       });
 
@@ -508,7 +497,7 @@ SendTestTelegramButton.propTypes = forbidExtraProps({
 SendTestSlackButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   botToken: PropTypes.string.isRequired,
-  botChannelName: PropTypes.string.isRequired,
+  botChannelId: PropTypes.string.isRequired,
 });
 
 SaveConfigButton.propTypes = forbidExtraProps({
