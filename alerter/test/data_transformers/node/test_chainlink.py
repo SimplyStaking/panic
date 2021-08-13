@@ -260,7 +260,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                             'address': 'address1',
                             'balance': self.test_eth_balance_info_new[
                                 'balance'],
-                            },
+                        },
                     },
                 }
             }
@@ -1067,102 +1067,102 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
 
     @parameterized.expand([
         ({
-            'prometheus': {
-                'result': {
-                    'meta_data': {
-                        'node_parent_id': 'node_parent_id1',
-                        'node_id': 'node_id1',
-                        'node_name': 'node_name1',
-                    }
-                }
-            }
-        }, (True, 'node_parent_id1', 'node_id1', 'node_name1',),),
+             'prometheus': {
+                 'result': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, (True, 'node_parent_id1', 'node_id1', 'node_name1',),),
         ({
-            'prometheus': {
-                'error': {
-                    'meta_data': {
-                        'node_parent_id': 'node_parent_id1',
-                        'node_id': 'node_id1',
-                        'node_name': 'node_name1',
-                    }
-                }
-            }
-        }, (True, 'node_parent_id1', 'node_id1', 'node_name1',),),
+             'prometheus': {
+                 'error': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, (True, 'node_parent_id1', 'node_id1', 'node_name1',),),
         ({
-            'prometheus': {
-                'error': {
-                    'meta_data': {
-                        'bad_node_parent_id_index': 'node_parent_id1',
-                        'node_id': 'node_id1',
-                        'node_name': 'node_name1',
-                    }
-                }
-            }
-        }, None,),
+             'prometheus': {
+                 'error': {
+                     'meta_data': {
+                         'bad_node_parent_id_index': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, None,),
         ({
-            'prometheus': {
-                'error': {
-                    'meta_data': {
-                        'node_parent_id': 'node_parent_id1',
-                        'bad_node_id_index': 'node_id1',
-                        'node_name': 'node_name1',
-                    }
-                }
-            }
-        }, None,),
+             'prometheus': {
+                 'error': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'bad_node_id_index': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, None,),
         ({
-            'prometheus': {
-                'error': {
-                    'meta_data': {
-                        'node_parent_id': 'node_parent_id1',
-                        'node_id': 'node_id1',
-                        'bad_node_name_index': 'node_name1',
-                    }
-                }
-            }
-        }, None,),
+             'prometheus': {
+                 'error': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'bad_node_name_index': 'node_name1',
+                     }
+                 }
+             }
+         }, None,),
         ({
-            'prometheus': {
-                'bad_index': {
-                    'meta_data': {
-                        'node_parent_id': 'node_parent_id1',
-                        'node_id': 'node_id1',
-                        'node_name': 'node_name1',
-                    }
-                }
-            }
-        }, None,),
+             'prometheus': {
+                 'bad_index': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, None,),
         ({
-            'prometheus': {
-                'result': {
-                    'meta_data': {
-                        'node_parent_id': 'node_parent_id1',
-                        'node_id': 'node_id1',
-                        'node_name': 'node_name1',
-                    }
-                }
-            },
-            'bad_source': {
-                'result': {
-                    'meta_data': {
-                        'node_parent_id': 'node_parent_id1',
-                        'node_id': 'node_id1',
-                        'node_name': 'node_name1',
-                    }
-                }
-            }
-        }, None,),
+             'prometheus': {
+                 'result': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             },
+             'bad_source': {
+                 'result': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, None,),
         ({
-            'bad_source': {
-                'result': {
-                    'meta_data': {
-                        'node_parent_id': 'node_parent_id1',
-                        'node_id': 'node_id1',
-                        'node_name': 'node_name1',
-                    }
-                }
-            }
-        }, None,),
+             'bad_source': {
+                 'result': {
+                     'meta_data': {
+                         'node_parent_id': 'node_parent_id1',
+                         'node_id': 'node_id1',
+                         'node_name': 'node_name1',
+                     }
+                 }
+             }
+         }, None,),
         ({'prometheus': {}}, None,),
     ])
     def test_raw_data_has_valid_sources_structure_return(
