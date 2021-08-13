@@ -165,15 +165,6 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         actual_ret = self.test_telegram_command_handlers.redis_running()
         self.assertTrue(actual_ret)
 
-    @mock.patch.object(RedisApi, "ping_unsafe")
-    def test_redis_running_returns_true_if_redis_is_running(
-            self, mock_ping_unsafe) -> None:
-        # If redis is down an exception is always raised, therefore we can mock
-        # that an exception is not raised when calling RedisApi.ping_unsafe
-        mock_ping_unsafe.return_value = None
-        actual_ret = self.test_telegram_command_handlers.redis_running()
-        self.assertTrue(actual_ret)
-
     @parameterized.expand([
         (RedisError('test'),),
         (ConnectionResetError('test'),),

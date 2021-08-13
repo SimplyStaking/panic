@@ -8,7 +8,7 @@ import pika
 import pika.exceptions
 from pymongo.errors import PyMongoError
 from redis import RedisError
-from slack_bolt import App, Ack, Say
+from slack_bolt import Ack, Say
 
 from src.alerter.alert_severities import Severity
 from src.channels_manager.channels.slack import SlackChannel
@@ -44,7 +44,6 @@ class SlackCommandHandlers(CommandHandler):
         self._mongo = mongo
         self._associated_chains = associated_chains
         self._slack_channel = slack_channel
-        self._app = App(token=self.slack_channel.slack_bot.bot_token)
 
     @property
     def rabbitmq(self) -> RabbitMQApi:
@@ -65,10 +64,6 @@ class SlackCommandHandlers(CommandHandler):
     @property
     def slack_channel(self) -> SlackChannel:
         return self._slack_channel
-
-    @property
-    def app(self) -> App:
-        return self._app
 
     def _execute_safely(function):
         def execute_callback_safely(self, ack: Ack, say: Say,
@@ -124,7 +119,7 @@ class SlackCommandHandlers(CommandHandler):
     def ping_callback(self, ack: Ack, say: Say,
                       command: Optional[Dict[str, Any]]) -> None:
         # Check that authorised
-        if not self._authorise(ack, say, command):
+        if not self._authorise(ack, command):
             return
 
         self.logger.info("/ping: command=%s", command)
@@ -432,7 +427,7 @@ class SlackCommandHandlers(CommandHandler):
     def status_callback(self, ack: Ack, say: Say,
                         command: Optional[Dict[str, Any]]) -> None:
         # Check that authorised
-        if not self._authorise(ack, say, command):
+        if not self._authorise(ack, command):
             return
 
         self._logger.info("/panicstatus: command=%s", command)
@@ -452,7 +447,7 @@ class SlackCommandHandlers(CommandHandler):
     def unmute_callback(self, ack: Ack, say: Say,
                         command: Optional[Dict[str, Any]]) -> None:
         # Check that authorised
-        if not self._authorise(ack, say, command):
+        if not self._authorise(ack, command):
             return
 
         self._logger.info("/unmute: command=%s", command)
@@ -513,7 +508,7 @@ class SlackCommandHandlers(CommandHandler):
     def mute_callback(self, ack: Ack, say: Say,
                       command: Optional[Dict[str, Any]]) -> None:
         # Check that authorised
-        if not self._authorise(ack, say, command):
+        if not self._authorise(ack, command):
             return
 
         self._logger.info("/panicmute: command=%s", command)
@@ -608,7 +603,7 @@ class SlackCommandHandlers(CommandHandler):
                          command: Optional[Dict[str, Any]]) \
             -> None:
         # Check that authorised
-        if not self._authorise(ack, say, command):
+        if not self._authorise(ack, command):
             return
 
         self._logger.info("/muteall: command=%s", command)
@@ -701,7 +696,7 @@ class SlackCommandHandlers(CommandHandler):
                            command: Optional[Dict[str, Any]]) \
             -> None:
         # Check that authorised
-        if not self._authorise(ack, say, command):
+        if not self._authorise(ack, command):
             return
 
         self.logger.info("/unmuteall: command=%s", command)
@@ -787,7 +782,7 @@ class SlackCommandHandlers(CommandHandler):
     def help_callback(self, ack: Ack, say: Say,
                       command: Optional[Dict[str, Any]]) -> None:
         # Check that authorised
-        if not self._authorise(ack, say, command):
+        if not self._authorise(ack, command):
             return
 
         self._logger.info("/help: command=%s", command)
@@ -825,7 +820,7 @@ class SlackCommandHandlers(CommandHandler):
     def start_callback(self, ack: Ack, say: Say,
                        command: Optional[Dict[str, Any]]) -> None:
         # Check that authorised
-        if not self._authorise(ack, say, command):
+        if not self._authorise(ack, command):
             return
 
         self.logger.info("/start: command=%s", command)
@@ -840,8 +835,7 @@ class SlackCommandHandlers(CommandHandler):
         """
         pass
 
-    def _authorise(self, ack: Ack, say: Say,
-                   command: Optional[Dict[str, Any]]) -> bool:
+    def _authorise(self, ack: Ack, command: Optional[Dict[str, Any]]) -> bool:
         authorised_bot_channel_id = \
             self.slack_channel.slack_bot.bot_channel_id
         if authorised_bot_channel_id in [None, command.get('channel_id', '')]:
