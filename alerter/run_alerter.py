@@ -35,10 +35,10 @@ from src.utils.constants.rabbitmq import (
     SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
     CHANNELS_MANAGER_CONFIGS_QUEUE_NAME, GH_MON_MAN_CONFIGS_QUEUE_NAME,
     SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIGS_STORE_INPUT_QUEUE_NAME,
-    NODE_MON_MAN_CONFIGS_QUEUE_NAME, NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
-    GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS, GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+    NODE_MON_MAN_CONFIGS_QUEUE_NAME, EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS,
+    NODES_CONFIGS_ROUTING_KEY_CHAINS, GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+    GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
-    SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES,
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
     ALERTS_CONFIGS_ROUTING_KEY_CHAIN,
     ALERTS_CONFIGS_ROUTING_KEY_GEN, ALERT_ROUTER_CONFIGS_ROUTING_KEY,
@@ -778,10 +778,10 @@ def _initialise_and_declare_config_queues() -> None:
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES),
+                                 NODES_CONFIGS_ROUTING_KEY_CHAINS),
                 dummy_logger)
             rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
-                                SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES)
+                                NODES_CONFIGS_ROUTING_KEY_CHAINS)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
@@ -800,11 +800,20 @@ def _initialise_and_declare_config_queues() -> None:
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS),
+                                 NODES_CONFIGS_ROUTING_KEY_CHAINS),
                 dummy_logger)
             rabbitmq.queue_bind(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
                                 CONFIG_EXCHANGE,
-                                NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
+                                NODES_CONFIGS_ROUTING_KEY_CHAINS)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS),
+                dummy_logger)
+            rabbitmq.queue_bind(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS)
 
             # Config Store queues
             log_and_print("Creating queue '{}'".format(
