@@ -7,16 +7,15 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { PingPrometheus } from 'utils/buttons';
+import { PingRPC } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
-import { Autocomplete } from '@material-ui/lab';
 import Button from 'components/material_ui/CustomButtons/Button';
 import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
 import GridContainer from 'components/material_ui/Grid/GridContainer';
 import GridItem from 'components/material_ui/Grid/GridItem';
 
-const NodesForm = ({
+const EvmNodesForm = ({
   errors,
   values,
   handleSubmit,
@@ -26,17 +25,13 @@ const NodesForm = ({
 }) => {
   const classes = useStyles();
 
-  const updatePrometheusUrl = (event, nodePrometheusUrl) => {
-    setFieldValue('node_prometheus_urls', nodePrometheusUrl);
-  };
-
   return (
     <MuiThemeProvider theme={defaultTheme}>
       <div>
         <div className={classes.subsection}>
           <GridContainer justify="center">
             <GridItem xs={12} sm={12} md={8}>
-              <h1 className={classes.title}>{data.nodeForm.title}</h1>
+              <h1 className={classes.title}>{data.evmForm.title}</h1>
             </GridItem>
           </GridContainer>
         </div>
@@ -49,7 +44,7 @@ const NodesForm = ({
                   fontSize: '1.2rem',
                 }}
               >
-                {data.nodeForm.description}
+                {data.evmForm.description}
               </p>
             </Box>
           </Typography>
@@ -59,14 +54,14 @@ const NodesForm = ({
               <Grid container spacing={3} justify="center" alignItems="center">
                 <Grid item xs={12}>
                   <CssTextField
-                    id="chain-name-outlined-full-width"
+                    id="evm-node-name-outlined-full-width"
                     error={!!(errors.name)}
                     value={values.name}
                     label="Node name"
                     type="text"
                     style={{ margin: 8 }}
                     name="name"
-                    placeholder={data.nodeForm.nameHolder}
+                    placeholder={data.evmForm.nameHolder}
                     helperText={errors.name ? errors.name : ''}
                     onChange={handleChange}
                     fullWidth
@@ -80,7 +75,7 @@ const NodesForm = ({
                       endAdornment: (
                         <InputAdornment position="end">
                           <MuiThemeProvider theme={theme}>
-                            <Tooltip title={data.nodeForm.nameTip} placement="left">
+                            <Tooltip title={data.evmForm.nameTip} placement="left">
                               <InfoIcon />
                             </Tooltip>
                           </MuiThemeProvider>
@@ -89,58 +84,41 @@ const NodesForm = ({
                     }}
                   />
                 </Grid>
-                <Grid item xs={8}>
-                  <Autocomplete
-                    multiple
-                    freeSolo
-                    options={[]}
-                    onChange={updatePrometheusUrl}
-                    value={values.node_prometheus_urls}
-                    renderInput={(params) => (
-                      <CssTextField
-                        // eslint-disable-next-line react/jsx-props-no-spreading
-                        {...params}
-                        id="prometheus-url-outlined-full-width"
-                        label="Prometheus URL"
-                        type="text"
-                        style={{ margin: 8 }}
-                        name="node_prometheus_urls"
-                        placeholder={data.nodeForm.prometheusHolder}
-                        fullWidth
-                        margin="normal"
-                        InputLabelProps={{
-                          shrink: true,
-                        }}
-                        variant="outlined"
-                        autoComplete="off"
-                      />
-                    )}
+                <Grid item xs={10}>
+                  <CssTextField
+                    id="evm-node-http-url-outlined-full-width"
+                    value={values.node_http_url}
+                    label="RPC URL"
+                    type="text"
+                    style={{ margin: 8 }}
+                    name="node_http_url"
+                    placeholder={data.evmForm.httpUrlHolder}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    variant="outlined"
+                    autoComplete="off"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <MuiThemeProvider theme={theme}>
+                            <Tooltip title={data.evmForm.httpUrlTip} placement="left">
+                              <InfoIcon />
+                            </Tooltip>
+                          </MuiThemeProvider>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
                 </Grid>
                 <Grid item xs={2}>
                   <Grid container direction="row" justify="flex-end" alignItems="center">
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          checked={values.monitor_prometheus}
-                          onClick={() => {
-                            setFieldValue('monitor_prometheus', !values.monitor_prometheus);
-                          }}
-                          name="monitor_prometheus"
-                          color="primary"
-                        />
-                      )}
-                      label="Monitor"
-                      labelPlacement="start"
-                    />
-                  </Grid>
-                </Grid>
-                <Grid item xs={2}>
-                  <Grid container direction="row" justify="flex-end" alignItems="center">
-                    <PingPrometheus
+                    <PingRPC
                       disabled={false}
-                      prometheusUrl={values.node_prometheus_urls}
-                      metric="max_unconfirmed_blocks"
+                      httpUrl={values.node_http_url}
                     />
                   </Grid>
                 </Grid>
@@ -168,7 +146,7 @@ const NodesForm = ({
                   <Grid container justify="flex-start">
                     <MuiThemeProvider theme={theme}>
                       <Tooltip
-                        title={data.nodeForm.monitorNodeTip}
+                        title={data.evmForm.monitorNodeTip}
                         placement="left"
                       >
                         <InfoIcon />
@@ -205,27 +183,26 @@ const NodesForm = ({
   );
 };
 
-NodesForm.propTypes = {
+EvmNodesForm.propTypes = {
   errors: PropTypes.shape({
     name: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     name: PropTypes.string.isRequired,
-    node_prometheus_urls: PropTypes.arrayOf(PropTypes.string.isRequired),
-    monitor_prometheus: PropTypes.bool.isRequired,
+    node_http_url: PropTypes.string.isRequired,
     monitor_node: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
   data: PropTypes.shape({
-    nodeForm: PropTypes.shape({
+    evmForm: PropTypes.shape({
       title: PropTypes.string.isRequired,
       description: PropTypes.string.isRequired,
       nameHolder: PropTypes.string.isRequired,
       nameTip: PropTypes.string.isRequired,
-      prometheusHolder: PropTypes.string.isRequired,
-      prometheusTip: PropTypes.string.isRequired,
+      httpUrlHolder: PropTypes.string.isRequired,
+      httpUrlTip: PropTypes.string.isRequired,
       monitorNodeTip: PropTypes.string.isRequired,
       backStep: PropTypes.string.isRequired,
       nextStep: PropTypes.string.isRequired,
@@ -233,4 +210,4 @@ NodesForm.propTypes = {
   }).isRequired,
 };
 
-export default NodesForm;
+export default EvmNodesForm;

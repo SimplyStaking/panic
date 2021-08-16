@@ -4,6 +4,8 @@ import {
   removeChainChainlink,
   loadConfigChainlink,
   removeNodeChainlink,
+  removeNodeEvm,
+  removeWeiWatchers,
 } from 'redux/actions/chainlinkActions';
 import {
   removeRepository,
@@ -36,6 +38,8 @@ function mapDispatchToProps(dispatch) {
     pageChanger: (page) => dispatch(changePage(page)),
     removeChainDetails: (details) => dispatch(removeChainChainlink(details)),
     removeNodeDetails: (details) => dispatch(removeNodeChainlink(details)),
+    removeNodeEvmDetails: (details) => dispatch(removeNodeEvm(details)),
+    removeWeiWatchersDetails: (details) => dispatch(removeWeiWatchers(details)),
     removeRepositoryDetails: (details) => dispatch(removeRepository(details)),
     loadConfigDetails: (details) => dispatch(loadConfigChainlink(details)),
     removeOpsGenieDetails: (details) => dispatch(removeOpsGenieChannel(details)),

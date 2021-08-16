@@ -1,44 +1,31 @@
 import * as Yup from 'yup';
+import { checkSourceName } from 'utils/helpers';
 
 const DockerHubSchema = (props) => Yup.object().shape({
   name: Yup.string()
     .test('unique-dockerHub-name', 'Name already exists.', (value) => {
       const {
-        systemConfig, substrateNodesConfig, cosmosNodesConfig, reposConfig,
-        dockerHubConfig, chainlinkNodesConfig,
+        systemConfig,
+        substrateNodesConfig,
+        cosmosNodesConfig,
+        reposConfig,
+        dockerHubConfig,
+        chainlinkNodesConfig,
+        evmNodesConfig,
       } = props;
 
-      for (let i = 0; i < chainlinkNodesConfig.allIds.length; i += 1) {
-        if (chainlinkNodesConfig.byId[chainlinkNodesConfig.allIds[i]].name === value) {
-          return false;
-        }
-      }
-      for (let i = 0; i < substrateNodesConfig.allIds.length; i += 1) {
-        if (substrateNodesConfig.byId[substrateNodesConfig.allIds[i]].name === value) {
-          return false;
-        }
-      }
-      for (let i = 0; i < cosmosNodesConfig.allIds.length; i += 1) {
-        if (cosmosNodesConfig.byId[cosmosNodesConfig.allIds[i]].name === value) {
-          return false;
-        }
-      }
-      for (let i = 0; i < systemConfig.allIds.length; i += 1) {
-        if (systemConfig.byId[systemConfig.allIds[i]].name === value) {
-          return false;
-        }
-      }
-      for (let i = 0; i < reposConfig.allIds.length; i += 1) {
-        if (reposConfig.byId[reposConfig.allIds[i]].repo_name === value) {
-          return false;
-        }
-      }
-      for (let i = 0; i < dockerHubConfig.allIds.length; i += 1) {
-        if (dockerHubConfig.byId[dockerHubConfig.allIds[i]].name === value) {
-          return false;
-        }
-      }
-      return true;
+      return checkSourceName(
+        value,
+        ...[
+          evmNodesConfig,
+          chainlinkNodesConfig,
+          cosmosNodesConfig,
+          substrateNodesConfig,
+          systemConfig,
+          reposConfig,
+          dockerHubConfig,
+        ],
+      );
     })
     .required('DockerHub name is required.'),
 });

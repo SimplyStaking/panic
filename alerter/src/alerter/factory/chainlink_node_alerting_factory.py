@@ -70,9 +70,7 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
         if node_id not in self.alerting_state[parent_id]:
             warning_sent = {
                 AlertsMetricCode.NoChangeInHeight.value: False,
-                AlertsMetricCode.HeadsInQueueThreshold.value: False,
                 AlertsMetricCode.NoChangeInTotalHeadersReceived.value: False,
-                AlertsMetricCode.DroppedBlockHeadersThreshold.value: False,
                 AlertsMetricCode.MaxUnconfirmedBlocksThreshold.value: False,
                 AlertsMetricCode.NoOfUnconfirmedTxsThreshold.value: False,
                 AlertsMetricCode.TotalErroredJobRunsThreshold.value: False,
@@ -82,9 +80,7 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
             }
             critical_sent = {
                 AlertsMetricCode.NoChangeInHeight.value: False,
-                AlertsMetricCode.HeadsInQueueThreshold.value: False,
                 AlertsMetricCode.NoChangeInTotalHeadersReceived.value: False,
-                AlertsMetricCode.DroppedBlockHeadersThreshold.value: False,
                 AlertsMetricCode.MaxUnconfirmedBlocksThreshold.value: False,
                 AlertsMetricCode.NoOfUnconfirmedTxsThreshold.value: False,
                 AlertsMetricCode.TotalErroredJobRunsThreshold.value: False,
@@ -99,18 +95,9 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
             current_head_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 cl_node_alerts_config.head_tracker_current_head)
-            heads_in_queue_thresholds = parse_alert_time_thresholds(
-                ['warning_time_window', 'critical_time_window',
-                 'critical_repeat'],
-                cl_node_alerts_config.head_tracker_heads_in_queue)
             total_headers_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 cl_node_alerts_config.head_tracker_heads_received_total)
-            dropped_headers_thresholds = parse_alert_time_thresholds(
-                ['warning_time_window', 'critical_time_window',
-                 'critical_repeat'],
-                cl_node_alerts_config.head_tracker_num_heads_dropped_total
-            )
             unconfirmed_blocks_thresholds = parse_alert_time_thresholds(
                 ['warning_time_window', 'critical_time_window',
                  'critical_repeat'],
@@ -138,9 +125,6 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                 AlertsMetricCode.NoChangeInHeight.value: TimedTaskTracker(
                     timedelta(seconds=current_head_thresholds[
                         'warning_threshold'])),
-                AlertsMetricCode.HeadsInQueueThreshold.value: TimedTaskTracker(
-                    timedelta(seconds=heads_in_queue_thresholds[
-                        'warning_time_window'])),
                 AlertsMetricCode.NoChangeInTotalHeadersReceived.value:
                     TimedTaskTracker(timedelta(seconds=total_headers_thresholds[
                         'warning_threshold'])),
@@ -159,9 +143,6 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                 AlertsMetricCode.NoChangeInHeight.value: TimedTaskTracker(
                     timedelta(seconds=current_head_thresholds[
                         'critical_threshold'])),
-                AlertsMetricCode.HeadsInQueueThreshold.value: TimedTaskTracker(
-                    timedelta(seconds=heads_in_queue_thresholds[
-                        'critical_time_window'])),
                 AlertsMetricCode.NoChangeInTotalHeadersReceived.value:
                     TimedTaskTracker(timedelta(seconds=total_headers_thresholds[
                         'critical_threshold'])),
@@ -180,15 +161,9 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                 AlertsMetricCode.NoChangeInHeight.value: TimedTaskLimiter(
                     timedelta(seconds=current_head_thresholds[
                         'critical_repeat'])),
-                AlertsMetricCode.HeadsInQueueThreshold.value: TimedTaskLimiter(
-                    timedelta(seconds=heads_in_queue_thresholds[
-                        'critical_repeat'])),
                 AlertsMetricCode.NoChangeInTotalHeadersReceived.value:
                     TimedTaskLimiter(timedelta(seconds=total_headers_thresholds[
                         'critical_repeat'])),
-                AlertsMetricCode.DroppedBlockHeadersThreshold.value:
-                    TimedTaskLimiter(timedelta(
-                        seconds=dropped_headers_thresholds['critical_repeat'])),
                 AlertsMetricCode.MaxUnconfirmedBlocksThreshold.value:
                     TimedTaskLimiter(timedelta(
                         seconds=unconfirmed_blocks_thresholds[
@@ -206,19 +181,11 @@ class ChainlinkNodeAlertingFactory(AlertingFactory):
                     seconds=node_is_down_thresholds['critical_repeat'])),
             }
             warning_occurrences_in_period_tracker = {
-                AlertsMetricCode.DroppedBlockHeadersThreshold.value:
-                    OccurrencesInTimePeriodTracker(timedelta(
-                        seconds=dropped_headers_thresholds[
-                            'warning_time_window'])),
                 AlertsMetricCode.TotalErroredJobRunsThreshold.value:
                     OccurrencesInTimePeriodTracker(timedelta(
                         seconds=error_jobs_thresholds['warning_time_window'])),
             }
             critical_occurrences_in_period_tracker = {
-                AlertsMetricCode.DroppedBlockHeadersThreshold.value:
-                    OccurrencesInTimePeriodTracker(timedelta(
-                        seconds=dropped_headers_thresholds[
-                            'critical_time_window'])),
                 AlertsMetricCode.TotalErroredJobRunsThreshold.value:
                     OccurrencesInTimePeriodTracker(timedelta(
                         seconds=error_jobs_thresholds['critical_time_window'])),

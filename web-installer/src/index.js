@@ -8,7 +8,7 @@ import './index.css';
 import App from './App';
 
 // Uncomment to be able to access the store from Chrome console.
-// window.store = store;
+window.store = store;
 
 ReactDOM.render(
   <Provider store={store}>

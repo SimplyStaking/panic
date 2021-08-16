@@ -8,6 +8,10 @@ import {
   REMOVE_NODE_CHAINLINK,
   REMOVE_CHAIN_CHAINLINK,
   UPDATE_CHAIN_NAME_CHAINLINK,
+  ADD_NODE_EVM,
+  REMOVE_NODE_EVM,
+  ADD_WEIWATCHERS,
+  REMOVE_WEIWATCHERS,
   RESET_CHAIN_CHAINLINK,
   ADD_REPOSITORY,
   REMOVE_REPOSITORY,
@@ -212,19 +216,20 @@ const chainlinkThresholdAlerts = {
       enabled: true,
     },
     10: {
-      name: 'Ethereum-based node is down.',
-      identifier: 'ethereum_based_node_is_down',
+      name: 'Chainlink Contracts: Node did not respond in the latest round.',
+      identifier: 'price_feed_not_observed',
       description:
-        'All data sources for the node are unreachable therefore the node is is declared to be down.',
-      adornment: 'Seconds',
+        'If a round has ended and the node operator did not submit a '
+        + 'price feed observation in that round an alert is raised.',
+      adornment: 'Missed Rounds',
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 10,
+        threshold: 1,
         enabled: true,
       },
       critical: {
-        threshold: 200,
+        threshold: 2,
         repeat: 300,
         repeat_enabled: true,
         enabled: true,
@@ -232,23 +237,24 @@ const chainlinkThresholdAlerts = {
       enabled: true,
     },
     11: {
-      name: 'Ethereum-based node: height difference between nodes.',
-      identifier: 'ethereum_based_node_height_difference',
+      name: "Chainlink Contracts: Node's answer deviates from the median answer.",
+      identifier: 'price_feed_deviation',
       description:
-        'Difference in node height between nodes being monitored, if a node is '
-        + 'significantly behind the node with the highest block height.',
-      adornment: 'Blocks',
+        'If a round has ended and the node operator submitted a '
+        + 'price feed observation that deviates from the median by a certain threshold '
+        + 'an alert is raised.',
+      adornment: '%',
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 1000,
+        threshold: 4,
         enabled: true,
       },
       critical: {
-        threshold: 10000,
+        threshold: 5,
         repeat: 300,
-        repeat_enabled: false,
-        enabled: false,
+        repeat_enabled: true,
+        enabled: true,
       },
       enabled: true,
     },
@@ -327,37 +333,13 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-    15: {
-      name: 'Ethereum-based node: Block height.',
-      identifier: 'chain_head_block',
-      description:
-        'Last block processed by an ethereum-based node. Example: If no blocks '
-        + 'are processed in 2 minutes then send a warning alert. If less than 5 '
-        + 'blocks are processed in 5 minutes then send a critical alert.',
-      adornment_threshold: 'Blocks',
-      adornment_time: 'Seconds',
-      parent_id: '',
-      warning: {
-        threshold: 0,
-        time_window: 120,
-        enabled: true,
-      },
-      critical: {
-        threshold: 5,
-        time_window: 300,
-        repeat: 300,
-        repeat_enabled: true,
-        enabled: true,
-      },
-      enabled: true,
-    },
   },
-  allIds: ['12', '13', '14', '15'],
+  allIds: ['12', '13', '14'],
 };
 
 const chainlinkSeverityAlerts = {
   byId: {
-    16: {
+    15: {
       name: 'Chainlink node: Node Switch',
       identifier: 'process_start_time_seconds',
       description:
@@ -367,29 +349,37 @@ const chainlinkSeverityAlerts = {
       parent_id: '',
       enabled: true,
     },
-    17: {
+    16: {
       name: 'Ethereum Balance Topped Up',
       identifier: 'eth_balance_amount_increase',
-      description:
-        'Whenever the ethereum balance of a node is topped up you will get alerted.',
+      description: 'Whenever the ethereum balance of a node is topped up you will get alerted.',
       severity: INFO,
       parent_id: '',
       enabled: true,
     },
-    18: {
+    17: {
       name: "Chainlink node: Gas price increases over the node's price limit",
       identifier: 'tx_manager_gas_bump_exceeds_limit_total',
       description:
         'If the current gas price is higher than the gas limit of the node an '
         + 'alert should is raised',
-      adornment: 'Seconds',
-      adornment_time: 'Seconds',
       severity: CRITICAL,
       parent_id: '',
       enabled: true,
     },
+    18: {
+      name: 'Chainlink Contracts: Consensus Failure',
+      identifier: 'consensus_failure',
+      description:
+        'If the number of oracles that have submitted their observations, '
+        + 'is less than the minimum requirement. Severity is set as warning as from a node '
+        + 'operator perspective there is nothing one can do.',
+      severity: INFO,
+      parent_id: '',
+      enabled: true,
+    },
   },
-  allIds: ['16', '17', '18'],
+  allIds: ['15', '16', '17', '18'],
 };
 
 // Reducers to add and remove chainlink node configurations from global state
@@ -427,6 +417,48 @@ const ChainlinkNodesReducer = combineReducers({
   allIds: allNodes,
 });
 
+// Reducers to add and remove evm node configurations from global state
+function evmNodesById(state = {}, action) {
+  switch (action.type) {
+    case ADD_NODE_EVM:
+      return {
+        ...state,
+        [action.payload.id]: action.payload,
+      };
+    case REMOVE_NODE_EVM:
+      return _.omit(state, action.payload.id);
+    default:
+      return state;
+  }
+}
+
+// Reducers to add and remove from list of all evm nodes
+function allEvmNodes(state = [], action) {
+  switch (action.type) {
+    case ADD_NODE_EVM:
+      if (state.includes(action.payload.id)) {
+        return state;
+      }
+      return state.concat(action.payload.id);
+    case REMOVE_NODE_EVM:
+      return state.filter((config) => config !== action.payload.id);
+    default:
+      return state;
+  }
+}
+
+const EvmNodesReducer = combineReducers({
+  byId: evmNodesById,
+  allIds: allEvmNodes,
+});
+
+const weiWatchersData = {
+  parent_id: '',
+  weiwatchers_url: '',
+  monitor_contract: false,
+  network_name: '',
+};
+
 function chainlinkChainsById(state = {}, action) {
   switch (action.type) {
     case ADD_CHAIN_CHAINLINK:
@@ -439,6 +471,8 @@ function chainlinkChainsById(state = {}, action) {
           id: action.payload.id,
           chain_name: action.payload.chain_name,
           nodes: [],
+          evmNodes: [],
+          weiWatchers: weiWatchersData,
           githubRepositories: [],
           dockerHubs: [],
           systems: [],
@@ -479,6 +513,43 @@ function chainlinkChainsById(state = {}, action) {
           ),
         },
       };
+    case ADD_NODE_EVM:
+      if (state[action.payload.parent_id].evmNodes.includes(action.payload.id)) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          evmNodes: state[action.payload.parent_id].evmNodes.concat(action.payload.id),
+        },
+      };
+    case REMOVE_NODE_EVM:
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          evmNodes: state[action.payload.parent_id].evmNodes.filter(
+            (config) => config !== action.payload.id,
+          ),
+        },
+      };
+    case ADD_WEIWATCHERS:
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          weiWatchers: action.payload,
+        },
+      };
+    case REMOVE_WEIWATCHERS:
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          weiWatchers: weiWatchersData,
+        },
+      };
     case ADD_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
@@ -507,7 +578,7 @@ function chainlinkChainsById(state = {}, action) {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          githubRepositories: state[action.payload.parent_id].repositories.filter(
+          githubRepositories: state[action.payload.parent_id].githubRepositories.filter(
             (config) => config !== action.payload.id,
           ),
         },
@@ -721,6 +792,7 @@ function CurrentChainlinkChain(state = '', action) {
 
 export {
   ChainlinkNodesReducer,
+  EvmNodesReducer,
   ChainlinkChainsReducer,
   CurrentChainlinkChain,
   chainlinkRepeatAlerts,

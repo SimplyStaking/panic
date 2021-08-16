@@ -3,11 +3,7 @@ from typing import Union, Any
 
 from src.alerter.alerts.node.chainlink import (
     NoChangeInHeightAlert, BlockHeightUpdatedAlert,
-    HeadsInQueueIncreasedAboveThresholdAlert,
-    HeadsInQueueDecreasedBelowThresholdAlert,
     NoChangeInTotalHeadersReceivedAlert, ReceivedANewHeaderAlert,
-    DroppedBlockHeadersIncreasedAboveThresholdAlert,
-    DroppedBlockHeadersDecreasedBelowThresholdAlert,
     MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
     MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, ChangeInSourceNodeAlert,
     GasBumpIncreasedOverNodeGasPriceLimitAlert,
@@ -62,16 +58,12 @@ NoChangeInAlert = Union[ChainlinkNodeNoChangeInAlert]
 ChangeInAlert = Union[ChainlinkNodeChangeInAlert]
 
 IncreasedAboveThresholdChainlinkNodeAlert = Union[
-    HeadsInQueueIncreasedAboveThresholdAlert,
-    DroppedBlockHeadersIncreasedAboveThresholdAlert,
     MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
     NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
     TotalErroredJobRunsIncreasedAboveThresholdAlert,
     EthBalanceIncreasedAboveThresholdAlert
 ]
 DecreasedBelowThresholdChainlinkNodeAlert = Union[
-    HeadsInQueueDecreasedBelowThresholdAlert,
-    DroppedBlockHeadersDecreasedBelowThresholdAlert,
     MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
     NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
     TotalErroredJobRunsDecreasedBelowThresholdAlert,
