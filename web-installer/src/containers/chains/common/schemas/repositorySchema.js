@@ -4,8 +4,13 @@ const RepositorySchema = (props) => Yup.object().shape({
   repo_name: Yup.string()
     .test('unique-repository-name', 'Name already exists.', (value) => {
       const {
-        systemConfig, substrateNodesConfig, cosmosNodesConfig, reposConfig,
-        chainlinkNodesConfig, dockerHubConfig, evmNodesConfig,
+        systemConfig,
+        substrateNodesConfig,
+        cosmosNodesConfig,
+        reposConfig,
+        chainlinkNodesConfig,
+        dockerHubConfig,
+        evmNodesConfig,
       } = props;
 
       for (let i = 0; i < evmNodesConfig.allIds.length; i += 1) {
