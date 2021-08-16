@@ -7,7 +7,7 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { PingPrometheus } from 'utils/buttons';
+import { PingMultiplePrometheus } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import { Autocomplete } from '@material-ui/lab';
 import Button from 'components/material_ui/CustomButtons/Button';
@@ -137,7 +137,7 @@ const NodesForm = ({
                 </Grid>
                 <Grid item xs={2}>
                   <Grid container direction="row" justify="flex-end" alignItems="center">
-                    <PingPrometheus
+                    <PingMultiplePrometheus
                       disabled={false}
                       prometheusUrl={values.node_prometheus_urls}
                       metric="max_unconfirmed_blocks"

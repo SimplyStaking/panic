@@ -410,6 +410,38 @@ function PingPrometheus({ disabled, prometheusUrl, metric }) {
   );
 }
 
+function PingMultiplePrometheus({ disabled, prometheusUrls, metric }) {
+  const onClick = async () => {
+    prometheusUrls.forEach(async (prometheusUrl) => {
+      try {
+        ToastsStore.info(`Connecting with Prometheus URL ${prometheusUrl}`, 5000);
+        await pingPrometheus(prometheusUrl, metric);
+        ToastsStore.success('Successfully connected', 5000);
+      } catch (e) {
+        if (e.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          ToastsStore.error(
+            `Could not connect with Prometheus URLs ${prometheusUrl}. Error: ${e.response.data.message}`,
+            5000,
+          );
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          ToastsStore.error(
+            `Could not connect with Prometheus URL ${prometheusUrl}. Error: ${e.message}`,
+            5000,
+          );
+        }
+      }
+    });
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
+    </Button>
+  );
+}
+
 function SaveConfigButton({ onClick }) {
   return (
     <Button onClick={onClick} size="lg" color="primary" fullWidth>
@@ -551,6 +583,12 @@ PingPrometheus.propTypes = forbidExtraProps({
   metric: PropTypes.string.isRequired,
 });
 
+PingMultiplePrometheus.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  prometheusUrls: PropTypes.string.isRequired,
+  metric: PropTypes.string.isRequired,
+});
+
 PingTendermint.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   tendermintRpcUrl: PropTypes.string.isRequired,
@@ -586,4 +624,5 @@ export {
   StartNewButton,
   BackButton,
   PingDockerHubButton,
+  PingMultiplePrometheus,
 };
