@@ -61,6 +61,7 @@ const mapGeneralStateToProps = (state) => ({
   cosmosNodesConfig: state.CosmosNodesReducer,
   reposConfig: state.GitHubRepositoryReducer,
   dockerHubConfig: state.DockerHubReducer,
+  evmNodesConfig: state.EvmNodesReducer,
   systemConfig: state.SystemsReducer,
   data: GeneralData,
 });

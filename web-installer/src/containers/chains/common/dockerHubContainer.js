@@ -64,6 +64,7 @@ const mapGeneralStateToProps = (state) => ({
   systemConfig: state.SystemsReducer,
   reposConfig: state.GitHubRepositoryReducer,
   dockerHubConfig: state.DockerHubReducer,
+  evmNodesConfig: state.EvmNodesReducer,
   data: GeneralData,
 });
 
@@ -92,6 +93,7 @@ const mapCosmosStateToProps = (state) => ({
   systemConfig: state.SystemsReducer,
   reposConfig: state.GitHubRepositoryReducer,
   dockerHubConfig: state.DockerHubReducer,
+  evmNodesConfig: state.EvmNodesReducer,
   data: CosmosData,
 });
 
@@ -149,6 +151,7 @@ const mapSubstrateStateToProps = (state) => ({
   systemConfig: state.SystemsReducer,
   reposConfig: state.GitHubRepositoryReducer,
   dockerHubConfig: state.DockerHubReducer,
+  evmNodesConfig: state.EvmNodesReducer,
   data: SubstrateData,
 });
 

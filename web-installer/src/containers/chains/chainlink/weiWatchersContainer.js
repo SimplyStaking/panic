@@ -24,6 +24,7 @@ const mapStateToProps = (state) => ({
   reposConfig: state.GitHubRepositoryReducer,
   systemConfig: state.SystemsReducer,
   dockerHubConfig: state.DockerHubReducer,
+  evmNodesConfig: state.EvmNodesReducer,
   data: ChainlinkData,
 });
 
