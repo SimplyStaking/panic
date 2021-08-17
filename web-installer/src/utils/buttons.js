@@ -1,4 +1,5 @@
 import React from 'react';
+import Web3 from 'web3';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import Button from 'components/material_ui/CustomButtons/Button';
@@ -148,7 +149,7 @@ function SendTestSlackButton({ disabled, token, chatName }) {
     try {
       ToastsStore.info(
         'Sending test alert. Make sure to check the slack channel corresponding'
-        + ` with chat name: ${chatName}`,
+          + ` with chat name: ${chatName}`,
         5000,
       );
 
@@ -380,6 +381,38 @@ function PingTendermint({ disabled, tendermintRpcUrl }) {
   );
 }
 
+function PingMultiplePrometheus({ disabled, prometheusUrls, metric }) {
+  const onClick = async () => {
+    prometheusUrls.forEach(async (prometheusUrl) => {
+      try {
+        ToastsStore.info(`Connecting with Prometheus URL ${prometheusUrl}`, 5000);
+        await pingPrometheus(prometheusUrl, metric);
+        ToastsStore.success('Successfully connected', 5000);
+      } catch (e) {
+        if (e.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          ToastsStore.error(
+            `Could not connect with Prometheus URLs ${prometheusUrl}. Error: ${e.response.data.message}`,
+            5000,
+          );
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          ToastsStore.error(
+            `Could not connect with Prometheus URL ${prometheusUrl}. Error: ${e.message}`,
+            5000,
+          );
+        }
+      }
+    });
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
+    </Button>
+  );
+}
+
 function PingPrometheus({ disabled, prometheusUrl, metric }) {
   const onClick = async () => {
     try {
@@ -400,6 +433,34 @@ function PingPrometheus({ disabled, prometheusUrl, metric }) {
           `Could not connect with Prometheus URL ${prometheusUrl}. Error: ${e.message}`,
           5000,
         );
+      }
+    }
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
+    </Button>
+  );
+}
+
+function PingRPC({ disabled, httpUrl }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(`Connecting with Node Http URL ${httpUrl}`, 5000);
+      const web3 = new Web3(new Web3.providers.HttpProvider(httpUrl));
+      await web3.eth.isSyncing();
+      ToastsStore.success('Successfully connected', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(
+          `Could not connect with RPC URL ${httpUrl}. Error: ${e.response.data.message}`,
+          5000,
+        );
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(`Could not connect with RPC URL ${httpUrl}. Error: ${e.message}`, 5000);
       }
     }
   };
@@ -545,6 +606,17 @@ PingDockerHubButton.propTypes = forbidExtraProps({
   name: PropTypes.string.isRequired,
 });
 
+PingRPC.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  httpUrl: PropTypes.string.isRequired,
+});
+
+PingMultiplePrometheus.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  prometheusUrls: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
+  metric: PropTypes.string.isRequired,
+});
+
 PingPrometheus.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   prometheusUrl: PropTypes.string.isRequired,
@@ -586,4 +658,5 @@ export {
   StartNewButton,
   BackButton,
   PingDockerHubButton,
+  PingRPC,
 };

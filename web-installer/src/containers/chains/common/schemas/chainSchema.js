@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+import { checkChainName } from 'utils/helpers';
 
 const ChainNameSchema = (props) => Yup.object().shape({
   chain_name: Yup.string()
@@ -13,24 +14,7 @@ const ChainNameSchema = (props) => Yup.object().shape({
         }
       }
 
-      for (let i = 0; i < config.allIds.length; i += 1) {
-        if (config.byId[config.allIds[i]].chain_name === value) {
-          return false;
-        }
-      }
-
-      for (let i = 0; i < config2.allIds.length; i += 1) {
-        if (config2.byId[config2.allIds[i]].chain_name === value) {
-          return false;
-        }
-      }
-
-      for (let i = 0; i < config3.allIds.length; i += 1) {
-        if (config3.byId[config3.allIds[i]].chain_name === value) {
-          return false;
-        }
-      }
-      return true;
+      return checkChainName(value, ...[config, config2, config3]);
     })
     .required('Chain name is required.'),
 });

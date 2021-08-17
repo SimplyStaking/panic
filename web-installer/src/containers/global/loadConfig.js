@@ -41,6 +41,8 @@ import {
 } from 'redux/actions/substrateActions';
 import {
   addNodeChainlink,
+  addNodeEvm,
+  addWeiWatchers,
   addChainChainlink,
   loadRepeatAlertsChainlink,
   loadTimeWindowAlertsChainlink,
@@ -83,6 +85,7 @@ const mapStateToProps = (state) => ({
   // Chainlink related data
   chainlinkChains: state.ChainlinkChainsReducer,
   chainlinkNodes: state.ChainlinkNodesReducer,
+  evmNodes: state.EvmNodesReducer,
 
   // Channels related data
   emails: state.EmailsReducer,
@@ -115,6 +118,8 @@ function mapDispatchToProps(dispatch) {
     clearChainIdSubstrate: () => dispatch(resetCurrentChainIdSubstrate()),
     addChainChainlinkDetails: (details) => dispatch(addChainChainlink(details)),
     addNodeChainlinkDetails: (details) => dispatch(addNodeChainlink(details)),
+    addNodeEvmDetails: (details) => dispatch(addNodeEvm(details)),
+    addWeiWatchersDetails: (details) => dispatch(addWeiWatchers(details)),
     clearChainIdChainlink: () => dispatch(resetCurrentChainIdChainlink()),
     addSystemDetails: (details) => dispatch(addSystem(details)),
     addDockerHubDetails: (details) => dispatch(addDockerHub(details)),
@@ -179,6 +184,8 @@ class LoadConfig extends Component {
       addNodeCosmosDetails,
       addNodeSubstrateDetails,
       addNodeChainlinkDetails,
+      addNodeEvmDetails,
+      addWeiWatchersDetails,
       loadThresholdAlertsGeneralDetails,
       loadRepeatAlertsCosmosDetails,
       loadTimeWindowAlertsCosmosDetails,
@@ -546,7 +553,26 @@ class LoadConfig extends Component {
                 }
                 node.monitor_prometheus = node.monitor_prometheus === 'true';
                 node.monitor_node = node.monitor_node === 'true';
+                delete node.evm_nodes_urls;
+                delete node.weiwatchers_url;
+                delete node.monitor_contracts;
                 addNodeChainlinkDetails(node);
+              });
+            } else if (filePath[4] === 'evm_nodes_config.ini') {
+              config = await getConfig('chain', 'evm_nodes_config.ini', filePath[3], 'chainlink');
+              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
+              Object.values(config.data.result).forEach((value) => {
+                const node = JSON.parse(JSON.stringify(value));
+                node.monitor_node = node.monitor_node === 'true';
+                addNodeEvmDetails(node);
+              });
+            } else if (filePath[4] === 'weiwatchers_config.ini') {
+              config = await getConfig('chain', 'weiwatchers_config.ini', filePath[3], 'chainlink');
+              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
+              Object.values(config.data.result).forEach((value) => {
+                const node = JSON.parse(JSON.stringify(value));
+                node.monitor_contracts = node.monitor_contracts === 'true';
+                addWeiWatchersDetails(node);
               });
             } else if (filePath[4] === 'systems_config.ini') {
               config = await getConfig('chain', 'systems_config.ini', filePath[3], 'chainlink');
@@ -813,6 +839,8 @@ LoadConfig.propTypes = {
   addNodeSubstrateDetails: PropTypes.func.isRequired,
   addChainChainlinkDetails: PropTypes.func.isRequired,
   addNodeChainlinkDetails: PropTypes.func.isRequired,
+  addNodeEvmDetails: PropTypes.func.isRequired,
+  addWeiWatchersDetails: PropTypes.func.isRequired,
   loadThresholdAlertsGeneralDetails: PropTypes.func.isRequired,
   loadRepeatAlertsCosmosDetails: PropTypes.func.isRequired,
   loadTimeWindowAlertsCosmosDetails: PropTypes.func.isRequired,

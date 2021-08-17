@@ -18,7 +18,7 @@ services:
     build:
       context: './'
       dockerfile: './web-installer/Dockerfile'
-    image: 'simplyvc/panic_installer:0.1.2'
+    image: 'simplyvc/panic_installer:0.3.0'
     volumes:
       - './config:/opt/panic/config'
       - './certificates:/opt/panic/certificates'
