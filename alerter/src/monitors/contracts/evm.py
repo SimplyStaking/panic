@@ -279,7 +279,7 @@ class EVMContractsMonitor(Monitor):
                 'latestTimestamp': float,
                 'answeredInRound': int
                 'withdrawablePayment': int,
-                'historicalRounds': {
+                'historicalRounds': [{
                     'roundId': int,
                     'roundAnswer': int/None (if round consensus not reached
                                              yet),
@@ -288,7 +288,7 @@ class EVMContractsMonitor(Monitor):
                     'answeredInRound': int/None (if round consensus not reached
                                                  yet)
                     'nodeSubmission': int
-                }
+                }]
             }
         }
         """
@@ -404,7 +404,7 @@ class EVMContractsMonitor(Monitor):
                 'latestTimestamp': float,
                 'answeredInRound': int
                 'owedPayment': int,
-                'historicalRounds': {
+                'historicalRounds': [{
                     'roundId': int,
                     'roundAnswer': int,
                     'roundTimestamp': float,
@@ -412,7 +412,7 @@ class EVMContractsMonitor(Monitor):
                     'nodeSubmission': int,
                     'noOfObservations': int,
                     'noOfTransmitters': int
-                }
+                }]
             }
         }
         """
