@@ -148,7 +148,7 @@ function SendTestSlackButton({ disabled, token, chatName }) {
     try {
       ToastsStore.info(
         'Sending test alert. Make sure to check the slack channel corresponding'
-        + ` with chat name: ${chatName}`,
+          + ` with chat name: ${chatName}`,
         5000,
       );
 
@@ -585,7 +585,7 @@ PingPrometheus.propTypes = forbidExtraProps({
 
 PingMultiplePrometheus.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
-  prometheusUrls: PropTypes.string.isRequired,
+  prometheusUrls: PropTypes.arrayOf(PropTypes.string).isRequired,
   metric: PropTypes.string.isRequired,
 });
 

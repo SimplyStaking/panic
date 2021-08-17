@@ -139,7 +139,7 @@ const NodesForm = ({
                   <Grid container direction="row" justify="flex-end" alignItems="center">
                     <PingMultiplePrometheus
                       disabled={false}
-                      prometheusUrl={values.node_prometheus_urls}
+                      prometheusUrls={values.node_prometheus_urls}
                       metric="max_unconfirmed_blocks"
                     />
                   </Grid>
