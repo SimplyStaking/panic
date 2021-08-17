@@ -27,11 +27,12 @@ from src.alerter.alerts.system_alerts import (
     SystemStorageUsageDecreasedBelowThresholdAlert
 )
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
+from src.monitorables.nodes.evm_node import EVMNode
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 
 RedisType = Union[bytes, str, int, float]
-Monitorable = Union[System, GitHubRepo, ChainlinkNode]
+Monitorable = Union[System, GitHubRepo, ChainlinkNode, EVMNode]
 
 # TODO: The below system alerts must be refactored to the types beneath them
 #     : when the system alerter is refactored.
