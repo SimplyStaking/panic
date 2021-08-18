@@ -244,6 +244,8 @@ class EVMNodeDataTransformer(DataTransformer):
             # Transform the meta_data by deleting the monitor_name and changing
             # the time key to last_monitored key. Also set went_down_at as None
             # because data was successfully retrieved
+            del td_meta_data['monitor_name']
+            del td_meta_data['time']
             td_meta_data['last_monitored'] = meta_data['time']
             td_metrics['went_down_at'] = None
         elif 'error' in data:
