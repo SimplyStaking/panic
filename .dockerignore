@@ -1,5 +1,5 @@
 ./config
-./alerter/logs
+./logs
 ./certificates
 ./web-installer/node_modules
 ./web-installer/build
