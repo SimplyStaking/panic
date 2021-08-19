@@ -148,3 +148,30 @@ class InvalidDictSchemaException(PANICException):
         message = "{} does not obey the valid schema.".format(dict_name)
         code = 5016
         super().__init__(message, code)
+
+
+class ComponentNotGivenEnoughDataSourcesException(PANICException):
+
+    def __init__(self, component: str, field: str) -> None:
+        message = "{} was not given enough data sources. {} is empty.".format(
+            component, field)
+        code = 5017
+        super().__init__(message, code)
+
+
+class CouldNotRetrieveContractsException(PANICException):
+
+    def __init__(self, component: str, url: str) -> None:
+        message = "{} could not retrieve contracts data from {}.".format(
+            component, url)
+        code = 5018
+        super().__init__(message, code)
+
+
+class NoSyncedDataSourceWasAccessibleException(PANICException):
+
+    def __init__(self, component: str, sources_type: str) -> None:
+        message = "{} could not access any synced {}.".format(component,
+                                                              sources_type)
+        code = 5019
+        super().__init__(message, code)

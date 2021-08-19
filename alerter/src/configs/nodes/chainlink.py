@@ -11,7 +11,8 @@ class ChainlinkNodeConfig(NodeConfig):
         super().__init__(node_id, parent_id, node_name, monitor_node)
 
         self._monitor_prometheus = monitor_prometheus
-        self._node_prometheus_urls = node_prometheus_urls
+        self._node_prometheus_urls = [url for url in node_prometheus_urls
+                                      if url.strip()]
 
     @property
     def node_prometheus_urls(self) -> List[str]:
