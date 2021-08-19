@@ -55,7 +55,8 @@ class EVMContractsMonitor(Monitor):
         self._node_configs = node_configs
         self._contracts_url = weiwatchers_url
 
-        # Construct the Web3 interfaces
+        # Construct the Web3 interfaces. DISCLAIMER: There might be an issue
+        # with open connections not being closed.
         self._evm_node_w3_interface = {}
         for evm_node_url in evm_nodes:
             self._evm_node_w3_interface[evm_node_url] = Web3(Web3.HTTPProvider(
