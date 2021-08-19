@@ -412,7 +412,7 @@ class EVMContractsMonitor(Monitor):
                     'roundAnswer': int,
                     'roundTimestamp': float,
                     'answeredInRound': int,
-                    'nodeSubmission': int,
+                    'nodeSubmission': Optional[int],
                     'noOfObservations': int,
                     'noOfTransmitters': int
                 }]
