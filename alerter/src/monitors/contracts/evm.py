@@ -17,7 +17,8 @@ from web3.exceptions import ContractLogicError
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
-from src.utils.constants.abis import V3, V4
+from src.utils.constants.abis.v3 import V3
+from src.utils.constants.abis.v4 import V4
 from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
                                           EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
 from src.utils.data import get_json, get_prometheus_metrics_data
