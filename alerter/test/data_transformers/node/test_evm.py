@@ -8,6 +8,7 @@ from queue import Queue
 from unittest import mock
 
 import pika
+import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
@@ -517,7 +518,7 @@ class TestEVMNodeDataTransformer(unittest.TestCase):
             eval(expected_state),
             self.test_data_transformer._state[self.test_evm_node_id])
 
-        # Check that the system is marked as up/down accordingly
+        # Check that the node is marked as up/down accordingly
         if evm_node_expected_up:
             self.assertFalse(
                 self.test_data_transformer._state[
@@ -1046,317 +1047,150 @@ class TestEVMNodeDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(1, mock_ack.call_count)
 
-    # TODO: Continue from here, all error tests.
+    @parameterized.expand([
+        (pika.exceptions.AMQPConnectionError,
+         pika.exceptions.AMQPConnectionError('test err'),),
+        (pika.exceptions.AMQPChannelError,
+         pika.exceptions.AMQPChannelError('test err'),),
+        (Exception, Exception('test'),)
+    ])
+    @mock.patch.object(EVMNodeDataTransformer, "_send_data")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_raises_err_if_raised_by_send_data(
+            self, exception_type, exception_instance, mock_ack,
+            mock_send_data) -> None:
+        """
+        We will perform this test only for errors we know that can be raised
+        """
+        mock_ack.return_value = None
+        mock_send_data.side_effect = exception_instance
 
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_raises_amqp_conn_err_if_conn_err_in_send_data(
-    #         self, mock_ack, mock_send_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.side_effect = pika.exceptions.AMQPConnectionError(
-    #         'test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data and assert exception
-    #         self.assertRaises(pika.exceptions.AMQPConnectionError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_result
-    #                           )
-    #         self.assertRaises(pika.exceptions.AMQPConnectionError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_error
-    #                           )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_raises_amqp_conn_err_if_conn_err_in_send_hb(
-    #         self, mock_ack, mock_send_data, mock_send_hb) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.side_effect = pika.exceptions.AMQPConnectionError(
-    #         'test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data and assert exception
-    #         self.assertRaises(pika.exceptions.AMQPConnectionError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_result
-    #                           )
-    #         self.assertRaises(pika.exceptions.AMQPConnectionError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_error
-    #                           )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_raises_amqp_chan_err_if_chan_err_in_send_data(
-    #         self, mock_ack, mock_send_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.side_effect = pika.exceptions.AMQPChannelError(
-    #         'test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data and assert exception
-    #         self.assertRaises(pika.exceptions.AMQPChannelError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_result
-    #                           )
-    #         self.assertRaises(pika.exceptions.AMQPChannelError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_error
-    #                           )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_raises_amqp_chan_err_if_chan_err_in_send_hb(
-    #         self, mock_ack, mock_send_data, mock_send_hb) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.side_effect = pika.exceptions.AMQPChannelError(
-    #         'test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data and assert exception
-    #         self.assertRaises(pika.exceptions.AMQPChannelError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_result
-    #                           )
-    #         self.assertRaises(pika.exceptions.AMQPChannelError,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_error
-    #                           )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_unexpec_except_if_unexpec_except_in_send_data(
-    #         self, mock_ack, mock_send_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.side_effect = self.test_exception
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data and assert exception
-    #         self.assertRaises(PANICException,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_result
-    #                           )
-    #         self.assertRaises(PANICException,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_error
-    #                           )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_unexpec_except_if_unexpec_except_in_send_hb(
-    #         self, mock_ack, mock_send_data, mock_send_hb) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.side_effect = self.test_exception
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data and assert exception
-    #         self.assertRaises(PANICException,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_result
-    #                           )
-    #         self.assertRaises(PANICException,
-    #                           self.test_data_transformer._process_raw_data,
-    #                           blocking_channel, method, properties, body_error
-    #                           )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_data(
-    #         self, mock_ack, mock_send_data) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.side_effect = MessageWasNotDeliveredException('test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data. Test would fail if an exception is raised
-    #         self.test_data_transformer._process_raw_data(
-    #             blocking_channel, method, properties, body_result
-    #         )
-    #         self.test_data_transformer._process_raw_data(
-    #             blocking_channel, method, properties, body_error
-    #         )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
-    #
-    # @mock.patch.object(SystemDataTransformer, "_send_heartbeat")
-    # @mock.patch.object(SystemDataTransformer, "_send_data")
-    # @mock.patch.object(RabbitMQApi, "basic_ack")
-    # def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_hb(
-    #         self, mock_ack, mock_send_data, mock_send_hb) -> None:
-    #     mock_ack.return_value = None
-    #     mock_send_data.return_value = None
-    #     mock_send_hb.side_effect = MessageWasNotDeliveredException('test err')
-    #
-    #     # Load the state to avoid having the system already in redis, hence
-    #     # avoiding errors.
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     try:
-    #         # We must initialise rabbit to the environment and parameters needed
-    #         # by `_process_raw_data`
-    #         self.test_data_transformer._initialise_rabbitmq()
-    #         blocking_channel = self.test_data_transformer.rabbitmq.channel
-    #         method = pika.spec.Basic.Deliver(
-    #             routing_key=SYSTEM_RAW_DATA_ROUTING_KEY)
-    #         body_result = json.dumps(self.raw_data_example_result)
-    #         body_error = json.dumps(self.raw_data_example_downtime_error)
-    #         properties = pika.spec.BasicProperties()
-    #
-    #         # Send raw data. Test would fail if an exception is raised
-    #         self.test_data_transformer._process_raw_data(
-    #             blocking_channel, method, properties, body_result
-    #         )
-    #         self.test_data_transformer._process_raw_data(
-    #             blocking_channel, method, properties, body_error
-    #         )
-    #     except Exception as e:
-    #         self.fail("Test failed: {}".format(e))
-    #
-    #     # Make sure that the message has been acknowledged. This must be done
-    #     # in all test cases to cover every possible case, and avoid doing a
-    #     # very large amount of tests around this.
-    #     self.assertEqual(2, mock_ack.call_count)
+        # Load the state to avoid having the node already in redis, hence
+        # avoiding errors.
+        self.test_data_transformer._state = copy.deepcopy(self.test_state)
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=EVM_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(self.raw_data_example_result)
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data and assert exception
+        self.assertRaises(
+            exception_type, self.test_data_transformer._process_raw_data,
+            blocking_channel, method, properties, body
+        )
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        self.assertEqual(1, mock_ack.call_count)
+
+    @parameterized.expand([
+        (pika.exceptions.AMQPConnectionError,
+         pika.exceptions.AMQPConnectionError('test err'),),
+        (pika.exceptions.AMQPChannelError,
+         pika.exceptions.AMQPChannelError('test err'),),
+        (Exception, Exception('test'),)
+    ])
+    @mock.patch.object(EVMNodeDataTransformer, "_send_heartbeat")
+    @mock.patch.object(EVMNodeDataTransformer, "_send_data")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_raises_err_if_raised_by_send_hb(
+            self, exception_type, exception_instance, mock_ack,
+            mock_send_data, mock_send_hb) -> None:
+        """
+        We will perform this test only for errors we know that can be raised
+        """
+        mock_ack.return_value = None
+        mock_send_data.return_value = None
+        mock_send_hb.side_effect = exception_instance
+
+        # Load the state to avoid having the node already in redis, hence
+        # avoiding errors.
+        self.test_data_transformer._state = copy.deepcopy(self.test_state)
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=EVM_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(self.raw_data_example_result)
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data and assert exception
+        self.assertRaises(
+            exception_type, self.test_data_transformer._process_raw_data,
+            blocking_channel, method, properties, body
+        )
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        self.assertEqual(1, mock_ack.call_count)
+
+    @mock.patch.object(EVMNodeDataTransformer, "_send_data")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_data(
+            self, mock_ack, mock_send_data) -> None:
+        mock_ack.return_value = None
+        mock_send_data.side_effect = MessageWasNotDeliveredException('test err')
+
+        # Load the state to avoid having the node already in redis, hence
+        # avoiding errors.
+        self.test_data_transformer._state = copy.deepcopy(self.test_state)
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=EVM_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(self.raw_data_example_result)
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data. Test would fail if an exception is raised
+        self.test_data_transformer._process_raw_data(
+            blocking_channel, method, properties, body
+        )
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        self.assertEqual(1, mock_ack.call_count)
+
+    @mock.patch.object(EVMNodeDataTransformer, "_send_heartbeat")
+    @mock.patch.object(EVMNodeDataTransformer, "_send_data")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_hb(
+            self, mock_ack, mock_send_data, mock_send_hb) -> None:
+        mock_ack.return_value = None
+        mock_send_data.return_value = None
+        mock_send_hb.side_effect = MessageWasNotDeliveredException('test err')
+
+        # Load the state to avoid having the node already in redis, hence
+        # avoiding errors.
+        self.test_data_transformer._state = copy.deepcopy(self.test_state)
+
+        # We must initialise rabbit to the environment and parameters needed
+        # by `_process_raw_data`
+        self.test_data_transformer._initialise_rabbitmq()
+        blocking_channel = self.test_data_transformer.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=EVM_NODE_RAW_DATA_ROUTING_KEY)
+        body = json.dumps(self.raw_data_example_result)
+        properties = pika.spec.BasicProperties()
+
+        # Send raw data. Test would fail if an exception is raised
+        self.test_data_transformer._process_raw_data(
+            blocking_channel, method, properties, body
+        )
+
+        # Make sure that the message has been acknowledged. This must be done
+        # in all test cases to cover every possible case, and avoid doing a
+        # very large amount of tests around this.
+        self.assertEqual(1, mock_ack.call_count)
