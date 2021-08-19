@@ -34,7 +34,8 @@ _WEI_WATCHERS_RETRIEVAL_TIME_PERIOD = 86400
 class EVMContractsMonitor(Monitor):
     """
     The EVMContractsMonitor is able to monitor contracts of an EVM based chain.
-    For now, only chainlink chains are supported.
+    For now, only chains which have chainlink smart contracts on them are
+    supported.
     """
 
     def __init__(self, monitor_name: str, weiwatchers_url: str,
