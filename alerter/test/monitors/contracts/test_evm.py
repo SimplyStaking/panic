@@ -23,8 +23,9 @@ from web3.exceptions import ContractLogicError
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitors.contracts.evm import EVMContractsMonitor, \
-    _WEI_WATCHERS_RETRIEVAL_TIME_PERIOD, _PROMETHEUS_RETRIEVAL_TIME_PERIOD
+from src.monitors.contracts.evm import (EVMContractsMonitor,
+                                        _WEI_WATCHERS_RETRIEVAL_TIME_PERIOD,
+                                        _PROMETHEUS_RETRIEVAL_TIME_PERIOD)
 from src.utils import env
 from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           RAW_DATA_EXCHANGE,

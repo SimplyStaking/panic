@@ -17,7 +17,8 @@ from web3.exceptions import ContractLogicError
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
-from src.utils.constants.abis import V3, V4
+from src.utils.constants.abis.v3 import V3
+from src.utils.constants.abis.v4 import V4
 from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
                                           EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
 from src.utils.data import get_json, get_prometheus_metrics_data
@@ -34,7 +35,8 @@ _WEI_WATCHERS_RETRIEVAL_TIME_PERIOD = 86400
 class EVMContractsMonitor(Monitor):
     """
     The EVMContractsMonitor is able to monitor contracts of an EVM based chain.
-    For now, only chainlink chains are supported.
+    For now, only chains which have chainlink smart contracts on them are
+    supported.
     """
 
     def __init__(self, monitor_name: str, weiwatchers_url: str,
@@ -54,7 +56,8 @@ class EVMContractsMonitor(Monitor):
         self._node_configs = node_configs
         self._contracts_url = weiwatchers_url
 
-        # Construct the Web3 interfaces
+        # Construct the Web3 interfaces. DISCLAIMER: There might be an issue
+        # with open connections not being closed.
         self._evm_node_w3_interface = {}
         for evm_node_url in evm_nodes:
             self._evm_node_w3_interface[evm_node_url] = Web3(Web3.HTTPProvider(
@@ -169,14 +172,14 @@ class EVMContractsMonitor(Monitor):
                         ChunkedEncodingError, ProtocolError) as e:
                     # If these errors are raised it may still be that another
                     # source can be accessed
-                    self.logger.debug("Error when trying to access %s",
-                                      prom_url)
+                    self.logger.debug("Error when trying to access %s of %s",
+                                      prom_url, node_config.node_name)
                     self.logger.debug(e)
                 except MetricNotFoundException as e:
                     # If these errors are raised then we can't get valid data
                     # from any node, as only 1 node is online at the same time.
-                    self.logger.error("Error when trying to access %s",
-                                      prom_url)
+                    self.logger.error("Error when trying to access %s of %s",
+                                      prom_url, node_config.node_name)
                     self.logger.exception(e)
                     break
 
@@ -663,7 +666,7 @@ class EVMContractsMonitor(Monitor):
                     except (ReqConnectionError, ReadTimeout, IncompleteRead,
                             ChunkedEncodingError, ProtocolError, InvalidURL,
                             InvalidSchema, MissingSchema) as e:
-                        self.logger.error("Could not retrieve contract metrics"
+                        self.logger.error("Could not retrieve contract metrics "
                                           "from %s for node %s",
                                           selected_node_url, node_id)
                         self.logger.exception(e)
