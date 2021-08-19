@@ -98,7 +98,7 @@ services:
     image: 'simplyvc/panic_alerter:0.2.0'
     volumes:
       - './config:/opt/panic/config'
-      - './alerter/logs:/opt/panic/alerter/logs'
+      - './logs:/opt/panic/logs'
     restart: always
     networks:
       panic_net:
@@ -148,7 +148,7 @@ services:
       dockerfile: './alerter/Health_Checker_Dockerfile'
     image: 'simplyvc/alerter_health_checker:0.2.0'
     volumes:
-      - './alerter/logs:/opt/panic/alerter/logs'
+      - './logs:/opt/panic/logs'
     restart: always
     networks:
       panic_net:
