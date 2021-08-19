@@ -665,7 +665,7 @@ class EVMContractsMonitor(Monitor):
                     except (ReqConnectionError, ReadTimeout, IncompleteRead,
                             ChunkedEncodingError, ProtocolError, InvalidURL,
                             InvalidSchema, MissingSchema) as e:
-                        self.logger.error("Could not retrieve contract metrics"
+                        self.logger.error("Could not retrieve contract metrics "
                                           "from %s for node %s",
                                           selected_node_url, node_id)
                         self.logger.exception(e)
