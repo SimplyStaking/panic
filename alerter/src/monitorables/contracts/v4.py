@@ -2,12 +2,12 @@ from typing import Dict, List, Optional
 
 from schema import Schema, Or
 
-from src.monitorables.contracts.contract import Contract
+from src.monitorables.contracts.contract import EVMContract
 
 
-class V4EvmContract(Contract):
-    def __init__(self, address: str) -> None:
-        super().__init__(address, 3)
+class V4EvmContract(EVMContract):
+    def __init__(self, proxy_address: str, aggregator_address: str) -> None:
+        super().__init__(proxy_address, aggregator_address, 4)
         self._owed_payment = None
 
     @property

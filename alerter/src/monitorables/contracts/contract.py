@@ -3,14 +3,12 @@ from typing import Any, Dict, List, Optional
 
 from src.utils.exceptions import InvalidDictSchemaException
 
-# todo: store proxy and aggrtergator address .. aggregator address can change,
-#     : proxy no, version can change also and we need to cater for this in the
-#     : transformer
 
-
-class Contract(ABC):
-    def __init__(self, address: str, version: int) -> None:
-        self._address = address
+class EVMContract(ABC):
+    def __init__(self, proxy_address: str, aggregator_address: str,
+                 version: int) -> None:
+        self._proxy_address = proxy_address
+        self._aggregator_address = aggregator_address
         self._version = version
         self._latest_round = None
         self._latest_answer = None
@@ -19,14 +17,18 @@ class Contract(ABC):
         self._historical_rounds = []
 
     def __str__(self) -> str:
-        return self._address
+        return self._proxy_address
 
     def __eq__(self, other: Any) -> bool:
         return self.__dict__ == other.__dict__
 
     @property
-    def address(self) -> str:
-        return self._address
+    def proxy_address(self) -> str:
+        return self._proxy_address
+
+    @property
+    def aggregator_address(self) -> str:
+        return self._aggregator_address
 
     @property
     def version(self) -> int:
@@ -51,6 +53,9 @@ class Contract(ABC):
     @property
     def historical_rounds(self) -> List[Dict]:
         return self._historical_rounds
+
+    def set_aggregator_address(self, aggregator_address: str) -> None:
+        self._aggregator_address = aggregator_address
 
     def set_latest_round(self, latest_round: Optional[int]) -> None:
         self._latest_round = latest_round
