@@ -56,6 +56,9 @@ class EVMContractsDataTransformer(DataTransformer):
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
+
+    # TODO: Need to cater for version upgrades, if version changes change state
+    #     : although proxy never changes. Monday continue from below.
     #
     # def _load_number_state(self, state_type: Union[Type[float], Type[int]],
     #                        evm_node: Monitorable) -> None:
@@ -359,6 +362,3 @@ class EVMContractsDataTransformer(DataTransformer):
     #     except Exception as e:
     #         # For any other exception raise it.
     #         raise e
-
-# TODO: Need to cater for version upgrades, if version changes change state
-#     : although proxy never changes
