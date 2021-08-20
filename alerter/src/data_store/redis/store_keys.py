@@ -42,13 +42,16 @@ _key_evm_node_current_height = 'evm1'
 _key_evm_node_went_down_at = 'evm2'
 _key_evm_node_last_monitored = 'evm3'
 
-# EvmContractX_<cl_node_id>_<contract_address>
+# EvmContractX_<cl_node_id>_<contract_proxy_address>
 _key_evm_contract_version = 'EvmContract1'
-_key_evm_contract_latest_round = 'EvmContract2'
-_key_evm_contract_latest_answer = 'EvmContract3'
-_key_evm_contract_latest_timestamp = 'EvmContract4'
-_key_evm_contract_answered_in_round = 'EvmContract5'
-_key_evm_contract_historical_rounds = 'EvmContract6'
+_key_evm_aggregator_address = 'EvmContract2'
+_key_evm_contract_latest_round = 'EvmContract3'
+_key_evm_contract_latest_answer = 'EvmContract4'
+_key_evm_contract_latest_timestamp = 'EvmContract5'
+_key_evm_contract_answered_in_round = 'EvmContract6'
+_key_evm_contract_historical_rounds = 'EvmContract7'
+_key_evm_contract_withdrawable_payment = 'EvmContract8'
+_key_evm_contract_owed_payment = 'EvmContract9'
 
 # ghX_<repo_id>
 _key_github_no_of_releases = 'gh1'
@@ -254,6 +257,67 @@ class Keys:
     @staticmethod
     def get_evm_node_last_monitored(evm_node_id: str) -> str:
         return Keys._as_prefix(_key_evm_node_last_monitored) + evm_node_id
+
+    @staticmethod
+    def get_evm_contract_version(cl_node_id: str,
+                                 contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_evm_contract_version) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_evm_contract_aggregator_address(cl_node_id: str,
+                                            contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_evm_aggregator_address) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_evm_contract_latest_round(cl_node_id: str,
+                                      contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_evm_contract_latest_round) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_evm_contract_latest_answer(cl_node_id: str,
+                                       contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_evm_contract_latest_answer) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_evm_contract_latest_timestamp(cl_node_id: str,
+                                          contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_evm_contract_latest_timestamp) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_evm_contract_answered_in_round(cl_node_id: str,
+                                           contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_evm_contract_answered_in_round) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_evm_contract_historical_rounds(cl_node_id: str,
+                                           contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_evm_contract_historical_rounds) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_evm_contract_withdrawable_payment(
+            cl_node_id: str, contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_evm_contract_withdrawable_payment) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_evm_contract_owed_payment(cl_node_id: str,
+                                      contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_evm_contract_owed_payment) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
 
     @staticmethod
     def get_github_no_of_releases(repo_id: str) -> str:
