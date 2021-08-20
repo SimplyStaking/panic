@@ -42,6 +42,14 @@ _key_evm_node_current_height = 'evm1'
 _key_evm_node_went_down_at = 'evm2'
 _key_evm_node_last_monitored = 'evm3'
 
+# EvmContractX_<cl_node_id>_<contract_address>
+_key_evm_contract_version = 'EvmContract1'
+_key_evm_contract_latest_round = 'EvmContract2'
+_key_evm_contract_latest_answer = 'EvmContract3'
+_key_evm_contract_latest_timestamp = 'EvmContract4'
+_key_evm_contract_answered_in_round = 'EvmContract5'
+_key_evm_contract_historical_rounds = 'EvmContract6'
+
 # ghX_<repo_id>
 _key_github_no_of_releases = 'gh1'
 _key_github_last_monitored = 'gh2'

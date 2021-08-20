@@ -3,6 +3,10 @@ from typing import Any, Dict, List, Optional
 
 from src.utils.exceptions import InvalidDictSchemaException
 
+# todo: store proxy and aggrtergator address .. aggregator address can change,
+#     : proxy no, version can change also and we need to cater for this in the
+#     : transformer
+
 
 class Contract(ABC):
     def __init__(self, address: str, version: int) -> None:
@@ -47,12 +51,6 @@ class Contract(ABC):
     @property
     def historical_rounds(self) -> List[Dict]:
         return self._historical_rounds
-
-    def set_address(self, address: str) -> None:
-        self._address = address
-
-    def set_version(self, version: int) -> None:
-        self._version = version
 
     def set_latest_round(self, latest_round: Optional[int]) -> None:
         self._latest_round = latest_round

@@ -5,7 +5,7 @@ from schema import Schema, Or
 from src.monitorables.contracts.contract import Contract
 
 
-class V4Contract(Contract):
+class V4EvmContract(Contract):
     def __init__(self, address: str) -> None:
         super().__init__(address, 3)
         self._owed_payment = None
