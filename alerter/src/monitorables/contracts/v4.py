@@ -6,8 +6,10 @@ from src.monitorables.contracts.contract import EVMContract
 
 
 class V4EvmContract(EVMContract):
-    def __init__(self, proxy_address: str, aggregator_address: str) -> None:
-        super().__init__(proxy_address, aggregator_address, 4)
+    def __init__(self, proxy_address: str, aggregator_address: str,
+                 parent_id: str, node_id: str) -> None:
+        super().__init__(proxy_address, aggregator_address, 4, parent_id,
+                         node_id)
         self._owed_payment = None
 
     @property
@@ -33,11 +35,34 @@ class V4EvmContract(EVMContract):
                 'roundTimestamp': float,
                 'answeredInRound': int,
                 'nodeSubmission': Or(int, None),
+                'deviation': Or(float, None),
                 'nodeObservations': int,
                 'noOfTransmitters': int,
             }
         ])
         return schema.is_valid(new_historical_rounds)
+
+    @staticmethod
+    def get_int_metric_attributes() -> List[str]:
+        """
+        :return: A list of all variable names representing integer metrics.
+        """
+        return ['_latest_round', '_latest_answer', '_answered_in_round',
+                '_owed_payment']
+
+    @staticmethod
+    def get_float_metric_attributes() -> List[str]:
+        """
+        :return: A list of all variable names representing float metrics.
+        """
+        return ['_latest_timestamp']
+
+    @staticmethod
+    def get_list_metric_attributes() -> List[str]:
+        """
+        :return: A list of all variable names representing dict metrics.
+        """
+        return ['_historical_rounds']
 
     def reset(self) -> None:
         self.set_latest_round(None)

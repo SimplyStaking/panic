@@ -44,7 +44,7 @@ _key_evm_node_last_monitored = 'evm3'
 
 # EvmContractX_<cl_node_id>_<contract_proxy_address>
 _key_evm_contract_version = 'EvmContract1'
-_key_evm_aggregator_address = 'EvmContract2'
+_key_evm_contract_aggregator_address = 'EvmContract2'
 _key_evm_contract_latest_round = 'EvmContract3'
 _key_evm_contract_latest_answer = 'EvmContract4'
 _key_evm_contract_latest_timestamp = 'EvmContract5'
@@ -267,7 +267,8 @@ class Keys:
     @staticmethod
     def get_evm_contract_aggregator_address(cl_node_id: str,
                                             contract_proxy_address: str) -> str:
-        return Keys._as_prefix(_key_evm_aggregator_address) + Keys._as_prefix(
+        return Keys._as_prefix(
+            _key_evm_contract_aggregator_address) + Keys._as_prefix(
             cl_node_id) + contract_proxy_address
 
     @staticmethod

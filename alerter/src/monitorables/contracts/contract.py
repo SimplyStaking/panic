@@ -6,10 +6,12 @@ from src.utils.exceptions import InvalidDictSchemaException
 
 class EVMContract(ABC):
     def __init__(self, proxy_address: str, aggregator_address: str,
-                 version: int) -> None:
+                 version: int, parent_id: str, node_id: str) -> None:
         self._proxy_address = proxy_address
         self._aggregator_address = aggregator_address
         self._version = version
+        self._parent_id = parent_id
+        self._node_id = node_id
         self._latest_round = None
         self._latest_answer = None
         self._latest_timestamp = None
@@ -35,6 +37,14 @@ class EVMContract(ABC):
         return self._version
 
     @property
+    def parent_id(self) -> str:
+        return self._parent_id
+
+    @property
+    def node_id(self) -> str:
+        return self._node_id
+
+    @property
     def latest_round(self) -> Optional[int]:
         return self._latest_round
 
@@ -56,6 +66,12 @@ class EVMContract(ABC):
 
     def set_aggregator_address(self, aggregator_address: str) -> None:
         self._aggregator_address = aggregator_address
+
+    def set_parent_id(self, parent_id: str) -> None:
+        self._parent_id = parent_id
+
+    def set_node_id(self, node_id: str) -> None:
+        self._node_id = node_id
 
     def set_latest_round(self, latest_round: Optional[int]) -> None:
         self._latest_round = latest_round
