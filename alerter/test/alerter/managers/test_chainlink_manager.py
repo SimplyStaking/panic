@@ -386,7 +386,8 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
 
     @freeze_time("2012-01-01")
     @mock.patch(
-        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -448,7 +449,8 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
 
     @freeze_time("2012-01-01")
     @mock.patch(
-        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -511,7 +513,8 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
 
     @freeze_time("2012-01-01")
     @mock.patch(
-        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch("src.alerter.alerter_starters.create_logger")
     @mock.patch.object(ChainlinkNodeAlerterManager, "_send_heartbeat")
@@ -566,7 +569,8 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         )
 
     @mock.patch(
-        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
     @mock.patch.object(multiprocessing, 'Process')
@@ -617,7 +621,8 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         mock_push_latest_data_to_queue_and_send.assert_called_once()
 
     @mock.patch(
-        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
             self, mock_push_latest_data_to_queue_and_send) -> None:
         self.test_manager._initialise_rabbitmq()
@@ -640,7 +645,8 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         ("self.test_exception", "PANICException"),
     ])
     @mock.patch(
-        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     @mock.patch.object(ChainlinkNodeAlerterManager, "_send_heartbeat")
     def test_process_ping_send_hb_raises_exceptions(
             self, param_input, param_expected, hb_mock,
@@ -722,7 +728,8 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
     ])
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch(
-        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     def test_process_configs_configs_get_updated_and_generates_alert(
             self, param_config, param_routing_key, mock_push_data_to_queue,
             mock_ack) -> None:
@@ -744,9 +751,11 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         call_1 = call({'alert_code': {'name': 'ComponentResetAlert',
                                       'code': 'internal_alert_1'},
                        'metric': 'component_reset_alert',
-                       'message': 'Component: Chainlink Node Alerter has been reset for chainlink polygon.',
+                       'message': 'Component: Chainlink Node Alerter has been '
+                                  'reset for chainlink polygon.',
                        'severity': 'INTERNAL',
-                       'parent_id': 'chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4',
+                       'parent_id':
+                           'chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4',
                        'origin_id': 'ChainlinkNodeAlerter',
                        'timestamp': 1625239987.518717}
                       )

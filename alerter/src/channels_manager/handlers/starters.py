@@ -7,21 +7,21 @@ import pika.exceptions
 from src.channels_manager.apis.email_api import EmailApi
 from src.channels_manager.apis.opsgenie_api import OpsgenieApi
 from src.channels_manager.apis.pagerduty_api import PagerDutyApi
-from src.channels_manager.apis.telegram_bot_api import TelegramBotApi
 from src.channels_manager.apis.slack_bot_api import SlackBotApi
+from src.channels_manager.apis.telegram_bot_api import TelegramBotApi
 from src.channels_manager.apis.twilio_api import TwilioApi
 from src.channels_manager.channels import PagerDutyChannel
 from src.channels_manager.channels.console import ConsoleChannel
 from src.channels_manager.channels.email import EmailChannel
 from src.channels_manager.channels.log import LogChannel
 from src.channels_manager.channels.opsgenie import OpsgenieChannel
-from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.channels.slack import SlackChannel
+from src.channels_manager.channels.telegram import TelegramChannel
 from src.channels_manager.channels.twilio import TwilioChannel
-from src.channels_manager.commands.handlers.telegram_cmd_handlers import (
-    TelegramCommandHandlers)
 from src.channels_manager.commands.handlers.slack_cmd_handlers import \
     SlackCommandHandlers
+from src.channels_manager.commands.handlers.telegram_cmd_handlers import (
+    TelegramCommandHandlers)
 from src.channels_manager.handlers import EmailAlertsHandler
 from src.channels_manager.handlers.console.alerts import ConsoleAlertsHandler
 from src.channels_manager.handlers.handler import ChannelHandler
@@ -29,11 +29,11 @@ from src.channels_manager.handlers.log.alerts import LogAlertsHandler
 from src.channels_manager.handlers.opsgenie.alerts import OpsgenieAlertsHandler
 from src.channels_manager.handlers.pagerduty.alerts import (
     PagerDutyAlertsHandler)
+from src.channels_manager.handlers.slack.alerts import SlackAlertsHandler
+from src.channels_manager.handlers.slack.commands import SlackCommandsHandler
 from src.channels_manager.handlers.telegram.alerts import TelegramAlertsHandler
 from src.channels_manager.handlers.telegram.commands import (
     TelegramCommandsHandler)
-from src.channels_manager.handlers.slack.alerts import SlackAlertsHandler
-from src.channels_manager.handlers.slack.commands import SlackCommandsHandler
 from src.channels_manager.handlers.twilio.alerts import TwilioAlertsHandler
 from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi

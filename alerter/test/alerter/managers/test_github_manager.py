@@ -268,7 +268,8 @@ class TestGithubAlertersManager(unittest.TestCase):
 
     @freeze_time("2012-01-01")
     @mock.patch(
-        "src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.github.GithubAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -332,7 +333,8 @@ class TestGithubAlertersManager(unittest.TestCase):
 
     @freeze_time("2012-01-01")
     @mock.patch(
-        "src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.github.GithubAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -398,7 +400,8 @@ class TestGithubAlertersManager(unittest.TestCase):
 
     @freeze_time("2012-01-01")
     @mock.patch(
-        "src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.github.GithubAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch("src.alerter.alerter_starters.create_logger")
     @mock.patch.object(GithubAlerterManager, "_send_heartbeat")
@@ -454,7 +457,8 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch(
-        "src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.github.GithubAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(multiprocessing.Process, "start")
     @mock.patch.object(multiprocessing, 'Process')
@@ -508,7 +512,8 @@ class TestGithubAlertersManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch(
-        "src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.github.GithubAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
             self, mock_push_latest_data_to_queue_and_send) -> None:
         try:
@@ -534,7 +539,8 @@ class TestGithubAlertersManager(unittest.TestCase):
         ("self.test_exception", "PANICException"),
     ])
     @mock.patch(
-        "src.alerter.managers.github.GithubAlerterManager._push_latest_data_to_queue_and_send")
+        "src.alerter.managers.github.GithubAlerterManager"
+        "._push_latest_data_to_queue_and_send")
     @mock.patch.object(GithubAlerterManager, "_send_heartbeat")
     def test_process_ping_send_hb_raises_exceptions(
             self, param_input, param_expected, hb_mock,

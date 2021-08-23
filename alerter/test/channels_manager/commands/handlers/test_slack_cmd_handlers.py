@@ -1462,6 +1462,8 @@ class TestSlackCommandHandlers(unittest.TestCase):
             "combination of CRITICAL, WARNING, INFO or ERROR separated by " \
             "spaces after the /panicmute command. You can enter no severities " \
             "" \
+            "" \
+            "" \
             "and PANIC will automatically mute all alerts for {}".format(
                 ', '.join(unrecognised_severities), ', '.join(chain_names))
         expected_calls = [call("Performing mute..."), call(expected_reply)]

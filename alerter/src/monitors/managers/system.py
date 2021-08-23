@@ -188,7 +188,8 @@ class SystemMonitorsManager(MonitorsManager):
                 previous_process.terminate()
                 previous_process.join()
 
-                # If we should not monitor the system, delete the previous process
+                # If we should not monitor the system, delete the previous
+                # process
                 # from the system and move to the next config
                 if not monitor_system:
                     del self.config_process_dict[config_id]
