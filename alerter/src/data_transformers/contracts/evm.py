@@ -1,9 +1,11 @@
 import copy
 import json
 import logging
+from datetime import datetime
 from typing import Union, Type, Dict, Tuple
 
 import pika
+from pika.adapters.blocking_connection import BlockingChannel
 
 from src.data_store.redis import Keys
 from src.data_store.redis.redis_api import RedisApi
@@ -16,7 +18,8 @@ from src.utils.constants.rabbitmq import (
     TOPIC, EVM_CONTRACTS_DT_INPUT_QUEUE_NAME,
     EVM_CONTRACTS_RAW_DATA_ROUTING_KEY,
     EVM_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY)
-from src.utils.exceptions import ReceivedUnexpectedDataException
+from src.utils.exceptions import (ReceivedUnexpectedDataException,
+                                  MessageWasNotDeliveredException)
 from src.utils.types import Monitorable, convert_to_int, convert_to_float
 
 
@@ -362,81 +365,85 @@ class EVMContractsDataTransformer(DataTransformer):
             elif version == 4:
                 self.state[node_id][proxy_address] = V4EvmContract(
                     proxy_address, aggregator_address, parent_id, node_id)
-    #
-    # def _process_raw_data(
-    #         self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
-    #         properties: pika.spec.BasicProperties, body: bytes) -> None:
-    #     raw_data = json.loads(body)
-    #     self.logger.debug("Received %s from monitors. Now processing this "
-    #                       "data.", raw_data)
-    #
-    #     processing_error = False
-    #     transformed_data = {}
-    #     data_for_alerting = {}
-    #     data_for_saving = {}
-    #     try:
-    #         if 'result' in raw_data or 'error' in raw_data:
-    #             response_index_key = \
-    #                 'result' if 'result' in raw_data else 'error'
-    #             meta_data = raw_data[response_index_key]['meta_data']
-    #             node_id = meta_data['node_id']
-    #             node_parent_id = meta_data['node_parent_id']
-    #             node_name = meta_data['node_name']
-    #
-    #             if node_id not in self.state:
-    #                 new_node = EVMNode(node_name, node_id, node_parent_id)
-    #                 loaded_node = self.load_state(new_node)
-    #                 self._state[node_id] = loaded_node
-    #
-    #             transformed_data, data_for_alerting, data_for_saving = \
-    #                 self._transform_data(raw_data)
-    #         else:
-    #             raise ReceivedUnexpectedDataException(
-    #                 "{}: _process_raw_data".format(self))
-    #     except Exception as e:
-    #         self.logger.error("Error when processing %s", raw_data)
-    #         self.logger.exception(e)
-    #         processing_error = True
-    #
-    #     # If the data is processed, it can be acknowledged.
-    #     self.rabbitmq.basic_ack(method.delivery_tag, False)
-    #
-    #     # We want to update the state after the data is acknowledged, otherwise
-    #     # if acknowledgement fails the state would be erroneous when processing
-    #     # the data again. Note, only update the state if there were no
-    #     # processing errors.
-    #     if not processing_error:
-    #         try:
-    #             self._update_state(transformed_data)
-    #             self.logger.debug("Successfully processed %s", raw_data)
-    #         except Exception as e:
-    #             self.logger.error("Error when processing %s", raw_data)
-    #             self.logger.exception(e)
-    #             processing_error = True
-    #
-    #     # Place the data on the publishing queue if there were no processing
-    #     # errors. This is done after acknowledging the data, so that if
-    #     # acknowledgement fails, the data is processed again and we do not have
-    #     # duplication of data in the queue
-    #     if not processing_error:
-    #         self._place_latest_data_on_queue(
-    #             transformed_data, data_for_alerting, data_for_saving)
-    #
-    #     # Send any data waiting in the publisher queue, if any
-    #     try:
-    #         self._send_data()
-    #
-    #         if not processing_error:
-    #             heartbeat = {
-    #                 'component_name': self.transformer_name,
-    #                 'is_alive': True,
-    #                 'timestamp': datetime.now().timestamp()
-    #             }
-    #             self._send_heartbeat(heartbeat)
-    #     except MessageWasNotDeliveredException as e:
-    #         # Log the message and do not raise it as message is residing in the
-    #         # publisher queue.
-    #         self.logger.exception(e)
-    #     except Exception as e:
-    #         # For any other exception raise it.
-    #         raise e
+
+    def _process_raw_data(
+            self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
+            properties: pika.spec.BasicProperties, body: bytes) -> None:
+        raw_data = json.loads(body)
+        self.logger.debug("Received %s from monitors. Now processing this "
+                          "data.", raw_data)
+
+        processing_error = False
+        transformed_data = {}
+        data_for_alerting = {}
+        data_for_saving = {}
+        try:
+            if 'result' in raw_data:
+                meta_data = raw_data['result']['meta_data']
+                node_id = meta_data['node_id']
+                parent_id = meta_data['node_parent_id']
+                data = raw_data['result']['data']
+
+                for proxy_address, contract_details in data.items():
+                    aggregator_address = contract_details['aggregatorAddress']
+                    version = contract_details['contractVersion']
+                    self._create_state_entry(node_id, proxy_address, parent_id,
+                                             version, aggregator_address)
+                    evm_contract = self.state[node_id][proxy_address]
+                    self.load_state(evm_contract)
+
+                transformed_data, data_for_alerting, data_for_saving = \
+                    self._transform_data(raw_data)
+            elif 'error' in raw_data:
+                transformed_data, data_for_alerting, data_for_saving = \
+                    self._transform_data(raw_data)
+            else:
+                raise ReceivedUnexpectedDataException(
+                    "{}: _process_raw_data".format(self))
+        except Exception as e:
+            self.logger.error("Error when processing %s", raw_data)
+            self.logger.exception(e)
+            processing_error = True
+
+        # If the data is processed, it can be acknowledged.
+        self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+        # We want to update the state after the data is acknowledged, otherwise
+        # if acknowledgement fails the state would be erroneous when processing
+        # the data again. Note, only update the state if there were no
+        # processing errors.
+        if not processing_error:
+            try:
+                self._update_state(transformed_data)
+                self.logger.debug("Successfully processed %s", raw_data)
+            except Exception as e:
+                self.logger.error("Error when processing %s", raw_data)
+                self.logger.exception(e)
+                processing_error = True
+
+        # Place the data on the publishing queue if there were no processing
+        # errors. This is done after acknowledging the data, so that if
+        # acknowledgement fails, the data is processed again and we do not have
+        # duplication of data in the queue
+        if not processing_error:
+            self._place_latest_data_on_queue(
+                transformed_data, data_for_alerting, data_for_saving)
+
+        # Send any data waiting in the publisher queue, if any
+        try:
+            self._send_data()
+
+            if not processing_error:
+                heartbeat = {
+                    'component_name': self.transformer_name,
+                    'is_alive': True,
+                    'timestamp': datetime.now().timestamp()
+                }
+                self._send_heartbeat(heartbeat)
+        except MessageWasNotDeliveredException as e:
+            # Log the message and do not raise it as message is residing in the
+            # publisher queue.
+            self.logger.exception(e)
+        except Exception as e:
+            # For any other exception raise it.
+            raise e
