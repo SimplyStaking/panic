@@ -98,14 +98,14 @@ class EVMContractsDataTransformer(DataTransformer):
         # also be passed as bytes(str()).
         for attribute in metric_attributes:
             state_value = eval('evm_contract.' + attribute)
-            redis_key = eval('Keys.get_evm_contract_' + attribute +
+            redis_key = eval('Keys.get_evm_contract' + attribute +
                              '(node_id, proxy_address)')
             default_value = bytes(str(state_value), 'utf-8')
             redis_value = self.redis.hget(redis_hash, redis_key, default_value)
             processed_redis_value = 'None' if redis_value is None \
                 else redis_value.decode("utf-8")
             new_value = convert_fn(processed_redis_value, None)
-            eval("evm_contract.set_" + attribute + '(new_value)')
+            eval("evm_contract.set" + attribute + '(new_value)')
 
     def _load_list_state(self, evm_contract: Monitorable) -> None:
         """
@@ -122,13 +122,13 @@ class EVMContractsDataTransformer(DataTransformer):
 
         for attribute in metric_attributes:
             state_value = eval('evm_contract.' + attribute)
-            redis_key = eval('Keys.get_evm_contract_' + attribute +
+            redis_key = eval('Keys.get_evm_contract' + attribute +
                              '(node_id, proxy_address)')
             default_value = bytes(json.dumps(state_value), 'utf-8')
             redis_value = self.redis.hget(redis_hash, redis_key, default_value)
             new_value = [] if redis_value is None else json.loads(
                 redis_value.decode("utf-8"))
-            eval("evm_contract.set_" + attribute + '(new_value)')
+            eval("evm_contract.set" + attribute + '(new_value)')
 
     def load_state(self, evm_contract: Monitorable) -> Monitorable:
         """
@@ -299,9 +299,9 @@ class EVMContractsDataTransformer(DataTransformer):
                     if None in [node_submission, round_answer]:
                         round_data['deviation'] = None
                     else:
-                        round_data['deviation'] = abs(
+                        round_data['deviation'] = convert_to_float(abs(
                             ((round_answer - node_submission) /
-                             round_answer) * 100)
+                             round_answer) * 100), None)
         elif 'error' in data:
             # In case of errors only remove the monitor_name from the meta data
 

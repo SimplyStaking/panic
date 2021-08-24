@@ -559,7 +559,7 @@ class EVMContractsMonitor(Monitor):
             'error': {
                 'meta_data': {
                     'monitor_name': self.monitor_name,
-                    'parent_id': parent_id,
+                    'node_parent_id': parent_id,
                     'time': datetime.now().timestamp()
                 },
                 'message': error.message,

@@ -1,5 +1,6 @@
 import json
 from time import sleep
+from typing import Union
 from unittest.mock import Mock
 
 import pika.exceptions
@@ -7,6 +8,8 @@ import pika.exceptions
 from src.alerter.alert_code import AlertCode
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.monitorables.contracts.v3 import V3EvmContract
+from src.monitorables.contracts.v4 import V4EvmContract
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
 from src.monitorables.nodes.evm_node import EVMNode
 from src.monitorables.repo import GitHubRepo
@@ -215,4 +218,31 @@ def save_evm_node_to_redis(redis: RedisApi, evm_node: EVMNode) -> None:
             str(evm_node.current_height),
         Keys.get_evm_node_last_monitored(evm_node_id):
             str(evm_node.last_monitored)
+    })
+
+
+def save_evm_contract_to_redis(
+        redis: RedisApi,
+        evm_contract: Union[V3EvmContract, V4EvmContract]) -> None:
+    redis_hash = Keys.get_hash_parent(evm_contract.parent_id)
+    node_id = evm_contract.node_id
+    proxy_address = evm_contract.proxy_address
+    version = evm_contract.version
+    payment_key = Keys.get_evm_contract_withdrawable_payment(
+        node_id, proxy_address) if version == 3 \
+        else Keys.get_evm_contract_owed_payment(node_id, proxy_address)
+    payment_value = evm_contract.withdrawable_payment if version == 3 \
+        else evm_contract.owed_payment
+    redis.hset_multiple(redis_hash, {
+        Keys.get_evm_contract_latest_round(node_id, proxy_address):
+            str(evm_contract.latest_round),
+        Keys.get_evm_contract_latest_answer(node_id, proxy_address):
+            str(evm_contract.latest_answer),
+        Keys.get_evm_contract_latest_timestamp(node_id, proxy_address):
+            str(evm_contract.latest_timestamp),
+        Keys.get_evm_contract_answered_in_round(node_id, proxy_address):
+            str(evm_contract.answered_in_round),
+        payment_key: payment_value,
+        Keys.get_evm_contract_historical_rounds(node_id, proxy_address):
+            json.dumps(evm_contract.historical_rounds),
     })

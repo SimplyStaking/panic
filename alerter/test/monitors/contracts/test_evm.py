@@ -1388,7 +1388,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
             'error': {
                 'meta_data': {
                     'monitor_name': self.monitor_name,
-                    'parent_id': self.test_parent_id,
+                    'node_parent_id': self.test_parent_id,
                     'time': datetime.now().timestamp()
                 },
                 'message': self.test_exception.message,
@@ -1651,7 +1651,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
             'error': {
                 'meta_data': {
                     'monitor_name': self.monitor_name,
-                    'parent_id': self.parent_id_1,
+                    'node_parent_id': self.parent_id_1,
                     'time': datetime.now().timestamp()
                 },
                 'message': expected_raised_exception.message,
@@ -1698,7 +1698,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
             'error': {
                 'meta_data': {
                     'monitor_name': self.monitor_name,
-                    'parent_id': self.parent_id_1,
+                    'node_parent_id': self.parent_id_1,
                     'time': datetime.now().timestamp()
                 },
                 'message': expected_raised_exception.message,

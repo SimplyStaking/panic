@@ -36,7 +36,7 @@ class V4EvmContract(EVMContract):
                 'answeredInRound': int,
                 'nodeSubmission': Or(int, None),
                 'deviation': Or(float, None),
-                'nodeObservations': int,
+                'noOfObservations': int,
                 'noOfTransmitters': int,
             }
         ])
