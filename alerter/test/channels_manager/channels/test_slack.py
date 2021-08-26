@@ -67,7 +67,7 @@ class TestSlackChannel(unittest.TestCase):
 
     @mock.patch.object(SlackBotApi, "send_message")
     def test_alert_sends_an_alert_correctly(self, mock_send_message) -> None:
-        # In this test we will check that PagerDutyApi.trigger() is called
+        # In this test we will check that SlackBotApi.send_message() is called
         # with the correct parameters.
         expected_subject = "PANIC {}".format(self.test_alert.severity.upper())
         expected_message = '*{}*: `{}`'.format(expected_subject,
