@@ -157,6 +157,9 @@ class EVMNodeDataTransformer(DataTransformer):
                 went_down_at = transformed_data['error']['data']['went_down_at']
                 node.set_as_down(went_down_at)
         else:
+            # Since the processing function calling this method caters for
+            # unexpected data this condition will never be executed. Regardless,
+            # this condition should be kept as a precaution for the function.
             raise ReceivedUnexpectedDataException(
                 "{}: _update_state".format(self))
 
@@ -169,6 +172,9 @@ class EVMNodeDataTransformer(DataTransformer):
         if 'result' in transformed_data or 'error' in transformed_data:
             processed_data = copy.deepcopy(transformed_data)
         else:
+            # Since the processing function calling this method caters for
+            # unexpected data this condition will never be executed. Regardless,
+            # this condition should be kept as a precaution for the function.
             raise ReceivedUnexpectedDataException(
                 "{}: _process_transformed_data_for_saving".format(self))
 
@@ -225,6 +231,9 @@ class EVMNodeDataTransformer(DataTransformer):
                 processed_data_metrics['went_down_at'][
                     'previous'] = node.went_down_at
         else:
+            # Since the processing function calling this method caters for
+            # unexpected data this condition will never be executed. Regardless,
+            # this condition should be kept as a precaution for the function.
             raise ReceivedUnexpectedDataException(
                 "{}: _process_transformed_data_for_alerting".format(self))
 
@@ -271,6 +280,9 @@ class EVMNodeDataTransformer(DataTransformer):
                 td_metrics['went_down_at'] = \
                     node.went_down_at if node.is_down else time_of_error
         else:
+            # Since the processing function calling this method caters for
+            # unexpected data this condition will never be executed. Regardless,
+            # this condition should be kept as a precaution for the function.
             raise ReceivedUnexpectedDataException(
                 "{}: _transform_data".format(self))
 
