@@ -52,6 +52,7 @@ _key_evm_contract_answered_in_round = 'EvmContract6'
 _key_evm_contract_historical_rounds = 'EvmContract7'
 _key_evm_contract_withdrawable_payment = 'EvmContract8'
 _key_evm_contract_owed_payment = 'EvmContract9'
+_key_evm_contract_last_monitored = 'EvmContract10'
 
 # ghX_<repo_id>
 _key_github_no_of_releases = 'gh1'
@@ -318,6 +319,13 @@ class Keys:
                                       contract_proxy_address: str) -> str:
         return Keys._as_prefix(
             _key_evm_contract_owed_payment) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_evm_contract_last_monitored(cl_node_id: str,
+                                        contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_evm_contract_last_monitored) + Keys._as_prefix(
             cl_node_id) + contract_proxy_address
 
     @staticmethod

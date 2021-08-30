@@ -8,6 +8,7 @@ from queue import Queue
 from unittest import mock
 
 import pika
+from parameterized import parameterized
 
 from src.data_store.redis import RedisApi
 from src.data_transformers.contracts.evm import EVMContractsDataTransformer
@@ -18,8 +19,10 @@ from src.utils import env
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE,
     EVM_CONTRACTS_DT_INPUT_QUEUE_NAME, EVM_CONTRACTS_RAW_DATA_ROUTING_KEY,
-    HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
-from src.utils.exceptions import (PANICException)
+    HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+    EVM_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY)
+from src.utils.exceptions import (PANICException,
+                                  ReceivedUnexpectedDataException)
 from test.utils.utils import (
     connect_to_rabbit, delete_queue_if_exists, disconnect_from_rabbit,
     delete_exchange_if_exists, save_evm_contract_to_redis)
@@ -59,7 +62,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             self.dummy_logger, self.redis_db, self.redis_host, self.redis_port,
             '', self.redis_namespace, self.connection_check_time_interval)
 
-        # Test node credentials
+        # Test meta_data credentials
         self.test_monitor_name = 'test_monitor'
         self.test_node_id_1 = 'node_id_1'
         self.test_parent_id_1 = 'parent_id_1'
@@ -73,7 +76,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_latest_timestamp_1 = self.test_last_monitored + 30
         self.test_answered_in_round_1 = 40
         self.test_withdrawable_payment_1 = 3458347534235
-        self.test_owed_payment_1 = 34545455
+        self.test_owed_payment_1 = 34
         self.test_historical_rounds_1 = [
             {
                 'roundId': 38,
@@ -84,16 +87,16 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             },
             {
                 'roundId': 39,
-                'roundAnswer': 12,
+                'roundAnswer': 5,
                 'roundTimestamp': self.test_last_monitored + 20,
-                'answeredInRound': 4,
-                'nodeSubmission': 6762356
+                'answeredInRound': 39,
+                'nodeSubmission': 10
             }
         ]
         self.test_historical_rounds_1_transformed = copy.deepcopy(
             self.test_historical_rounds_1)
         self.test_historical_rounds_1_transformed[0]['deviation'] = 50.0
-        self.test_historical_rounds_1_transformed[1]['deviation'] = 66.66666666
+        self.test_historical_rounds_1_transformed[1]['deviation'] = 100.0
         self.test_proxy_address_2 = 'test_proxy_address_2'
         self.test_aggregator_address_2 = 'test_aggregator_address_2'
         self.test_latest_round_2 = 50
@@ -101,7 +104,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_latest_timestamp_2 = self.test_last_monitored + 30
         self.test_answered_in_round_2 = 40
         self.test_withdrawable_payment_2 = 3458347
-        self.test_owed_payment_2 = 345454455
+        self.test_owed_payment_2 = 35
         self.test_historical_rounds_2 = [
             {
                 'roundId': 48,
@@ -112,16 +115,16 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             },
             {
                 'roundId': 49,
-                'roundAnswer': 12,
+                'roundAnswer': 5,
                 'roundTimestamp': self.test_last_monitored + 20,
                 'answeredInRound': 49,
-                'nodeSubmission': 4
+                'nodeSubmission': 10
             }
         ]
         self.test_historical_rounds_2_transformed = copy.deepcopy(
             self.test_historical_rounds_2)
         self.test_historical_rounds_2_transformed[0]['deviation'] = 50.0
-        self.test_historical_rounds_2_transformed[1]['deviation'] = 66.66666666
+        self.test_historical_rounds_2_transformed[1]['deviation'] = 100.0
         self.test_historical_rounds_3 = [
             {
                 'roundId': 48,
@@ -134,10 +137,10 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             },
             {
                 'roundId': 49,
-                'roundAnswer': 12,
+                'roundAnswer': 5,
                 'roundTimestamp': self.test_last_monitored + 20,
                 'answeredInRound': 49,
-                'nodeSubmission': 4,
+                'nodeSubmission': 10,
                 'noOfObservations': 5,
                 'noOfTransmitters': 16,
             }
@@ -145,7 +148,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_historical_rounds_3_transformed = copy.deepcopy(
             self.test_historical_rounds_3)
         self.test_historical_rounds_3_transformed[0]['deviation'] = 50.0
-        self.test_historical_rounds_3_transformed[1]['deviation'] = 66.66666666
+        self.test_historical_rounds_3_transformed[1]['deviation'] = 100.0
         self.test_historical_rounds_4 = [
             {
                 'roundId': 38,
@@ -158,10 +161,10 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             },
             {
                 'roundId': 39,
-                'roundAnswer': 12,
+                'roundAnswer': 5,
                 'roundTimestamp': self.test_last_monitored + 20,
                 'answeredInRound': 39,
-                'nodeSubmission': 4,
+                'nodeSubmission': 10,
                 'noOfObservations': 7,
                 'noOfTransmitters': 18,
             }
@@ -169,7 +172,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_historical_rounds_4_transformed = copy.deepcopy(
             self.test_historical_rounds_4)
         self.test_historical_rounds_4_transformed[0]['deviation'] = 50.0
-        self.test_historical_rounds_4_transformed[1]['deviation'] = 66.66666666
+        self.test_historical_rounds_4_transformed[1]['deviation'] = 100.0
 
         # Some raw data examples
         self.raw_data_example_result_v3 = {
@@ -335,6 +338,35 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_evm_contract_1_new_metrics = V3EvmContract(
             self.test_proxy_address_1, self.test_aggregator_address_1,
             self.test_parent_id_1, self.test_node_id_1)
+        self.test_evm_contract_2_new_metrics = V3EvmContract(
+            self.test_proxy_address_2, self.test_aggregator_address_2,
+            self.test_parent_id_1, self.test_node_id_1)
+        self.test_evm_contract_3_new_metrics = V4EvmContract(
+            self.test_proxy_address_1, self.test_aggregator_address_1,
+            self.test_parent_id_1, self.test_node_id_1)
+        self.test_evm_contract_4_new_metrics = V4EvmContract(
+            self.test_proxy_address_2, self.test_aggregator_address_2,
+            self.test_parent_id_1, self.test_node_id_1)
+
+        # Test state before receiving new metrics
+        self.test_state_v3 = {
+            self.test_node_id_1: {
+                self.test_proxy_address_1: copy.deepcopy(
+                    self.test_evm_contract_1_new_metrics),
+                self.test_proxy_address_2: copy.deepcopy(
+                    self.test_evm_contract_2_new_metrics),
+            },
+        }
+        self.test_state_v4 = {
+            self.test_node_id_1: {
+                self.test_proxy_address_1: copy.deepcopy(
+                    self.test_evm_contract_3_new_metrics),
+                self.test_proxy_address_2: copy.deepcopy(
+                    self.test_evm_contract_4_new_metrics),
+            },
+        }
+
+        # Update the states with received metrics
         self.test_evm_contract_1_new_metrics.set_latest_round(
             self.test_latest_round_1)
         self.test_evm_contract_1_new_metrics.set_latest_answer(
@@ -347,10 +379,9 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             self.test_withdrawable_payment_1)
         self.test_evm_contract_1_new_metrics.set_historical_rounds(
             self.test_historical_rounds_1_transformed)
+        self.test_evm_contract_1_new_metrics.set_last_monitored(
+            self.test_last_monitored + 60)
 
-        self.test_evm_contract_2_new_metrics = V3EvmContract(
-            self.test_proxy_address_2, self.test_aggregator_address_2,
-            self.test_parent_id_1, self.test_node_id_1)
         self.test_evm_contract_2_new_metrics.set_latest_round(
             self.test_latest_round_2)
         self.test_evm_contract_2_new_metrics.set_latest_answer(
@@ -363,10 +394,9 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             self.test_withdrawable_payment_2)
         self.test_evm_contract_2_new_metrics.set_historical_rounds(
             self.test_historical_rounds_2_transformed)
+        self.test_evm_contract_2_new_metrics.set_last_monitored(
+            self.test_last_monitored + 60)
 
-        self.test_evm_contract_3_new_metrics = V4EvmContract(
-            self.test_proxy_address_1, self.test_aggregator_address_1,
-            self.test_parent_id_1, self.test_node_id_1)
         self.test_evm_contract_3_new_metrics.set_latest_round(
             self.test_latest_round_1)
         self.test_evm_contract_3_new_metrics.set_latest_answer(
@@ -379,10 +409,9 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             self.test_owed_payment_1)
         self.test_evm_contract_3_new_metrics.set_historical_rounds(
             self.test_historical_rounds_3_transformed)
+        self.test_evm_contract_3_new_metrics.set_last_monitored(
+            self.test_last_monitored + 60)
 
-        self.test_evm_contract_4_new_metrics = V4EvmContract(
-            self.test_proxy_address_2, self.test_aggregator_address_2,
-            self.test_parent_id_1, self.test_node_id_1)
         self.test_evm_contract_4_new_metrics.set_latest_round(
             self.test_latest_round_2)
         self.test_evm_contract_4_new_metrics.set_latest_answer(
@@ -395,6 +424,22 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             self.test_owed_payment_2)
         self.test_evm_contract_4_new_metrics.set_historical_rounds(
             self.test_historical_rounds_4_transformed)
+        self.test_evm_contract_4_new_metrics.set_last_monitored(
+            self.test_last_monitored + 60)
+
+        # Test state after receiving new metrics
+        self.test_state_v3_updated = {
+            self.test_node_id_1: {
+                self.test_proxy_address_1: self.test_evm_contract_1_new_metrics,
+                self.test_proxy_address_2: self.test_evm_contract_2_new_metrics,
+            },
+        }
+        self.test_state_v4_updated = {
+            self.test_node_id_1: {
+                self.test_proxy_address_1: self.test_evm_contract_3_new_metrics,
+                self.test_proxy_address_2: self.test_evm_contract_4_new_metrics,
+            },
+        }
 
         meta_data_for_alerting_result_v3 = \
             self.transformed_data_example_result_v3['result']['meta_data']
@@ -403,8 +448,6 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                 'meta_data': meta_data_for_alerting_result_v3,
                 'data': {
                     self.test_proxy_address_1: {
-                        'contractVersion': 3,
-                        'aggregatorAddress': self.test_aggregator_address_1,
                         'latestRound': {
                             'current': self.test_latest_round_1,
                             'previous': None,
@@ -421,19 +464,19 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                             'current': self.test_answered_in_round_1,
                             'previous': None,
                         },
-                        'withdrawalPayment': {
+                        'withdrawablePayment': {
                             'current': self.test_withdrawable_payment_1,
                             'previous': None,
                         },
                         'historicalRounds': {
                             'current':
                                 self.test_historical_rounds_1_transformed,
-                            'previous': None,
-                        }
+                            'previous': [],
+                        },
+                        'contractVersion': 3,
+                        'aggregatorAddress': self.test_aggregator_address_1,
                     },
                     self.test_proxy_address_2: {
-                        'contractVersion': 3,
-                        'aggregatorAddress': self.test_aggregator_address_2,
                         'latestRound': {
                             'current': self.test_latest_round_2,
                             'previous': None,
@@ -450,15 +493,17 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                             'current': self.test_answered_in_round_2,
                             'previous': None,
                         },
-                        'withdrawalPayment': {
+                        'withdrawablePayment': {
                             'current': self.test_withdrawable_payment_2,
                             'previous': None,
                         },
                         'historicalRounds': {
                             'current':
                                 self.test_historical_rounds_2_transformed,
-                            'previous': None,
-                        }
+                            'previous': [],
+                        },
+                        'contractVersion': 3,
+                        'aggregatorAddress': self.test_aggregator_address_2,
                     },
                 }
             }
@@ -470,8 +515,6 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                 'meta_data': meta_data_for_alerting_result_v4,
                 'data': {
                     self.test_proxy_address_1: {
-                        'contractVersion': 4,
-                        'aggregatorAddress': self.test_aggregator_address_1,
                         'latestRound': {
                             'current': self.test_latest_round_1,
                             'previous': None,
@@ -489,18 +532,18 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                             'previous': None,
                         },
                         'owedPayment': {
-                            'current': self.test_withdrawable_payment_1,
+                            'current': self.test_owed_payment_1,
                             'previous': None,
                         },
                         'historicalRounds': {
                             'current':
                                 self.test_historical_rounds_3_transformed,
-                            'previous': None,
-                        }
+                            'previous': [],
+                        },
+                        'contractVersion': 4,
+                        'aggregatorAddress': self.test_aggregator_address_1,
                     },
                     self.test_proxy_address_2: {
-                        'contractVersion': 4,
-                        'aggregatorAddress': self.test_aggregator_address_2,
                         'latestRound': {
                             'current': self.test_latest_round_2,
                             'previous': None,
@@ -518,14 +561,16 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                             'previous': None,
                         },
                         'owedPayment': {
-                            'current': self.test_withdrawable_payment_2,
+                            'current': self.test_owed_payment_2,
                             'previous': None,
                         },
                         'historicalRounds': {
                             'current':
                                 self.test_historical_rounds_4_transformed,
-                            'previous': None,
-                        }
+                            'previous': [],
+                        },
+                        'contractVersion': 4,
+                        'aggregatorAddress': self.test_aggregator_address_2,
                     },
                 }
             }
@@ -729,6 +774,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                          loaded_evm_contract_v3.historical_rounds)
         self.assertEqual(self.test_withdrawable_payment_1,
                          loaded_evm_contract_v3.withdrawable_payment)
+        self.assertEqual(self.test_last_monitored + 60,
+                         loaded_evm_contract_v3.last_monitored)
 
         self.assertEqual(self.test_latest_round_2,
                          loaded_evm_contract_v4.latest_round)
@@ -742,6 +789,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                          loaded_evm_contract_v4.historical_rounds)
         self.assertEqual(self.test_owed_payment_2,
                          loaded_evm_contract_v4.owed_payment)
+        self.assertEqual(self.test_last_monitored + 60,
+                         loaded_evm_contract_v4.last_monitored)
 
         # Clean test db
         self.redis.delete_all()
@@ -782,6 +831,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.assertEqual(None, loaded_evm_contract_v3.answered_in_round)
         self.assertEqual([], loaded_evm_contract_v3.historical_rounds)
         self.assertEqual(None, loaded_evm_contract_v3.withdrawable_payment)
+        self.assertEqual(None, loaded_evm_contract_v3.last_monitored)
 
         self.assertEqual(None, loaded_evm_contract_v4.latest_round)
         self.assertEqual(None, loaded_evm_contract_v4.latest_answer)
@@ -789,6 +839,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.assertEqual(None, loaded_evm_contract_v4.answered_in_round)
         self.assertEqual([], loaded_evm_contract_v4.historical_rounds)
         self.assertEqual(None, loaded_evm_contract_v4.owed_payment)
+        self.assertEqual(None, loaded_evm_contract_v4.last_monitored)
 
         # Clean test db
         self.redis.delete_all()
@@ -820,6 +871,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                          loaded_evm_contract_v3.historical_rounds)
         self.assertEqual(self.test_withdrawable_payment_1,
                          loaded_evm_contract_v3.withdrawable_payment)
+        self.assertEqual(self.test_last_monitored + 60,
+                         loaded_evm_contract_v3.last_monitored)
 
         self.assertEqual(self.test_latest_round_2,
                          loaded_evm_contract_v4.latest_round)
@@ -833,6 +886,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                          loaded_evm_contract_v4.historical_rounds)
         self.assertEqual(self.test_owed_payment_2,
                          loaded_evm_contract_v4.owed_payment)
+        self.assertEqual(self.test_last_monitored + 60,
+                         loaded_evm_contract_v4.last_monitored)
 
         # Clean test db
         self.redis.delete_all()
@@ -865,6 +920,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                          loaded_evm_contract_v3.historical_rounds)
         self.assertEqual(self.test_withdrawable_payment_1,
                          loaded_evm_contract_v3.withdrawable_payment)
+        self.assertEqual(self.test_last_monitored + 60,
+                         loaded_evm_contract_v3.last_monitored)
 
         self.assertEqual(self.test_latest_round_2,
                          loaded_evm_contract_v4.latest_round)
@@ -878,178 +935,217 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                          loaded_evm_contract_v4.historical_rounds)
         self.assertEqual(self.test_owed_payment_2,
                          loaded_evm_contract_v4.owed_payment)
+        self.assertEqual(self.test_last_monitored + 60,
+                         loaded_evm_contract_v4.last_monitored)
 
         # Clean test db
         self.redis.delete_all()
-    #
-    # def test_update_state_raises_except_and_keeps_state_if_no_result_or_err(
-    #         self) -> None:
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     expected_state = copy.deepcopy(self.test_state)
-    #
-    #     # First confirm that an exception is raised
-    #     self.assertRaises(ReceivedUnexpectedDataException,
-    #                       self.test_data_transformer._update_state,
-    #                       self.invalid_transformed_data)
-    #
-    #     # Check that the state was not modified
-    #     self.assertEqual(expected_state, self.test_data_transformer.state)
-    #
-    # @parameterized.expand([
-    #     ('self.transformed_data_example_result',
-    #      'self.test_evm_node_new_metrics', True),
-    #     ('self.transformed_data_example_general_error', 'self.test_evm_node',
-    #      True),
-    #     ('self.transformed_data_example_downtime_error',
-    #      'self.test_evm_node_down', False),
-    # ])
-    # def test_update_state_updates_state_correctly(
-    #         self, transformed_data: str, expected_state: str,
-    #         evm_node_expected_up: bool) -> None:
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     self.test_data_transformer._state['dummy_id'] = self.test_data_str
-    #     old_state = copy.deepcopy(self.test_data_transformer._state)
-    #
-    #     self.test_data_transformer._update_state(eval(transformed_data))
-    #
-    #     # Check that there are the same keys in the state
-    #     self.assertEqual(old_state.keys(),
-    #                      self.test_data_transformer.state.keys())
-    #
-    #     # Check that the evm_nodes not in question are not modified
-    #     self.assertEqual(self.test_data_str,
-    #                      self.test_data_transformer._state['dummy_id'])
-    #
-    #     # Check that the evm nodes' state values have been modified correctly
-    #     self.assertEqual(
-    #         eval(expected_state),
-    #         self.test_data_transformer._state[self.test_evm_node_id])
-    #
-    #     # Check that the node is marked as up/down accordingly
-    #     if evm_node_expected_up:
-    #         self.assertFalse(
-    #             self.test_data_transformer._state[
-    #                 self.test_evm_node_id].is_down)
-    #     else:
-    #         self.assertTrue(
-    #             self.test_data_transformer._state[
-    #                 self.test_evm_node_id].is_down)
-    #
-    # @parameterized.expand([
-    #     ('self.transformed_data_example_result',
-    #      'self.transformed_data_example_result'),
-    #     ('self.transformed_data_example_general_error',
-    #      'self.transformed_data_example_general_error'),
-    # ])
-    # def test_process_transformed_data_for_saving_returns_expected_data(
-    #         self, transformed_data: str, expected_processed_data: str) -> None:
-    #     processed_data = \
-    #         self.test_data_transformer._process_transformed_data_for_saving(
-    #             eval(transformed_data))
-    #     self.assertDictEqual(eval(expected_processed_data), processed_data)
-    #
-    # def test_proc_trans_data_for_saving_raises_unexp_data_except_on_unexp_data(
-    #         self) -> None:
-    #     self.assertRaises(
-    #         ReceivedUnexpectedDataException,
-    #         self.test_data_transformer._process_transformed_data_for_saving,
-    #         self.invalid_transformed_data)
-    #
-    # @parameterized.expand([
-    #     ('self.transformed_data_example_result',
-    #      'self.test_data_for_alerting_result'),
-    #     ('self.transformed_data_example_general_error',
-    #      'self.transformed_data_example_general_error'),
-    #     ('self.transformed_data_example_downtime_error',
-    #      'self.test_data_for_alerting_down_error'),
-    # ])
-    # def test_process_transformed_data_for_alerting_returns_expected_data(
-    #         self, transformed_data: str, expected_processed_data: str) -> None:
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     actual_data = \
-    #         self.test_data_transformer._process_transformed_data_for_alerting(
-    #             eval(transformed_data))
-    #     self.assertDictEqual(eval(expected_processed_data), actual_data)
-    #
-    # def test_proc_trans_data_for_alerting_raise_unex_data_except_on_unex_data(
-    #         self) -> None:
-    #     self.assertRaises(
-    #         ReceivedUnexpectedDataException,
-    #         self.test_data_transformer._process_transformed_data_for_alerting,
-    #         self.invalid_transformed_data)
-    #
-    # @parameterized.expand([
-    #     ('self.raw_data_example_result',
-    #      'self.transformed_data_example_result'),
-    #     ('self.raw_data_example_general_error',
-    #      'self.transformed_data_example_general_error'),
-    #     ('self.raw_data_example_downtime_error',
-    #      'self.transformed_data_example_downtime_error'),
-    # ])
-    # @mock.patch.object(EVMNodeDataTransformer,
-    #                    "_process_transformed_data_for_alerting")
-    # @mock.patch.object(EVMNodeDataTransformer,
-    #                    "_process_transformed_data_for_saving")
-    # def test_transform_data_returns_expected_data_if_result(
-    #         self, raw_data, expected_processed_data, mock_process_for_saving,
-    #         mock_process_for_alerting) -> None:
-    #     self.test_data_transformer._state = copy.deepcopy(self.test_state)
-    #     self.test_data_transformer._state[self.test_evm_node_id].reset()
-    #     mock_process_for_saving.return_value = {'key_1': 'val1'}
-    #     mock_process_for_alerting.return_value = {'key_2': 'val2'}
-    #
-    #     trans_data, data_for_alerting, data_for_saving = \
-    #         self.test_data_transformer._transform_data(eval(raw_data))
-    #
-    #     expected_trans_data = copy.deepcopy(eval(expected_processed_data))
-    #
-    #     self.assertDictEqual(expected_trans_data, trans_data)
-    #     self.assertDictEqual({'key_2': 'val2'}, data_for_alerting)
-    #     self.assertDictEqual({'key_1': 'val1'}, data_for_saving)
-    #
-    # def test_transform_data_raises_unexpected_data_exception_on_unexpected_data(
-    #         self) -> None:
-    #     self.assertRaises(ReceivedUnexpectedDataException,
-    #                       self.test_data_transformer._transform_data,
-    #                       self.invalid_transformed_data)
-    #
-    # @parameterized.expand([
-    #     ('self.transformed_data_example_result',
-    #      'self.test_data_for_alerting_result',
-    #      'self.transformed_data_example_result'),
-    #     ('self.transformed_data_example_general_error',
-    #      'self.transformed_data_example_general_error',
-    #      'self.transformed_data_example_general_error'),
-    # ])
-    # def test_place_latest_data_on_queue_places_the_correct_data_on_queue(
-    #         self, transformed_data: str, data_for_alerting: str,
-    #         data_for_saving: str) -> None:
-    #     self.test_data_transformer._place_latest_data_on_queue(
-    #         eval(transformed_data), eval(data_for_alerting),
-    #         eval(data_for_saving)
-    #     )
-    #     expected_data_for_alerting = {
-    #         'exchange': ALERT_EXCHANGE,
-    #         'routing_key': EVM_NODE_TRANSFORMED_DATA_ROUTING_KEY,
-    #         'data': eval(data_for_alerting),
-    #         'properties': pika.BasicProperties(delivery_mode=2),
-    #         'mandatory': True
-    #     }
-    #     expected_data_for_saving = {
-    #         'exchange': STORE_EXCHANGE,
-    #         'routing_key': EVM_NODE_TRANSFORMED_DATA_ROUTING_KEY,
-    #         'data': eval(data_for_saving),
-    #         'properties': pika.BasicProperties(delivery_mode=2),
-    #         'mandatory': True
-    #     }
-    #
-    #     self.assertEqual(2, self.test_data_transformer.publishing_queue.qsize())
-    #     self.assertDictEqual(
-    #         expected_data_for_alerting,
-    #         self.test_data_transformer.publishing_queue.queue[0])
-    #     self.assertDictEqual(
-    #         expected_data_for_saving,
-    #         self.test_data_transformer.publishing_queue.queue[1])
+
+    def test_update_state_raises_except_and_keeps_state_if_no_result_or_err(
+            self) -> None:
+        self.test_data_transformer._state = copy.deepcopy(self.test_state_v3)
+        expected_state = copy.deepcopy(self.test_state_v3)
+
+        # First confirm that an exception is raised
+        self.assertRaises(ReceivedUnexpectedDataException,
+                          self.test_data_transformer._update_state,
+                          self.invalid_transformed_data)
+
+        # Check that the state was not modified
+        self.assertEqual(expected_state, self.test_data_transformer.state)
+
+    @parameterized.expand([
+        ('self.transformed_data_example_result_v3', 'self.test_state_v3',
+         'self.test_state_v3_updated'),
+        ('self.transformed_data_example_result_v4', 'self.test_state_v4',
+         'self.test_state_v4_updated'),
+        ('self.transformed_data_example_error', 'self.test_state_v3',
+         'self.test_state_v3'),
+    ])
+    def test_update_state_updates_state_correctly(
+            self, transformed_data, initial_state, expected_state) -> None:
+        self.test_data_transformer._state = copy.deepcopy(eval(initial_state))
+        self.test_data_transformer._state['dummy_id'] = self.test_data_str
+
+        self.test_data_transformer._update_state(eval(transformed_data))
+
+        evaluated_expected_state = eval(expected_state)
+        evaluated_expected_state['dummy_id'] = self.test_data_str
+        self.assertEqual(self.test_data_transformer.state,
+                         evaluated_expected_state)
+
+    @parameterized.expand([
+        ('self.transformed_data_example_result_v3',
+         'self.transformed_data_example_result_v3'),
+        ('self.transformed_data_example_result_v4',
+         'self.transformed_data_example_result_v4'),
+        ('self.transformed_data_example_error',
+         'self.transformed_data_example_error'),
+    ])
+    def test_process_transformed_data_for_saving_returns_expected_data(
+            self, transformed_data: str, expected_processed_data: str) -> None:
+        processed_data = \
+            self.test_data_transformer._process_transformed_data_for_saving(
+                eval(transformed_data))
+        self.assertDictEqual(eval(expected_processed_data), processed_data)
+
+    def test_proc_trans_data_for_saving_raises_unexp_data_except_on_unexp_data(
+            self) -> None:
+        self.assertRaises(
+            ReceivedUnexpectedDataException,
+            self.test_data_transformer._process_transformed_data_for_saving,
+            self.invalid_transformed_data)
+
+    @parameterized.expand([
+        ('self.transformed_data_example_result_v3', 'self.test_state_v3',
+         'self.test_data_for_alerting_result_v3'),
+        ('self.transformed_data_example_result_v4', 'self.test_state_v4',
+         'self.test_data_for_alerting_result_v4'),
+        ('self.transformed_data_example_error', 'self.test_state_v3',
+         'self.transformed_data_example_error'),
+    ])
+    def test_process_transformed_data_for_alerting_returns_expected_data(
+            self, transformed_data, initial_state,
+            expected_processed_data) -> None:
+        self.test_data_transformer._state = copy.deepcopy(eval(initial_state))
+        actual_data = \
+            self.test_data_transformer._process_transformed_data_for_alerting(
+                eval(transformed_data))
+        self.assertEqual(eval(expected_processed_data), actual_data)
+
+    def test_proc_trans_data_for_alerting_raise_unex_data_except_on_unex_data(
+            self) -> None:
+        self.assertRaises(
+            ReceivedUnexpectedDataException,
+            self.test_data_transformer._process_transformed_data_for_alerting,
+            self.invalid_transformed_data)
+
+    @parameterized.expand([
+        ('self.raw_data_example_result_v3', 'self.test_state_v3',
+         'self.transformed_data_example_result_v3'),
+        ('self.raw_data_example_result_v4', 'self.test_state_v4',
+         'self.transformed_data_example_result_v4'),
+        ('self.raw_data_example_error', 'self.test_state_v3',
+         'self.transformed_data_example_error'),
+    ])
+    @mock.patch.object(EVMContractsDataTransformer,
+                       "_process_transformed_data_for_alerting")
+    @mock.patch.object(EVMContractsDataTransformer,
+                       "_process_transformed_data_for_saving")
+    def test_transform_data_returns_expected_data_if_result(
+            self, raw_data, init_state, expected_processed_data,
+            mock_process_for_saving, mock_process_for_alerting) -> None:
+        self.test_data_transformer._state = copy.deepcopy(eval(init_state))
+        mock_process_for_saving.return_value = {'key_1': 'val1'}
+        mock_process_for_alerting.return_value = {'key_2': 'val2'}
+
+        trans_data, data_for_alerting, data_for_saving = \
+            self.test_data_transformer._transform_data(eval(raw_data))
+
+        expected_trans_data = copy.deepcopy(eval(expected_processed_data))
+
+        self.assertEqual(expected_trans_data, trans_data)
+        self.assertEqual({'key_2': 'val2'}, data_for_alerting)
+        self.assertEqual({'key_1': 'val1'}, data_for_saving)
+
+    def test_transform_data_raises_unexpected_data_exception_on_unexpected_data(
+            self) -> None:
+        self.assertRaises(ReceivedUnexpectedDataException,
+                          self.test_data_transformer._transform_data,
+                          self.invalid_transformed_data)
+
+    def test_place_latest_data_on_queue_places_the_correct_data_on_queue(
+            self) -> None:
+        self.test_data_transformer._place_latest_data_on_queue(
+            self.test_data_for_alerting_result_v3,
+            self.transformed_data_example_result_v3
+        )
+        expected_data_for_alerting = {
+            'exchange': ALERT_EXCHANGE,
+            'routing_key': EVM_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
+            'data': self.test_data_for_alerting_result_v3,
+            'properties': pika.BasicProperties(delivery_mode=2),
+            'mandatory': True
+        }
+        expected_data_for_saving = {
+            'exchange': STORE_EXCHANGE,
+            'routing_key': EVM_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
+            'data': self.transformed_data_example_result_v3,
+            'properties': pika.BasicProperties(delivery_mode=2),
+            'mandatory': True
+        }
+
+        self.assertEqual(2, self.test_data_transformer.publishing_queue.qsize())
+        self.assertDictEqual(
+            expected_data_for_alerting,
+            self.test_data_transformer.publishing_queue.queue[0])
+        self.assertDictEqual(
+            expected_data_for_saving,
+            self.test_data_transformer.publishing_queue.queue[1])
+
+    @parameterized.expand([(V3EvmContract, 3,), (V4EvmContract, 4,), ])
+    def test_create_state_entry_creates_new_entry_if_no_entry_for_contract(
+            self, contract_class, version) -> None:
+        """
+        In this test we will check that a new state entry will be created for a
+        node's contract state if there is no entry for that node or contract
+        yet. This test will be performed for both v3 and v4 contracts
+        """
+        # Add some dummy state to confirm that the state is updated correctly
+        self.test_data_transformer._state['dummy_id'] = self.test_data_str
+
+        # Test for when no entry has been added yet for both the contract and
+        # the node
+        self.test_data_transformer._create_state_entry(
+            self.test_node_id_1, self.test_proxy_address_1,
+            self.test_parent_id_1, version, self.test_aggregator_address_1)
+        expected_state = {
+            'dummy_id': self.test_data_str,
+            self.test_node_id_1: {
+                self.test_proxy_address_1: contract_class(
+                    self.test_proxy_address_1, self.test_aggregator_address_1,
+                    self.test_parent_id_1, self.test_node_id_1)
+            }
+        }
+        self.assertEqual(expected_state, self.test_data_transformer.state)
+
+        # Test for when an entry has already been created for the node
+        self.test_data_transformer._create_state_entry(
+            self.test_node_id_1, self.test_proxy_address_2,
+            self.test_parent_id_1, version, self.test_aggregator_address_2)
+        expected_state[self.test_node_id_1][
+            self.test_proxy_address_2] = contract_class(
+            self.test_proxy_address_2, self.test_aggregator_address_2,
+            self.test_parent_id_1, self.test_node_id_1)
+        self.assertEqual(expected_state, self.test_data_transformer.state)
+
+    @parameterized.expand([
+        (3, 'self.test_state_v3_updated',),
+        (4, 'self.test_state_v4_updated',),
+    ])
+    def test_create_state_entry_no_new_contract_entry_if_already_created_with_same_version(
+            self, version, init_state) -> None:
+        """
+        In this test we will check that no new entry will be created for a
+        node's contract state if there is already one with the same version.
+        This test will be performed for both v3 and v4 contracts
+        """
+        self.test_data_transformer._state = copy.deepcopy(eval(init_state))
+        self.test_data_transformer._state['dummy_id'] = self.test_data_str
+
+        self.test_data_transformer._create_state_entry(
+            self.test_node_id_1, self.test_proxy_address_1,
+            self.test_parent_id_1, version, self.test_aggregator_address_1)
+
+        # We expect an unchanged state
+        expected_state = copy.deepcopy(eval(init_state))
+        expected_state['dummy_id'] = self.test_data_str
+        self.assertEqual(expected_state, self.test_data_transformer.state)
+
+    def test_create_state_entry_creates_new_entry_if_contract_entry_has_a_different_version(
+            self) -> None:
+        # TODO: Perform for both v3 and v4
+        pass
     #
     # @parameterized.expand([({}, False,), ('self.test_state', True), ])
     # @mock.patch.object(EVMNodeDataTransformer, "_transform_data")

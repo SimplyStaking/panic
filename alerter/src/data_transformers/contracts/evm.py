@@ -181,10 +181,12 @@ class EVMContractsDataTransformer(DataTransformer):
                     contract_data['historicalRounds'])
 
                 if evm_contract.version == 3:
-                    evm_contract.set_withdrawal_payment(
+                    evm_contract.set_withdrawable_payment(
                         contract_data['withdrawablePayment'])
                 elif evm_contract.version == 4:
                     evm_contract.set_owed_payment(contract_data['owedPayment'])
+
+                evm_contract.set_last_monitored(meta_data['last_monitored'])
         elif 'error' in transformed_data:
             pass
         else:
@@ -226,6 +228,7 @@ class EVMContractsDataTransformer(DataTransformer):
 
             for proxy_address, contract_data in td_metrics.items():
                 evm_contract = self.state[node_id][proxy_address]
+                processed_data_metrics[proxy_address] = {}
 
                 # Reformat the data in such a way that both the previous and
                 # current states are sent to the alerter. We will not record
@@ -233,7 +236,6 @@ class EVMContractsDataTransformer(DataTransformer):
                 # this data is not used for alerting.
                 for metric, value in contract_data.items():
                     if metric not in ignore_metrics:
-                        processed_data_metrics[proxy_address] = {}
                         processed_data_metrics[proxy_address][metric] = {}
                         processed_data_metrics[proxy_address][metric][
                             'current'] = value
@@ -259,8 +261,9 @@ class EVMContractsDataTransformer(DataTransformer):
                     'previous'] = evm_contract.historical_rounds
 
                 if evm_contract.version == 3:
-                    processed_data_metrics[proxy_address]['withdrawalPayment'][
-                        'previous'] = evm_contract.withdrawal_payment
+                    processed_data_metrics[proxy_address][
+                        'withdrawablePayment'][
+                        'previous'] = evm_contract.withdrawable_payment
                 elif evm_contract.version == 4:
                     processed_data_metrics[proxy_address]['owedPayment'][
                         'previous'] = evm_contract.owed_payment
@@ -321,8 +324,7 @@ class EVMContractsDataTransformer(DataTransformer):
         return transformed_data, data_for_alerting, data_for_saving
 
     def _place_latest_data_on_queue(
-            self, transformed_data: Dict, data_for_alerting: Dict,
-            data_for_saving: Dict) -> None:
+            self, data_for_alerting: Dict, data_for_saving: Dict) -> None:
         self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
                             EVM_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
                             pika.BasicProperties(delivery_mode=2), True)
@@ -346,7 +348,7 @@ class EVMContractsDataTransformer(DataTransformer):
         :param aggregator_address: The aggregator address
         :return: Nothing
         """
-        if node_id in self.state and proxy_address in self.state:
+        if node_id in self.state and proxy_address in self.state[node_id]:
             old_evm_contract = copy.deepcopy(self.state[node_id][proxy_address])
             if version != old_evm_contract.version:
                 if version == 3:

@@ -245,4 +245,6 @@ def save_evm_contract_to_redis(
         payment_key: payment_value,
         Keys.get_evm_contract_historical_rounds(node_id, proxy_address):
             json.dumps(evm_contract.historical_rounds),
+        Keys.get_evm_contract_last_monitored(node_id, proxy_address):
+            str(evm_contract.last_monitored)
     })

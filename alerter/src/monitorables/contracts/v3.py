@@ -54,7 +54,7 @@ class V3EvmContract(EVMContract):
         """
         :return: A list of all variable names representing float metrics.
         """
-        return ['_latest_timestamp']
+        return ['_latest_timestamp', '_last_monitored']
 
     @staticmethod
     def get_list_metric_attributes() -> List[str]:
@@ -70,3 +70,4 @@ class V3EvmContract(EVMContract):
         self.set_answered_in_round(None)
         self.set_historical_rounds([])
         self.set_withdrawable_payment(None)
+        self.set_last_monitored(None)

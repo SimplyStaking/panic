@@ -18,6 +18,9 @@ class EVMContract(ABC):
         self._answered_in_round = None
         self._historical_rounds = []
 
+        # This stores the timestamp of the last successful monitoring round.
+        self._last_monitored = None
+
     def __str__(self) -> str:
         return self._proxy_address
 
@@ -64,6 +67,10 @@ class EVMContract(ABC):
     def historical_rounds(self) -> List[Dict]:
         return self._historical_rounds
 
+    @property
+    def last_monitored(self) -> Optional[float]:
+        return self._last_monitored
+
     def set_aggregator_address(self, aggregator_address: str) -> None:
         self._aggregator_address = aggregator_address
 
@@ -103,6 +110,9 @@ class EVMContract(ABC):
             self._historical_rounds = historical_rounds
         else:
             raise InvalidDictSchemaException('historical_rounds')
+
+    def set_last_monitored(self, last_monitored: Optional[float]) -> None:
+        self._last_monitored = last_monitored
 
     @abstractmethod
     def reset(self) -> None:
