@@ -27,6 +27,7 @@ Change the contents of this file to this:
 - Added EVM Node Monitoring along with the monitor tests.
 - Added EVMContractsMonitor along with its tests.
 - Added ContractMonitorsManager along with its tests.
+- Added EVM Node Data Transformer along with its tests.
 
 ## 0.1.2
 

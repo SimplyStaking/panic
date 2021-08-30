@@ -37,6 +37,11 @@ _key_cl_node_went_down_at_prometheus = 'cl12'
 _key_cl_node_last_prometheus_source_used = 'cl13'
 _key_cl_node_last_monitored_prometheus = 'cl14'
 
+# evmX_<evm_node_id>
+_key_evm_node_current_height = 'evm1'
+_key_evm_node_went_down_at = 'evm2'
+_key_evm_node_last_monitored = 'evm3'
+
 # ghX_<repo_id>
 _key_github_no_of_releases = 'gh1'
 _key_github_last_monitored = 'gh2'
@@ -229,6 +234,18 @@ class Keys:
     def get_cl_node_last_monitored_prometheus(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_last_monitored_prometheus) \
                + cl_node_id
+
+    @staticmethod
+    def get_evm_node_current_height(cl_node_id: str) -> str:
+        return Keys._as_prefix(_key_evm_node_current_height) + cl_node_id
+
+    @staticmethod
+    def get_evm_node_went_down_at(cl_node_id: str) -> str:
+        return Keys._as_prefix(_key_evm_node_went_down_at) + cl_node_id
+
+    @staticmethod
+    def get_evm_node_last_monitored(evm_node_id: str) -> str:
+        return Keys._as_prefix(_key_evm_node_last_monitored) + evm_node_id
 
     @staticmethod
     def get_github_no_of_releases(repo_id: str) -> str:
