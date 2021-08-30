@@ -136,6 +136,9 @@ class GitHubDataTransformer(DataTransformer):
             repo.set_parent_id(parent_id)
             repo.set_repo_name(repo_name)
         else:
+            # Since the processing function calling this method caters for
+            # unexpected data this condition will never be executed. Regardless,
+            # this condition should be kept as a precaution for the function.
             raise ReceivedUnexpectedDataException(
                 "{}: _update_state".format(self))
 
@@ -161,6 +164,9 @@ class GitHubDataTransformer(DataTransformer):
         elif 'error' in transformed_data:
             processed_data = copy.deepcopy(transformed_data)
         else:
+            # Since the processing function calling this method caters for
+            # unexpected data this condition will never be executed. Regardless,
+            # this condition should be kept as a precaution for the function.
             raise ReceivedUnexpectedDataException(
                 "{}: _process_transformed_data_for_saving".format(self))
 
@@ -204,6 +210,9 @@ class GitHubDataTransformer(DataTransformer):
         elif 'error' in transformed_data:
             processed_data = copy.deepcopy(transformed_data)
         else:
+            # Since the processing function calling this method caters for
+            # unexpected data this condition will never be executed. Regardless,
+            # this condition should be kept as a precaution for the function.
             raise ReceivedUnexpectedDataException(
                 "{}: _process_transformed_data_for_alerting".format(self))
 
@@ -243,6 +252,9 @@ class GitHubDataTransformer(DataTransformer):
             transformed_data = copy.deepcopy(data)
             del transformed_data['error']['meta_data']['monitor_name']
         else:
+            # Since the processing function calling this method caters for
+            # unexpected data this condition will never be executed. Regardless,
+            # this condition should be kept as a precaution for the function.
             raise ReceivedUnexpectedDataException(
                 "{}: _transform_data".format(self))
 
