@@ -335,7 +335,7 @@ class EVMContractsDataTransformer(DataTransformer):
 
     def _create_state_entry(self, node_id: str, proxy_address: str,
                             parent_id: str, version: str,
-                            aggregator_address: str) -> None:
+                            aggregator_address: str) -> bool:
         """
         This function attempts to create an entry in the state which stores the
         contract data for a node. This function creates a new state only if
@@ -346,17 +346,21 @@ class EVMContractsDataTransformer(DataTransformer):
         :param parent_id: The chain on which the contract resides
         :param version: The contract version
         :param aggregator_address: The aggregator address
-        :return: Nothing
+        :return: True if a new state is created
+               : False otherwise
         """
+        state_created = False
         if node_id in self.state and proxy_address in self.state[node_id]:
             old_evm_contract = copy.deepcopy(self.state[node_id][proxy_address])
             if version != old_evm_contract.version:
                 if version == 3:
                     self.state[node_id][proxy_address] = V3EvmContract(
                         proxy_address, aggregator_address, parent_id, node_id)
+                    state_created = True
                 elif version == 4:
                     self.state[node_id][proxy_address] = V4EvmContract(
                         proxy_address, aggregator_address, parent_id, node_id)
+                    state_created = True
         else:
             if node_id not in self.state:
                 self.state[node_id] = {}
@@ -364,9 +368,13 @@ class EVMContractsDataTransformer(DataTransformer):
             if version == 3:
                 self.state[node_id][proxy_address] = V3EvmContract(
                     proxy_address, aggregator_address, parent_id, node_id)
+                state_created = True
             elif version == 4:
                 self.state[node_id][proxy_address] = V4EvmContract(
                     proxy_address, aggregator_address, parent_id, node_id)
+                state_created = True
+
+        return state_created
 
     def _process_raw_data(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -389,10 +397,12 @@ class EVMContractsDataTransformer(DataTransformer):
                 for proxy_address, contract_details in data.items():
                     aggregator_address = contract_details['aggregatorAddress']
                     version = contract_details['contractVersion']
-                    self._create_state_entry(node_id, proxy_address, parent_id,
-                                             version, aggregator_address)
-                    evm_contract = self.state[node_id][proxy_address]
-                    self.load_state(evm_contract)
+                    state_created = self._create_state_entry(
+                        node_id, proxy_address, parent_id, version,
+                        aggregator_address)
+                    if state_created:
+                        evm_contract = self.state[node_id][proxy_address]
+                        self.load_state(evm_contract)
 
                 transformed_data, data_for_alerting, data_for_saving = \
                     self._transform_data(raw_data)
@@ -428,8 +438,7 @@ class EVMContractsDataTransformer(DataTransformer):
         # acknowledgement fails, the data is processed again and we do not have
         # duplication of data in the queue
         if not processing_error:
-            self._place_latest_data_on_queue(
-                transformed_data, data_for_alerting, data_for_saving)
+            self._place_latest_data_on_queue(data_for_alerting, data_for_saving)
 
         # Send any data waiting in the publisher queue, if any
         try:
