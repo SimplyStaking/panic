@@ -14,7 +14,8 @@
   "devDependencies": {
     "@stencil/core": "^2.0.0",
     "@stencil/router": "^1.0.1",
-    "@types/node": "^15.12.2"
+    "@types/swiper": "^5.4.3",
+    "stencil-router-v2": "^0.6.0"
   },
   "license": "MIT",
   "dependencies": {
