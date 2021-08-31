@@ -8,6 +8,7 @@ from src.alerter.alert_code import AlertCode
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
+from src.monitorables.nodes.evm_node import EVMNode
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 
@@ -202,4 +203,18 @@ def save_chainlink_node_to_redis(redis: RedisApi,
             str(cl_node.last_prometheus_source_used),
         Keys.get_cl_node_last_monitored_prometheus(cl_node_id):
             str(cl_node.last_monitored_prometheus)
+    })
+
+
+def save_evm_node_to_redis(redis: RedisApi,
+                           evm_node: EVMNode) -> None:
+    redis_hash = Keys.get_hash_parent(evm_node.parent_id)
+    evm_node_id = evm_node.node_id
+    redis.hset_multiple(redis_hash, {
+        Keys.get_evm_node_went_down_at(evm_node_id):
+            str(evm_node.went_down_at),
+        Keys.get_cl_node_current_height(evm_node_id):
+            str(evm_node.current_height),
+        Keys.get_evm_node_last_monitored(evm_node_id):
+            str(evm_node.last_monitored)
     })
