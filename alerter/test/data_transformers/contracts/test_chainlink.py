@@ -13,25 +13,27 @@ from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.data_store.redis import RedisApi
-from src.data_transformers.contracts.evm import EVMContractsDataTransformer
+from src.data_transformers.contracts.chainlink import (
+    ChainlinkContractsDataTransformer
+)
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitorables.contracts.v3 import V3EvmContract
-from src.monitorables.contracts.v4 import V4EvmContract
+from src.monitorables.contracts.chainlink.v3 import V3ChainlinkContract
+from src.monitorables.contracts.chainlink.v4 import V4ChainlinkContract
 from src.utils import env
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE,
-    EVM_CONTRACTS_DT_INPUT_QUEUE_NAME, CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY,
+    CL_CONTRACTS_DT_INPUT_QUEUE_NAME, CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY,
     HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
     CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY)
-from src.utils.exceptions import (PANICException,
-                                  ReceivedUnexpectedDataException,
-                                  MessageWasNotDeliveredException)
+from src.utils.exceptions import (
+    PANICException, ReceivedUnexpectedDataException,
+    MessageWasNotDeliveredException)
 from test.utils.utils import (
     connect_to_rabbit, delete_queue_if_exists, disconnect_from_rabbit,
-    delete_exchange_if_exists, save_evm_contract_to_redis)
+    delete_exchange_if_exists, save_chainlink_contract_to_redis)
 
 
-class TestEVMContractsDataTransformer(unittest.TestCase):
+class TestChainlinkContractsDataTransformer(unittest.TestCase):
     def setUp(self) -> None:
         # Dummy data and objects
         self.dummy_logger = logging.getLogger('Dummy')
@@ -48,7 +50,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.max_queue_size = 1000
         self.test_data_str = 'test_data'
         self.test_publishing_queue = Queue(self.max_queue_size)
-        self.transformer_name = 'test_evm_contracts_data_transformer'
+        self.transformer_name = 'test_chainlink_contracts_data_transformer'
 
         # Rabbit instance
         self.rabbit_ip = env.RABBIT_IP
@@ -337,17 +339,17 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         }
         self.invalid_transformed_data = {'bad_key': 'bad_value'}
 
-        # EVM Contracts with received state
-        self.test_evm_contract_1_new_metrics = V3EvmContract(
+        # Chainlink contracts with received state
+        self.test_cl_contract_1_new_metrics = V3ChainlinkContract(
             self.test_proxy_address_1, self.test_aggregator_address_1,
             self.test_parent_id_1, self.test_node_id_1)
-        self.test_evm_contract_2_new_metrics = V3EvmContract(
+        self.test_cl_contract_2_new_metrics = V3ChainlinkContract(
             self.test_proxy_address_2, self.test_aggregator_address_2,
             self.test_parent_id_1, self.test_node_id_1)
-        self.test_evm_contract_3_new_metrics = V4EvmContract(
+        self.test_cl_contract_3_new_metrics = V4ChainlinkContract(
             self.test_proxy_address_1, self.test_aggregator_address_1,
             self.test_parent_id_1, self.test_node_id_1)
-        self.test_evm_contract_4_new_metrics = V4EvmContract(
+        self.test_cl_contract_4_new_metrics = V4ChainlinkContract(
             self.test_proxy_address_2, self.test_aggregator_address_2,
             self.test_parent_id_1, self.test_node_id_1)
 
@@ -355,92 +357,92 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_state_v3 = {
             self.test_node_id_1: {
                 self.test_proxy_address_1: copy.deepcopy(
-                    self.test_evm_contract_1_new_metrics),
+                    self.test_cl_contract_1_new_metrics),
                 self.test_proxy_address_2: copy.deepcopy(
-                    self.test_evm_contract_2_new_metrics),
+                    self.test_cl_contract_2_new_metrics),
             },
         }
         self.test_state_v4 = {
             self.test_node_id_1: {
                 self.test_proxy_address_1: copy.deepcopy(
-                    self.test_evm_contract_3_new_metrics),
+                    self.test_cl_contract_3_new_metrics),
                 self.test_proxy_address_2: copy.deepcopy(
-                    self.test_evm_contract_4_new_metrics),
+                    self.test_cl_contract_4_new_metrics),
             },
         }
 
         # Update the states with received metrics
-        self.test_evm_contract_1_new_metrics.set_latest_round(
+        self.test_cl_contract_1_new_metrics.set_latest_round(
             self.test_latest_round_1)
-        self.test_evm_contract_1_new_metrics.set_latest_answer(
+        self.test_cl_contract_1_new_metrics.set_latest_answer(
             self.test_latest_answer_1)
-        self.test_evm_contract_1_new_metrics.set_latest_timestamp(
+        self.test_cl_contract_1_new_metrics.set_latest_timestamp(
             self.test_latest_timestamp_1)
-        self.test_evm_contract_1_new_metrics.set_answered_in_round(
+        self.test_cl_contract_1_new_metrics.set_answered_in_round(
             self.test_answered_in_round_1)
-        self.test_evm_contract_1_new_metrics.set_withdrawable_payment(
+        self.test_cl_contract_1_new_metrics.set_withdrawable_payment(
             self.test_withdrawable_payment_1)
-        self.test_evm_contract_1_new_metrics.set_historical_rounds(
+        self.test_cl_contract_1_new_metrics.set_historical_rounds(
             self.test_historical_rounds_1_transformed)
-        self.test_evm_contract_1_new_metrics.set_last_monitored(
+        self.test_cl_contract_1_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
 
-        self.test_evm_contract_2_new_metrics.set_latest_round(
+        self.test_cl_contract_2_new_metrics.set_latest_round(
             self.test_latest_round_2)
-        self.test_evm_contract_2_new_metrics.set_latest_answer(
+        self.test_cl_contract_2_new_metrics.set_latest_answer(
             self.test_latest_answer_2)
-        self.test_evm_contract_2_new_metrics.set_latest_timestamp(
+        self.test_cl_contract_2_new_metrics.set_latest_timestamp(
             self.test_latest_timestamp_2)
-        self.test_evm_contract_2_new_metrics.set_answered_in_round(
+        self.test_cl_contract_2_new_metrics.set_answered_in_round(
             self.test_answered_in_round_2)
-        self.test_evm_contract_2_new_metrics.set_withdrawable_payment(
+        self.test_cl_contract_2_new_metrics.set_withdrawable_payment(
             self.test_withdrawable_payment_2)
-        self.test_evm_contract_2_new_metrics.set_historical_rounds(
+        self.test_cl_contract_2_new_metrics.set_historical_rounds(
             self.test_historical_rounds_2_transformed)
-        self.test_evm_contract_2_new_metrics.set_last_monitored(
+        self.test_cl_contract_2_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
 
-        self.test_evm_contract_3_new_metrics.set_latest_round(
+        self.test_cl_contract_3_new_metrics.set_latest_round(
             self.test_latest_round_1)
-        self.test_evm_contract_3_new_metrics.set_latest_answer(
+        self.test_cl_contract_3_new_metrics.set_latest_answer(
             self.test_latest_answer_1)
-        self.test_evm_contract_3_new_metrics.set_latest_timestamp(
+        self.test_cl_contract_3_new_metrics.set_latest_timestamp(
             self.test_latest_timestamp_1)
-        self.test_evm_contract_3_new_metrics.set_answered_in_round(
+        self.test_cl_contract_3_new_metrics.set_answered_in_round(
             self.test_answered_in_round_1)
-        self.test_evm_contract_3_new_metrics.set_owed_payment(
+        self.test_cl_contract_3_new_metrics.set_owed_payment(
             self.test_owed_payment_1)
-        self.test_evm_contract_3_new_metrics.set_historical_rounds(
+        self.test_cl_contract_3_new_metrics.set_historical_rounds(
             self.test_historical_rounds_3_transformed)
-        self.test_evm_contract_3_new_metrics.set_last_monitored(
+        self.test_cl_contract_3_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
 
-        self.test_evm_contract_4_new_metrics.set_latest_round(
+        self.test_cl_contract_4_new_metrics.set_latest_round(
             self.test_latest_round_2)
-        self.test_evm_contract_4_new_metrics.set_latest_answer(
+        self.test_cl_contract_4_new_metrics.set_latest_answer(
             self.test_latest_answer_2)
-        self.test_evm_contract_4_new_metrics.set_latest_timestamp(
+        self.test_cl_contract_4_new_metrics.set_latest_timestamp(
             self.test_latest_timestamp_2)
-        self.test_evm_contract_4_new_metrics.set_answered_in_round(
+        self.test_cl_contract_4_new_metrics.set_answered_in_round(
             self.test_answered_in_round_2)
-        self.test_evm_contract_4_new_metrics.set_owed_payment(
+        self.test_cl_contract_4_new_metrics.set_owed_payment(
             self.test_owed_payment_2)
-        self.test_evm_contract_4_new_metrics.set_historical_rounds(
+        self.test_cl_contract_4_new_metrics.set_historical_rounds(
             self.test_historical_rounds_4_transformed)
-        self.test_evm_contract_4_new_metrics.set_last_monitored(
+        self.test_cl_contract_4_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
 
         # Test state after receiving new metrics
         self.test_state_v3_updated = {
             self.test_node_id_1: {
-                self.test_proxy_address_1: self.test_evm_contract_1_new_metrics,
-                self.test_proxy_address_2: self.test_evm_contract_2_new_metrics,
+                self.test_proxy_address_1: self.test_cl_contract_1_new_metrics,
+                self.test_proxy_address_2: self.test_cl_contract_2_new_metrics,
             },
         }
         self.test_state_v4_updated = {
             self.test_node_id_1: {
-                self.test_proxy_address_1: self.test_evm_contract_3_new_metrics,
-                self.test_proxy_address_2: self.test_evm_contract_4_new_metrics,
+                self.test_proxy_address_1: self.test_cl_contract_3_new_metrics,
+                self.test_proxy_address_2: self.test_cl_contract_4_new_metrics,
             },
         }
 
@@ -578,7 +580,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
                 }
             }
         }
-        self.test_data_transformer = EVMContractsDataTransformer(
+        self.test_data_transformer = ChainlinkContractsDataTransformer(
             self.transformer_name, self.dummy_logger, self.redis, self.rabbitmq,
             self.max_queue_size)
 
@@ -588,7 +590,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         delete_queue_if_exists(self.test_data_transformer.rabbitmq,
                                self.test_rabbit_queue_name)
         delete_queue_if_exists(self.test_data_transformer.rabbitmq,
-                               EVM_CONTRACTS_DT_INPUT_QUEUE_NAME)
+                               CL_CONTRACTS_DT_INPUT_QUEUE_NAME)
         delete_exchange_if_exists(self.test_data_transformer.rabbitmq,
                                   HEALTH_CHECK_EXCHANGE)
         delete_exchange_if_exists(self.test_data_transformer.rabbitmq,
@@ -606,10 +608,10 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.redis = None
         self.test_publishing_queue = None
         self.test_data_transformer = None
-        self.test_evm_contract_1_new_metrics = None
-        self.test_evm_contract_2_new_metrics = None
-        self.test_evm_contract_3_new_metrics = None
-        self.test_evm_contract_4_new_metrics = None
+        self.test_cl_contract_1_new_metrics = None
+        self.test_cl_contract_2_new_metrics = None
+        self.test_cl_contract_3_new_metrics = None
+        self.test_cl_contract_4_new_metrics = None
 
     def test_str_returns_transformer_name(self) -> None:
         self.assertEqual(self.transformer_name, str(self.test_data_transformer))
@@ -656,7 +658,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         # declared
         self.rabbitmq.connect()
         self.test_data_transformer.rabbitmq.queue_delete(
-            EVM_CONTRACTS_DT_INPUT_QUEUE_NAME)
+            CL_CONTRACTS_DT_INPUT_QUEUE_NAME)
         self.test_data_transformer.rabbitmq.exchange_delete(
             HEALTH_CHECK_EXCHANGE)
         self.test_data_transformer.rabbitmq.exchange_delete(RAW_DATA_EXCHANGE)
@@ -699,10 +701,10 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         # Re-declare queue to get the number of messages, and check that the
         # message received is the message sent
         res = self.test_data_transformer.rabbitmq.queue_declare(
-            EVM_CONTRACTS_DT_INPUT_QUEUE_NAME, False, True, False, False)
+            CL_CONTRACTS_DT_INPUT_QUEUE_NAME, False, True, False, False)
         self.assertEqual(1, res.method.message_count)
         _, _, body = self.test_data_transformer.rabbitmq.basic_get(
-            EVM_CONTRACTS_DT_INPUT_QUEUE_NAME)
+            CL_CONTRACTS_DT_INPUT_QUEUE_NAME)
         self.assertEqual(self.test_data_str, body.decode())
 
         mock_basic_consume.assert_called_once()
@@ -741,7 +743,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             self.test_rabbit_queue_name)
         self.assertEqual(self.test_heartbeat, json.loads(body))
 
-    def test_load_state_successful_if_evm_contract_in_redis_and_redis_online(
+    def test_load_state_successful_if_cl_contract_in_redis_and_redis_online(
             self) -> None:
         """
         We will perform this test for both V3 and V4 type contracts
@@ -750,55 +752,55 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.redis.delete_all()
 
         # Save state to Redis first
-        save_evm_contract_to_redis(self.redis,
-                                   self.test_evm_contract_1_new_metrics)
-        save_evm_contract_to_redis(self.redis,
-                                   self.test_evm_contract_4_new_metrics)
+        save_chainlink_contract_to_redis(self.redis,
+                                         self.test_cl_contract_1_new_metrics)
+        save_chainlink_contract_to_redis(self.redis,
+                                         self.test_cl_contract_4_new_metrics)
 
-        # Reset evm contract to default values
-        self.test_evm_contract_1_new_metrics.reset()
-        self.test_evm_contract_4_new_metrics.reset()
+        # Reset Chainlink contract to default values
+        self.test_cl_contract_1_new_metrics.reset()
+        self.test_cl_contract_4_new_metrics.reset()
 
         # Load state
-        loaded_evm_contract_v3 = self.test_data_transformer.load_state(
-            self.test_evm_contract_1_new_metrics)
-        loaded_evm_contract_v4 = self.test_data_transformer.load_state(
-            self.test_evm_contract_4_new_metrics)
+        loaded_cl_contract_v3 = self.test_data_transformer.load_state(
+            self.test_cl_contract_1_new_metrics)
+        loaded_cl_contract_v4 = self.test_data_transformer.load_state(
+            self.test_cl_contract_4_new_metrics)
 
         self.assertEqual(self.test_latest_round_1,
-                         loaded_evm_contract_v3.latest_round)
+                         loaded_cl_contract_v3.latest_round)
         self.assertEqual(self.test_latest_answer_1,
-                         loaded_evm_contract_v3.latest_answer)
+                         loaded_cl_contract_v3.latest_answer)
         self.assertEqual(self.test_latest_timestamp_1,
-                         loaded_evm_contract_v3.latest_timestamp)
+                         loaded_cl_contract_v3.latest_timestamp)
         self.assertEqual(self.test_answered_in_round_1,
-                         loaded_evm_contract_v3.answered_in_round)
+                         loaded_cl_contract_v3.answered_in_round)
         self.assertEqual(self.test_historical_rounds_1_transformed,
-                         loaded_evm_contract_v3.historical_rounds)
+                         loaded_cl_contract_v3.historical_rounds)
         self.assertEqual(self.test_withdrawable_payment_1,
-                         loaded_evm_contract_v3.withdrawable_payment)
+                         loaded_cl_contract_v3.withdrawable_payment)
         self.assertEqual(self.test_last_monitored + 60,
-                         loaded_evm_contract_v3.last_monitored)
+                         loaded_cl_contract_v3.last_monitored)
 
         self.assertEqual(self.test_latest_round_2,
-                         loaded_evm_contract_v4.latest_round)
+                         loaded_cl_contract_v4.latest_round)
         self.assertEqual(self.test_latest_answer_2,
-                         loaded_evm_contract_v4.latest_answer)
+                         loaded_cl_contract_v4.latest_answer)
         self.assertEqual(self.test_latest_timestamp_2,
-                         loaded_evm_contract_v4.latest_timestamp)
+                         loaded_cl_contract_v4.latest_timestamp)
         self.assertEqual(self.test_answered_in_round_2,
-                         loaded_evm_contract_v4.answered_in_round)
+                         loaded_cl_contract_v4.answered_in_round)
         self.assertEqual(self.test_historical_rounds_4_transformed,
-                         loaded_evm_contract_v4.historical_rounds)
+                         loaded_cl_contract_v4.historical_rounds)
         self.assertEqual(self.test_owed_payment_2,
-                         loaded_evm_contract_v4.owed_payment)
+                         loaded_cl_contract_v4.owed_payment)
         self.assertEqual(self.test_last_monitored + 60,
-                         loaded_evm_contract_v4.last_monitored)
+                         loaded_cl_contract_v4.last_monitored)
 
         # Clean test db
         self.redis.delete_all()
 
-    def test_load_state_keeps_same_state_if_evm_contract_in_redis_and_redis_off(
+    def test_load_state_keeps_same_state_if_cl_contract_in_redis_and_redis_off(
             self) -> None:
         """
         We will perform this test for both V3 and V4 type contracts
@@ -808,14 +810,14 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.redis.delete_all()
 
         # Save state to Redis first
-        save_evm_contract_to_redis(self.redis,
-                                   self.test_evm_contract_1_new_metrics)
-        save_evm_contract_to_redis(self.redis,
-                                   self.test_evm_contract_4_new_metrics)
+        save_chainlink_contract_to_redis(self.redis,
+                                         self.test_cl_contract_1_new_metrics)
+        save_chainlink_contract_to_redis(self.redis,
+                                         self.test_cl_contract_4_new_metrics)
 
-        # Reset evm contract to default values
-        self.test_evm_contract_1_new_metrics.reset()
-        self.test_evm_contract_4_new_metrics.reset()
+        # Reset Chainlink contract to default values
+        self.test_cl_contract_1_new_metrics.reset()
+        self.test_cl_contract_4_new_metrics.reset()
 
         # Set the _do_not_use_if_recently_went_down function to return True
         # as if redis is down
@@ -823,26 +825,26 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             lambda: True
 
         # Load state
-        loaded_evm_contract_v3 = self.test_data_transformer.load_state(
-            self.test_evm_contract_1_new_metrics)
-        loaded_evm_contract_v4 = self.test_data_transformer.load_state(
-            self.test_evm_contract_4_new_metrics)
+        loaded_cl_contract_v3 = self.test_data_transformer.load_state(
+            self.test_cl_contract_1_new_metrics)
+        loaded_cl_contract_v4 = self.test_data_transformer.load_state(
+            self.test_cl_contract_4_new_metrics)
 
-        self.assertEqual(None, loaded_evm_contract_v3.latest_round)
-        self.assertEqual(None, loaded_evm_contract_v3.latest_answer)
-        self.assertEqual(None, loaded_evm_contract_v3.latest_timestamp)
-        self.assertEqual(None, loaded_evm_contract_v3.answered_in_round)
-        self.assertEqual([], loaded_evm_contract_v3.historical_rounds)
-        self.assertEqual(None, loaded_evm_contract_v3.withdrawable_payment)
-        self.assertEqual(None, loaded_evm_contract_v3.last_monitored)
+        self.assertEqual(None, loaded_cl_contract_v3.latest_round)
+        self.assertEqual(None, loaded_cl_contract_v3.latest_answer)
+        self.assertEqual(None, loaded_cl_contract_v3.latest_timestamp)
+        self.assertEqual(None, loaded_cl_contract_v3.answered_in_round)
+        self.assertEqual([], loaded_cl_contract_v3.historical_rounds)
+        self.assertEqual(None, loaded_cl_contract_v3.withdrawable_payment)
+        self.assertEqual(None, loaded_cl_contract_v3.last_monitored)
 
-        self.assertEqual(None, loaded_evm_contract_v4.latest_round)
-        self.assertEqual(None, loaded_evm_contract_v4.latest_answer)
-        self.assertEqual(None, loaded_evm_contract_v4.latest_timestamp)
-        self.assertEqual(None, loaded_evm_contract_v4.answered_in_round)
-        self.assertEqual([], loaded_evm_contract_v4.historical_rounds)
-        self.assertEqual(None, loaded_evm_contract_v4.owed_payment)
-        self.assertEqual(None, loaded_evm_contract_v4.last_monitored)
+        self.assertEqual(None, loaded_cl_contract_v4.latest_round)
+        self.assertEqual(None, loaded_cl_contract_v4.latest_answer)
+        self.assertEqual(None, loaded_cl_contract_v4.latest_timestamp)
+        self.assertEqual(None, loaded_cl_contract_v4.answered_in_round)
+        self.assertEqual([], loaded_cl_contract_v4.historical_rounds)
+        self.assertEqual(None, loaded_cl_contract_v4.owed_payment)
+        self.assertEqual(None, loaded_cl_contract_v4.last_monitored)
 
         # Clean test db
         self.redis.delete_all()
@@ -857,40 +859,40 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.redis.delete_all()
 
         # Load state
-        loaded_evm_contract_v3 = self.test_data_transformer.load_state(
-            self.test_evm_contract_1_new_metrics)
-        loaded_evm_contract_v4 = self.test_data_transformer.load_state(
-            self.test_evm_contract_4_new_metrics)
+        loaded_cl_contract_v3 = self.test_data_transformer.load_state(
+            self.test_cl_contract_1_new_metrics)
+        loaded_cl_contract_v4 = self.test_data_transformer.load_state(
+            self.test_cl_contract_4_new_metrics)
 
         self.assertEqual(self.test_latest_round_1,
-                         loaded_evm_contract_v3.latest_round)
+                         loaded_cl_contract_v3.latest_round)
         self.assertEqual(self.test_latest_answer_1,
-                         loaded_evm_contract_v3.latest_answer)
+                         loaded_cl_contract_v3.latest_answer)
         self.assertEqual(self.test_latest_timestamp_1,
-                         loaded_evm_contract_v3.latest_timestamp)
+                         loaded_cl_contract_v3.latest_timestamp)
         self.assertEqual(self.test_answered_in_round_1,
-                         loaded_evm_contract_v3.answered_in_round)
+                         loaded_cl_contract_v3.answered_in_round)
         self.assertEqual(self.test_historical_rounds_1_transformed,
-                         loaded_evm_contract_v3.historical_rounds)
+                         loaded_cl_contract_v3.historical_rounds)
         self.assertEqual(self.test_withdrawable_payment_1,
-                         loaded_evm_contract_v3.withdrawable_payment)
+                         loaded_cl_contract_v3.withdrawable_payment)
         self.assertEqual(self.test_last_monitored + 60,
-                         loaded_evm_contract_v3.last_monitored)
+                         loaded_cl_contract_v3.last_monitored)
 
         self.assertEqual(self.test_latest_round_2,
-                         loaded_evm_contract_v4.latest_round)
+                         loaded_cl_contract_v4.latest_round)
         self.assertEqual(self.test_latest_answer_2,
-                         loaded_evm_contract_v4.latest_answer)
+                         loaded_cl_contract_v4.latest_answer)
         self.assertEqual(self.test_latest_timestamp_2,
-                         loaded_evm_contract_v4.latest_timestamp)
+                         loaded_cl_contract_v4.latest_timestamp)
         self.assertEqual(self.test_answered_in_round_2,
-                         loaded_evm_contract_v4.answered_in_round)
+                         loaded_cl_contract_v4.answered_in_round)
         self.assertEqual(self.test_historical_rounds_4_transformed,
-                         loaded_evm_contract_v4.historical_rounds)
+                         loaded_cl_contract_v4.historical_rounds)
         self.assertEqual(self.test_owed_payment_2,
-                         loaded_evm_contract_v4.owed_payment)
+                         loaded_cl_contract_v4.owed_payment)
         self.assertEqual(self.test_last_monitored + 60,
-                         loaded_evm_contract_v4.last_monitored)
+                         loaded_cl_contract_v4.last_monitored)
 
         # Clean test db
         self.redis.delete_all()
@@ -906,40 +908,40 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             lambda: True
 
         # Load state
-        loaded_evm_contract_v3 = self.test_data_transformer.load_state(
-            self.test_evm_contract_1_new_metrics)
-        loaded_evm_contract_v4 = self.test_data_transformer.load_state(
-            self.test_evm_contract_4_new_metrics)
+        loaded_cl_contract_v3 = self.test_data_transformer.load_state(
+            self.test_cl_contract_1_new_metrics)
+        loaded_cl_contract_v4 = self.test_data_transformer.load_state(
+            self.test_cl_contract_4_new_metrics)
 
         self.assertEqual(self.test_latest_round_1,
-                         loaded_evm_contract_v3.latest_round)
+                         loaded_cl_contract_v3.latest_round)
         self.assertEqual(self.test_latest_answer_1,
-                         loaded_evm_contract_v3.latest_answer)
+                         loaded_cl_contract_v3.latest_answer)
         self.assertEqual(self.test_latest_timestamp_1,
-                         loaded_evm_contract_v3.latest_timestamp)
+                         loaded_cl_contract_v3.latest_timestamp)
         self.assertEqual(self.test_answered_in_round_1,
-                         loaded_evm_contract_v3.answered_in_round)
+                         loaded_cl_contract_v3.answered_in_round)
         self.assertEqual(self.test_historical_rounds_1_transformed,
-                         loaded_evm_contract_v3.historical_rounds)
+                         loaded_cl_contract_v3.historical_rounds)
         self.assertEqual(self.test_withdrawable_payment_1,
-                         loaded_evm_contract_v3.withdrawable_payment)
+                         loaded_cl_contract_v3.withdrawable_payment)
         self.assertEqual(self.test_last_monitored + 60,
-                         loaded_evm_contract_v3.last_monitored)
+                         loaded_cl_contract_v3.last_monitored)
 
         self.assertEqual(self.test_latest_round_2,
-                         loaded_evm_contract_v4.latest_round)
+                         loaded_cl_contract_v4.latest_round)
         self.assertEqual(self.test_latest_answer_2,
-                         loaded_evm_contract_v4.latest_answer)
+                         loaded_cl_contract_v4.latest_answer)
         self.assertEqual(self.test_latest_timestamp_2,
-                         loaded_evm_contract_v4.latest_timestamp)
+                         loaded_cl_contract_v4.latest_timestamp)
         self.assertEqual(self.test_answered_in_round_2,
-                         loaded_evm_contract_v4.answered_in_round)
+                         loaded_cl_contract_v4.answered_in_round)
         self.assertEqual(self.test_historical_rounds_4_transformed,
-                         loaded_evm_contract_v4.historical_rounds)
+                         loaded_cl_contract_v4.historical_rounds)
         self.assertEqual(self.test_owed_payment_2,
-                         loaded_evm_contract_v4.owed_payment)
+                         loaded_cl_contract_v4.owed_payment)
         self.assertEqual(self.test_last_monitored + 60,
-                         loaded_evm_contract_v4.last_monitored)
+                         loaded_cl_contract_v4.last_monitored)
 
         # Clean test db
         self.redis.delete_all()
@@ -1031,9 +1033,9 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         ('self.raw_data_example_error', 'self.test_state_v3',
          'self.transformed_data_example_error'),
     ])
-    @mock.patch.object(EVMContractsDataTransformer,
+    @mock.patch.object(ChainlinkContractsDataTransformer,
                        "_process_transformed_data_for_alerting")
-    @mock.patch.object(EVMContractsDataTransformer,
+    @mock.patch.object(ChainlinkContractsDataTransformer,
                        "_process_transformed_data_for_saving")
     def test_transform_data_returns_expected_data_if_result(
             self, raw_data, init_state, expected_processed_data,
@@ -1086,7 +1088,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
             expected_data_for_saving,
             self.test_data_transformer.publishing_queue.queue[1])
 
-    @parameterized.expand([(V3EvmContract, 3,), (V4EvmContract, 4,), ])
+    @parameterized.expand(
+        [(V3ChainlinkContract, 3,), (V4ChainlinkContract, 4,), ])
     def test_create_state_entry_creates_new_entry_if_no_entry_for_contract(
             self, contract_class, version) -> None:
         """
@@ -1149,8 +1152,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.assertFalse(state_created)
 
     @parameterized.expand([
-        ('self.test_state_v3_updated', V4EvmContract, 4,),
-        ('self.test_state_v4_updated', V3EvmContract, 3,),
+        ('self.test_state_v3_updated', V4ChainlinkContract, 4,),
+        ('self.test_state_v4_updated', V3ChainlinkContract, 3,),
     ])
     def test_create_state_entry_creates_new_entry_if_contract_entry_has_a_different_version(
             self, init_state, new_contract_class, new_version) -> None:
@@ -1181,7 +1184,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.assertTrue(state_created)
 
     @parameterized.expand([({}, False,), ('self.test_state_v3', True), ])
-    @mock.patch.object(EVMContractsDataTransformer, "_transform_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_transform_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_transforms_data_if_data_valid(
             self, state, state_is_str, mock_ack, mock_trans_data) -> None:
@@ -1236,7 +1239,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
     @parameterized.expand([
         ({},), (None,), ("test",), ({'bad_key': 'bad_value'},)
     ])
-    @mock.patch.object(EVMContractsDataTransformer, "_transform_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_transform_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_does_not_call_trans_data_if_err_res_not_in_data(
             self, invalid_data, mock_ack, mock_trans_data) -> None:
@@ -1296,9 +1299,9 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.assertEqual(2, len(self.test_data_transformer._state[
                                     self.test_node_id_1].keys()))
         contract_1_expected_data = copy.deepcopy(
-            self.test_evm_contract_1_new_metrics)
+            self.test_cl_contract_1_new_metrics)
         contract_2_expected_data = copy.deepcopy(
-            self.test_evm_contract_2_new_metrics)
+            self.test_cl_contract_2_new_metrics)
         self.assertEqual(self.test_data_str,
                          self.test_data_transformer._state['node2'])
         self.assertEqual(
@@ -1315,7 +1318,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(1, mock_ack.call_count)
 
-    @mock.patch.object(EVMContractsDataTransformer, "_transform_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_transform_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_does_not_update_state_if_processing_fails(
             self, mock_ack, mock_transform_data) -> None:
@@ -1339,14 +1342,14 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         # check that the state is not updated with new metrics if processing
         # fails
         self.test_data_transformer._state = copy.deepcopy(self.test_state_v3)
-        new_contract_1 = V3EvmContract(
+        new_contract_1 = V3ChainlinkContract(
             self.test_proxy_address_1, self.test_aggregator_address_1,
             self.test_parent_id_1, self.test_node_id_1)
-        new_contract_2 = V3EvmContract(
+        new_contract_2 = V3ChainlinkContract(
             self.test_proxy_address_2, self.test_aggregator_address_2,
             self.test_parent_id_1, self.test_node_id_1)
-        save_evm_contract_to_redis(self.redis, new_contract_1)
-        save_evm_contract_to_redis(self.redis, new_contract_2)
+        save_chainlink_contract_to_redis(self.redis, new_contract_1)
+        save_chainlink_contract_to_redis(self.redis, new_contract_2)
 
         # Send raw data
         self.test_data_transformer._process_raw_data(
@@ -1373,8 +1376,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(1, mock_ack.call_count)
 
-    @mock.patch.object(EVMContractsDataTransformer, "_transform_data")
-    @mock.patch.object(EVMContractsDataTransformer,
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_transform_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer,
                        "_place_latest_data_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_places_data_on_queue_if_no_processing_errors(
@@ -1411,7 +1414,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
     @parameterized.expand([
         ({},), (None,), ("test",), ({'bad_key': 'bad_value'},)
     ])
-    @mock.patch.object(EVMContractsDataTransformer,
+    @mock.patch.object(ChainlinkContractsDataTransformer,
                        "_place_latest_data_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_no_data_on_queue_if_processing_error(
@@ -1439,7 +1442,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         mock_ack.assert_called_once()
 
-    @mock.patch.object(EVMContractsDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_sends_data_waiting_on_queue_if_no_process_errors(
             self, mock_ack, mock_send_data) -> None:
@@ -1470,8 +1473,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(1, mock_ack.call_count)
 
-    @mock.patch.object(EVMContractsDataTransformer, "_transform_data")
-    @mock.patch.object(EVMContractsDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_transform_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_sends_data_waiting_on_queue_if_process_errors(
             self, mock_ack, mock_send_data, mock_transform_data) -> None:
@@ -1505,8 +1508,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.assertEqual(1, mock_ack.call_count)
 
     @freeze_time("2012-01-01")
-    @mock.patch.object(EVMContractsDataTransformer, "_send_heartbeat")
-    @mock.patch.object(EVMContractsDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_heartbeat")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_sends_hb_if_no_proc_errors_and_send_data_success(
             self, mock_ack, mock_send_data, mock_send_hb) -> None:
@@ -1541,8 +1544,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(1, mock_ack.call_count)
 
-    @mock.patch.object(EVMContractsDataTransformer, "_update_state")
-    @mock.patch.object(EVMContractsDataTransformer, "_send_heartbeat")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_update_state")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_heartbeat")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_does_not_send_hb_if_proc_errors(
             self, mock_ack, mock_send_hb, mock_update_state) -> None:
@@ -1574,8 +1577,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(1, mock_ack.call_count)
 
-    @mock.patch.object(EVMContractsDataTransformer, "_send_data")
-    @mock.patch.object(EVMContractsDataTransformer, "_send_heartbeat")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_heartbeat")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_does_not_send_hb_if_send_data_fails(
             self, mock_ack, mock_send_hb, mock_send_data) -> None:
@@ -1614,7 +1617,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
          pika.exceptions.AMQPChannelError('test err'),),
         (Exception, Exception('test'),)
     ])
-    @mock.patch.object(EVMContractsDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_raises_err_if_raised_by_send_data(
             self, exception_type, exception_instance, mock_ack,
@@ -1655,8 +1658,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
          pika.exceptions.AMQPChannelError('test err'),),
         (Exception, Exception('test'),)
     ])
-    @mock.patch.object(EVMContractsDataTransformer, "_send_heartbeat")
-    @mock.patch.object(EVMContractsDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_heartbeat")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_raises_err_if_raised_by_send_hb(
             self, exception_type, exception_instance, mock_ack,
@@ -1691,7 +1694,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(1, mock_ack.call_count)
 
-    @mock.patch.object(EVMContractsDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_data(
             self, mock_ack, mock_send_data) -> None:
@@ -1720,8 +1723,8 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         # very large amount of tests around this.
         self.assertEqual(1, mock_ack.call_count)
 
-    @mock.patch.object(EVMContractsDataTransformer, "_send_heartbeat")
-    @mock.patch.object(EVMContractsDataTransformer, "_send_data")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_heartbeat")
+    @mock.patch.object(ChainlinkContractsDataTransformer, "_send_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_hb(
             self, mock_ack, mock_send_data, mock_send_hb) -> None:

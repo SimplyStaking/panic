@@ -11,11 +11,11 @@ from src.data_store.redis import Keys
 from src.data_store.redis.redis_api import RedisApi
 from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitorables.contracts.v3 import V3EvmContract
-from src.monitorables.contracts.v4 import V4EvmContract
+from src.monitorables.contracts.chainlink.v3 import V3ChainlinkContract
+from src.monitorables.contracts.chainlink.v4 import V4ChainlinkContract
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, STORE_EXCHANGE, RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-    TOPIC, EVM_CONTRACTS_DT_INPUT_QUEUE_NAME,
+    TOPIC, CL_CONTRACTS_DT_INPUT_QUEUE_NAME,
     CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY,
     CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
@@ -23,7 +23,7 @@ from src.utils.exceptions import (ReceivedUnexpectedDataException,
 from src.utils.types import Monitorable, convert_to_int, convert_to_float
 
 
-class EVMContractsDataTransformer(DataTransformer):
+class ChainlinkContractsDataTransformer(DataTransformer):
     def __init__(self, transformer_name: str, logger: logging.Logger,
                  redis: RedisApi, rabbitmq: RabbitMQApi,
                  max_queue_size: int = 0) -> None:
@@ -41,13 +41,14 @@ class EVMContractsDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating queue '%s'",
-                         EVM_CONTRACTS_DT_INPUT_QUEUE_NAME)
-        self.rabbitmq.queue_declare(EVM_CONTRACTS_DT_INPUT_QUEUE_NAME, False,
+                         CL_CONTRACTS_DT_INPUT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(CL_CONTRACTS_DT_INPUT_QUEUE_NAME, False,
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", EVM_CONTRACTS_DT_INPUT_QUEUE_NAME,
-                         RAW_DATA_EXCHANGE, CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
-        self.rabbitmq.queue_bind(EVM_CONTRACTS_DT_INPUT_QUEUE_NAME,
+                         "key '%s'", CL_CONTRACTS_DT_INPUT_QUEUE_NAME,
+                         RAW_DATA_EXCHANGE,
+                         CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
+        self.rabbitmq.queue_bind(CL_CONTRACTS_DT_INPUT_QUEUE_NAME,
                                  RAW_DATA_EXCHANGE,
                                  CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
 
@@ -55,7 +56,7 @@ class EVMContractsDataTransformer(DataTransformer):
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume(EVM_CONTRACTS_DT_INPUT_QUEUE_NAME,
+        self.rabbitmq.basic_consume(CL_CONTRACTS_DT_INPUT_QUEUE_NAME,
                                     self._process_raw_data, False, False, None)
 
         # Set producing configuration
@@ -72,23 +73,23 @@ class EVMContractsDataTransformer(DataTransformer):
                                        True, False, False)
 
     def _load_number_state(self, state_type: Union[Type[float], Type[int]],
-                           evm_contract: Monitorable) -> None:
+                           cl_contract: Monitorable) -> None:
         """
-        This function will attempt to load an evm contract's number metrics from
-        redis. If the data from Redis cannot be obtained, the state won't be
-        updated.
+        This function will attempt to load a Chainlink contract's number metrics
+        from redis. If the data from Redis cannot be obtained, the state won't
+        be updated.
         :param state_type: What type of number metrics we want to obtain
-        :param evm_contract: The evm contract in question
+        :param cl_contract: The Chainlink contract in question
         :return: Nothing
         """
-        redis_hash = Keys.get_hash_parent(evm_contract.parent_id)
-        node_id = evm_contract.node_id
-        proxy_address = evm_contract.proxy_address
+        redis_hash = Keys.get_hash_parent(cl_contract.parent_id)
+        node_id = cl_contract.node_id
+        proxy_address = cl_contract.proxy_address
         if state_type == int:
-            metric_attributes = evm_contract.get_int_metric_attributes()
+            metric_attributes = cl_contract.get_int_metric_attributes()
             convert_fn = convert_to_int
         else:
-            metric_attributes = evm_contract.get_float_metric_attributes()
+            metric_attributes = cl_contract.get_float_metric_attributes()
             convert_fn = convert_to_float
 
         # We iterate over the number metric attributes and attempt to load from
@@ -97,62 +98,64 @@ class EVMContractsDataTransformer(DataTransformer):
         # an error may occur when obtaining the data, the default value must
         # also be passed as bytes(str()).
         for attribute in metric_attributes:
-            state_value = eval('evm_contract.' + attribute)
-            redis_key = eval('Keys.get_evm_contract' + attribute +
+            state_value = eval('cl_contract.' + attribute)
+            redis_key = eval('Keys.get_chainlink_contract' + attribute +
                              '(node_id, proxy_address)')
             default_value = bytes(str(state_value), 'utf-8')
             redis_value = self.redis.hget(redis_hash, redis_key, default_value)
             processed_redis_value = 'None' if redis_value is None \
                 else redis_value.decode("utf-8")
             new_value = convert_fn(processed_redis_value, None)
-            eval("evm_contract.set" + attribute + '(new_value)')
+            eval("cl_contract.set" + attribute + '(new_value)')
 
-    def _load_list_state(self, evm_contract: Monitorable) -> None:
+    def _load_list_state(self, cl_contract: Monitorable) -> None:
         """
-        This function will attempt to load an evm contract's list metrics from
-        redis. If the data from Redis cannot be obtained, the state won't be
-        updated.
-        :param evm_contract: The evm contract in question
+        This function will attempt to load a Chainlink contract's list metrics
+        from redis. If the data from Redis cannot be obtained, the state won't
+        be updated.
+        :param cl_contract: The Chainlink contract in question
         :return: Nothing
         """
-        redis_hash = Keys.get_hash_parent(evm_contract.parent_id)
-        node_id = evm_contract.node_id
-        proxy_address = evm_contract.proxy_address
-        metric_attributes = evm_contract.get_list_metric_attributes()
+        redis_hash = Keys.get_hash_parent(cl_contract.parent_id)
+        node_id = cl_contract.node_id
+        proxy_address = cl_contract.proxy_address
+        metric_attributes = cl_contract.get_list_metric_attributes()
 
         for attribute in metric_attributes:
-            state_value = eval('evm_contract.' + attribute)
-            redis_key = eval('Keys.get_evm_contract' + attribute +
+            state_value = eval('cl_contract.' + attribute)
+            redis_key = eval('Keys.get_chainlink_contract' + attribute +
                              '(node_id, proxy_address)')
             default_value = bytes(json.dumps(state_value), 'utf-8')
             redis_value = self.redis.hget(redis_hash, redis_key, default_value)
             new_value = [] if redis_value is None else json.loads(
                 redis_value.decode("utf-8"))
-            eval("evm_contract.set" + attribute + '(new_value)')
+            eval("cl_contract.set" + attribute + '(new_value)')
 
-    def load_state(self, evm_contract: Monitorable) -> Monitorable:
+    def load_state(self, cl_contract: Monitorable) -> Monitorable:
         """
-        This function attempts to load the state of an evm_contract from redis.
-        If the data from Redis cannot be obtained, the state won't be updated.
-        :param evm_contract: The EVM Contract whose state we are interested in
-        :return: The loaded EVM Contract
+        This function attempts to load the state of a Chainlink contract from
+        redis. If the data from Redis cannot be obtained, the state won't be
+        updated.
+        :param cl_contract: The Chainlink Contract whose state we are interested
+                          : in
+            :return: The loaded Chainlink Contract
         """
-        self.logger.debug("Loading the state of %s from Redis", evm_contract)
+        self.logger.debug("Loading the state of %s from Redis", cl_contract)
 
-        self._load_number_state(int, evm_contract)
-        self._load_number_state(float, evm_contract)
-        self._load_list_state(evm_contract)
+        self._load_number_state(int, cl_contract)
+        self._load_number_state(float, cl_contract)
+        self._load_list_state(cl_contract)
 
         loaded_metrics_list = [
             '{}={}'.format(key, val)
-            for key, val in evm_contract.__dict__.items()
+            for key, val in cl_contract.__dict__.items()
         ]
         loaded_metrics_str = ', '.join(loaded_metrics_list)
 
-        self.logger.debug("Restored %s state: %s", evm_contract,
+        self.logger.debug("Restored %s state: %s", cl_contract,
                           loaded_metrics_str)
 
-        return evm_contract
+        return cl_contract
 
     def _update_state(self, transformed_data: Dict) -> None:
         self.logger.debug("Updating state ...")
@@ -165,28 +168,28 @@ class EVMContractsDataTransformer(DataTransformer):
 
             # We need to update the state for every node and contract
             for proxy_address, contract_data in metrics.items():
-                evm_contract = self.state[node_id][proxy_address]
+                cl_contract = self.state[node_id][proxy_address]
 
                 # Set some contract details
-                evm_contract.set_aggregator_address(
+                cl_contract.set_aggregator_address(
                     contract_data['aggregatorAddress'])
-                evm_contract.set_parent_id(parent_id)
-                evm_contract.set_latest_round(contract_data['latestRound'])
-                evm_contract.set_latest_answer(contract_data['latestAnswer'])
-                evm_contract.set_latest_timestamp(
+                cl_contract.set_parent_id(parent_id)
+                cl_contract.set_latest_round(contract_data['latestRound'])
+                cl_contract.set_latest_answer(contract_data['latestAnswer'])
+                cl_contract.set_latest_timestamp(
                     contract_data['latestTimestamp'])
-                evm_contract.set_answered_in_round(
+                cl_contract.set_answered_in_round(
                     contract_data['answeredInRound'])
-                evm_contract.set_historical_rounds(
+                cl_contract.set_historical_rounds(
                     contract_data['historicalRounds'])
 
-                if evm_contract.version == 3:
-                    evm_contract.set_withdrawable_payment(
+                if cl_contract.version == 3:
+                    cl_contract.set_withdrawable_payment(
                         contract_data['withdrawablePayment'])
-                elif evm_contract.version == 4:
-                    evm_contract.set_owed_payment(contract_data['owedPayment'])
+                elif cl_contract.version == 4:
+                    cl_contract.set_owed_payment(contract_data['owedPayment'])
 
-                evm_contract.set_last_monitored(meta_data['last_monitored'])
+                cl_contract.set_last_monitored(meta_data['last_monitored'])
         elif 'error' in transformed_data:
             pass
         else:
@@ -227,7 +230,7 @@ class EVMContractsDataTransformer(DataTransformer):
             ignore_metrics = ['contractVersion', 'aggregatorAddress']
 
             for proxy_address, contract_data in td_metrics.items():
-                evm_contract = self.state[node_id][proxy_address]
+                cl_contract = self.state[node_id][proxy_address]
                 processed_data_metrics[proxy_address] = {}
 
                 # Reformat the data in such a way that both the previous and
@@ -250,23 +253,23 @@ class EVMContractsDataTransformer(DataTransformer):
 
                 # Add the previous value
                 processed_data_metrics[proxy_address]['latestRound'][
-                    'previous'] = evm_contract.latest_round
+                    'previous'] = cl_contract.latest_round
                 processed_data_metrics[proxy_address]['latestAnswer'][
-                    'previous'] = evm_contract.latest_answer
+                    'previous'] = cl_contract.latest_answer
                 processed_data_metrics[proxy_address]['latestTimestamp'][
-                    'previous'] = evm_contract.latest_timestamp
+                    'previous'] = cl_contract.latest_timestamp
                 processed_data_metrics[proxy_address]['answeredInRound'][
-                    'previous'] = evm_contract.answered_in_round
+                    'previous'] = cl_contract.answered_in_round
                 processed_data_metrics[proxy_address]['historicalRounds'][
-                    'previous'] = evm_contract.historical_rounds
+                    'previous'] = cl_contract.historical_rounds
 
-                if evm_contract.version == 3:
+                if cl_contract.version == 3:
                     processed_data_metrics[proxy_address][
                         'withdrawablePayment'][
-                        'previous'] = evm_contract.withdrawable_payment
-                elif evm_contract.version == 4:
+                        'previous'] = cl_contract.withdrawable_payment
+                elif cl_contract.version == 4:
                     processed_data_metrics[proxy_address]['owedPayment'][
-                        'previous'] = evm_contract.owed_payment
+                        'previous'] = cl_contract.owed_payment
         elif 'error' in transformed_data:
             processed_data = copy.deepcopy(transformed_data)
         else:
@@ -351,14 +354,14 @@ class EVMContractsDataTransformer(DataTransformer):
         """
         state_created = False
         if node_id in self.state and proxy_address in self.state[node_id]:
-            old_evm_contract = copy.deepcopy(self.state[node_id][proxy_address])
-            if version != old_evm_contract.version:
+            old_cl_contract = copy.deepcopy(self.state[node_id][proxy_address])
+            if version != old_cl_contract.version:
                 if version == 3:
-                    self.state[node_id][proxy_address] = V3EvmContract(
+                    self.state[node_id][proxy_address] = V3ChainlinkContract(
                         proxy_address, aggregator_address, parent_id, node_id)
                     state_created = True
                 elif version == 4:
-                    self.state[node_id][proxy_address] = V4EvmContract(
+                    self.state[node_id][proxy_address] = V4ChainlinkContract(
                         proxy_address, aggregator_address, parent_id, node_id)
                     state_created = True
         else:
@@ -366,11 +369,11 @@ class EVMContractsDataTransformer(DataTransformer):
                 self.state[node_id] = {}
 
             if version == 3:
-                self.state[node_id][proxy_address] = V3EvmContract(
+                self.state[node_id][proxy_address] = V3ChainlinkContract(
                     proxy_address, aggregator_address, parent_id, node_id)
                 state_created = True
             elif version == 4:
-                self.state[node_id][proxy_address] = V4EvmContract(
+                self.state[node_id][proxy_address] = V4ChainlinkContract(
                     proxy_address, aggregator_address, parent_id, node_id)
                 state_created = True
 
@@ -401,8 +404,8 @@ class EVMContractsDataTransformer(DataTransformer):
                         node_id, proxy_address, parent_id, version,
                         aggregator_address)
                     if state_created:
-                        evm_contract = self.state[node_id][proxy_address]
-                        self.load_state(evm_contract)
+                        cl_contract = self.state[node_id][proxy_address]
+                        self.load_state(cl_contract)
 
                 transformed_data, data_for_alerting, data_for_saving = \
                     self._transform_data(raw_data)

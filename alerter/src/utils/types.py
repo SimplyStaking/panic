@@ -26,16 +26,16 @@ from src.alerter.alerts.system_alerts import (
     SystemRAMUsageDecreasedBelowThresholdAlert,
     SystemStorageUsageDecreasedBelowThresholdAlert
 )
-from src.monitorables.contracts.v3 import V3EvmContract
-from src.monitorables.contracts.v4 import V4EvmContract
+from src.monitorables.contracts.chainlink.v3 import V3ChainlinkContract
+from src.monitorables.contracts.chainlink.v4 import V4ChainlinkContract
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
 from src.monitorables.nodes.evm_node import EVMNode
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 
 RedisType = Union[bytes, str, int, float]
-Monitorable = Union[System, GitHubRepo, ChainlinkNode, EVMNode, V4EvmContract,
-                    V3EvmContract]
+Monitorable = Union[System, GitHubRepo, ChainlinkNode, EVMNode,
+                    V4ChainlinkContract, V3ChainlinkContract]
 
 # TODO: The below system alerts must be refactored to the types beneath them
 #     : when the system alerter is refactored.

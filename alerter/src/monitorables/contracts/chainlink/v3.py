@@ -2,10 +2,10 @@ from typing import Dict, List, Optional
 
 from schema import Schema, Or
 
-from src.monitorables.contracts.contract import EVMContract
+from src.monitorables.contracts.chainlink.contract import ChainlinkContract
 
 
-class V3EvmContract(EVMContract):
+class V3ChainlinkContract(ChainlinkContract):
     def __init__(self, proxy_address: str, aggregator_address: str,
                  parent_id: str, node_id: str) -> None:
         super().__init__(proxy_address, aggregator_address, 3, parent_id,

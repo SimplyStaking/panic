@@ -8,8 +8,8 @@ import pika.exceptions
 from src.alerter.alert_code import AlertCode
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitorables.contracts.v3 import V3EvmContract
-from src.monitorables.contracts.v4 import V4EvmContract
+from src.monitorables.contracts.chainlink.v3 import V3ChainlinkContract
+from src.monitorables.contracts.chainlink.v4 import V4ChainlinkContract
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
 from src.monitorables.nodes.evm_node import EVMNode
 from src.monitorables.repo import GitHubRepo
@@ -221,30 +221,30 @@ def save_evm_node_to_redis(redis: RedisApi, evm_node: EVMNode) -> None:
     })
 
 
-def save_evm_contract_to_redis(
+def save_chainlink_contract_to_redis(
         redis: RedisApi,
-        evm_contract: Union[V3EvmContract, V4EvmContract]) -> None:
-    redis_hash = Keys.get_hash_parent(evm_contract.parent_id)
-    node_id = evm_contract.node_id
-    proxy_address = evm_contract.proxy_address
-    version = evm_contract.version
-    payment_key = Keys.get_evm_contract_withdrawable_payment(
+        cl_contract: Union[V3ChainlinkContract, V4ChainlinkContract]) -> None:
+    redis_hash = Keys.get_hash_parent(cl_contract.parent_id)
+    node_id = cl_contract.node_id
+    proxy_address = cl_contract.proxy_address
+    version = cl_contract.version
+    payment_key = Keys.get_chainlink_contract_withdrawable_payment(
         node_id, proxy_address) if version == 3 \
-        else Keys.get_evm_contract_owed_payment(node_id, proxy_address)
-    payment_value = evm_contract.withdrawable_payment if version == 3 \
-        else evm_contract.owed_payment
+        else Keys.get_chainlink_contract_owed_payment(node_id, proxy_address)
+    payment_value = cl_contract.withdrawable_payment if version == 3 \
+        else cl_contract.owed_payment
     redis.hset_multiple(redis_hash, {
-        Keys.get_evm_contract_latest_round(node_id, proxy_address):
-            str(evm_contract.latest_round),
-        Keys.get_evm_contract_latest_answer(node_id, proxy_address):
-            str(evm_contract.latest_answer),
-        Keys.get_evm_contract_latest_timestamp(node_id, proxy_address):
-            str(evm_contract.latest_timestamp),
-        Keys.get_evm_contract_answered_in_round(node_id, proxy_address):
-            str(evm_contract.answered_in_round),
+        Keys.get_chainlink_contract_latest_round(node_id, proxy_address):
+            str(cl_contract.latest_round),
+        Keys.get_chainlink_contract_latest_answer(node_id, proxy_address):
+            str(cl_contract.latest_answer),
+        Keys.get_chainlink_contract_latest_timestamp(node_id, proxy_address):
+            str(cl_contract.latest_timestamp),
+        Keys.get_chainlink_contract_answered_in_round(node_id, proxy_address):
+            str(cl_contract.answered_in_round),
         payment_key: payment_value,
-        Keys.get_evm_contract_historical_rounds(node_id, proxy_address):
-            json.dumps(evm_contract.historical_rounds),
-        Keys.get_evm_contract_last_monitored(node_id, proxy_address):
-            str(evm_contract.last_monitored)
+        Keys.get_chainlink_contract_historical_rounds(node_id, proxy_address):
+            json.dumps(cl_contract.historical_rounds),
+        Keys.get_chainlink_contract_last_monitored(node_id, proxy_address):
+            str(cl_contract.last_monitored)
     })

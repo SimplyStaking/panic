@@ -24,7 +24,8 @@ GITHUB_DT_INPUT_QUEUE_NAME = 'github_data_transformer_input_queue'
 SYSTEM_DT_INPUT_QUEUE_NAME = 'system_data_transformer_input_queue'
 CL_NODE_DT_INPUT_QUEUE_NAME = 'chainlink_node_data_transformer_input_queue'
 EVM_NODE_DT_INPUT_QUEUE_NAME = 'evm_node_data_transformer_input_queue'
-EVM_CONTRACTS_DT_INPUT_QUEUE_NAME = 'evm_contracts_data_transformer_input_queue'
+CL_CONTRACTS_DT_INPUT_QUEUE_NAME = \
+    'chainlink_contracts_data_transformer_input_queue'
 DT_MAN_HEARTBEAT_QUEUE_NAME = 'data_transformers_manager_heartbeat_queue'
 SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE = "system_alerter_input_queue_{}"
 GITHUB_ALERTER_INPUT_QUEUE_NAME = 'github_alerter_input_queue'

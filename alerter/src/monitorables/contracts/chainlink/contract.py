@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from src.utils.exceptions import InvalidDictSchemaException
 
 
-class EVMContract(ABC):
+class ChainlinkContract(ABC):
     def __init__(self, proxy_address: str, aggregator_address: str,
                  version: int, parent_id: str, node_id: str) -> None:
         self._proxy_address = proxy_address
