@@ -19,8 +19,8 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
 from src.utils.constants.abis.v3 import V3_AGGREGATOR, V3_PROXY
 from src.utils.constants.abis.v4 import V4_AGGREGATOR, V4_PROXY
-from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
-                                          EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (
+    RAW_DATA_EXCHANGE, CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
 from src.utils.data import get_json, get_prometheus_metrics_data
 from src.utils.exceptions import (ComponentNotGivenEnoughDataSourcesException,
                                   MetricNotFoundException, PANICException,
@@ -32,11 +32,10 @@ _PROMETHEUS_RETRIEVAL_TIME_PERIOD = 86400
 _WEI_WATCHERS_RETRIEVAL_TIME_PERIOD = 86400
 
 
-class EVMContractsMonitor(Monitor):
+class ChainlinkContractsMonitor(Monitor):
     """
-    The EVMContractsMonitor is able to monitor contracts of an EVM based chain.
-    For now, only chains which have chainlink smart contracts on them are
-    supported.
+    The ChainlinkContractsMonitor is able to monitor chainlink contracts of an
+    EVM based chain.
     """
 
     def __init__(self, monitor_name: str, weiwatchers_url: str,
@@ -595,7 +594,7 @@ class EVMContractsMonitor(Monitor):
     def _send_data(self, data: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
             exchange=RAW_DATA_EXCHANGE,
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY, body=data,
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY, body=data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
         self.logger.debug("Sent data to '%s' exchange", RAW_DATA_EXCHANGE)

@@ -20,9 +20,9 @@ from src.monitorables.contracts.v4 import V4EvmContract
 from src.utils import env
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE,
-    EVM_CONTRACTS_DT_INPUT_QUEUE_NAME, EVM_CONTRACTS_RAW_DATA_ROUTING_KEY,
+    EVM_CONTRACTS_DT_INPUT_QUEUE_NAME, CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY,
     HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-    EVM_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY)
+    CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
@@ -692,7 +692,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         # sending messages with the same routing keys as for the bindings.
         self.test_data_transformer.rabbitmq.basic_publish_confirm(
             exchange=RAW_DATA_EXCHANGE,
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY,
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY,
             body=self.test_data_str, is_body_dict=False,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
 
@@ -1065,14 +1065,14 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         )
         expected_data_for_alerting = {
             'exchange': ALERT_EXCHANGE,
-            'routing_key': EVM_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
+            'routing_key': CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
             'data': self.test_data_for_alerting_result_v3,
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True
         }
         expected_data_for_saving = {
             'exchange': STORE_EXCHANGE,
-            'routing_key': EVM_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
+            'routing_key': CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
             'data': self.transformed_data_example_result_v3,
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True
@@ -1199,7 +1199,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body_result = json.dumps(self.raw_data_example_result_v3)
         body_error = json.dumps(self.raw_data_example_error)
         properties = pika.spec.BasicProperties()
@@ -1247,7 +1247,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(invalid_data)
         properties = pika.spec.BasicProperties()
 
@@ -1277,7 +1277,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(self.raw_data_example_result_v3)
         properties = pika.spec.BasicProperties()
 
@@ -1331,7 +1331,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(self.raw_data_example_result_v3)
         properties = pika.spec.BasicProperties()
 
@@ -1391,7 +1391,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(self.raw_data_example_result_v3)
         properties = pika.spec.BasicProperties()
 
@@ -1423,7 +1423,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(invalid_data)
         properties = pika.spec.BasicProperties()
 
@@ -1454,7 +1454,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(self.raw_data_example_result_v3)
         properties = pika.spec.BasicProperties()
 
@@ -1488,7 +1488,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(self.raw_data_example_result_v3)
         properties = pika.spec.BasicProperties()
 
@@ -1527,7 +1527,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(self.raw_data_example_result_v3)
         properties = pika.spec.BasicProperties()
 
@@ -1558,7 +1558,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(self.raw_data_example_result_v3)
         properties = pika.spec.BasicProperties()
 
@@ -1591,7 +1591,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(self.raw_data_example_result_v3)
         properties = pika.spec.BasicProperties()
 
@@ -1633,7 +1633,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(self.raw_data_example_result_v3)
         properties = pika.spec.BasicProperties()
 
@@ -1676,7 +1676,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(self.raw_data_example_result_v3)
         properties = pika.spec.BasicProperties()
 
@@ -1706,7 +1706,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(self.raw_data_example_result_v3)
         properties = pika.spec.BasicProperties()
 
@@ -1737,7 +1737,7 @@ class TestEVMContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._initialise_rabbitmq()
         blocking_channel = self.test_data_transformer.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         body = json.dumps(self.raw_data_example_result_v3)
         properties = pika.spec.BasicProperties()
 

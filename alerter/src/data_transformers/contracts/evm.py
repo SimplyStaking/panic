@@ -16,8 +16,8 @@ from src.monitorables.contracts.v4 import V4EvmContract
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, STORE_EXCHANGE, RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE,
     TOPIC, EVM_CONTRACTS_DT_INPUT_QUEUE_NAME,
-    EVM_CONTRACTS_RAW_DATA_ROUTING_KEY,
-    EVM_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY)
+    CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY,
+    CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import Monitorable, convert_to_int, convert_to_float
@@ -46,10 +46,10 @@ class EVMContractsDataTransformer(DataTransformer):
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", EVM_CONTRACTS_DT_INPUT_QUEUE_NAME,
-                         RAW_DATA_EXCHANGE, EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+                         RAW_DATA_EXCHANGE, CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
         self.rabbitmq.queue_bind(EVM_CONTRACTS_DT_INPUT_QUEUE_NAME,
                                  RAW_DATA_EXCHANGE,
-                                 EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+                                 CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
@@ -326,11 +326,11 @@ class EVMContractsDataTransformer(DataTransformer):
     def _place_latest_data_on_queue(
             self, data_for_alerting: Dict, data_for_saving: Dict) -> None:
         self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
-                            EVM_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
+                            CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
                             pika.BasicProperties(delivery_mode=2), True)
 
         self._push_to_queue(data_for_saving, STORE_EXCHANGE,
-                            EVM_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
+                            CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
                             pika.BasicProperties(delivery_mode=2), True)
 
     def _create_state_entry(self, node_id: str, proxy_address: str,
