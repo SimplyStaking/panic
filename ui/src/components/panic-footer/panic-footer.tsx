@@ -9,10 +9,6 @@ import { Component, Host, h, Prop } from '@stencil/core';
  * I've added header+content to the rendered JSX/HTML, but what matters here is just the footer.
  */
 export class PanicFooter {
-  @Prop() color: string;
-  @Prop() headline: string = 'Developed by SimplyVC';
-  @Prop() headlinePosition: 'start' | 'end' = 'start';
-  @Prop() buttonsPosition: 'start' | 'end' = 'end';
   @Prop() twitterURL: string = 'https://twitter.com/Simply_VC';
   @Prop() githubURL: string = 'https://github.com/SimplyVC';
   @Prop() mediumURL: string = 'https://medium.com/simply-vc';
@@ -29,8 +25,8 @@ export class PanicFooter {
         </svc-content>
         {/* Just ignore this markup */}
 
-        <svc-footer color={this.color} headlinePosition={this.headlinePosition} headline={this.headline}>
-          <svc-buttons-container position={this.buttonsPosition}>
+        <svc-footer color="primary" headlinePosition="start" headline="Developed by SimplyVC">
+          <svc-buttons-container position="end">
             <ion-button target="_blank" href={this.twitterURL}>
               <ion-icon slot="icon-only" name="logo-twitter" href={this.twitterURL}></ion-icon>
             </ion-button>
