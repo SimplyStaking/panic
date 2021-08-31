@@ -759,7 +759,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             NoChangeInTotalHeadersReceivedAlert, ReceivedANewHeaderAlert,
             data_for_alerting, self.test_parent_id, self.test_chainlink_node_id,
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived
-            .value, self.test_chainlink_node_name,
+                .value, self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new)
         self.assertTrue(call_1 in calls)
         self.assertTrue(call_2 in calls)
@@ -772,7 +772,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_chainlink_node_name,
+                .value, self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new)
         call_2 = call(
             self.test_no_of_unconfirmed_txs_new,
@@ -781,7 +781,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             NoOfUnconfirmedTxsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             GroupedChainlinkNodeAlertsMetricCode.NoOfUnconfirmedTxsThreshold
-            .value, self.test_chainlink_node_name,
+                .value, self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new)
         self.assertTrue(call_1 in calls)
         self.assertTrue(call_2 in calls)
@@ -795,7 +795,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_chainlink_node_name,
+                .value, self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new)
         self.assertTrue(call_1 in calls)
 
@@ -1133,7 +1133,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         )
 
     @mock.patch(
-        "src.alerter.alerters.node.chainlink.transformed_data_processing_helper")
+        "src.alerter.alerters.node.chainlink"
+        ".transformed_data_processing_helper")
     @mock.patch.object(ChainlinkNodeAlerter, "_process_downtime")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_transformed_data_calls_the_correct_process_fns_correctly(

@@ -2,9 +2,13 @@
 EMAIL_HTML_TEMPLATE = """<style type="text/css">
 .email {{font-family: sans-serif}}
 .tg  {{border:none; border-spacing:0;border-collapse: collapse;}}
-.tg td{{border-style:none;border-width:0px;overflow:hidden; padding:10px 5px;word-break:normal;}}
-.tg th{{border-style:none;border-width:0px;overflow:hidden;padding:10px 5px;word-break:normal;text-align:left;background-color:lightgray;}}
-@media screen and (max-width: 767px) {{.tg {{width: auto !important;}}.tg col {{width: auto !important;}}.tg-wrap {{overflow-x: auto;-webkit-overflow-scrolling: touch;}} }}</style>
+.tg td{{border-style:none;border-width:0px;overflow:hidden; padding:10px 
+5px;word-break:normal;}}
+.tg th{{border-style:none;border-width:0px;overflow:hidden;padding:10px 
+5px;word-break:normal;text-align:left;background-color:lightgray;}}
+@media screen and (max-width: 767px) {{.tg {{width: auto !important;}}.tg col 
+{{width: auto !important;}}.tg-wrap {{overflow-x: 
+auto;-webkit-overflow-scrolling: touch;}} }}</style>
 <div class="email">
 <h2>PANIC Alert</h2>
 <p>An alert was generated with the following details:</p>

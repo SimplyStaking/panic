@@ -559,28 +559,36 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_no_increase_alerts_or_decrease_alerts(
             self, mock_storage_usage_decrease, mock_storage_usage_increase,
@@ -608,28 +616,36 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_no_alerts_second_run_no_alerts(
             self, mock_storage_usage_decrease, mock_storage_usage_increase,
@@ -686,28 +702,36 @@ class TestSystemAlerter(unittest.TestCase):
          'self.critical'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_no_increase_or_decrease_alerts_then_warning_or_critical_alert(
             self, metric_param, mock_param, mock_pad, mock_severity,
@@ -785,28 +809,36 @@ class TestSystemAlerter(unittest.TestCase):
          'self.critical'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_alerts_above_warning_and_critical_threshold(
             self, metric_param, mock_param, mock_pad, mock_severity,
@@ -845,28 +877,36 @@ class TestSystemAlerter(unittest.TestCase):
          'mock_storage_usage_decrease'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_warning_alert_then_info_alert_on_decrease(
             self, metric_param, mock_param, mock_param_2,
@@ -917,28 +957,36 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_storage_usage', 'mock_storage_usage_increase'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_warning_alert_then_critical_alert(
             self, metric_param, mock_param, mock_storage_usage_decrease,
@@ -993,28 +1041,36 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_storage_usage', 'mock_storage_usage_increase'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_initial_run_warning_alerts_then_increase_in_warning_no_alert(
             self, metric_param, mock_param, mock_storage_usage_decrease,
@@ -1072,28 +1128,36 @@ class TestSystemAlerter(unittest.TestCase):
          'mock_storage_usage_decrease'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_critical_alerts_then_no_increase_alerts_on_decrease_between_critical_and_warning(
             self, metric_param, mock_param, mock_param_2,
@@ -1152,28 +1216,36 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_storage_usage', 'mock_storage_usage_increase'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
         "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
@@ -1234,28 +1306,36 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_storage_usage', 'mock_storage_usage_increase'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
         "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
@@ -1316,28 +1396,36 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_storage_usage', 'mock_storage_usage_increase'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
         "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
@@ -1454,7 +1542,8 @@ class TestSystemAlerter(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     """
-    These tests assume that critical_threshold_seconds > warning_threshold_seconds
+    These tests assume that critical_threshold_seconds > 
+    warning_threshold_seconds
     """
 
     @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
@@ -1594,7 +1683,8 @@ class TestSystemAlerter(unittest.TestCase):
             mock_system_still_down) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
-        past_critical_time = self.last_monitored + self.critical_threshold_seconds
+        past_critical_time = self.last_monitored + \
+                             self.critical_threshold_seconds
         mock_last_time_did_task.return_value = past_critical_time
         data['meta_data']['time'] = past_critical_time
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -1634,7 +1724,8 @@ class TestSystemAlerter(unittest.TestCase):
             mock_system_still_down) -> None:
         data_for_alerting = []
         data = self.data_received_error_data['error']
-        past_critical_time = self.last_monitored + self.critical_threshold_seconds
+        past_critical_time = self.last_monitored + \
+                             self.critical_threshold_seconds
         mock_last_time_did_task.return_value = past_critical_time
         data['meta_data']['time'] = past_critical_time
         self.test_system_alerter._create_state_for_system(self.system_id)
@@ -1870,28 +1961,36 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_storage_usage', 'mock_storage_usage_increase'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_warning_alerts_disabled_increase_above_warning_threshold_no_alerts_occur(
             self, metric_param, mock_param, mock_storage_usage_decrease,
@@ -1942,28 +2041,36 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_storage_usage', 'mock_storage_usage_increase'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_critical_alerts_disabled_increase_above_critical_threshold_warning_alert(
             self, metric_param, mock_param, mock_storage_usage_decrease,
@@ -1996,28 +2103,36 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_storage_usage', 'mock_storage_usage_increase'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_increase_above_critical_first_time_critical_repeat_disabled(
             self, metric_param, mock_param, mock_storage_usage_decrease,
@@ -2030,7 +2145,8 @@ class TestSystemAlerter(unittest.TestCase):
         data[metric_param]['current'] = self.percent_usage + 56
         data[metric_param]['previous'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_critical_repeat_disabled._create_state_for_system(
+        self.test_system_alerter_critical_repeat_disabled \
+            ._create_state_for_system(
             self.system_id)
         self.test_system_alerter_critical_repeat_disabled._process_results(
             data, meta_data, data_for_alerting)
@@ -2050,28 +2166,36 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_storage_usage', 'mock_storage_usage_increase'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_increase_above_critical_second_time_critical_repeat_disabled(
             self, metric_param, mock_param, mock_storage_usage_decrease,
@@ -2084,7 +2208,8 @@ class TestSystemAlerter(unittest.TestCase):
         data[metric_param]['current'] = self.percent_usage + 56
         data[metric_param]['previous'] = self.percent_usage + 46
         meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_critical_repeat_disabled._create_state_for_system(
+        self.test_system_alerter_critical_repeat_disabled \
+            ._create_state_for_system(
             self.system_id)
         self.test_system_alerter_critical_repeat_disabled._process_results(
             data, meta_data, data_for_alerting)
@@ -2112,28 +2237,36 @@ class TestSystemAlerter(unittest.TestCase):
         ('system_storage_usage', 'mock_storage_usage_increase'),
     ])
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.OpenFileDescriptorsDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemCPUUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemCPUUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemRAMUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemRAMUsageDecreasedBelowThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageIncreasedAboveThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageIncreasedAboveThresholdAlert",
         autospec=True)
     @mock.patch(
-        "src.alerter.alerters.system.SystemStorageUsageDecreasedBelowThresholdAlert",
+        "src.alerter.alerters.system"
+        ".SystemStorageUsageDecreasedBelowThresholdAlert",
         autospec=True)
     def test_critical_alerts_and_warning_alerts_disabled_increase_above_critical_threshold_no_alerts(
             self, metric_param, mock_param, mock_storage_usage_decrease,

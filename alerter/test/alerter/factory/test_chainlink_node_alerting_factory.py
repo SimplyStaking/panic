@@ -5,7 +5,8 @@ from datetime import timedelta
 
 from src.alerter.factory.chainlink_node_alerting_factory import \
     ChainlinkNodeAlertingFactory
-from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code import \
+from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
+    import \
     GroupedChainlinkNodeAlertsMetricCode
 from src.configs.alerts.chainlink_node import ChainlinkNodeAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
@@ -182,12 +183,12 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
                     seconds=total_headers_thresholds['warning_threshold'])),
             GroupedChainlinkNodeAlertsMetricCode.
                 MaxUnconfirmedBlocksThreshold.value: TimedTaskTracker(
-                    timedelta(seconds=unconfirmed_blocks_thresholds[
-                        'warning_time_window'])),
+                timedelta(seconds=unconfirmed_blocks_thresholds[
+                    'warning_time_window'])),
             GroupedChainlinkNodeAlertsMetricCode.
                 NoOfUnconfirmedTxsThreshold.value: TimedTaskTracker(
-                    timedelta(seconds=unconfirmed_txs_thresholds[
-                        'warning_time_window'])),
+                timedelta(seconds=unconfirmed_txs_thresholds[
+                    'warning_time_window'])),
             GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
                 TimedTaskTracker(timedelta(seconds=node_is_down_thresholds[
                     'warning_threshold'])),
@@ -202,12 +203,12 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
                     'critical_threshold'])),
             GroupedChainlinkNodeAlertsMetricCode.
                 MaxUnconfirmedBlocksThreshold.value: TimedTaskTracker(
-                    timedelta(seconds=unconfirmed_blocks_thresholds[
-                        'critical_time_window'])),
+                timedelta(seconds=unconfirmed_blocks_thresholds[
+                    'critical_time_window'])),
             GroupedChainlinkNodeAlertsMetricCode.
                 NoOfUnconfirmedTxsThreshold.value: TimedTaskTracker(
-                    timedelta(seconds=unconfirmed_txs_thresholds[
-                        'critical_time_window'])),
+                timedelta(seconds=unconfirmed_txs_thresholds[
+                    'critical_time_window'])),
             GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
                 TimedTaskTracker(timedelta(seconds=node_is_down_thresholds[
                     'critical_threshold'])),
@@ -222,16 +223,16 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
                     seconds=total_headers_thresholds['critical_repeat'])),
             GroupedChainlinkNodeAlertsMetricCode.
                 MaxUnconfirmedBlocksThreshold.value: TimedTaskLimiter(
-                    timedelta(seconds=unconfirmed_blocks_thresholds[
-                        'critical_repeat'])),
+                timedelta(seconds=unconfirmed_blocks_thresholds[
+                    'critical_repeat'])),
             GroupedChainlinkNodeAlertsMetricCode.
                 NoOfUnconfirmedTxsThreshold.value: TimedTaskLimiter(
-                    timedelta(seconds=unconfirmed_txs_thresholds[
-                        'critical_repeat'])),
+                timedelta(seconds=unconfirmed_txs_thresholds[
+                    'critical_repeat'])),
             GroupedChainlinkNodeAlertsMetricCode.
                 TotalErroredJobRunsThreshold.value: TimedTaskLimiter(
-                    timedelta(seconds=error_jobs_thresholds[
-                        'critical_repeat'])),
+                timedelta(seconds=error_jobs_thresholds[
+                    'critical_repeat'])),
             GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value:
                 TimedTaskLimiter(timedelta(seconds=eth_balance_thresholds[
                     'critical_repeat'])),
@@ -241,15 +242,15 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         }
         warning_occurrences_in_period_tracker = {
             GroupedChainlinkNodeAlertsMetricCode.
-            TotalErroredJobRunsThreshold.value:
-            OccurrencesInTimePeriodTracker(timedelta(
-                seconds=error_jobs_thresholds['warning_time_window'])),
+                TotalErroredJobRunsThreshold.value:
+                OccurrencesInTimePeriodTracker(timedelta(
+                    seconds=error_jobs_thresholds['warning_time_window'])),
         }
         critical_occurrences_in_period_tracker = {
             GroupedChainlinkNodeAlertsMetricCode.
-            TotalErroredJobRunsThreshold.value:
-            OccurrencesInTimePeriodTracker(timedelta(
-                seconds=error_jobs_thresholds['critical_time_window'])),
+                TotalErroredJobRunsThreshold.value:
+                OccurrencesInTimePeriodTracker(timedelta(
+                    seconds=error_jobs_thresholds['critical_time_window'])),
         }
 
         expected_state = {

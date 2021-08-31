@@ -143,17 +143,17 @@ class AlertingFactoryInstance(AlertingFactory):
             }
             warning_occurrences_in_period_tracker = {
                 GroupedChainlinkNodeAlertsMetricCode.
-                TotalErroredJobRunsThreshold.value:
-                OccurrencesInTimePeriodTracker(timedelta(
-                    seconds=error_jobs_thresholds[
-                        'warning_time_window'])),
+                    TotalErroredJobRunsThreshold.value:
+                    OccurrencesInTimePeriodTracker(timedelta(
+                        seconds=error_jobs_thresholds[
+                            'warning_time_window'])),
             }
             critical_occurrences_in_period_tracker = {
                 GroupedChainlinkNodeAlertsMetricCode.
-                TotalErroredJobRunsThreshold.value:
-                OccurrencesInTimePeriodTracker(timedelta(
-                    seconds=error_jobs_thresholds[
-                        'critical_time_window'])),
+                    TotalErroredJobRunsThreshold.value:
+                    OccurrencesInTimePeriodTracker(timedelta(
+                        seconds=error_jobs_thresholds[
+                            'critical_time_window'])),
             }
 
             self.alerting_state[parent_id][node_id] = {
@@ -359,7 +359,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # No change in alert is raised if time window elapsed
         pad = float(self.test_alerts_config.head_tracker_current_head[
-            threshold])
+                        threshold])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_no_change_in_alert(
             50, 50, self.test_alerts_config.head_tracker_current_head,
@@ -394,7 +394,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Send warning alert
         pad = float(self.test_alerts_config.head_tracker_current_head[
-            'warning_threshold'])
+                        'warning_threshold'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_no_change_in_alert(
             50, 50, self.test_alerts_config.head_tracker_current_head,
@@ -438,7 +438,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # First CRITICAL no change in alert
         pad = float(self.test_alerts_config.head_tracker_current_head[
-            'critical_threshold'])
+                        'critical_threshold'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_no_change_in_alert(
             50, 50, self.test_alerts_config.head_tracker_current_head,
@@ -453,7 +453,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Classify with not elapsed repeat to confirm that no critical alert is
         # raised.
         pad = float(self.test_alerts_config.head_tracker_current_head[
-            'critical_threshold']) + float(
+                        'critical_threshold']) + float(
             self.test_alerts_config.head_tracker_current_head[
                 'critical_repeat']) - 1
         alert_timestamp = datetime.now().timestamp() + pad
@@ -469,7 +469,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Let repeat time to elapse and check that a critical alert is
         # re-raised
         pad = float(self.test_alerts_config.head_tracker_current_head[
-            'critical_threshold']) + float(
+                        'critical_threshold']) + float(
             self.test_alerts_config.head_tracker_current_head[
                 'critical_repeat'])
         alert_timestamp = datetime.now().timestamp() + pad
@@ -508,7 +508,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # First CRITICAL no change in alert
         pad = float(self.test_alerts_config.head_tracker_current_head[
-            'critical_threshold'])
+                        'critical_threshold'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_no_change_in_alert(
             50, 50, self.test_alerts_config.head_tracker_current_head,
@@ -523,7 +523,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Let repeat time to elapse and check that a critical alert is
         # still not re-raised
         pad = float(self.test_alerts_config.head_tracker_current_head[
-            'critical_threshold']) + float(
+                        'critical_threshold']) + float(
             self.test_alerts_config.head_tracker_current_head[
                 'critical_repeat'])
         alert_timestamp = datetime.now().timestamp() + pad
@@ -561,7 +561,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Raise problem alert
         pad = float(self.test_alerts_config.head_tracker_current_head[
-            threshold])
+                        threshold])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_no_change_in_alert(
             50, 50, self.test_alerts_config.head_tracker_current_head,
@@ -575,7 +575,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Check that an INFO alert is raised
         pad = float(self.test_alerts_config.head_tracker_current_head[
-            threshold])
+                        threshold])
         alert_timestamp = datetime.now().timestamp() + pad + 60
         self.test_factory_instance.classify_no_change_in_alert(
             51, 50, self.test_alerts_config.head_tracker_current_head,
@@ -606,7 +606,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         data_for_alerting = []
         current = int(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_threshold'])
+                          'critical_threshold'])
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
             self.test_alerts_config.max_unconfirmed_blocks,
@@ -614,15 +614,17 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
 
         warning_timer = self.test_factory_instance.alerting_state[
             self.test_parent_id][self.test_node_id]['warning_window_timer'][
-            GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold.value]
+            GroupedChainlinkNodeAlertsMetricCode
+                .MaxUnconfirmedBlocksThreshold.value]
         critical_timer = self.test_factory_instance.alerting_state[
             self.test_parent_id][self.test_node_id]['critical_window_timer'][
-            GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold.value]
+            GroupedChainlinkNodeAlertsMetricCode
+                .MaxUnconfirmedBlocksThreshold.value]
         self.assertEqual([], data_for_alerting)
         self.assertFalse(warning_timer.timer_started)
         self.assertFalse(critical_timer.timer_started)
@@ -645,7 +647,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # No alert is raised if timer not started yet
         current = int(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_threshold'])
+                          'critical_threshold'])
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
             self.test_alerts_config.max_unconfirmed_blocks,
@@ -653,7 +655,7 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual([], data_for_alerting)
 
@@ -665,13 +667,13 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual([], data_for_alerting)
 
         # Above threshold alert is raised if time window elapsed
         pad = float(self.test_alerts_config.max_unconfirmed_blocks[
-            threshold])
+                        threshold])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
@@ -680,7 +682,7 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         expected_alert = MaxUnconfirmedBlocksIncreasedAboveThresholdAlert(
             self.test_node_name, current, severity, alert_timestamp, pad,
@@ -699,7 +701,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Set the timer
         current = int(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_threshold'])
+                          'critical_threshold'])
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
             self.test_alerts_config.max_unconfirmed_blocks,
@@ -707,12 +709,12 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
 
         # Send warning alert
         pad = float(self.test_alerts_config.max_unconfirmed_blocks[
-            'warning_time_window'])
+                        'warning_time_window'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
@@ -721,7 +723,7 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         self.assertEqual(1, len(data_for_alerting))
 
@@ -735,7 +737,7 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         self.assertEqual([], data_for_alerting)
 
@@ -751,7 +753,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Start timer
         current = int(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_threshold'])
+                          'critical_threshold'])
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
             self.test_alerts_config.max_unconfirmed_blocks,
@@ -759,12 +761,12 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
 
         # First CRITICAL above threshold alert
         pad = float(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_time_window'])
+                        'critical_time_window'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
@@ -773,7 +775,7 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -781,7 +783,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Classify with not elapsed repeat to confirm that no critical alert is
         # raised.
         pad = float(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_time_window']) + float(
+                        'critical_time_window']) + float(
             self.test_alerts_config.max_unconfirmed_blocks[
                 'critical_repeat']) - 1
         alert_timestamp = datetime.now().timestamp() + pad
@@ -792,14 +794,14 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         self.assertEqual([], data_for_alerting)
 
         # Let repeat time to elapse and check that a critical alert is
         # re-raised
         pad = float(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_time_window']) + float(
+                        'critical_time_window']) + float(
             self.test_alerts_config.max_unconfirmed_blocks[
                 'critical_repeat'])
         alert_timestamp = datetime.now().timestamp() + pad
@@ -810,7 +812,7 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         expected_alert = MaxUnconfirmedBlocksIncreasedAboveThresholdAlert(
             self.test_node_name, current, 'CRITICAL', alert_timestamp, pad,
@@ -831,7 +833,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Start timer
         current = int(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_threshold'])
+                          'critical_threshold'])
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
             self.test_alerts_config.max_unconfirmed_blocks,
@@ -839,12 +841,12 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
 
         # First CRITICAL above threshold alert
         pad = float(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_time_window'])
+                        'critical_time_window'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
@@ -853,7 +855,7 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -861,7 +863,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Let repeat time to elapse and check that a critical alert is
         # still not re-raised
         pad = float(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_time_window']) + float(
+                        'critical_time_window']) + float(
             self.test_alerts_config.max_unconfirmed_blocks[
                 'critical_repeat'])
         alert_timestamp = datetime.now().timestamp() + pad
@@ -872,7 +874,7 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         self.assertEqual([], data_for_alerting)
 
@@ -892,7 +894,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Start timers
         current = int(self.test_alerts_config.max_unconfirmed_blocks[
-            threshold])
+                          threshold])
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
             self.test_alerts_config.max_unconfirmed_blocks,
@@ -900,12 +902,12 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
 
         # First above threshold alert
         pad = float(self.test_alerts_config.max_unconfirmed_blocks[
-            time_window_threshold])
+                        time_window_threshold])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
@@ -914,14 +916,14 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Check that an INFO alert is raised
         pad = float(self.test_alerts_config.max_unconfirmed_blocks[
-            time_window_threshold])
+                        time_window_threshold])
         alert_timestamp = datetime.now().timestamp() + pad + 60
         self.test_factory_instance.classify_thresholded_time_window_alert(
             0,
@@ -930,7 +932,7 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         expected_alert = MaxUnconfirmedBlocksDecreasedBelowThresholdAlert(
             self.test_node_name, 0, 'INFO', alert_timestamp,
@@ -953,7 +955,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Start times
         current = int(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_threshold'])
+                          'critical_threshold'])
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
             self.test_alerts_config.max_unconfirmed_blocks,
@@ -961,12 +963,12 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
 
         # First above warning threshold alert
         pad = float(self.test_alerts_config.max_unconfirmed_blocks[
-            'warning_time_window'])
+                        'warning_time_window'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
@@ -975,13 +977,13 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         self.assertEqual(1, len(data_for_alerting))
 
         # First above critical threshold alert
         pad = float(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_time_window'])
+                        'critical_time_window'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current,
@@ -990,14 +992,14 @@ class TestAlertingFactory(unittest.TestCase):
             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         self.assertEqual(2, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Check that 2 alerts are raised, below critical and above warning
         pad = float(self.test_alerts_config.max_unconfirmed_blocks[
-            'critical_time_window'])
+                        'critical_time_window'])
         alert_timestamp = datetime.now().timestamp() + pad + 60
         self.test_factory_instance.classify_thresholded_time_window_alert(
             current - 1,
@@ -1013,7 +1015,7 @@ class TestAlertingFactory(unittest.TestCase):
             'CRITICAL', self.test_parent_id, self.test_node_id)
         expected_alert_2 = MaxUnconfirmedBlocksIncreasedAboveThresholdAlert(
             self.test_node_name, current - 1, 'WARNING', alert_timestamp,
-            pad + 60, 'WARNING', self.test_parent_id,
+                                 pad + 60, 'WARNING', self.test_parent_id,
             self.test_node_id
         )
         self.assertEqual(2, len(data_for_alerting))
@@ -1043,7 +1045,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
 
         self.assertEqual([], data_for_alerting)
@@ -1072,7 +1074,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
         period = float(
             self.test_alerts_config.run_status_update_total[
@@ -1104,7 +1106,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -1143,7 +1145,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -1161,7 +1163,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         self.assertEqual([], data_for_alerting)
 
@@ -1178,7 +1180,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         period = float(
             self.test_alerts_config.run_status_update_total[
@@ -1212,7 +1214,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -1230,7 +1232,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         self.assertEqual([], data_for_alerting)
 
@@ -1260,7 +1262,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -1277,7 +1279,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
         expected_alert = TotalErroredJobRunsDecreasedBelowThresholdAlert(
             self.test_node_name, 0, 'INFO', alert_timestamp, period,
@@ -1310,7 +1312,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual(1, len(data_for_alerting))
 
@@ -1326,7 +1328,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, datetime.now().timestamp()
+                .value, self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual(2, len(data_for_alerting))
         data_for_alerting.clear()
@@ -1354,7 +1356,7 @@ class TestAlertingFactory(unittest.TestCase):
             TotalErroredJobRunsDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold
-            .value, self.test_node_name, alert_timestamp
+                .value, self.test_node_name, alert_timestamp
         )
 
         new_current = int(
@@ -1461,7 +1463,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         data_for_alerting = []
         current = float(self.test_alerts_config.eth_balance_amount[
-            'critical_threshold']) - 1
+                            'critical_threshold']) - 1
         self.test_factory_instance.classify_thresholded_alert_reverse(
             current, self.test_alerts_config.eth_balance_amount,
             EthBalanceIncreasedAboveThresholdAlert,
@@ -1550,7 +1552,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # First critical below threshold alert
         current = float(self.test_alerts_config.eth_balance_amount[
-            'critical_threshold']) - 1
+                            'critical_threshold']) - 1
         self.test_factory_instance.classify_thresholded_alert_reverse(
             current, self.test_alerts_config.eth_balance_amount,
             EthBalanceIncreasedAboveThresholdAlert,
@@ -1565,7 +1567,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Classify with not elapsed repeat to confirm that no critical alert is
         # raised.
         pad = float(self.test_alerts_config.eth_balance_amount[
-            'critical_repeat']) - 1
+                        'critical_repeat']) - 1
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_alert_reverse(
             current, self.test_alerts_config.eth_balance_amount,
@@ -1580,7 +1582,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Let repeat time to elapse and check that a critical alert is
         # re-raised
         pad = float(self.test_alerts_config.eth_balance_amount[
-            'critical_repeat'])
+                        'critical_repeat'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_alert_reverse(
             current, self.test_alerts_config.eth_balance_amount,
@@ -1609,7 +1611,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # First critical below threshold alert
         current = float(self.test_alerts_config.eth_balance_amount[
-            'critical_threshold']) - 1
+                            'critical_threshold']) - 1
         self.test_factory_instance.classify_thresholded_alert_reverse(
             current, self.test_alerts_config.eth_balance_amount,
             EthBalanceIncreasedAboveThresholdAlert,
@@ -1624,7 +1626,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Let repeat time to elapse and check that a critical alert is not
         # re-raised
         pad = float(self.test_alerts_config.eth_balance_amount[
-            'critical_repeat'])
+                        'critical_repeat'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_alert_reverse(
             current, self.test_alerts_config.eth_balance_amount,
@@ -1652,7 +1654,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # First below threshold alert
         current = float(self.test_alerts_config.eth_balance_amount[
-            threshold_var]) - 1
+                            threshold_var]) - 1
         self.test_factory_instance.classify_thresholded_alert_reverse(
             current, self.test_alerts_config.eth_balance_amount,
             EthBalanceIncreasedAboveThresholdAlert,
@@ -1668,7 +1670,7 @@ class TestAlertingFactory(unittest.TestCase):
         # warning + 1 to not trigger a warning alert as it is expected that
         # critical <= warning.
         current = float(self.test_alerts_config.eth_balance_amount[
-            'warning_threshold']) + 1
+                            'warning_threshold']) + 1
         alert_timestamp = datetime.now().timestamp()
         self.test_factory_instance.classify_thresholded_alert_reverse(
             current, self.test_alerts_config.eth_balance_amount,
@@ -1699,7 +1701,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Send warning decrease below threshold alert
         current = float(self.test_alerts_config.eth_balance_amount[
-            'warning_threshold']) - 1
+                            'warning_threshold']) - 1
         self.test_factory_instance.classify_thresholded_alert_reverse(
             current, self.test_alerts_config.eth_balance_amount,
             EthBalanceIncreasedAboveThresholdAlert,
@@ -1712,7 +1714,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Send critical decrease below threshold alert
         current = float(self.test_alerts_config.eth_balance_amount[
-            'critical_threshold']) - 1
+                            'critical_threshold']) - 1
         self.test_factory_instance.classify_thresholded_alert_reverse(
             current, self.test_alerts_config.eth_balance_amount,
             EthBalanceIncreasedAboveThresholdAlert,
@@ -1726,7 +1728,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Check that 2 alerts are raised, above critical and below warning
         current = float(self.test_alerts_config.eth_balance_amount[
-            'critical_threshold']) + 1
+                            'critical_threshold']) + 1
         alert_timestamp = datetime.now().timestamp() + 10
         self.test_factory_instance.classify_thresholded_alert_reverse(
             current, self.test_alerts_config.eth_balance_amount,
@@ -1840,7 +1842,7 @@ class TestAlertingFactory(unittest.TestCase):
         current_went_down = datetime.now().timestamp()
         alert_timestamp = \
             current_went_down + float(self.test_alerts_config.node_is_down[
-                'critical_threshold'])
+                                          'critical_threshold'])
         self.test_factory_instance.classify_downtime_alert(
             current_went_down, self.test_alerts_config.node_is_down,
             NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
@@ -1875,7 +1877,7 @@ class TestAlertingFactory(unittest.TestCase):
         current_went_down = datetime.now().timestamp()
         alert_timestamp = \
             current_went_down + float(self.test_alerts_config.node_is_down[
-                threshold_var])
+                                          threshold_var])
 
         # Start timer, no alert is raised
         self.test_factory_instance.classify_downtime_alert(
@@ -1922,7 +1924,7 @@ class TestAlertingFactory(unittest.TestCase):
         current_went_down = datetime.now().timestamp()
         alert_timestamp = \
             current_went_down + float(self.test_alerts_config.node_is_down[
-                'warning_threshold'])
+                                          'warning_threshold'])
 
         # Start timer, no alert is raised
         self.test_factory_instance.classify_downtime_alert(
@@ -1965,7 +1967,7 @@ class TestAlertingFactory(unittest.TestCase):
         current_went_down = datetime.now().timestamp()
         alert_timestamp = \
             current_went_down + float(self.test_alerts_config.node_is_down[
-                'critical_threshold'])
+                                          'critical_threshold'])
 
         # Start timer, no alert is raised
         self.test_factory_instance.classify_downtime_alert(
@@ -1990,7 +1992,7 @@ class TestAlertingFactory(unittest.TestCase):
         # No alert is re-raised if the repeat time is not elapsed
         alert_timestamp = \
             alert_timestamp + float(self.test_alerts_config.node_is_down[
-                'critical_repeat'])
+                                        'critical_repeat'])
         self.test_factory_instance.classify_downtime_alert(
             current_went_down, self.test_alerts_config.node_is_down,
             NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
@@ -2028,7 +2030,7 @@ class TestAlertingFactory(unittest.TestCase):
         current_went_down = datetime.now().timestamp()
         alert_timestamp = \
             current_went_down + float(self.test_alerts_config.node_is_down[
-                'critical_threshold'])
+                                          'critical_threshold'])
 
         # Start timer, no alert is raised
         self.test_factory_instance.classify_downtime_alert(
@@ -2053,7 +2055,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Critical alert is not re-raised if the repeat time elapsed.
         alert_timestamp = \
             alert_timestamp + float(self.test_alerts_config.node_is_down[
-                'critical_repeat'])
+                                        'critical_repeat'])
         self.test_factory_instance.classify_downtime_alert(
             current_went_down, self.test_alerts_config.node_is_down,
             NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
@@ -2078,7 +2080,7 @@ class TestAlertingFactory(unittest.TestCase):
         current_went_down = datetime.now().timestamp()
         alert_timestamp = \
             current_went_down + float(self.test_alerts_config.node_is_down[
-                threshold_var])
+                                          threshold_var])
 
         # Start timer, no alert is raised
         self.test_factory_instance.classify_downtime_alert(

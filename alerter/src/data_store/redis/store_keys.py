@@ -103,7 +103,7 @@ class Keys:
     @staticmethod
     def get_system_process_cpu_seconds_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_process_cpu_seconds_total) \
-            + system_id
+               + system_id
 
     @staticmethod
     def get_system_process_memory_usage(system_id: str) -> str:
@@ -132,33 +132,33 @@ class Keys:
     @staticmethod
     def get_system_network_transmit_bytes_per_second(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_transmit_bytes_per_second) \
-            + system_id
+               + system_id
 
     @staticmethod
     def get_system_network_receive_bytes_per_second(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_receive_bytes_per_second) \
-            + system_id
+               + system_id
 
     @staticmethod
     def get_system_network_receive_bytes_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_receive_bytes_total) \
-            + system_id
+               + system_id
 
     @staticmethod
     def get_system_network_transmit_bytes_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_transmit_bytes_total) \
-            + system_id
+               + system_id
 
     @staticmethod
     def get_system_disk_io_time_seconds_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_disk_io_time_seconds_total) \
-            + system_id
+               + system_id
 
     @staticmethod
     def get_system_disk_io_time_seconds_in_interval(
             system_id: str) -> str:
         return Keys._as_prefix(_key_system_disk_io_time_seconds_in_interval) \
-            + system_id
+               + system_id
 
     @staticmethod
     def get_system_went_down_at(system_id: str) -> str:
@@ -175,7 +175,7 @@ class Keys:
     @staticmethod
     def get_cl_node_total_block_headers_received(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_total_block_headers_received) \
-            + cl_node_id
+               + cl_node_id
 
     @staticmethod
     def get_cl_node_no_of_active_jobs(cl_node_id: str) -> str:
@@ -188,7 +188,7 @@ class Keys:
     @staticmethod
     def get_cl_node_process_start_time_seconds(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_process_start_time_seconds) \
-            + cl_node_id
+               + cl_node_id
 
     @staticmethod
     def get_cl_node_total_gas_bumps(cl_node_id: str) -> str:
@@ -197,7 +197,7 @@ class Keys:
     @staticmethod
     def get_cl_node_total_gas_bumps_exceeds_limit(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_total_gas_bumps_exceeds_limit) \
-            + cl_node_id
+               + cl_node_id
 
     @staticmethod
     def get_cl_node_no_of_unconfirmed_txs(cl_node_id: str) -> str:
@@ -218,17 +218,17 @@ class Keys:
     @staticmethod
     def get_cl_node_went_down_at_prometheus(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_went_down_at_prometheus) + \
-            cl_node_id
+               cl_node_id
 
     @staticmethod
     def get_cl_node_last_prometheus_source_used(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_last_prometheus_source_used) \
-            + cl_node_id
+               + cl_node_id
 
     @staticmethod
     def get_cl_node_last_monitored_prometheus(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_last_monitored_prometheus) \
-            + cl_node_id
+               + cl_node_id
 
     @staticmethod
     def get_github_no_of_releases(repo_id: str) -> str:
