@@ -1,4 +1,4 @@
-import { Component, Host, h, Prop } from '@stencil/core';
+import { Component, Host, h } from '@stencil/core';
 
 @Component({
   tag: 'panic-footer',
@@ -9,11 +9,11 @@ import { Component, Host, h, Prop } from '@stencil/core';
  * I've added header+content to the rendered JSX/HTML, but what matters here is just the footer.
  */
 export class PanicFooter {
-  @Prop() twitterURL: string = 'https://twitter.com/Simply_VC';
-  @Prop() githubURL: string = 'https://github.com/SimplyVC';
-  @Prop() mediumURL: string = 'https://medium.com/simply-vc';
-  @Prop() telegramURL: string = 'https://t.me/SimplyVC';
-  @Prop() websiteURL: string = 'https://simply-vc.com.mt';
+  private twitterURL: string = 'https://twitter.com/Simply_VC';
+  private githubURL: string = 'https://github.com/SimplyVC';
+  private mediumURL: string = 'https://medium.com/simply-vc';
+  private telegramURL: string = 'https://t.me/SimplyVC';
+  private websiteURL: string = 'https://simply-vc.com.mt';
 
   render() {
     return (
