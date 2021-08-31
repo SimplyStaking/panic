@@ -54,9 +54,6 @@ _key_cl_contract_withdrawable_payment = 'ChainlinkContract8'
 _key_cl_contract_owed_payment = 'ChainlinkContract9'
 _key_cl_contract_last_monitored = 'ChainlinkContract10'
 
-# ChainlinkContractMonitoringErrorX
-_key_cl_contract_monitoring_error = 'ChianlinkContractMonitoringError1'
-
 # ghX_<repo_id>
 _key_github_no_of_releases = 'gh1'
 _key_github_last_monitored = 'gh2'
