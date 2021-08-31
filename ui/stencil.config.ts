@@ -10,6 +10,11 @@ export const config: Config = {
       type: 'www',
       serviceWorker: null,
       baseUrl: 'https://localhost:3333',
+      copy: [
+        {
+          src: "lib", warn: true
+        }
+      ]
     },
   ],
   devServer: {
