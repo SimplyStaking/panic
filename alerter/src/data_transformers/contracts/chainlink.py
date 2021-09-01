@@ -99,7 +99,7 @@ class ChainlinkContractsDataTransformer(DataTransformer):
         # also be passed as bytes(str()).
         for attribute in metric_attributes:
             state_value = eval('cl_contract.' + attribute)
-            redis_key = eval('Keys.get_chainlink_contract' + attribute +
+            redis_key = eval('Keys.get_cl_contract' + attribute +
                              '(node_id, proxy_address)')
             default_value = bytes(str(state_value), 'utf-8')
             redis_value = self.redis.hget(redis_hash, redis_key, default_value)
@@ -123,7 +123,7 @@ class ChainlinkContractsDataTransformer(DataTransformer):
 
         for attribute in metric_attributes:
             state_value = eval('cl_contract.' + attribute)
-            redis_key = eval('Keys.get_chainlink_contract' + attribute +
+            redis_key = eval('Keys.get_cl_contract' + attribute +
                              '(node_id, proxy_address)')
             default_value = bytes(json.dumps(state_value), 'utf-8')
             redis_value = self.redis.hget(redis_hash, redis_key, default_value)

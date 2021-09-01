@@ -11,7 +11,7 @@ class ChainlinkContract(ABC):
         self._aggregator_address = aggregator_address
         self._version = version
         self._parent_id = parent_id
-        self._node_id = node_id
+        self._node_id = node_id  # The id of the chainlink node
         self._latest_round = None
         self._latest_answer = None
         self._latest_timestamp = None
