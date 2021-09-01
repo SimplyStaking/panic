@@ -43,16 +43,16 @@ _key_evm_node_went_down_at = 'evm2'
 _key_evm_node_last_monitored = 'evm3'
 
 # ChainlinkContractX_<cl_node_id>_<contract_proxy_address>
-_key_chainlink_contract_version = 'ChainlinkContract1'
-_key_chainlink_contract_aggregator_address = 'ChainlinkContract2'
-_key_chainlink_contract_latest_round = 'ChainlinkContract3'
-_key_chainlink_contract_latest_answer = 'ChainlinkContract4'
-_key_chainlink_contract_latest_timestamp = 'ChainlinkContract5'
-_key_chainlink_contract_answered_in_round = 'ChainlinkContract6'
-_key_chainlink_contract_historical_rounds = 'ChainlinkContract7'
-_key_chainlink_contract_withdrawable_payment = 'ChainlinkContract8'
-_key_chainlink_contract_owed_payment = 'ChainlinkContract9'
-_key_chainlink_contract_last_monitored = 'ChainlinkContract10'
+_key_cl_contract_version = 'ChainlinkContract1'
+_key_cl_contract_aggregator_address = 'ChainlinkContract2'
+_key_cl_contract_latest_round = 'ChainlinkContract3'
+_key_cl_contract_latest_answer = 'ChainlinkContract4'
+_key_cl_contract_latest_timestamp = 'ChainlinkContract5'
+_key_cl_contract_answered_in_round = 'ChainlinkContract6'
+_key_cl_contract_historical_rounds = 'ChainlinkContract7'
+_key_cl_contract_withdrawable_payment = 'ChainlinkContract8'
+_key_cl_contract_owed_payment = 'ChainlinkContract9'
+_key_cl_contract_last_monitored = 'ChainlinkContract10'
 
 # ghX_<repo_id>
 _key_github_no_of_releases = 'gh1'
@@ -260,73 +260,70 @@ class Keys:
         return Keys._as_prefix(_key_evm_node_last_monitored) + evm_node_id
 
     @staticmethod
-    def get_chainlink_contract_version(cl_node_id: str,
+    def get_cl_contract_version(cl_node_id: str,
+                                contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_version) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_aggregator_address(cl_node_id: str,
+                                           contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_cl_contract_aggregator_address) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_latest_round(cl_node_id: str,
+                                     contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_latest_round) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_latest_answer(cl_node_id: str,
+                                      contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_cl_contract_latest_answer) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_latest_timestamp(cl_node_id: str,
+                                         contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_cl_contract_latest_timestamp) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_answered_in_round(cl_node_id: str,
+                                          contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_cl_contract_answered_in_round) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_historical_rounds(cl_node_id: str,
+                                          contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_cl_contract_historical_rounds) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_withdrawable_payment(
+            cl_node_id: str, contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_cl_contract_withdrawable_payment) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_owed_payment(cl_node_id: str,
+                                     contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_owed_payment) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_last_monitored(cl_node_id: str,
                                        contract_proxy_address: str) -> str:
         return Keys._as_prefix(
-            _key_chainlink_contract_version) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_chainlink_contract_aggregator_address(
-            cl_node_id: str, contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_chainlink_contract_aggregator_address) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_chainlink_contract_latest_round(cl_node_id: str,
-                                            contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_chainlink_contract_latest_round) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_chainlink_contract_latest_answer(
-            cl_node_id: str, contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_chainlink_contract_latest_answer) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_chainlink_contract_latest_timestamp(
-            cl_node_id: str, contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_chainlink_contract_latest_timestamp) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_chainlink_contract_answered_in_round(
-            cl_node_id: str, contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_chainlink_contract_answered_in_round) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_chainlink_contract_historical_rounds(
-            cl_node_id: str, contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_chainlink_contract_historical_rounds) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_chainlink_contract_withdrawable_payment(
-            cl_node_id: str, contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_chainlink_contract_withdrawable_payment) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_chainlink_contract_owed_payment(
-            cl_node_id: str, contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_chainlink_contract_owed_payment) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_chainlink_contract_last_monitored(
-            cl_node_id: str, contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_chainlink_contract_last_monitored) + Keys._as_prefix(
+            _key_cl_contract_last_monitored) + Keys._as_prefix(
             cl_node_id) + contract_proxy_address
 
     @staticmethod

@@ -228,23 +228,23 @@ def save_chainlink_contract_to_redis(
     node_id = cl_contract.node_id
     proxy_address = cl_contract.proxy_address
     version = cl_contract.version
-    payment_key = Keys.get_chainlink_contract_withdrawable_payment(
+    payment_key = Keys.get_cl_contract_withdrawable_payment(
         node_id, proxy_address) if version == 3 \
-        else Keys.get_chainlink_contract_owed_payment(node_id, proxy_address)
+        else Keys.get_cl_contract_owed_payment(node_id, proxy_address)
     payment_value = cl_contract.withdrawable_payment if version == 3 \
         else cl_contract.owed_payment
     redis.hset_multiple(redis_hash, {
-        Keys.get_chainlink_contract_latest_round(node_id, proxy_address):
+        Keys.get_cl_contract_latest_round(node_id, proxy_address):
             str(cl_contract.latest_round),
-        Keys.get_chainlink_contract_latest_answer(node_id, proxy_address):
+        Keys.get_cl_contract_latest_answer(node_id, proxy_address):
             str(cl_contract.latest_answer),
-        Keys.get_chainlink_contract_latest_timestamp(node_id, proxy_address):
+        Keys.get_cl_contract_latest_timestamp(node_id, proxy_address):
             str(cl_contract.latest_timestamp),
-        Keys.get_chainlink_contract_answered_in_round(node_id, proxy_address):
+        Keys.get_cl_contract_answered_in_round(node_id, proxy_address):
             str(cl_contract.answered_in_round),
         payment_key: payment_value,
-        Keys.get_chainlink_contract_historical_rounds(node_id, proxy_address):
+        Keys.get_cl_contract_historical_rounds(node_id, proxy_address):
             json.dumps(cl_contract.historical_rounds),
-        Keys.get_chainlink_contract_last_monitored(node_id, proxy_address):
+        Keys.get_cl_contract_last_monitored(node_id, proxy_address):
             str(cl_contract.last_monitored)
     })
