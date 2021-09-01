@@ -1,17 +1,17 @@
 import copy
 from typing import Dict, Optional
 
-from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
+from src.configs.alerts.node.evm import EVMNodeAlertsConfig
 from src.configs.factory.configs_factory import ConfigsFactory
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
 
-class ChainlinkAlertsConfigsFactory(ConfigsFactory):
+class EVMAlertsConfigsFactory(ConfigsFactory):
     """
     This class manages the alerts configs. The configs are indexed by the
     chain name, and it is expected that each chain has exactly one alerts
-    config. NOTE: This class does not manage the EVM alerts residing in
-    Chainlink chains' alerts_config.ini
+    config. NOTE: This class will only manage the EVM alerts residing in
+    Chainlink chains' alerts_config.ini.
     """
 
     def __init__(self) -> None:
@@ -30,27 +30,16 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
         for _, config in sent_configs.items():
             filtered[config['name']] = copy.deepcopy(config)
 
-        cl_node_alerts_config = ChainlinkNodeAlertsConfig(
+        evm_node_alerts_config = EVMNodeAlertsConfig(
             parent_id=parent_id,
-            head_tracker_current_head=filtered[
-                'head_tracker_current_head'],
-            head_tracker_heads_received_total=filtered[
-                'head_tracker_heads_received_total'],
-            max_unconfirmed_blocks=filtered['max_unconfirmed_blocks'],
-            process_start_time_seconds=filtered[
-                'process_start_time_seconds'],
-            tx_manager_gas_bump_exceeds_limit_total=filtered[
-                'tx_manager_gas_bump_exceeds_limit_total'],
-            unconfirmed_transactions=filtered[
-                'unconfirmed_transactions'],
-            run_status_update_total=filtered['run_status_update_total'],
-            eth_balance_amount=filtered['eth_balance_amount'],
-            eth_balance_amount_increase=filtered[
-                'eth_balance_amount_increase'],
-            node_is_down=filtered['node_is_down']
+            evm_node_is_down=filtered['evm_node_is_down'],
+            evm_block_syncing_block_height_difference=filtered[
+                'evm_block_syncing_block_height_difference'],
+            evm_block_syncing_no_change_in_block_height=filtered[
+                'evm_block_syncing_no_change_in_block_height']
         )
 
-        self._configs[chain_name] = cl_node_alerts_config
+        self._configs[chain_name] = evm_node_alerts_config
 
     def remove_config(self, chain_name: str) -> None:
         if chain_name in self.configs:
@@ -64,7 +53,7 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
                : False otherwise
         """
         return (chain_name in self.configs
-                and type(self.configs[chain_name]) == ChainlinkNodeAlertsConfig)
+                and type(self.configs[chain_name]) == EVMNodeAlertsConfig)
 
     def get_parent_id(self, chain_name: str) -> Optional[str]:
         """
@@ -87,7 +76,7 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
                : None otherwise
         """
         for chain_name, config in self.configs.items():
-            if type(config) == ChainlinkNodeAlertsConfig \
+            if type(config) == EVMNodeAlertsConfig \
                     and config.parent_id == parent_id:
                 return chain_name
 

@@ -1,6 +1,7 @@
 # Component names/name templates/ids
 GITHUB_ALERTER_NAME = 'GitHub Alerter'
 CHAINLINK_NODE_ALERTER_NAME = 'Chainlink Node Alerter'
+EVM_NODE_ALERTER_NAME = 'EVM Node Alerter'
 SYSTEM_STORE_NAME = 'System Store'
 CONFIG_STORE_NAME = 'Config Store'
 GITHUB_STORE_NAME = 'GitHub Store'

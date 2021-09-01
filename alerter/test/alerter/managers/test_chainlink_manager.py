@@ -25,8 +25,8 @@ from src.utils.constants.names import CHAINLINK_NODE_ALERTER_NAME
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE,
     CONFIG_EXCHANGE,
-    CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
-    CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
+    CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+    CHAINLINK_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
     PING_ROUTING_KEY, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
     ALERT_EXCHANGE, CL_NODE_ALERT_ROUTING_KEY, CL_ALERTS_CONFIGS_ROUTING_KEY)
 from src.utils.exceptions import PANICException
@@ -174,9 +174,9 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         delete_queue_if_exists(self.test_manager.rabbitmq,
                                self.test_queue_name)
         delete_queue_if_exists(self.test_manager.rabbitmq,
-                               CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
+                               CHAINLINK_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
         delete_queue_if_exists(self.test_manager.rabbitmq,
-                               CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME)
+                               CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME)
 
         disconnect_from_rabbit(self.test_manager.rabbitmq)
         disconnect_from_rabbit(self.test_rabbit_manager)
@@ -226,9 +226,9 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         # declared
         self.test_manager.rabbitmq.connect()
         self.test_manager.rabbitmq.queue_delete(
-            CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
+            CHAINLINK_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
         self.test_manager.rabbitmq.queue_delete(
-            CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME
+            CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME
         )
         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
         self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
@@ -274,19 +274,19 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         )
         # Re-declare queue to get the number of messages
         res = self.test_rabbit_manager.queue_declare(
-            CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, False, True, False,
+            CHAINLINK_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, False, True, False,
             False)
         self.assertEqual(1, res.method.message_count)
         res = self.test_rabbit_manager.queue_declare(
-            CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME, False, True, False,
+            CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME, False, True, False,
             False)
         self.assertEqual(1, res.method.message_count)
         self.assertEqual(2, mock_basic_consume.call_count)
 
         expected_calls = [
-            call(CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
+            call(CHAINLINK_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
                  self.test_manager._process_ping, True, False, None),
-            call(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+            call(CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
                  self.test_manager._process_configs, False, False, None)
         ]
         mock_basic_consume.assert_has_calls(expected_calls, True)

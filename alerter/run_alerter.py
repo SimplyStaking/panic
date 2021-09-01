@@ -44,7 +44,7 @@ from src.utils.constants.rabbitmq import (
     ALERTS_CONFIGS_ROUTING_KEY_CHAIN,
     ALERTS_CONFIGS_ROUTING_KEY_GEN, ALERT_ROUTER_CONFIGS_ROUTING_KEY,
     CONFIGS_STORE_INPUT_ROUTING_KEY, CHANNELS_MANAGER_CONFIGS_ROUTING_KEY,
-    TOPIC, CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+    TOPIC, CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
     CL_ALERTS_CONFIGS_ROUTING_KEY, CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME)
 from src.utils.constants.starters import (
@@ -738,16 +738,16 @@ def _initialise_and_declare_config_queues() -> None:
 
             # Chainlink Node Alerters Manager queues
             log_and_print("Creating queue '{}'".format(
-                CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+                CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
                                    False, True, False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+                "key {}.".format(CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
                                  CL_ALERTS_CONFIGS_ROUTING_KEY),
                 dummy_logger)
-            rabbitmq.queue_bind(CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+            rabbitmq.queue_bind(CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
                                 CONFIG_EXCHANGE,
                                 CL_ALERTS_CONFIGS_ROUTING_KEY)
 
