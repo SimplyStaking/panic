@@ -159,6 +159,8 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         self.chainlink_configs_factory = None
         self.evm_configs_factory = None
 
+    # TODO: Continue from here tomorrow. Add same tests for both factories.
+
     # def test_add_new_config_adds_a_new_config(self) -> None:
     #     """
     #     In this test we will check that add_new_config adds the newly received
