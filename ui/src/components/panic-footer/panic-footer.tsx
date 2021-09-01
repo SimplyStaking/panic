@@ -25,23 +25,13 @@ export class PanicFooter {
         </svc-content>
         {/* Just ignore this markup */}
 
-        <svc-footer color="primary" headlinePosition="start" headline="Developed by SimplyVC">
+        <svc-footer color="primary" headline-position="start" headline="Developed by SimplyVC">
           <svc-buttons-container position="end">
-            <svc-button target="_blank" href={this.twitterURL}>
-              <ion-icon name="logo-twitter" class="footer-social"></ion-icon>
-            </svc-button>
-            <svc-button target="_blank" href={this.githubURL}>
-              <ion-icon name="logo-github" class="footer-social"></ion-icon>
-            </svc-button>
-            <svc-button target="_blank" href={this.mediumURL}>
-              <ion-icon name="logo-medium" class="footer-social"></ion-icon>
-            </svc-button>
-            <svc-button target="_blank" href={this.telegramURL}>
-              <ion-icon src="assets/logos/telegram_logo.svg" class="footer-social"></ion-icon>
-            </svc-button>
-            <svc-button target="_blank" href={this.websiteURL}>
-              <ion-icon src="assets/logos/simplyvc_logo.svg" class="footer-social"></ion-icon>
-            </svc-button>
+            <svc-button icon-name="logo-twitter" href={this.twitterURL} target="_blank"></svc-button>
+            <svc-button icon-name="logo-github" href={this.githubURL} target="_blank"></svc-button>
+            <svc-button icon-name="logo-medium" href={this.mediumURL} target="_blank"></svc-button>
+            <svc-button icon-src="assets/logos/telegram_logo.svg" href={this.telegramURL} target="_blank"></svc-button>
+            <svc-button icon-src="assets/logos/simplyvc_logo.svg" href={this.websiteURL} target="_blank"></svc-button>
           </svc-buttons-container>
         </svc-footer>
       </Host>
