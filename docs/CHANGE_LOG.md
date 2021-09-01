@@ -25,9 +25,10 @@ Change the contents of this file to this:
 - Web-Installer bug fixes and removing outdated alerts.
 - Added Chainlink Node Alerter logic and tests.
 - Added EVM Node Monitoring along with the monitor tests.
-- Added EVMContractsMonitor along with its tests.
+- Added ChainlinkContractsMonitor along with its tests.
 - Added ContractMonitorsManager along with its tests.
 - Added EVM Node Data Transformer along with its tests.
+- Added ChainlinkContractsDataTransformer along with its tests.
 
 ## 0.1.2
 
