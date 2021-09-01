@@ -40,7 +40,7 @@ class DataTransformer(QueuingPublisherSubscriberComponent):
         return self._redis
 
     @property
-    def state(self) -> Dict[str, Monitorable]:
+    def state(self) -> Dict:
         return self._state
 
     @abstractmethod

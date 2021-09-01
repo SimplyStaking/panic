@@ -23,14 +23,14 @@ from web3.exceptions import ContractLogicError
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitors.contracts.evm import (EVMContractsMonitor,
-                                        _WEI_WATCHERS_RETRIEVAL_TIME_PERIOD,
-                                        _PROMETHEUS_RETRIEVAL_TIME_PERIOD)
+from src.monitors.contracts.chainlink import (
+    ChainlinkContractsMonitor, _WEI_WATCHERS_RETRIEVAL_TIME_PERIOD,
+    _PROMETHEUS_RETRIEVAL_TIME_PERIOD)
 from src.utils import env
-from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
-                                          RAW_DATA_EXCHANGE,
-                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-                                          EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (
+    HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE,
+    HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+    CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
 from src.utils.exceptions import (PANICException,
                                   ComponentNotGivenEnoughDataSourcesException,
                                   MetricNotFoundException,
@@ -48,7 +48,7 @@ class TestEventsClass:
         return self._events
 
 
-class TestEVMContractsMonitor(unittest.TestCase):
+class TestChainlinkContractsMonitor(unittest.TestCase):
     def setUp(self) -> None:
         # Some dummy data
         self.dummy_logger = logging.getLogger('Dummy')
@@ -104,6 +104,10 @@ class TestEVMContractsMonitor(unittest.TestCase):
             self.node_id_1: self.eth_address_1,
             self.node_id_2: self.eth_address_2
         }
+        self.proxy_address_1 = '0xFDF9EB5fafc11Efa65f6FD144898da39a7920Ae8'
+        self.proxy_address_2 = '0x678df3415fc31947dA4324eC63212874be5a82f8'
+        self.proxy_address_3 = '0x824b4A1A0443609A2ADd94a700b770FA5bE31287'
+        self.proxy_address_4 = '0x7969b8018928F3d9faaE9AC71744ed2C1486536F'
         self.contract_address_1 = '0x05883D24a5712c04f1b843C4839dC93073A56Ef4'
         self.contract_address_2 = '0x12A6B73A568f8DC3D24DA1654079343f18f69236'
         self.contract_address_3 = '0x01A1F73b1f4726EB6EB189FFA5CBB91AF8E14025'
@@ -111,18 +115,22 @@ class TestEVMContractsMonitor(unittest.TestCase):
         self.retrieved_contracts_example = [
             {
                 'contractAddress': self.contract_address_1,
+                'proxyAddress': self.proxy_address_1,
                 'contractVersion': 3,
             },
             {
                 'contractAddress': self.contract_address_2,
+                'proxyAddress': self.proxy_address_2,
                 'contractVersion': 3,
             },
             {
                 'contractAddress': self.contract_address_3,
+                'proxyAddress': self.proxy_address_3,
                 'contractVersion': 4,
             },
             {
                 'contractAddress': self.contract_address_4,
+                'proxyAddress': self.proxy_address_4,
                 'contractVersion': 4,
             }
         ]
@@ -140,12 +148,12 @@ class TestEVMContractsMonitor(unittest.TestCase):
         ]
         self.filtered_contracts_example = {
             self.node_id_1: {
-                'v3': [self.contract_address_1, self.contract_address_2],
-                'v4': [self.contract_address_3]
+                'v3': [self.proxy_address_1, self.proxy_address_2],
+                'v4': [self.proxy_address_3]
             },
             self.node_id_2: {
-                'v3': [self.contract_address_1],
-                'v4': [self.contract_address_3, self.contract_address_4]
+                'v3': [self.proxy_address_1],
+                'v4': [self.proxy_address_3, self.proxy_address_4]
             }
         }
         self.current_block = 1000
@@ -167,7 +175,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
             self.node_id_2, self.parent_id_2, self.node_name_2,
             self.monitor_node_2, self.monitor_prometheus_2,
             self.node_prometheus_urls_2)
-        self.test_monitor = EVMContractsMonitor(
+        self.test_monitor = ChainlinkContractsMonitor(
             self.monitor_name, self.weiwatchers_url, self.evm_nodes,
             [self.node_config_1, self.node_config_2], self.dummy_logger,
             self.monitoring_period, self.rabbitmq)
@@ -243,7 +251,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
         self.assertEqual(self.test_data_dict,
                          self.test_monitor.eth_address_retrieval_limiter)
 
-    def test_EVMContractsMonitor_init_raises_exception_if_nodes_lists_empty(
+    def test_ChainlinkContractsMonitor_init_raises_except_if_nodes_lists_empty(
             self) -> None:
         """
         In this test we will check that if the list of evm nodes or the list
@@ -254,20 +262,21 @@ class TestEVMContractsMonitor(unittest.TestCase):
 
         # If the list of evm nodes is empty
         self.assertRaises(
-            ComponentNotGivenEnoughDataSourcesException, EVMContractsMonitor,
-            self.monitor_name, self.weiwatchers_url, [],
-            [self.node_config_1, self.node_config_2], self.dummy_logger,
+            ComponentNotGivenEnoughDataSourcesException,
+            ChainlinkContractsMonitor, self.monitor_name, self.weiwatchers_url,
+            [], [self.node_config_1, self.node_config_2], self.dummy_logger,
             self.monitoring_period, self.rabbitmq)
 
         # If the list of node configs is empty
         self.assertRaises(
-            ComponentNotGivenEnoughDataSourcesException, EVMContractsMonitor,
-            self.monitor_name, self.weiwatchers_url, self.evm_nodes,
-            [], self.dummy_logger, self.monitoring_period, self.rabbitmq)
+            ComponentNotGivenEnoughDataSourcesException,
+            ChainlinkContractsMonitor, self.monitor_name, self.weiwatchers_url,
+            self.evm_nodes, [], self.dummy_logger, self.monitoring_period,
+            self.rabbitmq)
 
-    def test_EVMContractsMonitor_init_creates_w3_interfaces_for_each_evm_node(
+    def test_ChainlinkContractsMonitor_init_creates_w3_interfaces_correctly(
             self) -> None:
-        test_monitor = EVMContractsMonitor(
+        test_monitor = ChainlinkContractsMonitor(
             self.monitor_name, self.weiwatchers_url, self.evm_nodes,
             [self.node_config_1, self.node_config_2], self.dummy_logger,
             self.monitoring_period, self.rabbitmq)
@@ -309,8 +318,8 @@ class TestEVMContractsMonitor(unittest.TestCase):
             body=self.test_data_str, is_body_dict=False,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=False)
 
-    @mock.patch.object(EVMContractsMonitor, "_process_retrieved_data")
-    @mock.patch.object(EVMContractsMonitor, "_process_error")
+    @mock.patch.object(ChainlinkContractsMonitor, "_process_retrieved_data")
+    @mock.patch.object(ChainlinkContractsMonitor, "_process_error")
     def test_process_data_calls_process_error_on_retrieval_error(
             self, mock_process_error, mock_process_retrieved_data) -> None:
         # Do not test the processing of data for now
@@ -323,8 +332,8 @@ class TestEVMContractsMonitor(unittest.TestCase):
         self.assertEqual(1, mock_process_error.call_count)
         self.assertEqual(0, mock_process_retrieved_data.call_count)
 
-    @mock.patch.object(EVMContractsMonitor, "_process_retrieved_data")
-    @mock.patch.object(EVMContractsMonitor, "_process_error")
+    @mock.patch.object(ChainlinkContractsMonitor, "_process_retrieved_data")
+    @mock.patch.object(ChainlinkContractsMonitor, "_process_error")
     def test_process_data_calls_process_retrieved_data_on_retrieval_success(
             self, mock_process_error, mock_process_retrieved_data) -> None:
         # Do not test the processing of data for now
@@ -369,7 +378,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
         _, _, body = self.test_monitor.rabbitmq.basic_get(self.test_queue_name)
         self.assertEqual(self.test_heartbeat, json.loads(body))
 
-    @mock.patch("src.monitors.contracts.evm.get_json")
+    @mock.patch("src.monitors.contracts.chainlink.get_json")
     def test_get_chain_contracts_calls_and_returns_get_json_correctly(
             self, mock_get_json) -> None:
         mock_get_json.return_value = self.test_data_str
@@ -384,7 +393,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
         self.assertEqual([self.test_data_dict],
                          self.test_monitor.contracts_data)
 
-    @mock.patch("src.monitors.contracts.evm.get_prometheus_metrics_data")
+    @mock.patch("src.monitors.contracts.chainlink.get_prometheus_metrics_data")
     def test_get_nodes_eth_address_returns_correctly_if_no_errors(
             self, mock_get_prom_metrics_data) -> None:
         """
@@ -409,7 +418,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
         (ChunkedEncodingError('test'),), (ProtocolError('test'),),
         (MetricNotFoundException('test_metric', 'test_endpoint'),),
     ])
-    @mock.patch("src.monitors.contracts.evm.get_prometheus_metrics_data")
+    @mock.patch("src.monitors.contracts.chainlink.get_prometheus_metrics_data")
     def test_get_nodes_eth_address_returns_correctly_if_prom_retrieval_errors(
             self, error_instance, mock_get_prom_metrics_data) -> None:
         """
@@ -606,10 +615,14 @@ class TestEVMContractsMonitor(unittest.TestCase):
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            [self.current_block, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.withdrawable_payment,
-            [self.current_block, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.withdrawable_payment,
+            self.contract_address_1, [
+                self.current_block, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.withdrawable_payment,
+            self.contract_address_2, [
+                self.current_block, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.withdrawable_payment,
         ]
         self.test_monitor._node_contracts = self.filtered_contracts_example
         selected_node = self.evm_nodes[0]
@@ -642,17 +655,21 @@ class TestEVMContractsMonitor(unittest.TestCase):
         """
         self.test_monitor._last_block_monitored[self.node_id_1] = {}
         self.test_monitor._last_block_monitored[self.node_id_1][
-            self.contract_address_1] = self.current_block - 2
+            self.proxy_address_1] = self.current_block - 2
         self.test_monitor._last_block_monitored[self.node_id_1][
-            self.contract_address_2] = self.current_block - 2
+            self.proxy_address_2] = self.current_block - 2
         mock_to_checksum.return_value = self.eth_address_1
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.withdrawable_payment,
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.withdrawable_payment,
+            self.contract_address_1, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.withdrawable_payment,
+            self.contract_address_2, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.withdrawable_payment,
         ]
         self.test_monitor._node_contracts = self.filtered_contracts_example
         selected_node = self.evm_nodes[0]
@@ -684,10 +701,14 @@ class TestEVMContractsMonitor(unittest.TestCase):
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.withdrawable_payment,
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.withdrawable_payment,
+            self.contract_address_1, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.withdrawable_payment,
+            self.contract_address_2, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.withdrawable_payment,
         ]
         self.test_monitor._node_contracts = self.filtered_contracts_example
         selected_node = self.evm_nodes[0]
@@ -696,8 +717,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
             self.test_monitor.evm_node_w3_interface[selected_node],
             self.eth_address_1, self.node_id_1)
         expected_return = {
-            self.contract_address_1: {
+            self.proxy_address_1: {
                 'contractVersion': 3,
+                'aggregatorAddress': self.contract_address_1,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -705,8 +727,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
                 'withdrawablePayment': self.withdrawable_payment,
                 'historicalRounds': []
             },
-            self.contract_address_2: {
+            self.proxy_address_2: {
                 'contractVersion': 3,
+                'aggregatorAddress': self.contract_address_2,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -746,14 +769,18 @@ class TestEVMContractsMonitor(unittest.TestCase):
             }
         ])
         mock_call.side_effect = [
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.withdrawable_payment,
+            self.contract_address_1, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.withdrawable_payment,
             [self.current_round - 1, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 2],
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.withdrawable_payment,
+            self.contract_address_2, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.withdrawable_payment,
             [self.current_round - 1, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
@@ -766,8 +793,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
             self.test_monitor.evm_node_w3_interface[selected_node],
             self.eth_address_1, self.node_id_1)
         expected_return = {
-            self.contract_address_1: {
+            self.proxy_address_1: {
                 'contractVersion': 3,
+                'aggregatorAddress': self.contract_address_1,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -790,8 +818,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
                     }
                 ]
             },
-            self.contract_address_2: {
+            self.proxy_address_2: {
                 'contractVersion': 3,
+                'aggregatorAddress': self.contract_address_2,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -841,12 +870,14 @@ class TestEVMContractsMonitor(unittest.TestCase):
             },
         ])
         mock_call.side_effect = [
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.withdrawable_payment,
-            ContractLogicError('test'),
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.withdrawable_payment,
-            ContractLogicError('test'),
+            self.contract_address_1, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.withdrawable_payment, ContractLogicError('test'),
+            self.contract_address_2, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.withdrawable_payment, ContractLogicError('test'),
         ]
         self.test_monitor._node_contracts = self.filtered_contracts_example
         selected_node = self.evm_nodes[0]
@@ -855,8 +886,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
             self.test_monitor.evm_node_w3_interface[selected_node],
             self.eth_address_1, self.node_id_1)
         expected_return = {
-            self.contract_address_1: {
+            self.proxy_address_1: {
                 'contractVersion': 3,
+                'aggregatorAddress': self.contract_address_1,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -872,8 +904,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
                     },
                 ]
             },
-            self.contract_address_2: {
+            self.proxy_address_2: {
                 'contractVersion': 3,
+                'aggregatorAddress': self.contract_address_2,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -892,9 +925,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
         }
         self.assertEqual(expected_return, actual_return)
         self.assertEqual(self.test_monitor.last_block_monitored[self.node_id_1][
-                             self.contract_address_1], self.current_block - 1)
+                             self.proxy_address_1], self.current_block - 1)
         self.assertEqual(self.test_monitor.last_block_monitored[self.node_id_1][
-                             self.contract_address_2], self.current_block - 1)
+                             self.proxy_address_2], self.current_block - 1)
 
     def test_get_v4_data_returns_empty_dict_if_node_id_was_not_filtered(
             self) -> None:
@@ -926,12 +959,14 @@ class TestEVMContractsMonitor(unittest.TestCase):
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            [self.current_block, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.contract_3_transmitters,
-            self.withdrawable_payment,
-            [self.current_block, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.contract_4_transmitters,
-            self.withdrawable_payment,
+            self.contract_address_3, [
+                self.current_block, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.contract_3_transmitters, self.withdrawable_payment,
+            self.contract_address_4, [
+                self.current_block, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.contract_4_transmitters, self.withdrawable_payment,
         ]
         self.test_monitor._node_contracts = self.filtered_contracts_example
         selected_node = self.evm_nodes[0]
@@ -962,19 +997,21 @@ class TestEVMContractsMonitor(unittest.TestCase):
         """
         self.test_monitor._last_block_monitored[self.node_id_2] = {}
         self.test_monitor._last_block_monitored[self.node_id_2][
-            self.contract_address_3] = self.current_block - 2
+            self.proxy_address_3] = self.current_block - 2
         self.test_monitor._last_block_monitored[self.node_id_2][
-            self.contract_address_4] = self.current_block - 2
+            self.proxy_address_4] = self.current_block - 2
         mock_to_checksum.return_value = self.eth_address_2
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            [self.current_block, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.contract_3_transmitters,
-            self.withdrawable_payment,
-            [self.current_block, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.contract_4_transmitters,
-            self.withdrawable_payment,
+            self.contract_address_3, [
+                self.current_block, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.contract_3_transmitters, self.withdrawable_payment,
+            self.contract_address_4, [
+                self.current_block, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.contract_4_transmitters, self.withdrawable_payment,
         ]
         self.test_monitor._node_contracts = self.filtered_contracts_example
         selected_node = self.evm_nodes[0]
@@ -1004,12 +1041,14 @@ class TestEVMContractsMonitor(unittest.TestCase):
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.contract_3_transmitters,
-            self.withdrawable_payment,
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.contract_4_transmitters,
-            self.withdrawable_payment,
+            self.contract_address_3, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.contract_3_transmitters, self.withdrawable_payment,
+            self.contract_address_4, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.contract_4_transmitters, self.withdrawable_payment,
         ]
         self.test_monitor._node_contracts = self.filtered_contracts_example
         selected_node = self.evm_nodes[0]
@@ -1018,8 +1057,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
             self.test_monitor.evm_node_w3_interface[selected_node],
             self.eth_address_2, self.node_id_2)
         expected_return = {
-            self.contract_address_3: {
+            self.proxy_address_3: {
                 'contractVersion': 4,
+                'aggregatorAddress': self.contract_address_3,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1027,8 +1067,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
                 'owedPayment': self.withdrawable_payment,
                 'historicalRounds': []
             },
-            self.contract_address_4: {
+            self.proxy_address_4: {
                 'contractVersion': 4,
+                'aggregatorAddress': self.contract_address_4,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1055,11 +1096,14 @@ class TestEVMContractsMonitor(unittest.TestCase):
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.contract_3_transmitters,
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.contract_4_transmitters,
-            self.withdrawable_payment,
+            self.contract_address_3, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.contract_3_transmitters,
+            self.contract_address_4, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.contract_4_transmitters, self.withdrawable_payment,
         ]
         self.test_monitor._node_contracts = self.filtered_contracts_example
         selected_node = self.evm_nodes[0]
@@ -1068,8 +1112,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
             self.test_monitor.evm_node_w3_interface[selected_node],
             self.eth_address_2, self.node_id_2)
         expected_return = {
-            self.contract_address_4: {
+            self.proxy_address_4: {
                 'contractVersion': 4,
+                'aggregatorAddress': self.contract_address_4,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1112,16 +1157,18 @@ class TestEVMContractsMonitor(unittest.TestCase):
             }
         ])
         mock_call.side_effect = [
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.contract_3_transmitters,
-            self.withdrawable_payment,
+            self.contract_address_3, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.contract_3_transmitters, self.withdrawable_payment,
             [self.current_round - 1, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 2],
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.contract_4_transmitters,
-            self.withdrawable_payment,
+            self.contract_address_4, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.contract_4_transmitters, self.withdrawable_payment,
             [self.current_round - 1, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
@@ -1134,8 +1181,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
             self.test_monitor.evm_node_w3_interface[selected_node],
             self.eth_address_2, self.node_id_2)
         expected_return = {
-            self.contract_address_3: {
+            self.proxy_address_3: {
                 'contractVersion': 4,
+                'aggregatorAddress': self.contract_address_3,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1162,8 +1210,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
                     }
                 ]
             },
-            self.contract_address_4: {
+            self.proxy_address_4: {
                 'contractVersion': 4,
+                'aggregatorAddress': self.contract_address_4,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1225,16 +1274,18 @@ class TestEVMContractsMonitor(unittest.TestCase):
             }
         ])
         mock_call.side_effect = [
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.contract_3_transmitters,
-            self.withdrawable_payment,
+            self.contract_address_3, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.contract_3_transmitters, self.withdrawable_payment,
             [self.current_round - 1, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 2],
-            [self.current_round, self.answer, self.started_at, self.updated_at,
-             self.answered_in_round], self.contract_4_transmitters,
-            self.withdrawable_payment,
+            self.contract_address_4, [
+                self.current_round, self.answer, self.started_at,
+                self.updated_at, self.answered_in_round],
+            self.contract_4_transmitters, self.withdrawable_payment,
             [self.current_round - 1, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
@@ -1247,8 +1298,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
             self.test_monitor.evm_node_w3_interface[selected_node],
             self.eth_address_2, self.node_id_2)
         expected_return = {
-            self.contract_address_3: {
+            self.proxy_address_3: {
                 'contractVersion': 4,
+                'aggregatorAddress': self.contract_address_3,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1275,8 +1327,9 @@ class TestEVMContractsMonitor(unittest.TestCase):
                     }
                 ]
             },
-            self.contract_address_4: {
+            self.proxy_address_4: {
                 'contractVersion': 4,
+                'aggregatorAddress': self.contract_address_4,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1306,8 +1359,8 @@ class TestEVMContractsMonitor(unittest.TestCase):
         }
         self.assertEqual(expected_return, actual_return)
 
-    @mock.patch.object(EVMContractsMonitor, '_get_v4_data')
-    @mock.patch.object(EVMContractsMonitor, '_get_v3_data')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_v4_data')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_v3_data')
     def test_get_data_return(self, mock_get_v3_data, mock_get_v4_data) -> None:
         """
         In this test we will check that the get_data function will return the
@@ -1336,7 +1389,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
             'error': {
                 'meta_data': {
                     'monitor_name': self.monitor_name,
-                    'parent_id': self.test_parent_id,
+                    'node_parent_id': self.test_parent_id,
                     'time': datetime.now().timestamp()
                 },
                 'message': self.test_exception.message,
@@ -1381,7 +1434,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
         self.assertEqual(0, res.method.message_count)
         self.test_monitor.rabbitmq.queue_bind(
             queue=self.test_queue_name, exchange=RAW_DATA_EXCHANGE,
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
 
         self.test_monitor._send_data(self.test_data_dict)
 
@@ -1414,12 +1467,12 @@ class TestEVMContractsMonitor(unittest.TestCase):
         self.assertIsNone(actual)
 
     @freeze_time("2012-01-01")
-    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
-    @mock.patch.object(EVMContractsMonitor, '_send_data')
-    @mock.patch.object(EVMContractsMonitor, '_select_node')
-    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
-    @mock.patch.object(EVMContractsMonitor, '_store_chain_contracts')
-    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
+    @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_chain_contracts')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_retrieves_data_from_weiwatchers_periodically(
             self, mock_get_chain_contracts, mock_store_chain_contracts,
             mock_get_nodes_eth_address, mock_select_node, mock_send_data,
@@ -1465,13 +1518,13 @@ class TestEVMContractsMonitor(unittest.TestCase):
         mock_store_chain_contracts.assert_called_once_with(self.test_data_dict)
 
     @freeze_time("2012-01-01")
-    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
-    @mock.patch.object(EVMContractsMonitor, '_send_data')
-    @mock.patch.object(EVMContractsMonitor, '_select_node')
-    @mock.patch.object(EVMContractsMonitor, '_store_nodes_eth_addresses')
-    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
-    @mock.patch.object(EVMContractsMonitor, '_store_chain_contracts')
-    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
+    @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_nodes_eth_addresses')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_chain_contracts')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_retrieves_nodes_eth_address_periodically(
             self, mock_get_chain_contracts, mock_store_chain_contracts,
             mock_get_nodes_eth_address, mock_store_nodes_eth_addresses,
@@ -1520,13 +1573,13 @@ class TestEVMContractsMonitor(unittest.TestCase):
             self.test_data_dict)
 
     @freeze_time("2012-01-01")
-    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
-    @mock.patch.object(EVMContractsMonitor, '_send_data')
-    @mock.patch.object(EVMContractsMonitor, '_select_node')
-    @mock.patch.object(EVMContractsMonitor, '_store_nodes_eth_addresses')
-    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
-    @mock.patch.object(EVMContractsMonitor, '_store_chain_contracts')
-    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
+    @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_nodes_eth_addresses')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_chain_contracts')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_retrieves_prometheus_data_if_previous_retrieval_failed(
             self, mock_get_chain_contracts, mock_store_chain_contracts,
             mock_get_nodes_eth_address, mock_store_nodes_eth_addresses,
@@ -1569,13 +1622,13 @@ class TestEVMContractsMonitor(unittest.TestCase):
         (ChunkedEncodingError('test'),), (ProtocolError('test'),),
     ])
     @freeze_time("2012-01-01")
-    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
-    @mock.patch.object(EVMContractsMonitor, '_send_data')
-    @mock.patch.object(EVMContractsMonitor, '_select_node')
-    @mock.patch.object(EVMContractsMonitor, '_store_nodes_eth_addresses')
-    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
-    @mock.patch.object(EVMContractsMonitor, '_store_chain_contracts')
-    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
+    @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_nodes_eth_addresses')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_chain_contracts')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_processes_and_sends_error_and_hb_if_weiwatchers_exception(
             self, exception, mock_get_chain_contracts,
             mock_store_chain_contracts, mock_get_nodes_eth_address,
@@ -1599,7 +1652,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
             'error': {
                 'meta_data': {
                     'monitor_name': self.monitor_name,
-                    'parent_id': self.parent_id_1,
+                    'node_parent_id': self.parent_id_1,
                     'time': datetime.now().timestamp()
                 },
                 'message': expected_raised_exception.message,
@@ -1617,13 +1670,13 @@ class TestEVMContractsMonitor(unittest.TestCase):
         mock_send_heartbeat.assert_called_once_with(expected_heartbeat)
 
     @freeze_time("2012-01-01")
-    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
-    @mock.patch.object(EVMContractsMonitor, '_send_data')
-    @mock.patch.object(EVMContractsMonitor, '_select_node')
-    @mock.patch.object(EVMContractsMonitor, '_store_nodes_eth_addresses')
-    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
-    @mock.patch.object(EVMContractsMonitor, '_store_chain_contracts')
-    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
+    @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_nodes_eth_addresses')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_chain_contracts')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_processes_and_sends_error_and_hb_if_no_evm_node_selected(
             self, mock_get_chain_contracts, mock_store_chain_contracts,
             mock_get_nodes_eth_address, mock_store_nodes_eth_addresses,
@@ -1646,7 +1699,7 @@ class TestEVMContractsMonitor(unittest.TestCase):
             'error': {
                 'meta_data': {
                     'monitor_name': self.monitor_name,
-                    'parent_id': self.parent_id_1,
+                    'node_parent_id': self.parent_id_1,
                     'time': datetime.now().timestamp()
                 },
                 'message': expected_raised_exception.message,
@@ -1664,13 +1717,13 @@ class TestEVMContractsMonitor(unittest.TestCase):
         mock_send_heartbeat.assert_called_once_with(expected_heartbeat)
 
     @freeze_time("2012-01-01")
-    @mock.patch.object(EVMContractsMonitor, '_filter_contracts_by_node')
-    @mock.patch.object(EVMContractsMonitor, '_get_data')
-    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
-    @mock.patch.object(EVMContractsMonitor, '_send_data')
-    @mock.patch.object(EVMContractsMonitor, '_select_node')
-    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
-    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    @mock.patch.object(ChainlinkContractsMonitor, '_filter_contracts_by_node')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_data')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
+    @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_gets_data_for_each_node_processes_it_and_sends_it_and_hb(
             self, mock_get_chain_contracts, mock_get_nodes_eth_address,
             mock_select_node, mock_send_data, mock_send_heartbeat,
@@ -1721,13 +1774,13 @@ class TestEVMContractsMonitor(unittest.TestCase):
         mock_send_heartbeat.assert_called_once_with(expected_heartbeat)
 
     @freeze_time("2012-01-01")
-    @mock.patch.object(EVMContractsMonitor, '_filter_contracts_by_node')
-    @mock.patch.object(EVMContractsMonitor, '_get_data')
-    @mock.patch.object(EVMContractsMonitor, '_send_heartbeat')
-    @mock.patch.object(EVMContractsMonitor, '_send_data')
-    @mock.patch.object(EVMContractsMonitor, '_select_node')
-    @mock.patch.object(EVMContractsMonitor, '_get_nodes_eth_address')
-    @mock.patch.object(EVMContractsMonitor, '_get_chain_contracts')
+    @mock.patch.object(ChainlinkContractsMonitor, '_filter_contracts_by_node')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_data')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
+    @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
+    @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_skips_node_if_data_retrieval_fails_for_node(
             self, mock_get_chain_contracts, mock_get_nodes_eth_address,
             mock_select_node, mock_send_data, mock_send_heartbeat,
