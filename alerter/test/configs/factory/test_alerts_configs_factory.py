@@ -1,6 +1,8 @@
 import copy
 import unittest
 
+from parameterized import parameterized
+
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.configs.alerts.node.evm import EVMNodeAlertsConfig
 from src.configs.factory.chainlink_alerts_configs_factory import (
@@ -12,9 +14,11 @@ from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
 class TestAlertsConfigsFactory(unittest.TestCase):
     """
-    This test suite tests all the different alerts configs factories. This was
-    done in this way to avoid code duplication.
+    This test suite tests all the different alerts configs factories. It is done
+    using parameterized.expand. This was done in this way to avoid code
+    duplication.
     """
+
     def setUp(self) -> None:
         # Some dummy values
         self.test_parent_id_1 = 'chain_name_d60b8a8e-9c70-4601-9103'
@@ -159,152 +163,242 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         self.chainlink_configs_factory = None
         self.evm_configs_factory = None
 
-    # TODO: Continue from here tomorrow. Add same tests for both factories.
+    @parameterized.expand([
+        ('self.chainlink_configs_factory',
+         'self.received_config_example_1_chainlink',
+         'self.alerts_config_1_chainlink',
+         'self.received_config_example_2_chainlink',
+         'self.alerts_config_2_chainlink',),
+        ('self.evm_configs_factory', 'self.received_config_example_1_evm',
+         'self.alerts_config_1_evm', 'self.received_config_example_2_evm',
+         'self.alerts_config_2_evm',)
+    ])
+    def test_add_new_config_adds_a_new_config(
+            self, configs_factory, received_config_1, alerts_config_1,
+            received_config_2, alerts_config_2) -> None:
+        """
+        In this test we will check that add_new_config adds the newly received
+        config correctly in the state. First we will test for when the state is
+        empty and then for when the state is non-empty.
+        """
+        configs_factory = eval(configs_factory)
+        received_config_1 = eval(received_config_1)
+        alerts_config_1 = eval(alerts_config_1)
+        received_config_2 = eval(received_config_2)
+        alerts_config_2 = eval(alerts_config_2)
 
-    # def test_add_new_config_adds_a_new_config(self) -> None:
-    #     """
-    #     In this test we will check that add_new_config adds the newly received
-    #     config correctly in the state. First we will test for when the state is
-    #     empty and then for when the state is non-empty.
-    #     """
-    #     # First check that the state is empty
-    #     self.assertEqual({}, self.chainlink_configs_factory.configs)
-    #
-    #     # Add a config and check that the state was modified correctly
-    #     self.chainlink_configs_factory.add_new_config(self.test_chain_name_1,
-    #                                                   self.received_config_example_1_chainlink)
-    #     expected_state = {
-    #         self.test_chain_name_1: self.alerts_config_1_chainlink
-    #     }
-    #     self.assertEqual(expected_state, self.chainlink_configs_factory.configs)
-    #
-    #     # Add another config and check that the state was modified correctly
-    #     self.chainlink_configs_factory.add_new_config(self.test_chain_name_2,
-    #                                                   self.received_config_example_2_chainlink)
-    #     expected_state = {
-    #         self.test_chain_name_1: self.alerts_config_1_chainlink,
-    #         self.test_chain_name_2: self.alerts_config_2_chainlink
-    #     }
-    #     self.assertEqual(expected_state, self.chainlink_configs_factory.configs)
-    #
-    # def test_add_new_config_raises_ParentIdsMissMatch_if_parent_ids_not_equal(
-    #         self) -> None:
-    #     """
-    #     In this test we will check that the specified exception is raised and
-    #     that the state is not modified
-    #     """
-    #     self.received_config_example_1_chainlink['1']['parent_id'] = 'bad_parent_id'
-    #     old_state = copy.deepcopy(self.chainlink_configs_factory.configs)
-    #
-    #     self.assertRaises(ParentIdsMissMatchInAlertsConfiguration,
-    #                       self.chainlink_configs_factory.add_new_config,
-    #                       self.test_chain_name_1,
-    #                       self.received_config_example_1_chainlink)
-    #     self.assertEqual(old_state, self.chainlink_configs_factory.configs)
-    #
-    # def test_remove_config_removes_config_for_chain_if_chain_exists(
-    #         self) -> None:
-    #     state = {
-    #         self.test_chain_name_1: self.alerts_config_1_chainlink,
-    #         self.test_chain_name_2: self.alerts_config_2_chainlink
-    #     }
-    #     self.chainlink_configs_factory._configs = state
-    #
-    #     self.chainlink_configs_factory.remove_config(self.test_chain_name_1)
-    #     expected_state = {
-    #         self.test_chain_name_2: self.alerts_config_2_chainlink
-    #     }
-    #     self.assertEqual(expected_state, self.chainlink_configs_factory.configs)
-    #
-    # def test_remove_config_does_nothing_if_no_config_exists_for_chain(
-    #         self) -> None:
-    #     """
-    #     We will check that the state is kept intact if a configuration does not
-    #     exist for a chain
-    #     """
-    #     state = {
-    #         self.test_chain_name_1: self.alerts_config_1_chainlink,
-    #         self.test_chain_name_2: self.alerts_config_2_chainlink
-    #     }
-    #     self.chainlink_configs_factory._configs = state
-    #
-    #     self.chainlink_configs_factory.remove_config('bad_chain')
-    #     self.assertEqual(state, self.chainlink_configs_factory.configs)
-    #
-    # def test_config_exists_returns_true_if_config_exists(self) -> None:
-    #     state = {
-    #         self.test_chain_name_1: self.alerts_config_1_chainlink,
-    #         self.test_chain_name_2: self.alerts_config_2_chainlink
-    #     }
-    #     self.chainlink_configs_factory._configs = state
-    #     self.assertTrue(self.chainlink_configs_factory.config_exists(
-    #         self.test_chain_name_1))
-    #
-    # def test_config_exists_returns_false_if_config_does_not_exists(
-    #         self) -> None:
-    #     """
-    #     We will perform this test for both when the expected config object is
-    #     invalid and for when the chain_name does not exist in the state
-    #     """
-    #     state = {
-    #         self.test_chain_name_1: self.alerts_config_1_chainlink,
-    #         self.test_chain_name_2: 'bad_object'
-    #     }
-    #     self.chainlink_configs_factory._configs = state
-    #     self.assertFalse(self.chainlink_configs_factory.config_exists('bad_chain'))
-    #     self.assertFalse(self.chainlink_configs_factory.config_exists(
-    #         self.test_chain_name_2))
-    #
-    # def test_get_parent_id_gets_id_from_stored_config_if_chain_exists_in_state(
-    #         self) -> None:
-    #     state = {
-    #         self.test_chain_name_1: self.alerts_config_1_chainlink,
-    #         self.test_chain_name_2: self.alerts_config_2_chainlink
-    #     }
-    #     self.chainlink_configs_factory._configs = state
-    #
-    #     actual_output = self.chainlink_configs_factory.get_parent_id(
-    #         self.test_chain_name_1)
-    #     self.assertEqual(self.test_parent_id_1, actual_output)
-    #
-    # def test_get_parent_id_returns_none_if_chain_does_not_exist_in_state(
-    #         self) -> None:
-    #     """
-    #     We will perform this test for both when the expected config object is
-    #     invalid and for when the chain_name does not exist in the state
-    #     """
-    #     state = {
-    #         self.test_chain_name_1: self.alerts_config_1_chainlink,
-    #         self.test_chain_name_2: 'bad_object'
-    #     }
-    #     self.chainlink_configs_factory._configs = state
-    #     self.assertIsNone(self.chainlink_configs_factory.get_parent_id(
-    #         self.test_chain_name_2))
-    #     self.assertIsNone(self.chainlink_configs_factory.get_parent_id('bad_chain'))
-    #
-    # def test_get_chain_name_gets_name_given_the_parent_id_if_config_exists(
-    #         self) -> None:
-    #     state = {
-    #         self.test_chain_name_1: self.alerts_config_1_chainlink,
-    #         self.test_chain_name_2: self.alerts_config_2_chainlink
-    #     }
-    #     self.chainlink_configs_factory._configs = state
-    #
-    #     actual_output = self.chainlink_configs_factory.get_chain_name(
-    #         self.test_parent_id_1)
-    #     self.assertEqual(self.test_chain_name_1, actual_output)
-    #
-    # def test_get_chain_name_returns_none_if_no_config_exists_for_parent_id(
-    #         self) -> None:
-    #     """
-    #     We will perform this test for both when the expected config object is
-    #     invalid and for when no config is associated with the given parent_id
-    #     """
-    #     state = {
-    #         self.test_chain_name_1: self.alerts_config_1_chainlink,
-    #         self.test_chain_name_2: 'bad_object'
-    #     }
-    #     self.chainlink_configs_factory._configs = state
-    #     self.assertIsNone(self.chainlink_configs_factory.get_chain_name(
-    #         self.test_parent_id_2))
-    #     self.assertIsNone(self.chainlink_configs_factory.get_chain_name('bad_id'))
+        # First check that the state is empty
+        self.assertEqual({}, configs_factory.configs)
+
+        # Add a config and check that the state was modified correctly
+        configs_factory.add_new_config(self.test_chain_name_1,
+                                       received_config_1)
+        expected_state = {
+            self.test_chain_name_1: alerts_config_1
+        }
+        self.assertEqual(expected_state, configs_factory.configs)
+
+        # Add another config and check that the state was modified correctly
+        configs_factory.add_new_config(self.test_chain_name_2,
+                                       received_config_2)
+        expected_state = {
+            self.test_chain_name_1: alerts_config_1,
+            self.test_chain_name_2: alerts_config_2
+        }
+        self.assertEqual(expected_state, configs_factory.configs)
+
+    @parameterized.expand([
+        ('self.chainlink_configs_factory',
+         'self.received_config_example_1_chainlink',),
+        ('self.evm_configs_factory', 'self.received_config_example_1_evm',)
+    ])
+    def test_add_new_config_raises_ParentIdsMissMatch_if_parent_ids_not_equal(
+            self, configs_factory, received_config) -> None:
+        """
+        In this test we will check that the specified exception is raised and
+        that the state is not modified
+        """
+        configs_factory = eval(configs_factory)
+        received_config = eval(received_config)
+
+        received_config['1']['parent_id'] = 'bad_parent_id'
+        old_state = copy.deepcopy(configs_factory.configs)
+
+        self.assertRaises(
+            ParentIdsMissMatchInAlertsConfiguration,
+            configs_factory.add_new_config, self.test_chain_name_1,
+            received_config)
+        self.assertEqual(old_state, configs_factory.configs)
+
+    @parameterized.expand([
+        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',
+         'self.alerts_config_2_chainlink',),
+        ('self.evm_configs_factory', 'self.alerts_config_1_evm',
+         'self.alerts_config_2_evm',)
+    ])
+    def test_remove_config_removes_config_for_chain_if_chain_exists(
+            self, configs_factory, alerts_config_1, alerts_config_2) -> None:
+        configs_factory = eval(configs_factory)
+        alerts_config_1 = eval(alerts_config_1)
+        alerts_config_2 = eval(alerts_config_2)
+
+        state = {
+            self.test_chain_name_1: alerts_config_1,
+            self.test_chain_name_2: alerts_config_2
+        }
+        configs_factory._configs = state
+
+        configs_factory.remove_config(self.test_chain_name_1)
+        expected_state = {
+            self.test_chain_name_2: alerts_config_2
+        }
+        self.assertEqual(expected_state, configs_factory.configs)
+
+    @parameterized.expand([
+        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',
+         'self.alerts_config_2_chainlink',),
+        ('self.evm_configs_factory', 'self.alerts_config_1_evm',
+         'self.alerts_config_2_evm',)
+    ])
+    def test_remove_config_does_nothing_if_no_config_exists_for_chain(
+            self, configs_factory, alerts_config_1, alerts_config_2) -> None:
+        """
+        We will check that the state is kept intact if a configuration does not
+        exist for a chain
+        """
+        configs_factory = eval(configs_factory)
+        alerts_config_1 = eval(alerts_config_1)
+        alerts_config_2 = eval(alerts_config_2)
+
+        state = {
+            self.test_chain_name_1: alerts_config_1,
+            self.test_chain_name_2: alerts_config_2
+        }
+        configs_factory._configs = state
+
+        configs_factory.remove_config('bad_chain')
+        self.assertEqual(state, configs_factory.configs)
+
+    @parameterized.expand([
+        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',
+         'self.alerts_config_2_chainlink',),
+        ('self.evm_configs_factory', 'self.alerts_config_1_evm',
+         'self.alerts_config_2_evm',)
+    ])
+    def test_config_exists_returns_true_if_config_exists(
+            self, configs_factory, alerts_config_1, alerts_config_2) -> None:
+        configs_factory = eval(configs_factory)
+        alerts_config_1 = eval(alerts_config_1)
+        alerts_config_2 = eval(alerts_config_2)
+
+        state = {
+            self.test_chain_name_1: alerts_config_1,
+            self.test_chain_name_2: alerts_config_2
+        }
+        configs_factory._configs = state
+        self.assertTrue(configs_factory.config_exists(self.test_chain_name_1))
+
+    @parameterized.expand([
+        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',),
+        ('self.evm_configs_factory', 'self.alerts_config_1_evm',)
+    ])
+    def test_config_exists_returns_false_if_config_does_not_exists(
+            self, configs_factory, alerts_config_1) -> None:
+        """
+        We will perform this test for both when the expected config object is
+        invalid and for when the chain_name does not exist in the state
+        """
+        configs_factory = eval(configs_factory)
+        alerts_config_1 = eval(alerts_config_1)
+
+        state = {
+            self.test_chain_name_1: alerts_config_1,
+            self.test_chain_name_2: 'bad_object'
+        }
+        configs_factory._configs = state
+        self.assertFalse(configs_factory.config_exists('bad_chain'))
+        self.assertFalse(configs_factory.config_exists(self.test_chain_name_2))
+
+    @parameterized.expand([
+        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',
+         'self.alerts_config_2_chainlink',),
+        ('self.evm_configs_factory', 'self.alerts_config_1_evm',
+         'self.alerts_config_2_evm',)
+    ])
+    def test_get_parent_id_gets_id_from_stored_config_if_chain_exists_in_state(
+            self, configs_factory, alerts_config_1, alerts_config_2) -> None:
+        configs_factory = eval(configs_factory)
+        alerts_config_1 = eval(alerts_config_1)
+        alerts_config_2 = eval(alerts_config_2)
+
+        state = {
+            self.test_chain_name_1: alerts_config_1,
+            self.test_chain_name_2: alerts_config_2
+        }
+        configs_factory._configs = state
+
+        actual_output = configs_factory.get_parent_id(self.test_chain_name_1)
+        self.assertEqual(self.test_parent_id_1, actual_output)
+
+    @parameterized.expand([
+        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',),
+        ('self.evm_configs_factory', 'self.alerts_config_1_evm',)
+    ])
+    def test_get_parent_id_returns_none_if_chain_does_not_exist_in_state(
+            self, configs_factory, alerts_config_1) -> None:
+        """
+        We will perform this test for both when the expected config object is
+        invalid and for when the chain_name does not exist in the state
+        """
+        configs_factory = eval(configs_factory)
+        alerts_config_1 = eval(alerts_config_1)
+
+        state = {
+            self.test_chain_name_1: alerts_config_1,
+            self.test_chain_name_2: 'bad_object'
+        }
+        configs_factory._configs = state
+        self.assertIsNone(configs_factory.get_parent_id(self.test_chain_name_2))
+        self.assertIsNone(configs_factory.get_parent_id('bad_chain'))
+
+    @parameterized.expand([
+        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',
+         'self.alerts_config_2_chainlink',),
+        ('self.evm_configs_factory', 'self.alerts_config_1_evm',
+         'self.alerts_config_2_evm',)
+    ])
+    def test_get_chain_name_gets_name_given_the_parent_id_if_config_exists(
+            self, configs_factory, alerts_config_1, alerts_config_2) -> None:
+        configs_factory = eval(configs_factory)
+        alerts_config_1 = eval(alerts_config_1)
+        alerts_config_2 = eval(alerts_config_2)
+
+        state = {
+            self.test_chain_name_1: alerts_config_1,
+            self.test_chain_name_2: alerts_config_2
+        }
+        configs_factory._configs = state
+
+        actual_output = configs_factory.get_chain_name(self.test_parent_id_1)
+        self.assertEqual(self.test_chain_name_1, actual_output)
+
+    @parameterized.expand([
+        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',),
+        ('self.evm_configs_factory', 'self.alerts_config_1_evm',)
+    ])
+    def test_get_chain_name_returns_none_if_no_config_exists_for_parent_id(
+            self, configs_factory, alerts_config_1) -> None:
+        """
+        We will perform this test for both when the expected config object is
+        invalid and for when no config is associated with the given parent_id
+        """
+        configs_factory = eval(configs_factory)
+        alerts_config_1 = eval(alerts_config_1)
+
+        state = {
+            self.test_chain_name_1: alerts_config_1,
+            self.test_chain_name_2: 'bad_object'
+        }
+        configs_factory._configs = state
+        self.assertIsNone(configs_factory.get_chain_name(self.test_parent_id_2))
+        self.assertIsNone(configs_factory.get_chain_name('bad_id'))
