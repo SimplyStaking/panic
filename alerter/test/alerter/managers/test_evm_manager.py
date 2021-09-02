@@ -478,6 +478,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         mock_init_proc.assert_not_called()
         mock_start.assert_not_called()
 
+    @freeze_time("2012-01-01")
     @mock.patch.object(RabbitMQApi, 'basic_ack')
     @mock.patch.object(EVMNodeAlerterManager,
                        "_push_latest_data_to_queue_and_send")
