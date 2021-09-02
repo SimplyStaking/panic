@@ -98,7 +98,7 @@ _key_alert_cl_metric_not_found = 'alert_cl_node11'
 _key_alert_cl_node_is_down = 'alert_cl_node12'
 _key_alert_cl_prometheus_is_down = 'alert_cl_node13'
 
-# alert_cl_contractX_<origin_id>_<contract_proxy_address>
+# alert_cl_contractX_<origin_id>
 _key_alert_cl_contract_price_feed_not_observed = 'alert_cl_contract1'
 _key_alert_cl_contract_price_feed_deviation = 'alert_cl_contract2'
 _key_alert_cl_contract_consensus_failure = 'alert_cl_contract3'
