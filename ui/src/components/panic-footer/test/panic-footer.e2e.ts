@@ -6,6 +6,6 @@ describe('panic-footer', () => {
     await page.setContent('<panic-footer></panic-footer>');
 
     const element = await page.find('panic-footer');
-    expect(element).toHaveClass('hydrated');
+    expect(element).toMatchSnapshot();
   });
 });
