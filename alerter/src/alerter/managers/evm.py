@@ -111,8 +111,10 @@ class EVMNodeAlerterManager(AlertersManager):
                     heartbeat['dead_processes'].append(alerter)
                     process.join()  # Just in case, to release resources
 
-                    # Restart dead process
-                    self._create_and_start_alerter_process()
+            # Restart dead process
+            if len(heartbeat['dead_processes']) > 0:
+                self._create_and_start_alerter_process()
+
             heartbeat['timestamp'] = datetime.now().timestamp()
         except Exception as e:
             # If we encounter an error during processing log the error and
