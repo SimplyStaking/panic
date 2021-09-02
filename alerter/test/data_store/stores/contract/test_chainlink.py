@@ -105,14 +105,16 @@ class TestChainlinkContractStore(unittest.TestCase):
                 'roundAnswer': 319275162350,
                 'roundTimestamp': 1630316065,
                 'answeredInRound': 1630316066,
-                'nodeSubmission': 8
+                'nodeSubmission': 8,
+                'deviation': 100,
             },
             {
                 'roundId': 92233720368547767539,
                 'roundAnswer': 319275162349,
                 'roundTimestamp': 1630316064,
                 'answeredInRound': 1630316065,
-                'nodeSubmission': 8
+                'nodeSubmission': 8,
+                'deviation': 50,
             }
         ]
         self.test_historical_rounds_3_1 = [
@@ -121,29 +123,38 @@ class TestChainlinkContractStore(unittest.TestCase):
                 'roundAnswer': 319275162348,
                 'roundTimestamp': 1630316063,
                 'answeredInRound': 1630316064,
-                'nodeSubmission': 7
+                'nodeSubmission': 7,
+                'deviation': 200,
             },
             {
                 'roundId': 92233720368547767523,
                 'roundAnswer': 319275162321,
                 'roundTimestamp': 1630316012,
                 'answeredInRound': 1630316011,
-                'nodeSubmission': 7
+                'nodeSubmission': 7,
+                'deviation': 1200,
             }
         ]
         # Some metrics contract version 4
         self.test_contract_version_4 = 4
         self.test_aggregator_address_4 = \
             '0x00d9B37B03690fb9f41b5C5AF8131735C7275456'
+        self.test_aggregator_address_4_1 = \
+            '0x22d9B37B03690fb9f41b5C5AF8131735C7275456'
         self.test_proxy_address_4 = \
             '0x6C4eC3Df9cbd43714FE2740f5E3616155c5b8419'
         self.test_proxy_address_4_1 = \
             '0x7D5bD4Df9cbd43714FE2740f5E3616155c5b8419'
         self.test_latest_round_4 = 92233720368547767541
+        self.test_latest_round_4_1 = 82233720368547767541
         self.test_latest_answer_4 = 319275162350
+        self.test_latest_answer_4_1 = 319275162340
         self.test_latest_timestamp_4 = 1630316066
+        self.test_latest_timestamp_4_1 = 1630315066
         self.test_answered_in_round_4 = 1630316066
+        self.test_answered_in_round_4_1 = 1630313066
         self.test_owed_payment_4 = 4750000000000000000
+        self.test_owed_payment_4_1 = 3750000000000000000
         self.test_historical_rounds_4 = [
             {
                 'roundId': 92233720368547767540,
@@ -153,6 +164,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                 'nodeSubmission': 8,
                 'noOfObservations': 8,
                 'noOfTransmitters': 8,
+                'deviation': 100,
             },
             {
                 'roundId': 92233720368547767539,
@@ -162,6 +174,29 @@ class TestChainlinkContractStore(unittest.TestCase):
                 'nodeSubmission': 8,
                 'noOfObservations': 8,
                 'noOfTransmitters': 8,
+                'deviation': 50,
+            }
+        ]
+        self.test_historical_rounds_4_1 = [
+            {
+                'roundId': 192233720368547767540,
+                'roundAnswer': 1319275162350,
+                'roundTimestamp': 11630316065,
+                'answeredInRound': 11630316066,
+                'nodeSubmission': 81,
+                'noOfObservations': 81,
+                'noOfTransmitters': 81,
+                'deviation': 1001,
+            },
+            {
+                'roundId': 192233720368547767539,
+                'roundAnswer': 1319275162349,
+                'roundTimestamp': 11630316064,
+                'answeredInRound': 11630316065,
+                'nodeSubmission': 81,
+                'noOfObservations': 81,
+                'noOfTransmitters': 81,
+                'deviation': 150,
             }
         ]
 
@@ -184,7 +219,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                         "answeredInRound": self.test_answered_in_round_3,
                         "withdrawablePayment":
                             self.test_withdrawable_payment_3,
-                        "historicalRounds":  self.test_historical_rounds_3
+                        "historicalRounds":  self.test_historical_rounds_3,
                     },
                     self.test_proxy_address_3_1: {
                         "contractVersion": self.test_contract_version_3,
@@ -195,7 +230,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                         "answeredInRound": self.test_answered_in_round_3_1,
                         "withdrawablePayment":
                             self.test_withdrawable_payment_3_1,
-                        "historicalRounds":  self.test_historical_rounds_3_1
+                        "historicalRounds":  self.test_historical_rounds_3_1,
                     }
                 }
             }
@@ -217,17 +252,17 @@ class TestChainlinkContractStore(unittest.TestCase):
                         "latestTimestamp": self.test_latest_timestamp_4,
                         "answeredInRound": self.test_answered_in_round_4,
                         "owedPayment": self.test_owed_payment_4,
-                        "historicalRounds":  self.test_historical_rounds_4
+                        "historicalRounds":  self.test_historical_rounds_4,
                     },
                     self.test_proxy_address_4_1: {
                         "contractVersion": self.test_contract_version_4,
-                        "aggregatorAddress": self.test_aggregator_address_4,
-                        "latestRound": self.test_latest_round_4,
-                        "latestAnswer": self.test_latest_answer_4,
-                        "latestTimestamp": self.test_latest_timestamp_4,
-                        "answeredInRound": self.test_answered_in_round_4,
-                        "owedPayment": self.test_owed_payment_4,
-                        "historicalRounds":  self.test_historical_rounds_4
+                        "aggregatorAddress": self.test_aggregator_address_4_1,
+                        "latestRound": self.test_latest_round_4_1,
+                        "latestAnswer": self.test_latest_answer_4_1,
+                        "latestTimestamp": self.test_latest_timestamp_4_1,
+                        "answeredInRound": self.test_answered_in_round_4_1,
+                        "owedPayment": self.test_owed_payment_4_1,
+                        "historicalRounds":  self.test_historical_rounds_4_1,
                     }
                 }
             }
@@ -556,7 +591,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                     'bad_val'))
 
             self.assertEqual(
-                str(contract_data['historicalRounds']),
+                json.dumps(contract_data['historicalRounds']),
                 self.redis.hget(
                     redis_hash, Keys.get_cl_contract_historical_rounds(
                         self.node_id, proxy_address)).decode("utf-8"))

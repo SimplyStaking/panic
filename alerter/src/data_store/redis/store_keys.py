@@ -98,6 +98,16 @@ _key_alert_cl_metric_not_found = 'alert_cl_node11'
 _key_alert_cl_node_is_down = 'alert_cl_node12'
 _key_alert_cl_prometheus_is_down = 'alert_cl_node13'
 
+# alert_cl_contractX_<origin_id>_<contract_proxy_address>
+_key_alert_cl_contract_price_feed_not_observed = 'alert_cl_contract1'
+_key_alert_cl_contract_price_feed_deviation = 'alert_cl_contract2'
+_key_alert_cl_contract_consensus_failure = 'alert_cl_contract3'
+
+# alert_evm_nodeX_<origin_id>
+_key_alert_evm_node_is_down = 'alert_evm_node1'
+_key_alert_evm_block_syncing_block_height_difference = 'alert_evm_node2'
+_key_alert_evm_block_syncing_no_change_in_block_height = 'alert_evm_node3'
+
 
 class Keys:
 
@@ -120,7 +130,7 @@ class Keys:
     @staticmethod
     def get_system_process_cpu_seconds_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_process_cpu_seconds_total) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_process_memory_usage(system_id: str) -> str:
@@ -149,33 +159,33 @@ class Keys:
     @staticmethod
     def get_system_network_transmit_bytes_per_second(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_transmit_bytes_per_second) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_network_receive_bytes_per_second(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_receive_bytes_per_second) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_network_receive_bytes_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_receive_bytes_total) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_network_transmit_bytes_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_transmit_bytes_total) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_disk_io_time_seconds_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_disk_io_time_seconds_total) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_disk_io_time_seconds_in_interval(
             system_id: str) -> str:
         return Keys._as_prefix(_key_system_disk_io_time_seconds_in_interval) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_went_down_at(system_id: str) -> str:
@@ -192,7 +202,7 @@ class Keys:
     @staticmethod
     def get_cl_node_total_block_headers_received(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_total_block_headers_received) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_cl_node_no_of_active_jobs(cl_node_id: str) -> str:
@@ -205,7 +215,7 @@ class Keys:
     @staticmethod
     def get_cl_node_process_start_time_seconds(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_process_start_time_seconds) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_cl_node_total_gas_bumps(cl_node_id: str) -> str:
@@ -214,7 +224,7 @@ class Keys:
     @staticmethod
     def get_cl_node_total_gas_bumps_exceeds_limit(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_total_gas_bumps_exceeds_limit) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_cl_node_no_of_unconfirmed_txs(cl_node_id: str) -> str:
@@ -235,17 +245,17 @@ class Keys:
     @staticmethod
     def get_cl_node_went_down_at_prometheus(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_went_down_at_prometheus) + \
-               cl_node_id
+            cl_node_id
 
     @staticmethod
     def get_cl_node_last_prometheus_source_used(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_last_prometheus_source_used) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_cl_node_last_monitored_prometheus(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_last_monitored_prometheus) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_evm_node_current_height(cl_node_id: str) -> str:
@@ -436,6 +446,37 @@ class Keys:
     def get_alert_cl_head_tacker_current_head(origin_id: str) -> str:
         return Keys._as_prefix(
             _key_alert_cl_head_tacker_current_head) + origin_id
+
+    @staticmethod
+    def get_alert_cl_contract_price_feed_not_observed(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cl_contract_price_feed_not_observed) + origin_id
+
+    @staticmethod
+    def get_alert_cl_contract_price_feed_deviation(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cl_contract_price_feed_deviation) + origin_id
+
+    @staticmethod
+    def get_alert_cl_contract_consensus_failure(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cl_contract_consensus_failure) + origin_id
+
+    @staticmethod
+    def get_alert_evm_evm_node_is_down(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_evm_node_is_down) + origin_id
+
+    @staticmethod
+    def get_alert_evm_evm_block_syncing_block_height_difference(
+            origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_evm_block_syncing_block_height_difference) + origin_id
+
+    @staticmethod
+    def get_alert_evm_evm_block_syncing_no_change_in_block_height(
+            origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_evm_block_syncing_no_change_in_block_height) + origin_id
 
     @staticmethod
     def get_base_chain_monitorables_info(base_chain: str) -> str:

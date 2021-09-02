@@ -163,7 +163,7 @@ class ChainlinkContractStore(Store):
                         str(contract_data['withdrawablePayment']),
                     Keys.get_cl_contract_historical_rounds(
                         node_id, proxy_address):
-                        str(contract_data['historicalRounds']),
+                        json.dumps(contract_data['historicalRounds']),
                     Keys.get_cl_contract_last_monitored(
                         node_id, proxy_address):
                         str(meta_data['last_monitored']),
@@ -209,7 +209,7 @@ class ChainlinkContractStore(Store):
                         str(contract_data['owedPayment']),
                     Keys.get_cl_contract_historical_rounds(
                         node_id, proxy_address):
-                        str(contract_data['historicalRounds']),
+                        json.dumps(contract_data['historicalRounds']),
                     Keys.get_cl_contract_last_monitored(
                         node_id, proxy_address):
                         str(meta_data['last_monitored']),
@@ -273,7 +273,7 @@ class ChainlinkContractStore(Store):
                                     'answeredInRound']),
                                 'withdrawablePayment': str(contract_data[
                                     'withdrawablePayment']),
-                                'historicalRounds': str(
+                                'historicalRounds': json.dumps(
                                     contract_data['historicalRounds']),
                                 'timestamp': meta_data['last_monitored'],
                             }
@@ -304,7 +304,7 @@ class ChainlinkContractStore(Store):
                                     'answeredInRound']),
                                 'owedPayment': str(contract_data[
                                     'owedPayment']),
-                                'historicalRounds': str(
+                                'historicalRounds': json.dumps(
                                     contract_data['historicalRounds']),
                                 'timestamp': meta_data['last_monitored'],
                             }
