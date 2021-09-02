@@ -963,10 +963,12 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         manager_components = [SYSTEM_MONITORS_MANAGER_NAME,
                               GITHUB_MONITORS_MANAGER_NAME,
                               NODE_MONITORS_MANAGER_NAME,
+                              CONTRACT_MONITORS_MANAGER_NAME,
                               DATA_TRANSFORMERS_MANAGER_NAME,
                               SYSTEM_ALERTERS_MANAGER_NAME,
                               GITHUB_ALERTER_MANAGER_NAME,
                               CL_NODE_ALERTER_MANAGER_NAME,
+                              EVM_NODE_ALERTER_MANAGER_NAME,
                               DATA_STORE_MANAGER_NAME, CHANNELS_MANAGER_NAME]
         worker_components = [ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME]
         mock_manager_status.side_effect = [
