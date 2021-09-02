@@ -4,10 +4,6 @@ import { Component, Host, h } from '@stencil/core';
   tag: 'panic-footer',
   styleUrl: 'panic-footer.css'
 })
-/**
- * Currently panic-footer component is acting as a "page" and being loaded at the URL /daniel.
- * I've added header+content to the rendered JSX/HTML, but what matters here is just the footer.
- */
 export class PanicFooter {
   private twitterURL: string = 'https://twitter.com/Simply_VC';
   private githubURL: string = 'https://github.com/SimplyVC';
