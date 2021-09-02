@@ -124,11 +124,11 @@ class ChainlinkContractStore(Store):
         for proxy_address, contract_data in metrics.items():
             if(int(contract_data['contractVersion']) == 3):
                 self.logger.debug(
-                    "Saving %s state from node %s : _contractVersion=%s, "
+                    "Saving %s state for node %s : _contractVersion=%s, "
                     "_aggregatorAddress=%s, _latestRound=%s, "
                     "_latestAnswer=%s, _latestTimestamp=%s, "
                     "_answeredInRound=%s, _withdrawablePayment=%s, "
-                    "_historicalRounds=%s, _last_monitored=%s",
+                    "_last_monitored=%s, _historicalRounds=%s",
                     proxy_address, node_name,
                     str(contract_data['contractVersion']),
                     str(contract_data['aggregatorAddress']),
@@ -137,8 +137,8 @@ class ChainlinkContractStore(Store):
                     str(contract_data['latestTimestamp']),
                     str(contract_data['answeredInRound']),
                     str(contract_data['withdrawablePayment']),
-                    contract_data['historicalRounds'],
-                    meta_data['last_monitored'])
+                    meta_data['last_monitored'],
+                    contract_data['historicalRounds'])
 
                 self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
                     Keys.get_cl_contract_version(node_id, proxy_address):
@@ -170,11 +170,11 @@ class ChainlinkContractStore(Store):
                 })
             elif (int(contract_data['contractVersion']) == 4):
                 self.logger.debug(
-                    "Saving %s state from node %s : _contractVersion=%s, "
+                    "Saving %s state for node %s : _contractVersion=%s, "
                     "_aggregatorAddress=%s, _latestRound=%s, "
                     "_latestAnswer=%s, _latestTimestamp=%s, "
                     "_answeredInRound=%s, _owedPayment=%s, "
-                    "_historicalRounds=%s, _last_monitored=%s.",
+                    "_last_monitored=%s, _historicalRounds=%s",
                     proxy_address, node_name,
                     str(contract_data['contractVersion']),
                     str(contract_data['aggregatorAddress']),
@@ -183,8 +183,8 @@ class ChainlinkContractStore(Store):
                     str(contract_data['latestTimestamp']),
                     str(contract_data['answeredInRound']),
                     str(contract_data['owedPayment']),
-                    contract_data['historicalRounds'],
-                    meta_data['last_monitored'])
+                    meta_data['last_monitored'],
+                    contract_data['historicalRounds'])
 
                 self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
                     Keys.get_cl_contract_version(node_id, proxy_address):
