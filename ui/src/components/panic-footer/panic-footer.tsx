@@ -1,8 +1,9 @@
-import { Component, Host, h } from '@stencil/core';
+import { Component, Host, h, getAssetPath } from '@stencil/core';
 
 @Component({
   tag: 'panic-footer',
-  styleUrl: 'panic-footer.css'
+  styleUrl: 'panic-footer.css',
+  assetsDirs: ['assets']
 })
 export class PanicFooter {
   private twitterURL: string = 'https://twitter.com/Simply_VC';
@@ -10,6 +11,8 @@ export class PanicFooter {
   private mediumURL: string = 'https://medium.com/simply-vc';
   private telegramURL: string = 'https://t.me/SimplyVC';
   private websiteURL: string = 'https://simply-vc.com.mt';
+  private telegramLogoSVG: string = "telegram_logo.svg"
+  private simplyVcLogoSVG: string = "simplyvc_logo.svg"
 
   render() {
     return (
@@ -19,8 +22,8 @@ export class PanicFooter {
             <svc-button icon-name="logo-twitter" href={this.twitterURL} target="_blank"></svc-button>
             <svc-button icon-name="logo-github" href={this.githubURL} target="_blank"></svc-button>
             <svc-button icon-name="logo-medium" href={this.mediumURL} target="_blank"></svc-button>
-            <svc-button icon-src="assets/logos/telegram_logo.svg" href={this.telegramURL} target="_blank"></svc-button>
-            <svc-button icon-src="assets/logos/simplyvc_logo.svg" href={this.websiteURL} target="_blank"></svc-button>
+            <svc-button icon-src={getAssetPath(`./assets/${this.telegramLogoSVG}`)} href={this.telegramURL} target="_blank"></svc-button>
+            <svc-button icon-src={getAssetPath(`./assets/${this.simplyVcLogoSVG}`)} href={this.websiteURL} target="_blank"></svc-button>
           </svc-buttons-container>
         </svc-footer>
       </Host>

@@ -15,11 +15,6 @@ export class PanicRoot {
             <Route path={"/"}>
               <panic-dashboard-overview />
             </Route>
-
-            {/* Daniel's playground */}
-            <Route path={"/daniel"}>
-              <panic-footer />
-            </Route>
           </Router.Switch>
         </svc-app>
       </Host>
