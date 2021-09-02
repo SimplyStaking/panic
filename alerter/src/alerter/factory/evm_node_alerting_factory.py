@@ -13,37 +13,29 @@ from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
 class EVMNodeAlertingFactory(AlertingFactory):
     """
     This class is in charge of alerting and managing the alerting state for the
-    chainlink node alerter. The alerting_state dict is to be structured as
+    EVM node alerter. The alerting_state dict is to be structured as
     follows:
     {
         <parent_id>: {
             <node_id>: {
                 Optional[warning_sent]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value: bool
+                    GroupedEVMNodeAlertsMetricCode.value: bool
                 },
                 Optional[critical_sent]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value: bool
+                    GroupedEVMNodeAlertsMetricCode.value: bool
                 },
                 Optional[error_sent]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value: bool
+                    GroupedEVMNodeAlertsMetricCode.value: bool
                 },
                 Optional[warning_window_timer]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskTracker
+                    GroupedEVMNodeAlertsMetricCode.value: TimedTaskTracker
                 },
                 Optional[critical_window_timer]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskTracker
+                    GroupedEVMNodeAlertsMetricCode.value: TimedTaskTracker
                 },
                 Optional[critical_repeat_timer]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value: TimedTaskLimiter
-                },
-                Optional[warning_occurrences_in_period_tracker]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value:
-                    OccurrencesInTimePeriodTracker
-                },
-                Optional[critical_occurrences_in_period_tracker]: {
-                    GroupedChainlinkNodeAlertsMetricCode.value:
-                    OccurrencesInTimePeriodTracker
-                },
+                    GroupedEVMNodeAlertsMetricCode.value: TimedTaskLimiter
+                }
             }
         }
     }
@@ -54,13 +46,13 @@ class EVMNodeAlertingFactory(AlertingFactory):
 
     def create_alerting_state(
             self, parent_id: str, node_id: str,
-            cl_node_alerts_config: ChainlinkNodeAlertsConfig) -> None:
+            evm_node_alerts_config: ChainlinkEVMAlertsConfig) -> None:
         """
         If no state is already stored, this function will create a new alerting
         state for a node based on the passed alerts config.
         :param parent_id: The id of the chain
         :param node_id: The id of the node
-        :param cl_node_alerts_config: The alerts configuration
+        :param evm_node_alerts_config: The alerts configuration
         :return: None
         """
 
@@ -69,126 +61,65 @@ class EVMNodeAlertingFactory(AlertingFactory):
 
         if node_id not in self.alerting_state[parent_id]:
             warning_sent = {
-                AlertsMetricCode.NoChangeInHeight.value: False,
-                AlertsMetricCode.NoChangeInTotalHeadersReceived.value: False,
-                AlertsMetricCode.MaxUnconfirmedBlocksThreshold.value: False,
-                AlertsMetricCode.NoOfUnconfirmedTxsThreshold.value: False,
-                AlertsMetricCode.TotalErroredJobRunsThreshold.value: False,
-                AlertsMetricCode.EthBalanceThreshold.value: False,
-                AlertsMetricCode.NodeIsDown.value: False,
-                AlertsMetricCode.PrometheusSourceIsDown.value: False
+                AlertsMetricCode.BlockHeightDifference.value: False,
+                AlertsMetricCode.NoChangeInBlockHeight.value: False,
+                AlertsMetricCode.NodeIsDown.value: False
             }
             critical_sent = {
-                AlertsMetricCode.NoChangeInHeight.value: False,
-                AlertsMetricCode.NoChangeInTotalHeadersReceived.value: False,
-                AlertsMetricCode.MaxUnconfirmedBlocksThreshold.value: False,
-                AlertsMetricCode.NoOfUnconfirmedTxsThreshold.value: False,
-                AlertsMetricCode.TotalErroredJobRunsThreshold.value: False,
-                AlertsMetricCode.EthBalanceThreshold.value: False,
-                AlertsMetricCode.NodeIsDown.value: False,
+                AlertsMetricCode.BlockHeightDifference.value: False,
+                AlertsMetricCode.NoChangeInBlockHeight.value: False,
+                AlertsMetricCode.NodeIsDown.value: False
             }
             error_sent = {
                 AlertsMetricCode.InvalidUrl.value: False,
-                AlertsMetricCode.MetricNotFound.value: False,
             }
 
-            current_head_thresholds = parse_alert_time_thresholds(
+            evm_node_is_down_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
-                cl_node_alerts_config.head_tracker_current_head)
-            total_headers_thresholds = parse_alert_time_thresholds(
+                evm_node_alerts_config.evm_node_is_down)
+
+            block_height_difference_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
-                cl_node_alerts_config.head_tracker_heads_received_total)
-            unconfirmed_blocks_thresholds = parse_alert_time_thresholds(
-                ['warning_time_window', 'critical_time_window',
-                 'critical_repeat'],
-                cl_node_alerts_config.max_unconfirmed_blocks
-            )
-            unconfirmed_txs_thresholds = parse_alert_time_thresholds(
-                ['warning_time_window', 'critical_time_window',
-                 'critical_repeat'],
-                cl_node_alerts_config.unconfirmed_transactions
-            )
-            error_jobs_thresholds = parse_alert_time_thresholds(
-                ['warning_time_window', 'critical_time_window',
-                 'critical_repeat'],
-                cl_node_alerts_config.run_status_update_total
-            )
-            eth_balance_thresholds = parse_alert_time_thresholds(
-                ['critical_repeat'], cl_node_alerts_config.eth_balance_amount
-            )
-            node_is_down_thresholds = parse_alert_time_thresholds(
-                ['warning_threshold', 'critical_threshold',
-                 'critical_repeat'], cl_node_alerts_config.node_is_down
-            )
+                evm_node_alerts_config.
+                evm_block_syncing_block_height_difference)
+
+            no_change_in_block_height_thresholds = parse_alert_time_thresholds(
+                ['warning_threshold', 'critical_threshold', 'critical_repeat'],
+                evm_node_alerts_config.
+                evm_block_syncing_no_change_in_block_height)
 
             warning_window_timer = {
-                AlertsMetricCode.NoChangeInHeight.value: TimedTaskTracker(
-                    timedelta(seconds=current_head_thresholds[
-                        'warning_threshold'])),
-                AlertsMetricCode.NoChangeInTotalHeadersReceived.value:
-                    TimedTaskTracker(timedelta(seconds=total_headers_thresholds[
-                        'warning_threshold'])),
-                AlertsMetricCode.MaxUnconfirmedBlocksThreshold.value:
+                AlertsMetricCode.NoChangeInBlockHeight.value:
                     TimedTaskTracker(timedelta(
-                        seconds=unconfirmed_blocks_thresholds[
-                            'warning_time_window'])),
-                AlertsMetricCode.NoOfUnconfirmedTxsThreshold.value:
+                        seconds=no_change_in_block_height_thresholds[
+                            'warning_threshold'])),
+                AlertsMetricCode.NodeIsDown.value:
                     TimedTaskTracker(timedelta(
-                        seconds=unconfirmed_txs_thresholds[
-                            'warning_time_window'])),
-                AlertsMetricCode.NodeIsDown.value: TimedTaskTracker(timedelta(
-                    seconds=node_is_down_thresholds['warning_threshold'])),
+                        seconds=evm_node_is_down_thresholds[
+                            'warning_threshold'])),
             }
             critical_window_timer = {
-                AlertsMetricCode.NoChangeInHeight.value: TimedTaskTracker(
-                    timedelta(seconds=current_head_thresholds[
-                        'critical_threshold'])),
-                AlertsMetricCode.NoChangeInTotalHeadersReceived.value:
-                    TimedTaskTracker(timedelta(seconds=total_headers_thresholds[
-                        'critical_threshold'])),
-                AlertsMetricCode.MaxUnconfirmedBlocksThreshold.value:
+                AlertsMetricCode.NoChangeInBlockHeight.value:
                     TimedTaskTracker(timedelta(
-                        seconds=unconfirmed_blocks_thresholds[
-                            'critical_time_window'])),
-                AlertsMetricCode.NoOfUnconfirmedTxsThreshold.value:
+                        seconds=no_change_in_block_height_thresholds[
+                            'critical_threshold'])),
+                AlertsMetricCode.NodeIsDown.value:
                     TimedTaskTracker(timedelta(
-                        seconds=unconfirmed_txs_thresholds[
-                            'critical_time_window'])),
-                AlertsMetricCode.NodeIsDown.value: TimedTaskTracker(timedelta(
-                    seconds=node_is_down_thresholds['critical_threshold'])),
+                        seconds=evm_node_is_down_thresholds[
+                            'critical_threshold'])),
             }
             critical_repeat_timer = {
-                AlertsMetricCode.NoChangeInHeight.value: TimedTaskLimiter(
-                    timedelta(seconds=current_head_thresholds[
+                AlertsMetricCode.NoChangeInBlockHeight.value: TimedTaskLimiter(
+                    timedelta(seconds=no_change_in_block_height_thresholds[
                         'critical_repeat'])),
-                AlertsMetricCode.NoChangeInTotalHeadersReceived.value:
-                    TimedTaskLimiter(timedelta(seconds=total_headers_thresholds[
-                        'critical_repeat'])),
-                AlertsMetricCode.MaxUnconfirmedBlocksThreshold.value:
+                AlertsMetricCode.NodeIsDown.value:
                     TimedTaskLimiter(timedelta(
-                        seconds=unconfirmed_blocks_thresholds[
+                        seconds=evm_node_is_down_thresholds[
                             'critical_repeat'])),
-                AlertsMetricCode.NoOfUnconfirmedTxsThreshold.value:
+                AlertsMetricCode.BlockHeightDifference.value:
                     TimedTaskLimiter(timedelta(
-                        seconds=unconfirmed_txs_thresholds['critical_repeat'])),
-                AlertsMetricCode.TotalErroredJobRunsThreshold.value:
-                    TimedTaskLimiter(timedelta(seconds=error_jobs_thresholds[
-                        'critical_repeat'])),
-                AlertsMetricCode.EthBalanceThreshold.value: TimedTaskLimiter(
-                    timedelta(seconds=eth_balance_thresholds[
-                        'critical_repeat'])),
-                AlertsMetricCode.NodeIsDown.value: TimedTaskLimiter(timedelta(
-                    seconds=node_is_down_thresholds['critical_repeat'])),
-            }
-            warning_occurrences_in_period_tracker = {
-                AlertsMetricCode.TotalErroredJobRunsThreshold.value:
-                    OccurrencesInTimePeriodTracker(timedelta(
-                        seconds=error_jobs_thresholds['warning_time_window'])),
-            }
-            critical_occurrences_in_period_tracker = {
-                AlertsMetricCode.TotalErroredJobRunsThreshold.value:
-                    OccurrencesInTimePeriodTracker(timedelta(
-                        seconds=error_jobs_thresholds['critical_time_window'])),
+                        seconds=block_height_difference_thresholds[
+                            'critical_repeat'])),
             }
 
             self.alerting_state[parent_id][node_id] = {
@@ -197,11 +128,7 @@ class EVMNodeAlertingFactory(AlertingFactory):
                 'error_sent': error_sent,
                 'warning_window_timer': warning_window_timer,
                 'critical_window_timer': critical_window_timer,
-                'critical_repeat_timer': critical_repeat_timer,
-                'warning_occurrences_in_period_tracker':
-                    warning_occurrences_in_period_tracker,
-                'critical_occurrences_in_period_tracker':
-                    critical_occurrences_in_period_tracker,
+                'critical_repeat_timer': critical_repeat_timer
             }
 
     def remove_chain_alerting_state(self, parent_id: str) -> None:
