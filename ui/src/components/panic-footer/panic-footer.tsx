@@ -18,13 +18,6 @@ export class PanicFooter {
   render() {
     return (
       <Host>
-        {/* Just ignore this markup */}
-        <svc-header headline={"Dummy Page"}></svc-header>
-        <svc-content>
-          <svc-label>Dummy content...</svc-label>
-        </svc-content>
-        {/* Just ignore this markup */}
-
         <svc-footer color="primary" headline-position="start" headline="Developed by SimplyVC">
           <svc-buttons-container position="end">
             <svc-button icon-name="logo-twitter" href={this.twitterURL} target="_blank"></svc-button>
