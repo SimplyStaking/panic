@@ -10,7 +10,7 @@ from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
                               OccurrencesInTimePeriodTracker)
 
 
-class ChainlinkNodeAlertingFactory(AlertingFactory):
+class ChainlinkContractAlertingFactory(AlertingFactory):
     """
     This class is in charge of alerting and managing the alerting state for the
     chainlink node alerter. The alerting_state dict is to be structured as

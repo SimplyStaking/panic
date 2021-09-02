@@ -2,15 +2,15 @@ import logging
 from datetime import timedelta
 
 from src.alerter.factory.alerting_factory import AlertingFactory
-from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
-    import GroupedChainlinkNodeAlertsMetricCode as AlertsMetricCode
-from src.configs.alerts.chainlink_node import ChainlinkNodeAlertsConfig
+from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
+    import GroupedEVMNodeAlertsMetricCode as AlertsMetricCode
+from src.configs.alerts.evm_node import EVMNodeAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
 from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
                               OccurrencesInTimePeriodTracker)
 
 
-class ChainlinkNodeAlertingFactory(AlertingFactory):
+class EVMNodeAlertingFactory(AlertingFactory):
     """
     This class is in charge of alerting and managing the alerting state for the
     chainlink node alerter. The alerting_state dict is to be structured as
