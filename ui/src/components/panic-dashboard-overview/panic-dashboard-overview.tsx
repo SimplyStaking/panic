@@ -14,7 +14,13 @@ export class PanicDashboardOverview {
             <svc-dropdown-menu />
           </svc-header>
         </panic-header>
-      </Host>
+        <svc-content>
+          <svc-surface>
+            <svc-card></svc-card>
+          </svc-surface>
+        </svc-content>
+        <panic-footer></panic-footer>
+      </Host >
     );
   }
 
