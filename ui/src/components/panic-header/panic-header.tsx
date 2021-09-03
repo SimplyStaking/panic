@@ -1,17 +1,18 @@
-import { Component, Host, h } from '@stencil/core';
+import { Component, getAssetPath, h } from '@stencil/core';
+import { HOME_URL } from '../../utils/constants';
 
 @Component({
   tag: 'panic-header',
-  styleUrl: 'panic-header.css',
-  shadow: true,
+  styleUrl: 'panic-header.scss',
+  assetsDirs: ['../assets']
 })
 export class PanicHeader {
 
   render() {
     return (
-      <Host>
-        <slot></slot>
-      </Host>
+      <svc-header imgPath={getAssetPath("../assets/logos/panic_logo.png")} imgPosition={"start"} imgLink={HOME_URL}>
+
+      </svc-header>
     );
   }
 
