@@ -841,6 +841,10 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': False,
                     },
+                    CONTRACT_MONITORS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
                     DATA_TRANSFORMERS_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
@@ -857,6 +861,10 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': False,
                     },
+                    EVM_NODE_ALERTER_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
                     DATA_STORE_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
@@ -870,14 +878,6 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_ok': False,
                     },
                     CHANNELS_MANAGER_NAME: {
-                        'hb_exists': True,
-                        'hb_ok': False,
-                    },
-                    CONTRACT_MONITORS_MANAGER_NAME: {
-                        'hb_exists': True,
-                        'hb_ok': False,
-                    },
-                    EVM_NODE_ALERTER_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
                     },
@@ -897,6 +897,10 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': False,
                     },
+                    CONTRACT_MONITORS_MANAGER_NAME: {
+                        'hb_exists': False,
+                        'hb_ok': False,
+                    },
                     DATA_TRANSFORMERS_MANAGER_NAME: {
                         'hb_exists': False,
                         'hb_ok': False,
@@ -913,6 +917,10 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': True,
                     },
+                    EVM_NODE_ALERTER_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
                     DATA_STORE_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': True,
@@ -926,14 +934,6 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_ok': False,
                     },
                     CHANNELS_MANAGER_NAME: {
-                        'hb_exists': True,
-                        'hb_ok': False,
-                    },
-                    CONTRACT_MONITORS_MANAGER_NAME: {
-                        'hb_exists': False,
-                        'hb_ok': False,
-                    },
-                    EVM_NODE_ALERTER_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
                     },
