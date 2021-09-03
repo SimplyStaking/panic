@@ -14,6 +14,8 @@ from parameterized import parameterized
 
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
+from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
+from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
@@ -131,6 +133,22 @@ class TestAlertStore(unittest.TestCase):
         self.message_4 = 'alert message 4'
         self.value_4 = 'alert_code_4'
 
+        self.alert_id_5 = 'test_alert_id_5'
+        self.origin_id_5 = 'test_origin_id_5'
+        self.alert_name_5 = 'test_alert_5'
+        self.metric_5 = 'price_feed_not_observed'
+        self.severity_5 = 'info'
+        self.message_5 = 'alert message 5'
+        self.value_5 = 'alert_code_5'
+
+        self.alert_id_6 = 'test_alert_id_6'
+        self.origin_id_6 = 'test_origin_id_6'
+        self.alert_name_6 = 'test_alert_6'
+        self.metric_6 = 'evm_node_is_down'
+        self.severity_6 = 'info'
+        self.message_6 = 'alert message 6'
+        self.value_6 = 'alert_code_6'
+
         self.last_monitored = datetime(2012, 1, 1).timestamp()
         self.none = None
 
@@ -187,18 +205,41 @@ class TestAlertStore(unittest.TestCase):
             'message': self.message_4,
             'timestamp': self.last_monitored,
         }
+        self.alert_data_4_1 = copy.deepcopy(self.alert_data_4)
+        self.alert_data_4_1['parent_id'] = self.parent_id2
+
         self.alert_data_5 = {
-            'parent_id': self.parent_id2,
-            'origin_id': self.origin_id_4,
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id_5,
             'alert_code': {
-                'name': self.alert_name_4,
-                'code': self.value_4,
+                'name': self.alert_name_5,
+                'code': self.value_5,
             },
-            'severity': self.severity_4,
-            'metric': self.metric_4,
-            'message': self.message_4,
+            'severity': self.severity_5,
+            'metric': self.metric_5,
+            'message': self.message_5,
+            'timestamp': self.last_monitored,
+            'alert_data': {'contract_proxy_address':
+                           '0x5DcB78343780E1B1e578ae0590dc1e868792a435'}
+        }
+        self.alert_data_5_1 = copy.deepcopy(self.alert_data_5)
+        self.alert_data_5_1['parent_id'] = self.parent_id2
+        self.alert_data_5_1['alert_data']['contract_proxy_address'] = \
+            '0xA5F7146D3cbB5a50Da36b8AC3857C48Ed3BF3bd9'
+        self.alert_data_6 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id_6,
+            'alert_code': {
+                'name': self.alert_name_6,
+                'code': self.value_6,
+            },
+            'severity': self.severity_6,
+            'metric': self.metric_6,
+            'message': self.message_6,
             'timestamp': self.last_monitored,
         }
+        self.alert_data_6_1 = copy.deepcopy(self.alert_data_6)
+        self.alert_data_6_1['parent_id'] = self.parent_id2
 
         # Bad data
         self.alert_data_key_error = {
@@ -273,7 +314,54 @@ class TestAlertStore(unittest.TestCase):
             'metric': self.metric_2,
             'message': self.message_2,
             'timestamp': self.last_monitored,
-
+        }
+        self.alert_internal_chainlink_contract_1 = {
+            'parent_id': self.parent_id,
+            'origin_id': ChainlinkContractAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_5,
+            'message': self.message_5,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_chainlink_contract_all_chains = {
+            'parent_id': None,
+            'origin_id': ChainlinkContractAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_5,
+            'message': self.message_5,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_evm_node_1 = {
+            'parent_id': self.parent_id,
+            'origin_id': EVMNodeAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_6,
+            'message': self.message_6,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_evm_node_all_chains = {
+            'parent_id': None,
+            'origin_id': EVMNodeAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_6,
+            'message': self.message_6,
+            'timestamp': self.last_monitored,
         }
         self.alert_internal_github_chain_1 = {
             'parent_id': self.parent_id,
@@ -675,11 +763,11 @@ class TestAlertStore(unittest.TestCase):
                 self.alert_data_4['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
 
-        self.test_store._process_redis_store(self.alert_data_5)
-        chain_hash_2 = Keys.get_hash_parent(self.alert_data_5['parent_id'])
+        self.test_store._process_redis_store(self.alert_data_4_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_4_1['parent_id'])
         metric_key_2 = eval(
-            "Keys.get_alert_cl_{}(self.alert_data_5['origin_id'])".format(
-                self.alert_data_5['metric']))
+            "Keys.get_alert_cl_{}(self.alert_data_4_1['origin_id'])".format(
+                self.alert_data_4_1['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
 
         self.test_store._process_redis_store(
@@ -699,15 +787,115 @@ class TestAlertStore(unittest.TestCase):
                 self.alert_data_4['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
 
-        self.test_store._process_redis_store(self.alert_data_5)
-        chain_hash_2 = Keys.get_hash_parent(self.alert_data_5['parent_id'])
+        self.test_store._process_redis_store(self.alert_data_4_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_4_1['parent_id'])
         metric_key_2 = eval(
-            "Keys.get_alert_cl_{}(self.alert_data_5['origin_id'])".format(
-                self.alert_data_5['metric']))
+            "Keys.get_alert_cl_{}(self.alert_data_4_1['origin_id'])".format(
+                self.alert_data_4_1['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
 
         self.test_store._process_redis_store(
             self.alert_internal_chainlink_1)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_cl_contract_removes_all_cl_contracts_metrics_for_all_chains(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_5)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_5['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_cl_contract_{}(self.alert_data_5['origin_id'], "
+            "self.alert_data_5['alert_data']['contract_proxy_address'])".
+            format(self.alert_data_5['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_5_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_5_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_cl_contract_{}(self.alert_data_5_1['origin_id'], "
+            "self.alert_data_5_1['alert_data']['contract_proxy_address'])".
+            format(self.alert_data_5_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_chainlink_contract_all_chains)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertFalse(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_cl_contract_removes_all_cl_contract_metrics_for_one_chain(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_5)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_5['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_cl_contract_{}(self.alert_data_5['origin_id'], "
+            "self.alert_data_5['alert_data']['contract_proxy_address'])".
+            format(self.alert_data_5['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_5_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_5_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_cl_contract_{}(self.alert_data_5_1['origin_id'], "
+            "self.alert_data_5_1['alert_data']['contract_proxy_address'])".
+            format(self.alert_data_5_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_chainlink_contract_1)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_evm_node_removes_all_evm_node_metrics_for_all_chains(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_6)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_6['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_evm_{}(self.alert_data_6['origin_id'])".
+            format(self.alert_data_6['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_6_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_6_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_evm_{}(self.alert_data_6_1['origin_id'])".
+            format(self.alert_data_6_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_evm_node_all_chains)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertFalse(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_evm_node_removes_all_evm_node_metrics_for_one_chain(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_6)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_6['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_evm_{}(self.alert_data_6['origin_id'])".
+            format(self.alert_data_6['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_6_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_6_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_evm_{}(self.alert_data_6_1['origin_id'])".
+            format(self.alert_data_6_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_evm_node_1)
 
         self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
         self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
@@ -722,7 +910,7 @@ class TestAlertStore(unittest.TestCase):
         # we always delete all github metrics for all chains
         self.test_store._process_redis_store(self.alert_data_github_1)
         chain_hash_1 = Keys.get_hash_parent(self.alert_data_github_1[
-                                                'parent_id'])
+            'parent_id'])
         metric_key_1 = eval(
             "Keys.get_alert_{}(self.alert_data_github_1['origin_id'])".format(
                 self.alert_data_github_1['metric']))
@@ -730,7 +918,7 @@ class TestAlertStore(unittest.TestCase):
 
         self.test_store._process_redis_store(self.alert_data_github_2)
         chain_hash_2 = Keys.get_hash_parent(self.alert_data_github_2[
-                                                'parent_id'])
+            'parent_id'])
         metric_key_2 = eval(
             "Keys.get_alert_{}(self.alert_data_github_2['origin_id'])".format(
                 self.alert_data_github_2['metric']))
@@ -738,7 +926,7 @@ class TestAlertStore(unittest.TestCase):
 
         self.test_store._process_redis_store(self.alert_data_github_3)
         chain_hash_3 = Keys.get_hash_parent(self.alert_data_github_3[
-                                                'parent_id'])
+            'parent_id'])
         metric_key_3 = eval(
             "Keys.get_alert_{}(self.alert_data_github_3['origin_id'])".format(
                 self.alert_data_github_3['metric']))
