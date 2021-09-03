@@ -107,6 +107,7 @@ _key_alert_cl_contract_consensus_failure = 'alert_cl_contract3'
 _key_alert_evm_node_is_down = 'alert_evm_node1'
 _key_alert_evm_block_syncing_block_height_difference = 'alert_evm_node2'
 _key_alert_evm_block_syncing_no_change_in_block_height = 'alert_evm_node3'
+_key_alert_evm_invalid_url = 'alert_evm_node4'
 
 
 class Keys:
@@ -477,6 +478,11 @@ class Keys:
             origin_id: str) -> str:
         return Keys._as_prefix(
             _key_alert_evm_block_syncing_no_change_in_block_height) + origin_id
+
+    @staticmethod
+    def get_alert_evm_evm_invalid_url(
+            origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_evm_invalid_url) + origin_id
 
     @staticmethod
     def get_base_chain_monitorables_info(base_chain: str) -> str:
