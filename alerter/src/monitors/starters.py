@@ -9,7 +9,7 @@ from src.configs.nodes.node import NodeConfig
 from src.configs.repo import RepoConfig
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitors.contracts.evm import EVMContractsMonitor
+from src.monitors.contracts.chainlink import ChainlinkContractsMonitor
 from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
 from src.monitors.system import SystemMonitor
@@ -17,7 +17,7 @@ from src.utils import env
 from src.utils.constants.names import (SYSTEM_MONITOR_NAME_TEMPLATE,
                                        GITHUB_MONITOR_NAME_TEMPLATE,
                                        NODE_MONITOR_NAME_TEMPLATE,
-                                       EVM_CONTRACTS_MONITOR_NAME_TEMPLATE)
+                                       CL_CONTRACTS_MONITOR_NAME_TEMPLATE)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
                                           RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
@@ -77,12 +77,12 @@ def _initialise_monitor(
     return monitor
 
 
-def _initialise_evm_contracts_monitor(
+def _initialise_chainlink_contracts_monitor(
         monitor_display_name: str, monitoring_period: int, weiwatchers_url: str,
         evm_nodes: List[str],
-        node_configs: List[ChainlinkNodeConfig]) -> EVMContractsMonitor:
-    monitor_logger = _initialise_monitor_logger(monitor_display_name,
-                                                EVMContractsMonitor.__name__)
+        node_configs: List[ChainlinkNodeConfig]) -> ChainlinkContractsMonitor:
+    monitor_logger = _initialise_monitor_logger(
+        monitor_display_name, ChainlinkContractsMonitor.__name__)
 
     # Try initialising the monitor until successful
     while True:
@@ -90,7 +90,7 @@ def _initialise_evm_contracts_monitor(
             rabbitmq = RabbitMQApi(
                 logger=monitor_logger.getChild(RabbitMQApi.__name__),
                 host=env.RABBIT_IP)
-            monitor = EVMContractsMonitor(
+            monitor = ChainlinkContractsMonitor(
                 monitor_display_name, weiwatchers_url, evm_nodes, node_configs,
                 monitor_logger, monitoring_period, rabbitmq)
             log_and_print("Successfully initialised {}".format(
@@ -136,12 +136,12 @@ def start_node_monitor(node_config: NodeConfig, monitor_type: Type[T]) -> None:
     start_monitor(node_monitor)
 
 
-def start_evm_contracts_monitor(
+def start_chainlink_contracts_monitor(
         weiwatchers_url: str, evm_nodes: List[str],
         node_configs: List[ChainlinkNodeConfig], parent_id: str) -> None:
-    monitor_display_name = EVM_CONTRACTS_MONITOR_NAME_TEMPLATE.format(parent_id)
-    node_monitor = _initialise_evm_contracts_monitor(
-        monitor_display_name, env.EVM_CONTRACTS_MONITOR_PERIOD_SECONDS,
+    monitor_display_name = CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(parent_id)
+    node_monitor = _initialise_chainlink_contracts_monitor(
+        monitor_display_name, env.CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS,
         weiwatchers_url, evm_nodes, node_configs)
     start_monitor(node_monitor)
 

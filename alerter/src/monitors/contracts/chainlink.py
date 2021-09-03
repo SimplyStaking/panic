@@ -17,10 +17,10 @@ from web3.exceptions import ContractLogicError
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
-from src.utils.constants.abis.v3 import V3
-from src.utils.constants.abis.v4 import V4
-from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
-                                          EVM_CONTRACTS_RAW_DATA_ROUTING_KEY)
+from src.utils.constants.abis.v3 import V3_AGGREGATOR, V3_PROXY
+from src.utils.constants.abis.v4 import V4_AGGREGATOR, V4_PROXY
+from src.utils.constants.rabbitmq import (
+    RAW_DATA_EXCHANGE, CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
 from src.utils.data import get_json, get_prometheus_metrics_data
 from src.utils.exceptions import (ComponentNotGivenEnoughDataSourcesException,
                                   MetricNotFoundException, PANICException,
@@ -32,11 +32,10 @@ _PROMETHEUS_RETRIEVAL_TIME_PERIOD = 86400
 _WEI_WATCHERS_RETRIEVAL_TIME_PERIOD = 86400
 
 
-class EVMContractsMonitor(Monitor):
+class ChainlinkContractsMonitor(Monitor):
     """
-    The EVMContractsMonitor is able to monitor contracts of an EVM based chain.
-    For now, only chains which have chainlink smart contracts on them are
-    supported.
+    The ChainlinkContractsMonitor is able to monitor chainlink contracts of an
+    EVM based chain.
     """
 
     def __init__(self, monitor_name: str, weiwatchers_url: str,
@@ -71,15 +70,16 @@ class EVMContractsMonitor(Monitor):
         # watchers link
         self._contracts_data = []
 
-        # This dict stores a list of contract addresses that each node
+        # This dict stores a list of proxy contract addresses that each node
         # participates on, indexed by the node id. The contracts addresses are
-        # also filtered out according to their version.
+        # also filtered out according to their version. The proxy addresses are
+        # used because they are immutable.
         self._node_contracts = {}
 
         # This dict stores the last block height monitored for a node and
-        # contract pair. This will be used to monitored round submissions.
+        # contract pair. This will be used to monitor round submissions.
         # This dict should have the following structure:
-        # {<node_id>: {<contract_address>: <last_block_monitored>}}
+        # {<node_id>: {<proxy_contract_address>: <last_block_monitored>}}
         self._last_block_monitored = {}
 
         # Data retrieval limiters
@@ -225,7 +225,7 @@ class EVMContractsMonitor(Monitor):
         :param selected_node: The evm node selected to retrieve the data from
         :return: A dict indexed by the node_id were each value is another dict
                : containing a list of v3 and v4 contracts the node participates
-               : on
+               : on. The proxy contract address is used to identify a contract.
         """
         w3_interface = self.evm_node_w3_interface[selected_node]
         node_contracts = {}
@@ -235,20 +235,22 @@ class EVMContractsMonitor(Monitor):
             v3_participating_contracts = []
             v4_participating_contracts = []
             for contract_data in self._contracts_data:
-                contract_address = contract_data['contractAddress']
+                aggregator_address = contract_data['contractAddress']
+                proxy_address = contract_data['proxyAddress']
                 contract_version = contract_data['contractVersion']
                 if contract_version == 3:
-                    contract = w3_interface.eth.contract(
-                        address=contract_address, abi=V3)
-                    oracles = contract.functions.getOracles().call()
+                    aggregator_contract = w3_interface.eth.contract(
+                        address=aggregator_address, abi=V3_AGGREGATOR)
+                    oracles = aggregator_contract.functions.getOracles().call()
                     if transformed_eth_address in oracles:
-                        v3_participating_contracts.append(contract_address)
+                        v3_participating_contracts.append(proxy_address)
                 elif contract_version == 4:
-                    contract = w3_interface.eth.contract(
-                        address=contract_address, abi=V4)
-                    transmitters = contract.functions.transmitters().call()
+                    aggregator_contract = w3_interface.eth.contract(
+                        address=aggregator_address, abi=V4_AGGREGATOR)
+                    transmitters = aggregator_contract.functions.transmitters() \
+                        .call()
                     if transformed_eth_address in transmitters:
-                        v4_participating_contracts.append(contract_address)
+                        v4_participating_contracts.append(proxy_address)
 
             node_contracts[node_id] = {}
             node_contracts[node_id]['v3'] = v3_participating_contracts
@@ -275,14 +277,15 @@ class EVMContractsMonitor(Monitor):
         :param node_id: The id of the node the metrics are associated with.
         :return: A dict with the following structure:
         {
-            <v3_contract_address>: {
+            <v3_proxy_contract_address>: {
                 'contractVersion': 3,
+                'aggregatorAddress': str
                 'latestRound': int,
                 'latestAnswer': int,
                 'latestTimestamp': float,
                 'answeredInRound': int
                 'withdrawablePayment': int,
-                'historicalRounds': {
+                'historicalRounds': [{
                     'roundId': int,
                     'roundAnswer': int/None (if round consensus not reached
                                              yet),
@@ -291,7 +294,7 @@ class EVMContractsMonitor(Monitor):
                     'answeredInRound': int/None (if round consensus not reached
                                                  yet)
                     'nodeSubmission': int
-                }
+                }]
             }
         }
         """
@@ -306,9 +309,12 @@ class EVMContractsMonitor(Monitor):
 
         data = {}
         v3_contracts = self.node_contracts[node_id]['v3']
-        for contract_address in v3_contracts:
-            contract = w3_interface.eth.contract(address=contract_address,
-                                                 abi=V3)
+        for proxy_address in v3_contracts:
+            proxy_contract = w3_interface.eth.contract(address=proxy_address,
+                                                       abi=V3_PROXY)
+            aggregator_address = proxy_contract.functions.aggregator().call()
+            aggregator_contract = w3_interface.eth.contract(
+                address=aggregator_address, abi=V3_AGGREGATOR)
             transformed_eth_address = w3_interface.toChecksumAddress(
                 node_eth_address)
 
@@ -318,29 +324,34 @@ class EVMContractsMonitor(Monitor):
             current_block_height = w3_interface.eth.get_block('latest')[
                 'number']
             first_block_to_monitor = self.last_block_monitored[node_id][
-                                         contract_address] + 1 \
-                if contract_address in self.last_block_monitored[node_id] \
+                                         proxy_address] + 1 \
+                if proxy_address in self.last_block_monitored[node_id] \
                 else current_block_height
-            event_filter = contract.events.SubmissionReceived.createFilter(
-                fromBlock=first_block_to_monitor, toBlock=current_block_height,
-                argument_filters={'oracle': transformed_eth_address})
+            event_filter = \
+                aggregator_contract.events.SubmissionReceived.createFilter(
+                    fromBlock=first_block_to_monitor,
+                    toBlock=current_block_height,
+                    argument_filters={'oracle': transformed_eth_address})
             events = event_filter.get_all_entries()
-            latest_round_data = contract.functions.latestRoundData().call()
+            latest_round_data = aggregator_contract.functions.latestRoundData() \
+                .call()
 
             # Construct the latest round data
-            data[contract_address] = {
+            data[proxy_address] = {
                 'contractVersion': 3,
+                'aggregatorAddress': aggregator_address,
                 'latestRound': latest_round_data[0],
                 'latestAnswer': latest_round_data[1],
                 'latestTimestamp': latest_round_data[3],
                 'answeredInRound': latest_round_data[4],
-                'withdrawablePayment': contract.functions.withdrawablePayment(
-                    transformed_eth_address).call(),
+                'withdrawablePayment':
+                    aggregator_contract.functions.withdrawablePayment(
+                        transformed_eth_address).call(),
                 'historicalRounds': []
             }
 
             # Construct the historical data
-            historical_rounds = data[contract_address]['historicalRounds']
+            historical_rounds = data[proxy_address]['historicalRounds']
             for event in events:
                 round_id = event['args']['round']
                 round_answer = None
@@ -360,7 +371,7 @@ class EVMContractsMonitor(Monitor):
                 # still be shown with roundAnswer, roundTimestamp and
                 # answeredInRound set to None.
                 try:
-                    round_data = contract.functions.getRoundData(
+                    round_data = aggregator_contract.functions.getRoundData(
                         round_id).call()
                     round_answer = round_data[1]
                     round_timestamp = round_data[3]
@@ -385,7 +396,7 @@ class EVMContractsMonitor(Monitor):
                     break
 
             self._last_block_monitored[node_id][
-                contract_address] = current_block_height
+                proxy_address] = current_block_height
 
         return data
 
@@ -402,20 +413,21 @@ class EVMContractsMonitor(Monitor):
         {
             <v4_contract_address>: {
                 'contractVersion': 4,
+                'aggregatorAddress': str,
                 'latestRound': int,
                 'latestAnswer': int,
                 'latestTimestamp': float,
                 'answeredInRound': int
                 'owedPayment': int,
-                'historicalRounds': {
+                'historicalRounds': [{
                     'roundId': int,
                     'roundAnswer': int,
                     'roundTimestamp': float,
                     'answeredInRound': int,
-                    'nodeSubmission': int,
+                    'nodeSubmission': Optional[int],
                     'noOfObservations': int,
                     'noOfTransmitters': int
-                }
+                }]
             }
         }
         """
@@ -430,9 +442,12 @@ class EVMContractsMonitor(Monitor):
 
         data = {}
         v4_contracts = self.node_contracts[node_id]['v4']
-        for contract_address in v4_contracts:
-            contract = w3_interface.eth.contract(address=contract_address,
-                                                 abi=V4)
+        for proxy_address in v4_contracts:
+            proxy_contract = w3_interface.eth.contract(address=proxy_address,
+                                                       abi=V4_PROXY)
+            aggregator_address = proxy_contract.functions.aggregator().call()
+            aggregator_contract = w3_interface.eth.contract(
+                address=aggregator_address, abi=V4_AGGREGATOR)
             transformed_eth_address = w3_interface.toChecksumAddress(
                 node_eth_address)
 
@@ -442,14 +457,17 @@ class EVMContractsMonitor(Monitor):
             current_block_height = w3_interface.eth.get_block('latest')[
                 'number']
             first_block_to_monitor = self.last_block_monitored[node_id][
-                                         contract_address] + 1 \
-                if contract_address in self.last_block_monitored[node_id] \
+                                         proxy_address] + 1 \
+                if proxy_address in self.last_block_monitored[node_id] \
                 else current_block_height
-            event_filter = contract.events.NewTransmission.createFilter(
-                fromBlock=first_block_to_monitor, toBlock=current_block_height)
+            event_filter = \
+                aggregator_contract.events.NewTransmission.createFilter(
+                    fromBlock=first_block_to_monitor,
+                    toBlock=current_block_height)
             events = event_filter.get_all_entries()
-            latest_round_data = contract.functions.latestRoundData().call()
-            transmitters = contract.functions.transmitters().call()
+            latest_round_data = aggregator_contract.functions.latestRoundData(
+            ).call()
+            transmitters = aggregator_contract.functions.transmitters().call()
 
             try:
                 node_transmitter_index = transmitters.index(
@@ -458,26 +476,28 @@ class EVMContractsMonitor(Monitor):
                 # If the node is no longer a transmitter of this contract,
                 # move on to the next contract
                 self.logger.warning("Node %s is no longer participating on "
-                                    "contract %s", node_id, contract_address)
+                                    "contract %s", node_id, proxy_address)
                 continue
 
             # Construct the latest round data
-            data[contract_address] = {
+            data[proxy_address] = {
                 'contractVersion': 4,
+                'aggregatorAddress': aggregator_address,
                 'latestRound': latest_round_data[0],
                 'latestAnswer': latest_round_data[1],
                 'latestTimestamp': latest_round_data[3],
                 'answeredInRound': latest_round_data[4],
-                'owedPayment': contract.functions.owedPayment(
+                'owedPayment': aggregator_contract.functions.owedPayment(
                     transformed_eth_address).call(),
                 'historicalRounds': []
             }
 
             # Construct the historical data
-            historical_rounds = data[contract_address]['historicalRounds']
+            historical_rounds = data[proxy_address]['historicalRounds']
             for event in events:
                 round_id = event['args']['aggregatorRoundId']
-                round_data = contract.functions.getRoundData(round_id).call()
+                round_data = aggregator_contract.functions.getRoundData(
+                    round_id).call()
                 observers_list = list(event['args']['observers'])
 
                 try:
@@ -487,7 +507,7 @@ class EVMContractsMonitor(Monitor):
                 except ValueError:
                     self.logger.warning("Node %s did not send an answer in "
                                         "round %s for contract %s", node_id,
-                                        round_id, contract_address)
+                                        round_id, proxy_address)
                     node_submission = None
 
                 historical_rounds.append({
@@ -501,7 +521,7 @@ class EVMContractsMonitor(Monitor):
                 })
 
             self._last_block_monitored[node_id][
-                contract_address] = current_block_height
+                proxy_address] = current_block_height
 
         return data
 
@@ -538,7 +558,7 @@ class EVMContractsMonitor(Monitor):
             'error': {
                 'meta_data': {
                     'monitor_name': self.monitor_name,
-                    'parent_id': parent_id,
+                    'node_parent_id': parent_id,
                     'time': datetime.now().timestamp()
                 },
                 'message': error.message,
@@ -574,7 +594,7 @@ class EVMContractsMonitor(Monitor):
     def _send_data(self, data: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
             exchange=RAW_DATA_EXCHANGE,
-            routing_key=EVM_CONTRACTS_RAW_DATA_ROUTING_KEY, body=data,
+            routing_key=CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY, body=data,
             is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
         self.logger.debug("Sent data to '%s' exchange", RAW_DATA_EXCHANGE)

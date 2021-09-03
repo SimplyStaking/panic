@@ -12,18 +12,19 @@ from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.data_transformers.manager import DataTransformersManager
-from src.data_transformers.starters import (start_system_data_transformer,
-                                            start_github_data_transformer,
-                                            start_chainlink_node_data_transformer)
+from src.data_transformers.starters import (
+    start_system_data_transformer, start_github_data_transformer,
+    start_chainlink_node_data_transformer, start_evm_node_data_transformer,
+    start_chainlink_contracts_data_transformer)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants.names import (SYSTEM_DATA_TRANSFORMER_NAME,
-                                       GITHUB_DATA_TRANSFORMER_NAME,
-                                       CL_NODE_DATA_TRANSFORMER_NAME)
-from src.utils.constants.rabbitmq import (DT_MAN_HEARTBEAT_QUEUE_NAME,
-                                          HEALTH_CHECK_EXCHANGE,
-                                          PING_ROUTING_KEY,
-                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+from src.utils.constants.names import (
+    SYSTEM_DATA_TRANSFORMER_NAME, GITHUB_DATA_TRANSFORMER_NAME,
+    CL_NODE_DATA_TRANSFORMER_NAME, EVM_NODE_DATA_TRANSFORMER_NAME,
+    CL_CONTRACTS_DATA_TRANSFORMER_NAME)
+from src.utils.constants.rabbitmq import (
+    DT_MAN_HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY,
+    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import (infinite_fn, connect_to_rabbit,
                               delete_queue_if_exists, delete_exchange_if_exists,
@@ -61,16 +62,21 @@ class TestDataTransformersManager(unittest.TestCase):
         self.dummy_process3.daemon = True
         self.dummy_process4 = Process(target=infinite_fn, args=())
         self.dummy_process4.daemon = True
+        self.dummy_process5 = Process(target=infinite_fn, args=())
+        self.dummy_process5.daemon = True
+        self.dummy_process6 = Process(target=infinite_fn, args=())
+        self.dummy_process6.daemon = True
         self.transformer_process_dict_example = {
             SYSTEM_DATA_TRANSFORMER_NAME: self.dummy_process1,
             GITHUB_DATA_TRANSFORMER_NAME: self.dummy_process2,
-            CL_NODE_DATA_TRANSFORMER_NAME: self.dummy_process3
+            CL_NODE_DATA_TRANSFORMER_NAME: self.dummy_process3,
+            EVM_NODE_DATA_TRANSFORMER_NAME: self.dummy_process4,
+            CL_CONTRACTS_DATA_TRANSFORMER_NAME: self.dummy_process5,
         }
 
         # Test data transformer manager
-        self.test_manager = DataTransformersManager(self.dummy_logger,
-                                                    self.manager_name,
-                                                    self.rabbitmq)
+        self.test_manager = DataTransformersManager(
+            self.dummy_logger, self.manager_name, self.rabbitmq)
         self.test_exception = PANICException('test_exception', 1)
 
     def tearDown(self) -> None:
@@ -89,6 +95,8 @@ class TestDataTransformersManager(unittest.TestCase):
         self.dummy_process2 = None
         self.dummy_process3 = None
         self.dummy_process4 = None
+        self.dummy_process5 = None
+        self.dummy_process6 = None
         self.test_manager = None
         self.test_exception = None
         self.transformer_process_dict_example = None
@@ -193,11 +201,20 @@ class TestDataTransformersManager(unittest.TestCase):
          False,),
         (CL_NODE_DATA_TRANSFORMER_NAME, start_chainlink_node_data_transformer,
          {}, False,),
+        (EVM_NODE_DATA_TRANSFORMER_NAME, start_evm_node_data_transformer,
+         {}, False,),
+        (CL_CONTRACTS_DATA_TRANSFORMER_NAME,
+         start_chainlink_contracts_data_transformer, {}, False,),
         (SYSTEM_DATA_TRANSFORMER_NAME, start_system_data_transformer,
          'self.transformer_process_dict_example', True,),
         (GITHUB_DATA_TRANSFORMER_NAME, start_github_data_transformer,
          'self.transformer_process_dict_example', True,),
         (CL_NODE_DATA_TRANSFORMER_NAME, start_chainlink_node_data_transformer,
+         'self.transformer_process_dict_example', True,),
+        (EVM_NODE_DATA_TRANSFORMER_NAME, start_evm_node_data_transformer,
+         'self.transformer_process_dict_example', True,),
+        (CL_CONTRACTS_DATA_TRANSFORMER_NAME,
+         start_chainlink_contracts_data_transformer,
          'self.transformer_process_dict_example', True,),
     ])
     @mock.patch.object(multiprocessing.Process, "start")
@@ -232,7 +249,7 @@ class TestDataTransformersManager(unittest.TestCase):
         # time run, and for when the related process is dead. For the second
         # case we will use the dummy state created in startUp as no dummy
         # process was started. Note that each time we will check that start is
-        # called 3 times, once for each transformer.
+        # called 4 times, once for each transformer.
         mock_start.return_value = None
 
         self.test_manager._transformer_process_dict = \
@@ -240,7 +257,7 @@ class TestDataTransformersManager(unittest.TestCase):
 
         self.test_manager._start_transformers_processes()
 
-        self.assertEqual(3, mock_start.call_count)
+        self.assertEqual(5, mock_start.call_count)
 
     @mock.patch.object(multiprocessing, "Process")
     @mock.patch.object(multiprocessing.Process, "is_alive")
@@ -293,7 +310,9 @@ class TestDataTransformersManager(unittest.TestCase):
             'component_name': self.test_manager.name,
             'running_processes': [SYSTEM_DATA_TRANSFORMER_NAME,
                                   GITHUB_DATA_TRANSFORMER_NAME,
-                                  CL_NODE_DATA_TRANSFORMER_NAME],
+                                  CL_NODE_DATA_TRANSFORMER_NAME,
+                                  EVM_NODE_DATA_TRANSFORMER_NAME,
+                                  CL_CONTRACTS_DATA_TRANSFORMER_NAME],
             'dead_processes': [],
             'timestamp': datetime.now().timestamp()
         }
@@ -309,10 +328,9 @@ class TestDataTransformersManager(unittest.TestCase):
             mock_send_hb) -> None:
         # We will perform this test by checking that send_hb is called with the
         # correct heartbeat as the actual sending was already tested above. Note
-        # we wil mock is_alive by setting it to first return true and then
-        # return false (note we only have two processes). By this we can avoid
-        # creating processes.
-        mock_is_alive.side_effect = [True, False, False]
+        # we wil mock is_alive by setting it to return different values
+        # (note we have 5 processes). By this we can avoid creating processes.
+        mock_is_alive.side_effect = [True, False, False, True, False]
         mock_send_hb.return_value = None
         mock_join.return_value = None
         mock_start_trans.return_value = None
@@ -335,9 +353,11 @@ class TestDataTransformersManager(unittest.TestCase):
 
         expected_hb = {
             'component_name': self.test_manager.name,
-            'running_processes': [SYSTEM_DATA_TRANSFORMER_NAME],
+            'running_processes': [SYSTEM_DATA_TRANSFORMER_NAME,
+                                  EVM_NODE_DATA_TRANSFORMER_NAME],
             'dead_processes': [GITHUB_DATA_TRANSFORMER_NAME,
-                               CL_NODE_DATA_TRANSFORMER_NAME],
+                               CL_NODE_DATA_TRANSFORMER_NAME,
+                               CL_CONTRACTS_DATA_TRANSFORMER_NAME],
             'timestamp': datetime.now().timestamp()
         }
         mock_send_hb.assert_called_once_with(expected_hb)
@@ -380,7 +400,9 @@ class TestDataTransformersManager(unittest.TestCase):
             'running_processes': [],
             'dead_processes': [SYSTEM_DATA_TRANSFORMER_NAME,
                                GITHUB_DATA_TRANSFORMER_NAME,
-                               CL_NODE_DATA_TRANSFORMER_NAME],
+                               CL_NODE_DATA_TRANSFORMER_NAME,
+                               EVM_NODE_DATA_TRANSFORMER_NAME,
+                               CL_CONTRACTS_DATA_TRANSFORMER_NAME],
             'timestamp': datetime.now().timestamp()
         }
         mock_send_hb.assert_called_once_with(expected_hb)
@@ -431,9 +453,9 @@ class TestDataTransformersManager(unittest.TestCase):
         # We will perform this test by checking that
         # _start_transformers_processes is called, as the actual restarting
         # logic was already tested above. Note we wil mock is_alive by setting
-        # it to first return False and then True. By this we can avoid creating
+        # it to return different values. By this we can avoid creating
         # processes.
-        mock_is_alive.side_effect = [False, True, False]
+        mock_is_alive.side_effect = [False, True, False, True, True]
         mock_send_hb.return_value = None
         mock_join.return_value = None
         mock_start_trans.return_value = None

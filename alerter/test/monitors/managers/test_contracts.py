@@ -16,14 +16,14 @@ from parameterized import parameterized
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.contracts import ContractMonitorsManager
-from src.monitors.starters import start_evm_contracts_monitor
+from src.monitors.starters import start_chainlink_contracts_monitor
 from src.utils import env
-from src.utils.constants.names import EVM_CONTRACTS_MONITOR_NAME_TEMPLATE
+from src.utils.constants.names import CL_CONTRACTS_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-    CONTRACT_MON_MAN_HEARTBEAT_QUEUE_NAME,
-    CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-    PING_ROUTING_KEY, NODES_CONFIGS_ROUTING_KEY_CHAINS)
+    CONTRACT_MON_MAN_HEARTBEAT_QUEUE_NAME, CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
+    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, PING_ROUTING_KEY,
+    NODES_CONFIGS_ROUTING_KEY_CHAINS)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import (infinite_fn, connect_to_rabbit,
                               delete_queue_if_exists, delete_exchange_if_exists,
@@ -115,7 +115,7 @@ class TestContractMonitorsManager(unittest.TestCase):
         # Here we wil assume that only configuration 1 is in the state.
         self.config_process_dict_example = {
             self.chain_1: {
-                'component_name': EVM_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
+                'component_name': CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
                     self.parent_id_1),
                 'process': self.dummy_process1,
                 'weiwatchers_url': self.weiwatchers_url_1,
@@ -376,7 +376,7 @@ class TestContractMonitorsManager(unittest.TestCase):
 
     @mock.patch.object(multiprocessing.Process, "start")
     @mock.patch.object(multiprocessing, 'Process')
-    def test_create_and_start_evm_contracts_monitor_process_stores_correctly(
+    def test_create_and_start_cl_contracts_monitor_process_stores_correctly(
             self, mock_init, mock_start) -> None:
         mock_start.return_value = None
         mock_init.return_value = self.dummy_process2
@@ -384,7 +384,7 @@ class TestContractMonitorsManager(unittest.TestCase):
             self.config_process_dict_example
         expected_state = {
             self.chain_1: {
-                'component_name': EVM_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
+                'component_name': CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
                     self.parent_id_1),
                 'process': self.dummy_process1,
                 'weiwatchers_url': self.weiwatchers_url_1,
@@ -394,7 +394,7 @@ class TestContractMonitorsManager(unittest.TestCase):
                 'chain_name': self.chain_1,
             },
             self.chain_2: {
-                'component_name': EVM_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
+                'component_name': CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
                     self.parent_id_2),
                 'process': self.dummy_process2,
                 'weiwatchers_url': self.weiwatchers_url_2,
@@ -405,18 +405,18 @@ class TestContractMonitorsManager(unittest.TestCase):
             }
         }
 
-        self.test_manager._create_and_start_evm_contracts_monitor_process(
+        self.test_manager._create_and_start_chainlink_contracts_monitor_process(
             self.weiwatchers_url_2, self.evm_nodes_2,
             self.chainlink_node_configs_2, self.parent_id_2, self.chain_2)
 
         self.assertEqual(expected_state, self.test_manager.config_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
-    def test_create_and_start_evm_contr_monitor_proc_creates_process_correctly(
+    def test_create_and_start_cl_contr_monitor_proc_creates_process_correctly(
             self, mock_start) -> None:
         mock_start.return_value = None
 
-        self.test_manager._create_and_start_evm_contracts_monitor_process(
+        self.test_manager._create_and_start_chainlink_contracts_monitor_process(
             self.weiwatchers_url_2, self.evm_nodes_2,
             self.chainlink_node_configs_2, self.parent_id_2, self.chain_2)
 
@@ -429,25 +429,27 @@ class TestContractMonitorsManager(unittest.TestCase):
         self.assertEqual(self.chainlink_node_configs_2,
                          new_entry_process._args[2])
         self.assertEqual(self.parent_id_2, new_entry_process._args[3])
-        self.assertEqual(start_evm_contracts_monitor, new_entry_process._target)
+        self.assertEqual(start_chainlink_contracts_monitor,
+                         new_entry_process._target)
 
     @mock.patch.object(multiprocessing.Process, "start")
-    def test_create_and_start_evm_contracts_monitor_process_starts_the_process(
+    def test_create_and_start_cl_contracts_monitor_process_starts_the_process(
             self, mock_start) -> None:
-        self.test_manager._create_and_start_evm_contracts_monitor_process(
+        self.test_manager._create_and_start_chainlink_contracts_monitor_process(
             self.weiwatchers_url_2, self.evm_nodes_2,
             self.chainlink_node_configs_2, self.parent_id_2, self.chain_2)
         mock_start.assert_called_once()
 
     @mock.patch.object(ContractMonitorsManager,
-                       "_create_and_start_evm_contracts_monitor_process")
+                       "_create_and_start_chainlink_contracts_monitor_process")
     def test_process_chainlink_node_configs_creates_new_monitor_if_none_running(
             self, mock_create_and_start) -> None:
         """
         In this test we will check that if a valid nodes configuration for
-        contracts monitoring is received and no EVM contracts monitor has been
-        started for that chain, a new one is started. In addition to this we
-        will check that the function outputs the correct contracts configuration
+        contracts monitoring is received and no Chainlink contracts monitor has
+        been started for that chain, a new one is started. In addition to this
+        we will check that the function outputs the correct contracts
+        configuration
         """
         mock_create_and_start.return_value = None
         expected_confs = {
@@ -468,12 +470,12 @@ class TestContractMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(ContractMonitorsManager,
-                       "_create_and_start_evm_contracts_monitor_process")
+                       "_create_and_start_chainlink_contracts_monitor_process")
     def test_process_chainlink_node_configs_stops_and_creates_new_monitor_if_newer_confs(
             self, mock_create_and_start, mock_join, mock_terminate) -> None:
         """
         In this test we will check that if a new valid nodes configuration for
-        contracts monitoring is received and an EVM contracts monitor has
+        contracts monitoring is received and a Chainlink contracts monitor has
         already been started for that chain, the old is stopped and a new one is
         started. In addition to this we will check that the function outputs the
         correct contracts configuration
@@ -512,15 +514,15 @@ class TestContractMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(ContractMonitorsManager,
-                       "_create_and_start_evm_contracts_monitor_process")
+                       "_create_and_start_chainlink_contracts_monitor_process")
     def test_process_chainlink_node_configs_stops_monitor_if_confs_removed(
             self, mock_create_and_start, mock_join, mock_terminate) -> None:
         """
         In this test we will check that if configurations for contracts
-        monitoring have been removed for a chain and an EVM contracts monitor
-        has already been started for that chain, the old is stopped. In addition
-        to this we will check that the function outputs the correct contracts
-        configuration
+        monitoring have been removed for a chain and a Chainlink contracts
+        monitor has already been started for that chain, the old is stopped.
+        In addition to this we will check that the function outputs the correct
+        contracts configuration
         """
         mock_create_and_start.return_value = None
         mock_terminate.return_value = None
@@ -549,14 +551,14 @@ class TestContractMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(ContractMonitorsManager,
-                       "_create_and_start_evm_contracts_monitor_process")
+                       "_create_and_start_chainlink_contracts_monitor_process")
     def test_process_chainlink_node_configs_does_nothing_if_unchanged_confs(
             self, mock_create_and_start, mock_join, mock_terminate) -> None:
         """
         In this test we will check that if we receive unchanged configurations
-        for contracts monitoring and an EVM contracts monitor has already been
-        started for that chain, nothing is done. In addition to this we will
-        check that the function outputs the correct contracts configuration
+        for contracts monitoring and a Chainlink contracts monitor has already
+        been started for that chain, nothing is done. In addition to this we
+        will check that the function outputs the correct contracts configuration
         """
         mock_create_and_start.return_value = None
         mock_terminate.return_value = None
@@ -715,7 +717,7 @@ class TestContractMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(ContractMonitorsManager,
-                       "_create_and_start_evm_contracts_monitor_process")
+                       "_create_and_start_chainlink_contracts_monitor_process")
     @mock.patch.object(ContractMonitorsManager, "_send_heartbeat")
     def test_process_ping_sends_a_valid_hb(
             self, is_alive_side_effect, dead_configs, mock_send_hb,
@@ -726,7 +728,7 @@ class TestContractMonitorsManager(unittest.TestCase):
         mock_is_alive.side_effect = is_alive_side_effect
         dead_configs_eval = list(map(eval, dead_configs))
         self.config_process_dict_example[self.chain_2] = {
-            'component_name': EVM_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
+            'component_name': CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
                 self.parent_id_2),
             'process': self.dummy_process2,
             'weiwatchers_url': self.weiwatchers_url_2,
@@ -774,7 +776,7 @@ class TestContractMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "is_alive")
     @mock.patch.object(ContractMonitorsManager,
-                       "_create_and_start_evm_contracts_monitor_process")
+                       "_create_and_start_chainlink_contracts_monitor_process")
     @mock.patch.object(ContractMonitorsManager, "_send_heartbeat")
     def test_process_ping_restarts_dead_processes_correctly(
             self, is_alive_side_effect, dead_configs, mock_send_hb,
@@ -785,7 +787,7 @@ class TestContractMonitorsManager(unittest.TestCase):
         mock_is_alive.side_effect = is_alive_side_effect
         dead_configs_eval = list(map(eval, dead_configs))
         self.config_process_dict_example[self.chain_2] = {
-            'component_name': EVM_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
+            'component_name': CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
                 self.parent_id_2),
             'process': self.dummy_process2,
             'weiwatchers_url': self.weiwatchers_url_2,

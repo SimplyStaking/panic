@@ -11,13 +11,12 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.manager import MonitorsManager
-from src.monitors.starters import start_evm_contracts_monitor
-from src.utils.constants.names import EVM_CONTRACTS_MONITOR_NAME_TEMPLATE
+from src.monitors.starters import start_chainlink_contracts_monitor
+from src.utils.constants.names import CL_CONTRACTS_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
-    HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY,
-    CONFIG_EXCHANGE, NODES_CONFIGS_ROUTING_KEY_CHAINS, TOPIC,
-    CONTRACT_MON_MAN_HEARTBEAT_QUEUE_NAME,
-    CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME)
+    HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY, CONFIG_EXCHANGE,
+    NODES_CONFIGS_ROUTING_KEY_CHAINS, TOPIC,
+    CONTRACT_MON_MAN_HEARTBEAT_QUEUE_NAME, CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME)
 from src.utils.exceptions import (EnabledSourceIsEmptyException,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
@@ -96,7 +95,7 @@ class ContractMonitorsManager(MonitorsManager):
             Optional[List[ChainlinkNodeConfig]]):
         """
         Given the received configurations this function is able to extract some
-        import fields which are needed for monitoring EVM contracts
+        import fields which are needed for monitoring Chainlink contracts
         :param configs: The received configurations without the DEFAULT key
         :return: (parent_id, weiwatchers_url, evm_nodes_urls,
                   chainlink_node_configs)
@@ -179,13 +178,13 @@ class ContractMonitorsManager(MonitorsManager):
 
         return parent_id, weiwatchers_url, evm_nodes_urls, cl_node_configs
 
-    def _create_and_start_evm_contracts_monitor_process(
+    def _create_and_start_chainlink_contracts_monitor_process(
             self, weiwatchers_url: str, evm_nodes: List[str],
             node_configs: List[ChainlinkNodeConfig], parent_id: str,
             chain_name: str) -> None:
         """
-        This function creates and starts and EVM contracts monitor process for
-        a particular chain
+        This function creates and starts a Chainlink contracts monitor process
+        for a particular chain
         :param weiwatchers_url: The weiwatchers server url to be used
         :param evm_nodes: The evm nodes that will be used as data sources to
                         : obtain the contract metrics
@@ -195,17 +194,18 @@ class ContractMonitorsManager(MonitorsManager):
         :param chain_name: The name of the chain
         :return:
         """
-        log_and_print("Creating a new process for the EVM contracts monitor of "
-                      "{}".format(chain_name), self.logger)
+        log_and_print("Creating a new process for the Chainlink contracts "
+                      "monitor of {}".format(chain_name), self.logger)
         process = multiprocessing.Process(
-            target=start_evm_contracts_monitor,
+            target=start_chainlink_contracts_monitor,
             args=(weiwatchers_url, evm_nodes, node_configs, parent_id,))
+
         # Kills children if parent is killed
         process.daemon = True
         process.start()
         self._config_process_dict[chain_name] = {}
         self._config_process_dict[chain_name]['component_name'] = \
-            EVM_CONTRACTS_MONITOR_NAME_TEMPLATE.format(parent_id)
+            CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(parent_id)
         self._config_process_dict[chain_name]['process'] = process
         self._config_process_dict[chain_name][
             'weiwatchers_url'] = weiwatchers_url
@@ -230,10 +230,10 @@ class ContractMonitorsManager(MonitorsManager):
             }
 
             if current_configs:
-                # If there is an EVM Contracts Monitor running for the chain
-                # check if the configurations have been modified. If yes first
-                # terminate the monitor, if no it means that we can return as
-                # the current state is the correct one
+                # If there is a Chainlink Contracts Monitor running for the
+                # chain check if the configurations have been modified. If yes
+                # first terminate the monitor, if no it means that we can return
+                # as the current state is the correct one
                 if potential_configs != current_configs:
                     previous_process = self.config_process_dict[chain_name][
                         'process']
@@ -241,19 +241,19 @@ class ContractMonitorsManager(MonitorsManager):
                     previous_process.join()
                     del self.config_process_dict[chain_name]
                     correct_configs = {}
-                    log_and_print("Killed the EVM Contracts monitor of "
+                    log_and_print("Killed the Chainlink Contracts monitor of "
                                   "{}".format(chain_name), self.logger)
                 else:
                     # This case may occur if config keys which are irrelevant
                     # for contract monitoring are modified
                     return correct_configs
 
-            # Check if potentially there could be any EVM Contracts Monitor that
-            # could be started for the chain. This is True if valid monitoring
-            # fields can be parsed from the config
+            # Check if potentially there could be any Chainlink Contracts
+            # Monitor that could be started for the chain. This is True if valid
+            # monitoring fields can be parsed from the config
             if None not in [parent_id, weiwatchers_url, evm_nodes_urls,
                             cl_node_configs]:
-                self._create_and_start_evm_contracts_monitor_process(
+                self._create_and_start_chainlink_contracts_monitor_process(
                     weiwatchers_url, evm_nodes_urls, cl_node_configs,
                     parent_id, chain_name
                 )
@@ -319,7 +319,7 @@ class ContractMonitorsManager(MonitorsManager):
                     evm_nodes = process_details['evm_nodes']
                     node_configs = process_details['node_configs']
                     parent_id = process_details['parent_id']
-                    self._create_and_start_evm_contracts_monitor_process(
+                    self._create_and_start_chainlink_contracts_monitor_process(
                         weiwatchers_url, evm_nodes, node_configs, parent_id,
                         chain_name
                     )

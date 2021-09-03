@@ -12,16 +12,16 @@ from pika.adapters.blocking_connection import BlockingChannel
 from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.data_transformers.starters import (
     start_system_data_transformer, start_github_data_transformer,
-    start_chainlink_node_data_transformer)
+    start_chainlink_node_data_transformer, start_evm_node_data_transformer,
+    start_chainlink_contracts_data_transformer)
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants.names import (SYSTEM_DATA_TRANSFORMER_NAME,
-                                       GITHUB_DATA_TRANSFORMER_NAME,
-                                       CL_NODE_DATA_TRANSFORMER_NAME)
-from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
-                                          DT_MAN_HEARTBEAT_QUEUE_NAME,
-                                          PING_ROUTING_KEY,
-                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                          TOPIC)
+from src.utils.constants.names import (
+    SYSTEM_DATA_TRANSFORMER_NAME, GITHUB_DATA_TRANSFORMER_NAME,
+    CL_NODE_DATA_TRANSFORMER_NAME, EVM_NODE_DATA_TRANSFORMER_NAME,
+    CL_CONTRACTS_DATA_TRANSFORMER_NAME)
+from src.utils.constants.rabbitmq import (
+    HEALTH_CHECK_EXCHANGE, DT_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
+    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -93,6 +93,9 @@ class DataTransformersManager(PublisherSubscriberComponent):
             GITHUB_DATA_TRANSFORMER_NAME: start_github_data_transformer,
             CL_NODE_DATA_TRANSFORMER_NAME:
                 start_chainlink_node_data_transformer,
+            EVM_NODE_DATA_TRANSFORMER_NAME: start_evm_node_data_transformer,
+            CL_CONTRACTS_DATA_TRANSFORMER_NAME:
+                start_chainlink_contracts_data_transformer,
         }
         for transformer_name, transformer_starter in configuration.items():
             if transformer_name not in self.transformer_process_dict or not \

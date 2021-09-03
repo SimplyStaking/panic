@@ -2,29 +2,27 @@ import copy
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Tuple
+from typing import Union, Type, Dict, Tuple
 
-import pika.exceptions
+import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.data_store.redis import Keys
 from src.data_store.redis.redis_api import RedisApi
-from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitorables.repo import GitHubRepo
-from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
-                                          ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                          GITHUB_DT_INPUT_QUEUE_NAME,
-                                          GITHUB_RAW_DATA_ROUTING_KEY,
-                                          GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
-                                          TOPIC)
+from src.monitorables.nodes.evm_node import EVMNode
+from src.utils.constants.rabbitmq import (
+    ALERT_EXCHANGE, STORE_EXCHANGE, RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+    TOPIC, EVM_NODE_DT_INPUT_QUEUE_NAME, EVM_NODE_RAW_DATA_ROUTING_KEY,
+    EVM_NODE_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
+                                  NodeIsDownException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import (convert_to_float,
-                             convert_to_int, Monitorable)
+from src.utils.types import Monitorable, convert_to_int, convert_to_float
 
 
-class GitHubDataTransformer(DataTransformer):
+class EVMNodeDataTransformer(DataTransformer):
     def __init__(self, transformer_name: str, logger: logging.Logger,
                  redis: RedisApi, rabbitmq: RabbitMQApi,
                  max_queue_size: int = 0) -> None:
@@ -41,23 +39,22 @@ class GitHubDataTransformer(DataTransformer):
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
         self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, TOPIC, False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'", GITHUB_DT_INPUT_QUEUE_NAME)
-        self.rabbitmq.queue_declare(GITHUB_DT_INPUT_QUEUE_NAME, False, True,
-                                    False,
-                                    False)
-        self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", GITHUB_DT_INPUT_QUEUE_NAME, RAW_DATA_EXCHANGE,
-                         GITHUB_RAW_DATA_ROUTING_KEY)
-        self.rabbitmq.queue_bind(GITHUB_DT_INPUT_QUEUE_NAME, RAW_DATA_EXCHANGE,
-                                 GITHUB_RAW_DATA_ROUTING_KEY)
+        self.logger.info("Creating queue '%s'", EVM_NODE_DT_INPUT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(EVM_NODE_DT_INPUT_QUEUE_NAME, False, True,
+                                    False, False)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing "
+                         "key '%s'", EVM_NODE_DT_INPUT_QUEUE_NAME,
+                         RAW_DATA_EXCHANGE, EVM_NODE_RAW_DATA_ROUTING_KEY)
+        self.rabbitmq.queue_bind(EVM_NODE_DT_INPUT_QUEUE_NAME,
+                                 RAW_DATA_EXCHANGE,
+                                 EVM_NODE_RAW_DATA_ROUTING_KEY)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
-        self.logger.debug('Declaring consuming intentions')
-        self.rabbitmq.basic_consume(GITHUB_DT_INPUT_QUEUE_NAME,
-                                    self._process_raw_data,
-                                    False, False, None)
+        self.logger.debug("Declaring consuming intentions")
+        self.rabbitmq.basic_consume(EVM_NODE_DT_INPUT_QUEUE_NAME,
+                                    self._process_raw_data, False, False, None)
 
         # Set producing configuration
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
@@ -72,40 +69,57 @@ class GitHubDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
-    def load_state(self, repo: Monitorable) -> Monitorable:
-        # Below, we will try and get the data stored in redis and store it
-        # in the repo's state. If the data from Redis cannot be obtained, the
-        # state won't be updated.
+    def _load_number_state(self, state_type: Union[Type[float], Type[int]],
+                           evm_node: Monitorable) -> None:
+        """
+        This function will attempt to load a node's number metrics from redis.
+        If the data from Redis cannot be obtained, the state won't be updated.
+        :param state_type: What type of number metrics we want to obtain
+        :param evm_node: The node in question
+        :return: Nothing
+        """
+        redis_hash = Keys.get_hash_parent(evm_node.parent_id)
+        evm_node_id = evm_node.node_id
+        if state_type == int:
+            metric_attributes = evm_node.get_int_metric_attributes()
+            convert_fn = convert_to_int
+        else:
+            metric_attributes = evm_node.get_float_metric_attributes()
+            convert_fn = convert_to_float
 
-        self.logger.debug("Loading the state of %s from Redis", repo)
-        redis_hash = Keys.get_hash_parent(repo.parent_id)
-        repo_id = repo.repo_id
+        # We iterate over the number metric attributes and attempt to load from
+        # redis. We are saving metrics in the following format b"value", so
+        # first we need to decode, and then convert to int/float. Note, since
+        # an error may occur when obtaining the data, the default value must
+        # also be passed as bytes(str()).
+        for attribute in metric_attributes:
+            state_value = eval('evm_node.' + attribute)
+            redis_key = eval('Keys.get_evm_node_' + attribute + '(evm_node_id)')
+            default_value = bytes(str(state_value), 'utf-8')
+            redis_value = self.redis.hget(redis_hash, redis_key, default_value)
+            processed_redis_value = 'None' if redis_value is None \
+                else redis_value.decode("utf-8")
+            new_value = convert_fn(processed_redis_value, None)
+            eval("evm_node.set_" + attribute + '(new_value)')
 
-        # Load no_of_releases from Redis
-        state_no_of_releases = repo.no_of_releases
-        redis_no_of_releases = self.redis.hget(
-            redis_hash, Keys.get_github_no_of_releases(repo_id),
-            bytes(str(state_no_of_releases), 'utf-8'))
-        redis_no_of_releases = 'None' if redis_no_of_releases is None \
-            else redis_no_of_releases.decode("utf-8")
-        no_of_releases = convert_to_int(redis_no_of_releases, None)
-        repo.set_no_of_releases(no_of_releases)
+    def load_state(self, evm_node: Monitorable) -> Monitorable:
+        """
+        This function attempts to load the state of an evm_node from redis. If
+        the data from Redis cannot be obtained, the state won't be updated.
+        :param evm_node: The EVM Node whose state we are interested in
+        :return: The loaded EVM node
+        """
+        self.logger.debug("Loading the state of %s from Redis", evm_node)
 
-        # Load last_monitored from Redis
-        state_last_monitored = repo.last_monitored
-        redis_last_monitored = self.redis.hget(
-            redis_hash, Keys.get_github_last_monitored(repo_id),
-            bytes(str(state_last_monitored), 'utf-8'))
-        redis_last_monitored = 'None' if redis_last_monitored is None \
-            else redis_last_monitored.decode("utf-8")
-        last_monitored = convert_to_float(redis_last_monitored, None)
-        repo.set_last_monitored(last_monitored)
+        self._load_number_state(int, evm_node)
+        self._load_number_state(float, evm_node)
 
         self.logger.debug(
-            "Restored %s state: _no_of_releases=%s, _last_monitored=%s", repo,
-            no_of_releases, last_monitored)
+            "Restored %s state: _current_height=%s, _last_monitored=%s, "
+            "_went_down_at=%s", evm_node, evm_node.current_height,
+            evm_node.last_monitored, evm_node.went_down_at)
 
-        return repo
+        return evm_node
 
     def _update_state(self, transformed_data: Dict) -> None:
         self.logger.debug("Updating state ...")
@@ -113,28 +127,35 @@ class GitHubDataTransformer(DataTransformer):
         if 'result' in transformed_data:
             meta_data = transformed_data['result']['meta_data']
             metrics = transformed_data['result']['data']
-            repo_id = meta_data['repo_id']
-            parent_id = meta_data['repo_parent_id']
-            repo_name = meta_data['repo_name']
-            repo = self.state[repo_id]
+            node_id = meta_data['node_id']
+            parent_id = meta_data['node_parent_id']
+            node_name = meta_data['node_name']
+            node = self.state[node_id]
 
-            # Set repo details just in case the configs have changed
-            repo.set_parent_id(parent_id)
-            repo.set_repo_name(repo_name)
+            # Set node details just in case the configs have changed
+            node.set_parent_id(parent_id)
+            node.set_node_name(node_name)
 
-            # Save the new metrics
-            repo.set_last_monitored(meta_data['last_monitored'])
-            repo.set_no_of_releases(metrics['no_of_releases'])
+            # Save the new metrics in process memory
+            node.set_last_monitored(meta_data['last_monitored'])
+            node.set_current_height(metrics['current_height'])
+            node.set_as_up()
         elif 'error' in transformed_data:
             meta_data = transformed_data['error']['meta_data']
-            repo_name = meta_data['repo_name']
-            repo_id = meta_data['repo_id']
-            parent_id = meta_data['repo_parent_id']
-            repo = self.state[repo_id]
+            error_code = transformed_data['error']['code']
+            node_name = meta_data['node_name']
+            node_id = meta_data['node_id']
+            parent_id = meta_data['node_parent_id']
+            downtime_exception = NodeIsDownException(node_name)
+            node = self.state[node_id]
 
-            # Set repo details just in case the configs have changed
-            repo.set_parent_id(parent_id)
-            repo.set_repo_name(repo_name)
+            # Set node details just in case the configs have changed
+            node.set_parent_id(parent_id)
+            node.set_node_name(node_name)
+
+            if error_code == downtime_exception.code:
+                went_down_at = transformed_data['error']['data']['went_down_at']
+                node.set_as_down(went_down_at)
         else:
             # Since the processing function calling this method caters for
             # unexpected data this condition will never be executed. Regardless,
@@ -148,20 +169,7 @@ class GitHubDataTransformer(DataTransformer):
                                              transformed_data: Dict) -> Dict:
         self.logger.debug("Performing further processing for storage ...")
 
-        if 'result' in transformed_data:
-            td_meta_data = transformed_data['result']['meta_data']
-            td_metrics = transformed_data['result']['data']
-            no_of_releases = td_metrics['no_of_releases']
-
-            processed_data = {
-                'result': {
-                    'meta_data': copy.deepcopy(td_meta_data),
-                    'data': {
-                        'no_of_releases': no_of_releases
-                    }
-                }
-            }
-        elif 'error' in transformed_data:
+        if 'result' in transformed_data or 'error' in transformed_data:
             processed_data = copy.deepcopy(transformed_data)
         else:
             # Since the processing function calling this method caters for
@@ -180,8 +188,8 @@ class GitHubDataTransformer(DataTransformer):
 
         if 'result' in transformed_data:
             td_meta_data = transformed_data['result']['meta_data']
-            td_repo_id = td_meta_data['repo_id']
-            repo = self.state[td_repo_id]
+            td_node_id = td_meta_data['node_id']
+            node = self.state[td_node_id]
             td_metrics = transformed_data['result']['data']
 
             processed_data = {
@@ -192,23 +200,36 @@ class GitHubDataTransformer(DataTransformer):
             }
 
             # Reformat the data in such a way that both the previous and current
-            # states are sent to the alerter. Exclude the releases list, as the
-            # previous list can be inferred.
+            # states are sent to the alerter
             processed_data_metrics = processed_data['result']['data']
             for metric, value in td_metrics.items():
-                if metric != 'releases':
+                processed_data_metrics[metric] = {}
+                processed_data_metrics[metric]['current'] = value
+
+            processed_data_metrics['current_height'][
+                'previous'] = node.current_height
+            processed_data_metrics['went_down_at'][
+                'previous'] = node.went_down_at
+        elif 'error' in transformed_data:
+            td_meta_data = transformed_data['error']['meta_data']
+            td_error_code = transformed_data['error']['code']
+            td_node_id = td_meta_data['node_id']
+            td_node_name = td_meta_data['node_name']
+            node = self.state[td_node_id]
+            downtime_exception = NodeIsDownException(td_node_name)
+
+            processed_data = copy.deepcopy(transformed_data)
+
+            if td_error_code == downtime_exception.code:
+                td_metrics = transformed_data['error']['data']
+                processed_data_metrics = processed_data['error']['data']
+
+                for metric, value in td_metrics.items():
                     processed_data_metrics[metric] = {}
                     processed_data_metrics[metric]['current'] = value
 
-            # Add the previous state
-            processed_data_metrics['no_of_releases']['previous'] = \
-                repo.no_of_releases
-
-            # Finally add the list of releases
-            processed_data_metrics['releases'] = \
-                copy.deepcopy(td_metrics['releases'])
-        elif 'error' in transformed_data:
-            processed_data = copy.deepcopy(transformed_data)
+                processed_data_metrics['went_down_at'][
+                    'previous'] = node.went_down_at
         else:
             # Since the processing function calling this method caters for
             # unexpected data this condition will never be executed. Regardless,
@@ -225,32 +246,39 @@ class GitHubDataTransformer(DataTransformer):
 
         if 'result' in data:
             meta_data = data['result']['meta_data']
-            repo_metrics = data['result']['data']
-
-            transformed_data = {
-                'result': {
-                    'meta_data': copy.deepcopy(meta_data),
-                    'data': {},
-                }
-            }
+            transformed_data = copy.deepcopy(data)
             td_meta_data = transformed_data['result']['meta_data']
             td_metrics = transformed_data['result']['data']
 
             # Transform the meta_data by deleting the monitor_name and changing
-            # the time key to last_monitored key
+            # the time key to last_monitored key. Also set went_down_at as None
+            # because data was successfully retrieved
             del td_meta_data['monitor_name']
             del td_meta_data['time']
             td_meta_data['last_monitored'] = meta_data['time']
-
-            # Transform the data by adding the no_of_releases and releases
-            # metrics.
-            td_metrics['no_of_releases'] = len(repo_metrics)
-            td_metrics['releases'] = copy.deepcopy(repo_metrics)
+            td_metrics['went_down_at'] = None
         elif 'error' in data:
+            meta_data = data['error']['meta_data']
+            error_code = data['error']['code']
+            node_id = meta_data['node_id']
+            node_name = meta_data['node_name']
+            time_of_error = meta_data['time']
+            node = self.state[node_id]
+            downtime_exception = NodeIsDownException(node_name)
+
             # In case of errors in the sent messages only remove the
             # monitor_name from the meta data
             transformed_data = copy.deepcopy(data)
             del transformed_data['error']['meta_data']['monitor_name']
+
+            # If we have a downtime error, set went_down_at to the time of error
+            # if the system was up. Otherwise, leave went_down_at as stored in
+            # the system state
+            if error_code == downtime_exception.code:
+                transformed_data['error']['data'] = {}
+                td_metrics = transformed_data['error']['data']
+                td_metrics['went_down_at'] = \
+                    node.went_down_at if node.is_down else time_of_error
         else:
             # Since the processing function calling this method caters for
             # unexpected data this condition will never be executed. Regardless,
@@ -267,19 +295,20 @@ class GitHubDataTransformer(DataTransformer):
 
         return transformed_data, data_for_alerting, data_for_saving
 
-    def _place_latest_data_on_queue(self, data_for_alerting: Dict,
-                                    data_for_saving: Dict) -> None:
+    def _place_latest_data_on_queue(
+            self, transformed_data: Dict, data_for_alerting: Dict,
+            data_for_saving: Dict) -> None:
         self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
-                            GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
-                            pika.BasicProperties(delivery_mode=2), True)
-        self._push_to_queue(data_for_saving, STORE_EXCHANGE,
-                            GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
+                            EVM_NODE_TRANSFORMED_DATA_ROUTING_KEY,
                             pika.BasicProperties(delivery_mode=2), True)
 
-    def _process_raw_data(self, ch: BlockingChannel,
-                          method: pika.spec.Basic.Deliver,
-                          properties: pika.spec.BasicProperties, body: bytes) \
-            -> None:
+        self._push_to_queue(data_for_saving, STORE_EXCHANGE,
+                            EVM_NODE_TRANSFORMED_DATA_ROUTING_KEY,
+                            pika.BasicProperties(delivery_mode=2), True)
+
+    def _process_raw_data(
+            self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
+            properties: pika.spec.BasicProperties, body: bytes) -> None:
         raw_data = json.loads(body)
         self.logger.debug("Received %s from monitors. Now processing this "
                           "data.", raw_data)
@@ -290,17 +319,17 @@ class GitHubDataTransformer(DataTransformer):
         data_for_saving = {}
         try:
             if 'result' in raw_data or 'error' in raw_data:
-                response_index_key = 'result' if 'result' in raw_data \
-                    else 'error'
+                response_index_key = \
+                    'result' if 'result' in raw_data else 'error'
                 meta_data = raw_data[response_index_key]['meta_data']
-                repo_id = meta_data['repo_id']
-                repo_parent_id = meta_data['repo_parent_id']
-                repo_name = meta_data['repo_name']
+                node_id = meta_data['node_id']
+                node_parent_id = meta_data['node_parent_id']
+                node_name = meta_data['node_name']
 
-                if repo_id not in self.state:
-                    new_repo = GitHubRepo(repo_name, repo_id, repo_parent_id)
-                    loaded_repo = self.load_state(new_repo)
-                    self._state[repo_id] = loaded_repo
+                if node_id not in self.state:
+                    new_node = EVMNode(node_name, node_id, node_parent_id)
+                    loaded_node = self.load_state(new_node)
+                    self._state[node_id] = loaded_node
 
                 transformed_data, data_for_alerting, data_for_saving = \
                     self._transform_data(raw_data)
@@ -333,7 +362,8 @@ class GitHubDataTransformer(DataTransformer):
         # acknowledgement fails, the data is processed again and we do not have
         # duplication of data in the queue
         if not processing_error:
-            self._place_latest_data_on_queue(data_for_alerting, data_for_saving)
+            self._place_latest_data_on_queue(
+                transformed_data, data_for_alerting, data_for_saving)
 
         # Send any data waiting in the publisher queue, if any
         try:
