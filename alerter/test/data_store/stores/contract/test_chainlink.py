@@ -618,11 +618,20 @@ class TestChainlinkContractStore(unittest.TestCase):
                             self.node_id, proxy_address)).decode("utf-8"),
                         'bad_val'))
 
+    @mock.patch.object(RedisApi, "set_unsafe")
+    @mock.patch.object(RedisApi, "hset_unsafe")
+    @mock.patch.object(RedisApi, "set_multiple_unsafe")
+    @mock.patch.object(RedisApi, "set_for_unsafe")
     @mock.patch.object(ChainlinkContractStore, "_process_redis_result_store")
-    def test_process_redis_error_store_does_nothing(self,
-                                                    mock_result_store) -> None:
+    def test_process_redis_error_store_does_nothing(
+            self, mock_result_store, mock_set_unsafe, mock_hset_unsafe,
+            mock_set_multiple_unsafe, mock_set_for_unsafe) -> None:
         self.test_store._process_redis_store(self.contract_data_down_error)
         mock_result_store.assert_not_called()
+        mock_set_unsafe.assert_not_called()
+        mock_hset_unsafe.assert_not_called()
+        mock_set_multiple_unsafe.assert_not_called()
+        mock_set_for_unsafe.assert_not_called()
 
     @parameterized.expand([
         ("self.contract_data_v3",),
@@ -712,8 +721,15 @@ class TestChainlinkContractStore(unittest.TestCase):
                                    'bad_val'),
                 ]
 
+    @mock.patch.object(MongoApi, "insert_one")
+    @mock.patch.object(MongoApi, "insert_many")
+    @mock.patch.object(MongoApi, "update_one")
     @mock.patch.object(ChainlinkContractStore, "_process_mongo_result_store")
-    def test_process_mongo_error_store_does_nothing(self,
-                                                    mock_result_store) -> None:
+    def test_process_mongo_error_store_does_nothing(
+            self, mock_result_store, mock_insert_one, mock_insert_many,
+            mock_update_one) -> None:
         self.test_store._process_mongo_store(self.contract_data_down_error)
         mock_result_store.assert_not_called()
+        mock_insert_one.assert_not_called()
+        mock_insert_many.assert_not_called()
+        mock_update_one.assert_not_called()

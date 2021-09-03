@@ -219,10 +219,13 @@ class TestAlertStore(unittest.TestCase):
             'metric': self.metric_5,
             'message': self.message_5,
             'timestamp': self.last_monitored,
+            'alert_data': {'contract_proxy_address':
+                           '0x5DcB78343780E1B1e578ae0590dc1e868792a435'}
         }
         self.alert_data_5_1 = copy.deepcopy(self.alert_data_5)
         self.alert_data_5_1['parent_id'] = self.parent_id2
-
+        self.alert_data_5_1['alert_data']['contract_proxy_address'] = \
+            '0xA5F7146D3cbB5a50Da36b8AC3857C48Ed3BF3bd9'
         self.alert_data_6 = {
             'parent_id': self.parent_id,
             'origin_id': self.origin_id_6,
@@ -804,14 +807,16 @@ class TestAlertStore(unittest.TestCase):
         self.test_store._process_redis_store(self.alert_data_5)
         chain_hash_1 = Keys.get_hash_parent(self.alert_data_5['parent_id'])
         metric_key_1 = eval(
-            "Keys.get_alert_cl_contract_{}(self.alert_data_5['origin_id'])".
+            "Keys.get_alert_cl_contract_{}(self.alert_data_5['origin_id'], "
+            "self.alert_data_5['alert_data']['contract_proxy_address'])".
             format(self.alert_data_5['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
 
         self.test_store._process_redis_store(self.alert_data_5_1)
         chain_hash_2 = Keys.get_hash_parent(self.alert_data_5_1['parent_id'])
         metric_key_2 = eval(
-            "Keys.get_alert_cl_contract_{}(self.alert_data_5_1['origin_id'])".
+            "Keys.get_alert_cl_contract_{}(self.alert_data_5_1['origin_id'], "
+            "self.alert_data_5_1['alert_data']['contract_proxy_address'])".
             format(self.alert_data_5_1['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
 
@@ -828,14 +833,16 @@ class TestAlertStore(unittest.TestCase):
         self.test_store._process_redis_store(self.alert_data_5)
         chain_hash_1 = Keys.get_hash_parent(self.alert_data_5['parent_id'])
         metric_key_1 = eval(
-            "Keys.get_alert_cl_contract_{}(self.alert_data_5['origin_id'])".
+            "Keys.get_alert_cl_contract_{}(self.alert_data_5['origin_id'], "
+            "self.alert_data_5['alert_data']['contract_proxy_address'])".
             format(self.alert_data_5['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
 
         self.test_store._process_redis_store(self.alert_data_5_1)
         chain_hash_2 = Keys.get_hash_parent(self.alert_data_5_1['parent_id'])
         metric_key_2 = eval(
-            "Keys.get_alert_cl_contract_{}(self.alert_data_5_1['origin_id'])".
+            "Keys.get_alert_cl_contract_{}(self.alert_data_5_1['origin_id'], "
+            "self.alert_data_5_1['alert_data']['contract_proxy_address'])".
             format(self.alert_data_5_1['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
 

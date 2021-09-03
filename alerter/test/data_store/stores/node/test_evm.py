@@ -259,7 +259,7 @@ class TestEVMNodeStore(unittest.TestCase):
 
     @mock.patch.object(RabbitMQApi, "basic_consume")
     @mock.patch.object(RabbitMQApi, "start_consuming")
-    def test_listen_for_data_calls_basic_consume_and_listen_for_data(
+    def test_listen_for_data_calls_basic_consume_and_start_consuming(
             self, mock_start_consuming, mock_basic_consume) -> None:
         mock_start_consuming.return_value = None
         mock_basic_consume.return_value = None
@@ -422,7 +422,6 @@ class TestEVMNodeStore(unittest.TestCase):
                 Keys.get_evm_node_went_down_at(self.node_id)
             ))
 
-
     def test_process_redis_error_store_stores_correctly_if_down_err(
             self) -> None:
         data = self.node_data_down_error['error']
@@ -432,56 +431,6 @@ class TestEVMNodeStore(unittest.TestCase):
         self.assertEqual(
             None, self.redis.hget(redis_hash,
                                   Keys.get_evm_node_current_height(self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_total_block_headers_received(
-                                      self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_no_of_active_jobs(
-                                      self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_max_pending_tx_delay(
-                                      self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_process_start_time_seconds(
-                                      self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_total_gas_bumps(
-                                      self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(
-                redis_hash, Keys.get_cl_node_total_gas_bumps_exceeds_limit(
-                    self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(
-                redis_hash, Keys.get_cl_node_no_of_unconfirmed_txs(
-                    self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(
-                redis_hash, Keys.get_cl_node_total_errored_job_runs(
-                    self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_eth_balance_info(
-                                      self.node_id))
-        )
-        self.assertEqual(
-            None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_current_gas_price_info(
-                                      self.node_id))
         )
         self.assertEqual(None, self.redis.hget(
             redis_hash, Keys.get_evm_node_last_monitored(self.node_id)
@@ -511,41 +460,6 @@ class TestEVMNodeStore(unittest.TestCase):
             None, self.redis.hget(redis_hash,
                                   Keys.get_evm_node_went_down_at(
                                       self.node_id)))
-
-    @parameterized.expand([
-        ("self.node_data",),
-        ("self.node_data_pad",),
-    ])
-    def test_process_mongo_result_store_stores_correctly(
-            self, data_var) -> None:
-        data = eval(data_var)['result']
-        meta_data = data['meta_data']
-        node_id = meta_data['node_id']
-        parent_id = meta_data['node_parent_id']
-        metrics = data['data']
-
-        self.test_store._process_mongo_result_store(data)
-
-        documents = self.mongo.get_all(parent_id)
-        document = documents[0]
-        expected = [
-            'node',
-            1,
-            metrics['current_height'],
-            metrics['went_down_at'],
-            meta_data['last_monitored'],
-        ]
-        actual = [
-            document['doc_type'],
-            document['n_entries'],
-            convert_to_int(document[node_id][0]['current_height'], 'bad_val'),
-            None if document[node_id][0]['went_down_at'] == 'None'
-            else convert_to_float(
-                document[node_id][0]['went_down_at'], 'bad_val'),
-            document[node_id][0]['timestamp'],
-        ]
-
-        self.assertListEqual(expected, actual)
 
     @parameterized.expand([
         ("self.node_data",),

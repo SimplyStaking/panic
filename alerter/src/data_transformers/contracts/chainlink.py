@@ -17,7 +17,7 @@ from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, STORE_EXCHANGE, RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE,
     TOPIC, CL_CONTRACTS_DT_INPUT_QUEUE_NAME,
     CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY,
-    CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY)
+    CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import Monitorable, convert_to_int, convert_to_float
@@ -329,11 +329,11 @@ class ChainlinkContractsDataTransformer(DataTransformer):
     def _place_latest_data_on_queue(
             self, data_for_alerting: Dict, data_for_saving: Dict) -> None:
         self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
-                            CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
+                            CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY,
                             pika.BasicProperties(delivery_mode=2), True)
 
         self._push_to_queue(data_for_saving, STORE_EXCHANGE,
-                            CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
+                            CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY,
                             pika.BasicProperties(delivery_mode=2), True)
 
     def _create_state_entry(self, node_id: str, proxy_address: str,

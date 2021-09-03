@@ -27,6 +27,12 @@ from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException)
 
+_LIST_OF_ALERTERS = [SystemAlerter.__name__,
+                     ChainlinkNodeAlerter.__name__,
+                     GithubAlerter.__name__,
+                     EVMNodeAlerter.__name__,
+                     ChainlinkContractAlerter.__name__]
+
 
 class AlertStore(Store):
     def __init__(self, name: str, logger: logging.Logger,
@@ -35,11 +41,6 @@ class AlertStore(Store):
         self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
                                db_name=self.mongo_db, host=self.mongo_ip,
                                port=self.mongo_port)
-        self.list_of_alerters = [SystemAlerter.__name__,
-                                 ChainlinkNodeAlerter.__name__,
-                                 GithubAlerter.__name__,
-                                 EVMNodeAlerter.__name__,
-                                 ChainlinkContractAlerter.__name__]
 
     def _initialise_rabbitmq(self) -> None:
         """
@@ -167,7 +168,7 @@ class AlertStore(Store):
         if alert['severity'] == Severity.INTERNAL.value:
             if alert['alert_code']['code'] == \
                     InternalAlertCode.ComponentResetAlert.value and \
-                    alert['origin_id'] in self.list_of_alerters:
+                    alert['origin_id'] in _LIST_OF_ALERTERS:
                 """
                 The `ComponentResetAlert` indicates that a component or PANIC
                 has restarted. If this component is an alerter, we will reset
@@ -267,10 +268,12 @@ class AlertStore(Store):
                     json.dumps(metric_data)
                 )
             elif alert['metric'] in CHAINLINK_CONTRACT_METRICS_TO_STORE:
+                contract_proxy_address = alert['alert_data'][
+                    'contract_proxy_address']
                 self.redis.hset(
                     Keys.get_hash_parent(alert['parent_id']),
-                    eval('Keys.get_alert_cl_contract_{}(key)'.format(
-                        alert['metric'])),
+                    eval('Keys.get_alert_cl_contract_{}(key, '
+                         'contract_proxy_address)'.format(alert['metric'])),
                     json.dumps(metric_data)
                 )
             else:

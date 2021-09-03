@@ -98,12 +98,12 @@ _key_alert_cl_metric_not_found = 'alert_cl_node11'
 _key_alert_cl_node_is_down = 'alert_cl_node12'
 _key_alert_cl_prometheus_is_down = 'alert_cl_node13'
 
-# alert_cl_contractX_<origin_id>
+# alert_cl_contractX_<cl_node_id>_<contract_proxy_address>
 _key_alert_cl_contract_price_feed_not_observed = 'alert_cl_contract1'
 _key_alert_cl_contract_price_feed_deviation = 'alert_cl_contract2'
 _key_alert_cl_contract_consensus_failure = 'alert_cl_contract3'
 
-# alert_evm_nodeX_<origin_id>
+# alert_evm_nodeX_<evm_node_id>
 _key_alert_evm_node_is_down = 'alert_evm_node1'
 _key_alert_evm_block_syncing_block_height_difference = 'alert_evm_node2'
 _key_alert_evm_block_syncing_no_change_in_block_height = 'alert_evm_node3'
@@ -259,12 +259,12 @@ class Keys:
             + cl_node_id
 
     @staticmethod
-    def get_evm_node_current_height(cl_node_id: str) -> str:
-        return Keys._as_prefix(_key_evm_node_current_height) + cl_node_id
+    def get_evm_node_current_height(evm_node_id: str) -> str:
+        return Keys._as_prefix(_key_evm_node_current_height) + evm_node_id
 
     @staticmethod
-    def get_evm_node_went_down_at(cl_node_id: str) -> str:
-        return Keys._as_prefix(_key_evm_node_went_down_at) + cl_node_id
+    def get_evm_node_went_down_at(evm_node_id: str) -> str:
+        return Keys._as_prefix(_key_evm_node_went_down_at) + evm_node_id
 
     @staticmethod
     def get_evm_node_last_monitored(evm_node_id: str) -> str:
@@ -307,12 +307,6 @@ class Keys:
             Keys._as_prefix(cl_node_id) + contract_proxy_address
 
     @staticmethod
-    def get_cl_contract_historical_rounds(cl_node_id: str,
-                                          contract_proxy_address: str) -> str:
-        return Keys._as_prefix(_key_cl_contract_historical_rounds) + \
-            contract_proxy_address
-
-    @staticmethod
     def get_cl_contract_withdrawable_payment(cl_node_id: str,
                                              contract_proxy_address: str
                                              ) -> str:
@@ -332,82 +326,10 @@ class Keys:
             Keys._as_prefix(cl_node_id) + contract_proxy_address
 
     @staticmethod
-    def get_evm_node_current_height(cl_node_id: str) -> str:
-        return Keys._as_prefix(_key_evm_node_current_height) + cl_node_id
-
-    @staticmethod
-    def get_evm_node_went_down_at(cl_node_id: str) -> str:
-        return Keys._as_prefix(_key_evm_node_went_down_at) + cl_node_id
-
-    @staticmethod
-    def get_evm_node_last_monitored(evm_node_id: str) -> str:
-        return Keys._as_prefix(_key_evm_node_last_monitored) + evm_node_id
-
-    @staticmethod
-    def get_cl_contract_version(cl_node_id: str,
-                                contract_proxy_address: str) -> str:
-        return Keys._as_prefix(_key_cl_contract_version) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_cl_contract_aggregator_address(cl_node_id: str,
-                                           contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_cl_contract_aggregator_address) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_cl_contract_latest_round(cl_node_id: str,
-                                     contract_proxy_address: str) -> str:
-        return Keys._as_prefix(_key_cl_contract_latest_round) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_cl_contract_latest_answer(cl_node_id: str,
-                                      contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_cl_contract_latest_answer) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_cl_contract_latest_timestamp(cl_node_id: str,
-                                         contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_cl_contract_latest_timestamp) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_cl_contract_answered_in_round(cl_node_id: str,
-                                          contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_cl_contract_answered_in_round) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
     def get_cl_contract_historical_rounds(cl_node_id: str,
                                           contract_proxy_address: str) -> str:
         return Keys._as_prefix(
             _key_cl_contract_historical_rounds) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_cl_contract_withdrawable_payment(
-            cl_node_id: str, contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_cl_contract_withdrawable_payment) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_cl_contract_owed_payment(cl_node_id: str,
-                                     contract_proxy_address: str) -> str:
-        return Keys._as_prefix(_key_cl_contract_owed_payment) + Keys._as_prefix(
-            cl_node_id) + contract_proxy_address
-
-    @staticmethod
-    def get_cl_contract_last_monitored(cl_node_id: str,
-                                       contract_proxy_address: str) -> str:
-        return Keys._as_prefix(
-            _key_cl_contract_last_monitored) + Keys._as_prefix(
             cl_node_id) + contract_proxy_address
 
     @staticmethod
@@ -528,40 +450,46 @@ class Keys:
             _key_alert_cl_head_tacker_current_head) + origin_id
 
     @staticmethod
-    def get_alert_cl_contract_price_feed_not_observed(origin_id: str) -> str:
+    def get_alert_cl_contract_price_feed_not_observed(
+            cl_node_id: str, contract_proxy_address: str) -> str:
         return Keys._as_prefix(
-            _key_alert_cl_contract_price_feed_not_observed) + origin_id
+            _key_alert_cl_contract_price_feed_not_observed) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
 
     @staticmethod
-    def get_alert_cl_contract_price_feed_deviation(origin_id: str) -> str:
-        return Keys._as_prefix(
-            _key_alert_cl_contract_price_feed_deviation) + origin_id
+    def get_alert_cl_contract_price_feed_deviation(
+            cl_node_id: str, contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_alert_cl_contract_price_feed_deviation) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
 
     @staticmethod
-    def get_alert_cl_contract_consensus_failure(origin_id: str) -> str:
+    def get_alert_cl_contract_consensus_failure(
+            cl_node_id: str, contract_proxy_address: str) -> str:
         return Keys._as_prefix(
-            _key_alert_cl_contract_consensus_failure) + origin_id
+            _key_alert_cl_contract_consensus_failure) + \
+                Keys._as_prefix(cl_node_id) + contract_proxy_address
 
     @staticmethod
-    def get_alert_evm_evm_node_is_down(origin_id: str) -> str:
-        return Keys._as_prefix(_key_alert_evm_node_is_down) + origin_id
+    def get_alert_evm_evm_node_is_down(evm_node_id: str) -> str:
+        return Keys._as_prefix(_key_alert_evm_node_is_down) + evm_node_id
 
     @staticmethod
     def get_alert_evm_evm_block_syncing_block_height_difference(
-            origin_id: str) -> str:
+            evm_node_id: str) -> str:
         return Keys._as_prefix(
-            _key_alert_evm_block_syncing_block_height_difference) + origin_id
+            _key_alert_evm_block_syncing_block_height_difference) + evm_node_id
 
     @staticmethod
     def get_alert_evm_evm_block_syncing_no_change_in_block_height(
-            origin_id: str) -> str:
+            evm_node_id: str) -> str:
         return Keys._as_prefix(
-            _key_alert_evm_block_syncing_no_change_in_block_height) + origin_id
+            _key_alert_evm_block_syncing_no_change_in_block_height) + \
+                evm_node_id
 
     @staticmethod
     def get_alert_evm_evm_invalid_url(
-            origin_id: str) -> str:
-        return Keys._as_prefix(_key_alert_evm_invalid_url) + origin_id
+            evm_node_id: str) -> str:
+        return Keys._as_prefix(_key_alert_evm_invalid_url) + evm_node_id
 
     @staticmethod
     def get_base_chain_monitorables_info(base_chain: str) -> str:

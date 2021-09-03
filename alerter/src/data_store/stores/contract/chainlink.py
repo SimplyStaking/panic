@@ -33,7 +33,7 @@ class ChainlinkContractStore(Store):
         Creates a store exchange of type `topic`
         Declares a queue named `cl_contract_store_input_queue` and binds it
         to the store exchange with a routing key
-        `transformed_data.contract.cl` meaning anything coming from the
+        `transformed_data.contract.chainlink` meaning anything coming from the
         transformer with regards to chainlink contract data will be received
         here.
 
@@ -120,100 +120,44 @@ class ChainlinkContractStore(Store):
         node_id = meta_data['node_id']
         parent_id = meta_data['node_parent_id']
         metrics = data['data']
+        redis_hash = Keys.get_hash_parent(parent_id)
 
         for proxy_address, contract_data in metrics.items():
-            if(int(contract_data['contractVersion']) == 3):
-                self.logger.debug(
-                    "Saving %s state for node %s : _contractVersion=%s, "
-                    "_aggregatorAddress=%s, _latestRound=%s, "
-                    "_latestAnswer=%s, _latestTimestamp=%s, "
-                    "_answeredInRound=%s, _withdrawablePayment=%s, "
-                    "_last_monitored=%s, _historicalRounds=%s",
-                    proxy_address, node_name,
-                    str(contract_data['contractVersion']),
-                    str(contract_data['aggregatorAddress']),
-                    str(contract_data['latestRound']),
-                    str(contract_data['latestAnswer']),
-                    str(contract_data['latestTimestamp']),
-                    str(contract_data['answeredInRound']),
-                    str(contract_data['withdrawablePayment']),
-                    meta_data['last_monitored'],
-                    contract_data['historicalRounds'])
+            version = int(contract_data['contractVersion'])
 
-                self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
-                    Keys.get_cl_contract_version(node_id, proxy_address):
-                        str(contract_data['contractVersion']),
-                    Keys.get_cl_contract_aggregator_address(
-                        node_id, proxy_address):
-                        str(contract_data['aggregatorAddress']),
-                    Keys.get_cl_contract_latest_round(
-                        node_id, proxy_address):
-                        str(contract_data['latestRound']),
-                    Keys.get_cl_contract_latest_answer(
-                        node_id, proxy_address):
-                        str(contract_data['latestAnswer']),
-                    Keys.get_cl_contract_latest_timestamp(
-                        node_id, proxy_address):
-                        str(contract_data['latestTimestamp']),
-                    Keys.get_cl_contract_answered_in_round(
-                        node_id, proxy_address):
-                        str(contract_data['answeredInRound']),
-                    Keys.get_cl_contract_withdrawable_payment(
-                        node_id, proxy_address):
-                        str(contract_data['withdrawablePayment']),
-                    Keys.get_cl_contract_historical_rounds(
-                        node_id, proxy_address):
-                        json.dumps(contract_data['historicalRounds']),
-                    Keys.get_cl_contract_last_monitored(
-                        node_id, proxy_address):
-                        str(meta_data['last_monitored']),
-                })
-            elif (int(contract_data['contractVersion']) == 4):
-                self.logger.debug(
-                    "Saving %s state for node %s : _contractVersion=%s, "
-                    "_aggregatorAddress=%s, _latestRound=%s, "
-                    "_latestAnswer=%s, _latestTimestamp=%s, "
-                    "_answeredInRound=%s, _owedPayment=%s, "
-                    "_last_monitored=%s, _historicalRounds=%s",
-                    proxy_address, node_name,
-                    str(contract_data['contractVersion']),
-                    str(contract_data['aggregatorAddress']),
-                    str(contract_data['latestRound']),
-                    str(contract_data['latestAnswer']),
-                    str(contract_data['latestTimestamp']),
-                    str(contract_data['answeredInRound']),
-                    str(contract_data['owedPayment']),
-                    meta_data['last_monitored'],
-                    contract_data['historicalRounds'])
+            payment_key = Keys.get_cl_contract_withdrawable_payment(
+                node_id, proxy_address) if version == 3 \
+                else Keys.get_cl_contract_owed_payment(node_id, proxy_address)
+            payment_value = contract_data[
+                'withdrawablePayment'] if version == 3 \
+                else contract_data['owedPayment']
 
-                self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
-                    Keys.get_cl_contract_version(node_id, proxy_address):
-                        str(contract_data['contractVersion']),
-                    Keys.get_cl_contract_aggregator_address(
-                        node_id, proxy_address):
-                        str(contract_data['aggregatorAddress']),
-                    Keys.get_cl_contract_latest_round(
-                        node_id, proxy_address):
-                        str(contract_data['latestRound']),
-                    Keys.get_cl_contract_latest_answer(
-                        node_id, proxy_address):
-                        str(contract_data['latestAnswer']),
-                    Keys.get_cl_contract_latest_timestamp(
-                        node_id, proxy_address):
-                        str(contract_data['latestTimestamp']),
-                    Keys.get_cl_contract_answered_in_round(
-                        node_id, proxy_address):
-                        str(contract_data['answeredInRound']),
-                    Keys.get_cl_contract_owed_payment(
-                        node_id, proxy_address):
-                        str(contract_data['owedPayment']),
-                    Keys.get_cl_contract_historical_rounds(
-                        node_id, proxy_address):
-                        json.dumps(contract_data['historicalRounds']),
-                    Keys.get_cl_contract_last_monitored(
-                        node_id, proxy_address):
-                        str(meta_data['last_monitored']),
-                })
+            self.redis.hset_multiple(redis_hash, {
+                Keys.get_cl_contract_version(node_id, proxy_address):
+                str(contract_data['contractVersion']),
+                Keys.get_cl_contract_aggregator_address(
+                    node_id, proxy_address):
+                str(contract_data['aggregatorAddress']),
+                Keys.get_cl_contract_latest_round(
+                    node_id, proxy_address):
+                str(contract_data['latestRound']),
+                Keys.get_cl_contract_latest_answer(
+                    node_id, proxy_address):
+                str(contract_data['latestAnswer']),
+                Keys.get_cl_contract_latest_timestamp(
+                    node_id, proxy_address):
+                str(contract_data['latestTimestamp']),
+                Keys.get_cl_contract_answered_in_round(
+                    node_id, proxy_address):
+                str(contract_data['answeredInRound']),
+                payment_key: payment_value,
+                Keys.get_cl_contract_historical_rounds(
+                    node_id, proxy_address):
+                json.dumps(contract_data['historicalRounds']),
+                Keys.get_cl_contract_last_monitored(
+                    node_id, proxy_address):
+                str(meta_data['last_monitored'])
+            })
 
     def _process_mongo_store(self, data: Dict) -> None:
         if 'result' in data:
@@ -250,65 +194,37 @@ class ChainlinkContractStore(Store):
         time_now = datetime.now()
 
         for proxy_address, contract_data in metrics.items():
-            if(int(contract_data['contractVersion']) == 3):
-                self.mongo.update_one(
-                    parent_id,
-                    {'doc_type': 'contract', 'd': time_now.hour},
-                    {
-                        '$push': {
-                            proxy_address: {
-                                'node_id': str(node_id),
-                                'node_name': str(node_name),
-                                'contractVersion': str(contract_data[
-                                    'contractVersion']),
-                                'aggregatorAddress': str(contract_data[
-                                    'aggregatorAddress']),
-                                'latestRound': str(contract_data[
-                                    'latestRound']),
-                                'latestAnswer': str(contract_data[
-                                    'latestAnswer']),
-                                'latestTimestamp': str(contract_data[
-                                    'latestTimestamp']),
-                                'answeredInRound': str(contract_data[
-                                    'answeredInRound']),
-                                'withdrawablePayment': str(contract_data[
-                                    'withdrawablePayment']),
-                                'historicalRounds': json.dumps(
-                                    contract_data['historicalRounds']),
-                                'timestamp': meta_data['last_monitored'],
-                            }
-                        },
-                        '$inc': {'n_entries': 1},
-                    }
-                )
-            elif (int(contract_data['contractVersion'] == 4)):
-                self.mongo.update_one(
-                    parent_id,
-                    {'doc_type': 'contract', 'd': time_now.hour},
-                    {
-                        '$push': {
-                            proxy_address: {
-                                'node_id': str(node_id),
-                                'node_name': str(node_name),
-                                'contractVersion': str(contract_data[
-                                    'contractVersion']),
-                                'aggregatorAddress': str(contract_data[
-                                    'aggregatorAddress']),
-                                'latestRound': str(contract_data[
-                                    'latestRound']),
-                                'latestAnswer': str(contract_data[
-                                    'latestAnswer']),
-                                'latestTimestamp': str(contract_data[
-                                    'latestTimestamp']),
-                                'answeredInRound': str(contract_data[
-                                    'answeredInRound']),
-                                'owedPayment': str(contract_data[
-                                    'owedPayment']),
-                                'historicalRounds': json.dumps(
-                                    contract_data['historicalRounds']),
-                                'timestamp': meta_data['last_monitored'],
-                            }
-                        },
-                        '$inc': {'n_entries': 1},
-                    }
-                )
+            version = int(contract_data['contractVersion'])
+            payment_key = 'withdrawablePayment' if version == 3 \
+                else 'owedPayment'
+
+            self.mongo.update_one(
+                parent_id,
+                {'doc_type': 'contract', 'd': time_now.hour},
+                {
+                    '$push': {
+                        proxy_address: {
+                            'node_id': str(node_id),
+                            'node_name': str(node_name),
+                            'contractVersion': str(contract_data[
+                                'contractVersion']),
+                            'aggregatorAddress': str(contract_data[
+                                'aggregatorAddress']),
+                            'latestRound': str(contract_data[
+                                'latestRound']),
+                            'latestAnswer': str(contract_data[
+                                'latestAnswer']),
+                            'latestTimestamp': str(contract_data[
+                                'latestTimestamp']),
+                            'answeredInRound': str(contract_data[
+                                'answeredInRound']),
+                            payment_key: str(contract_data[
+                                payment_key]),
+                            'historicalRounds': json.dumps(
+                                contract_data['historicalRounds']),
+                            'timestamp': meta_data['last_monitored'],
+                        }
+                    },
+                    '$inc': {'n_entries': 1},
+                }
+            )

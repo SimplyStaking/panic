@@ -74,8 +74,8 @@ GITHUB_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.github'
 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE = 'transformed_data.system.{}'
 CL_NODE_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.node.chainlink'
 EVM_NODE_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.node.evm'
-CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY = \
-    'transformed_data.contracts.chainlink'
+CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY = \
+    'transformed_data.contract.chainlink'
 SYSTEM_ALERT_ROUTING_KEY = 'alert.system'
 GITHUB_ALERT_ROUTING_KEY = 'alert.github'
 CL_NODE_ALERT_ROUTING_KEY = 'alert.node.chainlink'

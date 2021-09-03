@@ -1,6 +1,7 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from src.alerter.alert_code import AlertCode
+from src.alerter.alert_data import AlertData
 from src.alerter.grouped_alerts_metric_code import GroupedAlertsMetricCode
 
 
@@ -9,7 +10,8 @@ class Alert:
     def __init__(
             self, alert_code: AlertCode, message: str, severity: str,
             timestamp: float, parent_id: str, origin_id: str,
-            alert_group_metric_code: GroupedAlertsMetricCode) -> None:
+            alert_group_metric_code: GroupedAlertsMetricCode,
+            alert_data: Optional[AlertData] = None) -> None:
         self._alert_code = alert_code
         self._message = message
         self._severity = severity
@@ -17,6 +19,7 @@ class Alert:
         self._origin_id = origin_id
         self._timestamp = timestamp
         self._alert_group_metric_code = alert_group_metric_code
+        self._alert_data = alert_data
 
     def __str__(self) -> str:
         return self.message
@@ -61,5 +64,6 @@ class Alert:
             'severity': self._severity,
             'parent_id': self._parent_id,
             'origin_id': self._origin_id,
-            'timestamp': self._timestamp
+            'timestamp': self._timestamp,
+            'alert_data': self._alert_data
         }
