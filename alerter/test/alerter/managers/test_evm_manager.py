@@ -307,7 +307,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
 
     @parameterized.expand([
         ([True, True], False,),
-        # ([True, False], True,),
+        ([True, False], True,),
         ([False, True], True,),
         ([False, False], True,),
     ])
