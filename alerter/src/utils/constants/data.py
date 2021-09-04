@@ -39,3 +39,9 @@ SYSTEM_METRICS_TO_STORE = ['open_file_descriptors',
                            'system_storage_usage',
                            'system_ram_usage',
                            'system_is_down']
+CHAINLINK_CONTRACT_METRICS_TO_STORE = ['price_feed_not_observed',
+                                       'price_feed_deviation',
+                                       'consensus_failure']
+EVM_METRICS_TO_STORE = ['evm_node_is_down',
+                        'evm_block_syncing_block_height_difference',
+                        'evm_block_syncing_no_change_in_block_height']

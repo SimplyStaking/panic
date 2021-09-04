@@ -11,8 +11,8 @@ from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants.configs import (CHAINS, GITHUB_REPOS_CONFIG,
                                          SYSTEMS_CONFIG,
-                                         NODES_CONFIG, GENERAL,
-                                         MONITORABLES_PARSING_HELPER)
+                                         NODES_CONFIG, EVM_NODES_CONFIG,
+                                         GENERAL, MONITORABLES_PARSING_HELPER)
 from src.utils.constants.rabbitmq import (CONFIG_EXCHANGE, TOPIC,
                                           HEALTH_CHECK_EXCHANGE,
                                           CONFIGS_STORE_INPUT_QUEUE_NAME,
@@ -242,7 +242,11 @@ class ConfigStore(Store):
                     config_type_key = parsed_routing_key[3]
                 elif parsed_routing_key[3].lower() == NODES_CONFIG.lower():
                     config_type_key = parsed_routing_key[1] + \
-                                      '_' + NODES_CONFIG.lower()
+                        '_' + NODES_CONFIG.lower()
+                elif parsed_routing_key[3].lower() == EVM_NODES_CONFIG.lower():
+                    config_type_key = parsed_routing_key[1] + \
+                        '_' + EVM_NODES_CONFIG.lower()
+
         except KeyError as ke:
             self._logger.error("Failed to process routing_key %s",
                                routing_key)
