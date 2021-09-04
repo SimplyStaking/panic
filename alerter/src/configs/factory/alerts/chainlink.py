@@ -1,7 +1,7 @@
 import copy
 from typing import Dict, Optional
 
-from src.configs.alerts.chainlink_node import ChainlinkNodeAlertsConfig
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.configs.factory.configs_factory import ConfigsFactory
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
@@ -10,7 +10,8 @@ class ChainlinkAlertsConfigsFactory(ConfigsFactory):
     """
     This class manages the alerts configs. The configs are indexed by the
     chain name, and it is expected that each chain has exactly one alerts
-    config.
+    config. NOTE: This class does not manage the EVM alerts residing in
+    Chainlink chains' alerts_config.ini
     """
 
     def __init__(self) -> None:

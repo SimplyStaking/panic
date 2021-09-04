@@ -19,7 +19,7 @@ from src.alerter.alerts.node.chainlink import (
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
-from src.configs.alerts.chainlink_node import ChainlinkNodeAlertsConfig
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
 from src.utils.exceptions import InvalidUrlException, MetricNotFoundException
 from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,

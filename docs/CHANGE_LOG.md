@@ -30,6 +30,7 @@ Change the contents of this file to this:
 - Added ContractMonitorsManager along with its tests.
 - Added EVM Node Data Transformer along with its tests.
 - Added ChainlinkContractsDataTransformer along with its tests.
+- Added EVMNodeAlerterManager and its tests.
 
 ## 0.1.2
 
