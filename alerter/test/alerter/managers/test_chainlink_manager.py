@@ -17,8 +17,7 @@ from src.alerter.alerter_starters import start_chainlink_node_alerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.chainlink import (ChainlinkNodeAlerterManager)
-from src.configs.factory.chainlink_alerts_configs_factory import (
-    ChainlinkAlertsConfigsFactory)
+from src.configs.factory.alerts.chainlink import ChainlinkAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import CHAINLINK_NODE_ALERTER_NAME

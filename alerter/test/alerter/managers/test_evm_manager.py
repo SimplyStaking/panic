@@ -19,8 +19,7 @@ from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.evm import EVMNodeAlerterManager
 from src.configs.alerts.node.evm import EVMNodeAlertsConfig
-from src.configs.factory.evm_alerts_configs_factory import \
-    EVMAlertsConfigsFactory
+from src.configs.factory.alerts.evm import EVMAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import EVM_NODE_ALERTER_NAME

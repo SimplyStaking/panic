@@ -5,10 +5,8 @@ from parameterized import parameterized
 
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.configs.alerts.node.evm import EVMNodeAlertsConfig
-from src.configs.factory.chainlink_alerts_configs_factory import (
-    ChainlinkAlertsConfigsFactory)
-from src.configs.factory.evm_alerts_configs_factory import (
-    EVMAlertsConfigsFactory)
+from src.configs.factory.alerts.chainlink import ChainlinkAlertsConfigsFactory
+from src.configs.factory.alerts.evm import EVMAlertsConfigsFactory
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
 
