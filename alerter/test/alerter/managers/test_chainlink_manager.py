@@ -16,7 +16,7 @@ from parameterized import parameterized
 from src.alerter.alerter_starters import start_chainlink_node_alerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
-from src.alerter.managers.chainlink import (ChainlinkNodeAlerterManager)
+from src.alerter.managers.chainlink import (ChainlinkAlertersManager)
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.configs.factory.alerts.chainlink import (
     ChainlinkNodeAlertsConfigsFactory)
@@ -26,8 +26,8 @@ from src.utils.constants.names import CHAINLINK_NODE_ALERTER_NAME
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE,
     CONFIG_EXCHANGE,
-    CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
-    CHAINLINK_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
+    CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
+    CL_ALERTERS_MAN_HB_QUEUE_NAME,
     PING_ROUTING_KEY, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
     ALERT_EXCHANGE, CL_NODE_ALERT_ROUTING_KEY, CL_ALERTS_CONFIGS_ROUTING_KEY)
 from src.utils.exceptions import PANICException
@@ -62,7 +62,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             self.dummy_logger, env.RABBIT_IP,
             connection_check_time_interval=self.connection_check_time_interval)
 
-        self.test_manager = ChainlinkNodeAlerterManager(
+        self.test_manager = ChainlinkAlertersManager(
             self.dummy_logger, self.manager_name, self.rabbitmq)
         self.test_exception = PANICException('test_exception', 1)
 
@@ -175,9 +175,9 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         delete_queue_if_exists(self.test_manager.rabbitmq,
                                self.test_queue_name)
         delete_queue_if_exists(self.test_manager.rabbitmq,
-                               CHAINLINK_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
+                               CL_ALERTERS_MAN_HB_QUEUE_NAME)
         delete_queue_if_exists(self.test_manager.rabbitmq,
-                               CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME)
+                               CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME)
 
         disconnect_from_rabbit(self.test_manager.rabbitmq)
         disconnect_from_rabbit(self.test_rabbit_manager)
@@ -204,11 +204,11 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         self.assertEqual(1, mock_start_consuming.call_count)
 
     @mock.patch.object(RabbitMQApi, "basic_consume")
-    @mock.patch.object(ChainlinkNodeAlerterManager,
+    @mock.patch.object(ChainlinkAlertersManager,
                        "_push_latest_data_to_queue_and_send")
-    @mock.patch.object(ChainlinkNodeAlerterManager, "_process_ping")
-    @mock.patch.object(ChainlinkNodeAlerterManager, "_process_configs")
-    @mock.patch.object(ChainlinkNodeAlerterManager,
+    @mock.patch.object(ChainlinkAlertersManager, "_process_ping")
+    @mock.patch.object(ChainlinkAlertersManager, "_process_configs")
+    @mock.patch.object(ChainlinkAlertersManager,
                        "_create_and_start_alerter_process")
     def test_initialise_rabbitmq_initialises_everything_as_expected(
             self, mock_start_alerter_process, mock_process_configs,
@@ -227,9 +227,9 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         # declared
         self.test_manager.rabbitmq.connect()
         self.test_manager.rabbitmq.queue_delete(
-            CHAINLINK_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
+            CL_ALERTERS_MAN_HB_QUEUE_NAME)
         self.test_manager.rabbitmq.queue_delete(
-            CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME
+            CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME
         )
         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
         self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
@@ -275,25 +275,25 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         )
         # Re-declare queue to get the number of messages
         res = self.test_rabbit_manager.queue_declare(
-            CHAINLINK_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, False, True, False,
+            CL_ALERTERS_MAN_HB_QUEUE_NAME, False, True, False,
             False)
         self.assertEqual(1, res.method.message_count)
         res = self.test_rabbit_manager.queue_declare(
-            CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME, False, True, False,
+            CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME, False, True, False,
             False)
         self.assertEqual(1, res.method.message_count)
         self.assertEqual(2, mock_basic_consume.call_count)
 
         expected_calls = [
-            call(CHAINLINK_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
+            call(CL_ALERTERS_MAN_HB_QUEUE_NAME,
                  self.test_manager._process_ping, True, False, None),
-            call(CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+            call(CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
                  self.test_manager._process_configs, False, False, None)
         ]
         mock_basic_consume.assert_has_calls(expected_calls, True)
         mock_push_latest_data_to_queue_and_send.assert_not_called()
 
-    @mock.patch.object(ChainlinkNodeAlerterManager,
+    @mock.patch.object(ChainlinkAlertersManager,
                        "_create_and_start_alerter_process")
     def test_send_heartbeat_sends_a_heartbeat_correctly(
             self, mock_start_alerter_process) -> None:
@@ -329,7 +329,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         self.assertEqual(self.test_heartbeat, json.loads(body))
         self.assertEqual(0, mock_start_alerter_process.call_count)
 
-    @mock.patch.object(ChainlinkNodeAlerterManager,
+    @mock.patch.object(ChainlinkAlertersManager,
                        "_push_latest_data_to_queue_and_send")
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_alerter_process_creates_the_correct_process(
@@ -337,7 +337,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         mock_start.return_value = None
         mock_push_latest_data_to_queue_and_send.return_value = None
 
-        self.test_manager._create_and_start_alerter_process()
+        self.test_manager._create_and_start_alerter_processes()
 
         new_entry_process = self.test_manager.alerter_process_dict[
             CHAINLINK_NODE_ALERTER_NAME]
@@ -349,7 +349,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         mock_push_latest_data_to_queue_and_send.assert_called_once()
 
     @mock.patch.object(multiprocessing.Process, "start")
-    @mock.patch.object(ChainlinkNodeAlerterManager,
+    @mock.patch.object(ChainlinkAlertersManager,
                        "_push_latest_data_to_queue_and_send")
     @mock.patch("src.alerter.alerter_starters.create_logger")
     def test_start_alerters_process_starts_the_process(
@@ -359,14 +359,14 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         mock_push_latest_data_to_queue_and_send.return_value = None
         mock_start.return_value = None
 
-        self.test_manager._create_and_start_alerter_process()
+        self.test_manager._create_and_start_alerter_processes()
 
         mock_start.assert_called_once()
         mock_push_latest_data_to_queue_and_send.assert_called_once()
 
     @freeze_time("2012-01-01")
     @mock.patch.object(multiprocessing.Process, "start")
-    @mock.patch.object(ChainlinkNodeAlerterManager,
+    @mock.patch.object(ChainlinkAlertersManager,
                        "_push_latest_data_to_queue_and_send")
     @mock.patch("src.alerter.alerter_starters.create_logger")
     def test_start_alerters_process_sends_a_component_reset_alert(
@@ -376,7 +376,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         mock_push_latest_data_to_queue_and_send.return_value = None
         mock_start.return_value = None
 
-        self.test_manager._create_and_start_alerter_process()
+        self.test_manager._create_and_start_alerter_processes()
 
         expected_alert = ComponentResetAlert(CHAINLINK_NODE_ALERTER_NAME,
                                              datetime.now().timestamp(),
@@ -405,7 +405,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         mock_join.return_value = None
         mock_terminate.return_value = None
         self.test_manager._initialise_rabbitmq()
-        self.test_manager._create_and_start_alerter_process()
+        self.test_manager._create_and_start_alerter_processes()
 
         # Delete the queue before to avoid messages in the queue on error.
         self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
@@ -467,7 +467,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         mock_join.return_value = None
         mock_terminate.return_value = None
         self.test_manager._initialise_rabbitmq()
-        self.test_manager._create_and_start_alerter_process()
+        self.test_manager._create_and_start_alerter_processes()
 
         # Delete the queue before to avoid messages in the queue on error.
         self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
@@ -515,7 +515,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch("src.alerter.alerter_starters.create_logger")
-    @mock.patch.object(ChainlinkNodeAlerterManager, "_send_heartbeat")
+    @mock.patch.object(ChainlinkAlertersManager, "_send_heartbeat")
     def test_process_ping_restarts_dead_processes(
             self, send_hb_mock, mock_create_logger, mock_ack,
             mock_push_latest_data_to_queue_and_send) -> None:
@@ -523,7 +523,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
         self.test_manager._initialise_rabbitmq()
-        self.test_manager._create_and_start_alerter_process()
+        self.test_manager._create_and_start_alerter_processes()
 
         # Give time for the processes to start
         time.sleep(1)
@@ -581,7 +581,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         mock_start.return_value = None
         mock_process.side_effect = self.dummy_process
         self.test_manager._initialise_rabbitmq()
-        self.test_manager._create_and_start_alerter_process()
+        self.test_manager._create_and_start_alerter_processes()
 
         self.test_manager.rabbitmq.queue_declare(
             queue=self.test_queue_name, durable=True, exclusive=False,
@@ -622,7 +622,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
     def test_proc_ping_send_hb_does_not_raise_msg_not_del_exce_if_hb_not_routed(
             self, mock_push_latest_data_to_queue_and_send) -> None:
         self.test_manager._initialise_rabbitmq()
-        self.test_manager._create_and_start_alerter_process()
+        self.test_manager._create_and_start_alerter_processes()
 
         # initialise
         blocking_channel = self.test_manager.rabbitmq.channel
@@ -642,7 +642,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
     ])
     @mock.patch(
         "src.alerter.managers.chainlink.ChainlinkNodeAlerterManager._push_latest_data_to_queue_and_send")
-    @mock.patch.object(ChainlinkNodeAlerterManager, "_send_heartbeat")
+    @mock.patch.object(ChainlinkAlertersManager, "_send_heartbeat")
     def test_process_ping_send_hb_raises_exceptions(
             self, param_input, param_expected, hb_mock,
             mock_push_latest_data_to_queue_and_send) -> None:
@@ -777,7 +777,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
 
         self.assertFalse(
-            self.test_manager.alerts_config_factory.config_exists(
+            self.test_manager.node_alerts_config_factory.config_exists(
                 chain_name, ChainlinkNodeAlertsConfig))
 
         blocking_channel = self.test_manager.rabbitmq.channel
@@ -789,5 +789,5 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
             blocking_channel, method_chains, properties, body)
 
         self.assertTrue(
-            self.test_manager.alerts_config_factory.config_exists(
+            self.test_manager.node_alerts_config_factory.config_exists(
                 chain_name, ChainlinkNodeAlertsConfig))

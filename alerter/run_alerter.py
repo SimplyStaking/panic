@@ -9,7 +9,7 @@ from typing import Tuple
 import pika.exceptions
 
 from src.alert_router.alert_router import AlertRouter
-from src.alerter.managers.chainlink import ChainlinkNodeAlerterManager
+from src.alerter.managers.chainlink import ChainlinkAlertersManager
 from src.alerter.managers.evm import EVMNodeAlerterManager
 from src.alerter.managers.github import GithubAlerterManager
 from src.alerter.managers.manager import AlertersManager
@@ -30,8 +30,8 @@ from src.utils.constants.names import (
     SYSTEM_MONITORS_MANAGER_NAME, GITHUB_MONITORS_MANAGER_NAME,
     DATA_TRANSFORMERS_MANAGER_NAME, CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME,
     CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME, NODE_MONITORS_MANAGER_NAME,
-    CL_NODE_ALERTER_MANAGER_NAME,
-    CONTRACT_MONITORS_MANAGER_NAME, EVM_NODE_ALERTER_MANAGER_NAME)
+    CONTRACT_MONITORS_MANAGER_NAME, EVM_NODE_ALERTER_MANAGER_NAME,
+    CL_ALERTERS_MANAGER_NAME)
 from src.utils.constants.rabbitmq import (
     ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
     SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
@@ -41,12 +41,11 @@ from src.utils.constants.rabbitmq import (
     NODES_CONFIGS_ROUTING_KEY_CHAINS, GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
     GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
-    SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-    ALERTS_CONFIGS_ROUTING_KEY_CHAIN,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN, ALERTS_CONFIGS_ROUTING_KEY_CHAIN,
     ALERTS_CONFIGS_ROUTING_KEY_GEN, ALERT_ROUTER_CONFIGS_ROUTING_KEY,
     CONFIGS_STORE_INPUT_ROUTING_KEY, CHANNELS_MANAGER_CONFIGS_ROUTING_KEY,
-    TOPIC, CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
-    CL_ALERTS_CONFIGS_ROUTING_KEY, CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+    TOPIC, CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME, CL_ALERTS_CONFIGS_ROUTING_KEY,
+    CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
     EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME)
 from src.utils.constants.starters import (
@@ -139,11 +138,11 @@ def _initialise_github_alerter_manager() -> GithubAlerterManager:
     return github_alerter_manager
 
 
-def _initialise_chainlink_node_alerter_manager() -> ChainlinkNodeAlerterManager:
-    manager_display_name = CL_NODE_ALERTER_MANAGER_NAME
+def _initialise_chainlink_alerters_manager() -> ChainlinkAlertersManager:
+    manager_display_name = CL_ALERTERS_MANAGER_NAME
 
-    chainlink_alerter_manager_logger = _initialise_logger(
-        manager_display_name, ChainlinkNodeAlerterManager.__name__,
+    chainlink_alerters_manager_logger = _initialise_logger(
+        manager_display_name, ChainlinkAlertersManager.__name__,
         env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
@@ -151,21 +150,21 @@ def _initialise_chainlink_node_alerter_manager() -> ChainlinkNodeAlerterManager:
     while True:
         try:
             rabbitmq = RabbitMQApi(
-                logger=chainlink_alerter_manager_logger.getChild(
+                logger=chainlink_alerters_manager_logger.getChild(
                     RabbitMQApi.__name__), host=env.RABBIT_IP)
-            chainlink_alerter_manager = ChainlinkNodeAlerterManager(
-                chainlink_alerter_manager_logger, manager_display_name,
+            chainlink_alerters_manager = ChainlinkAlertersManager(
+                chainlink_alerters_manager_logger, manager_display_name,
                 rabbitmq)
             break
         except Exception as e:
             log_and_print(get_initialisation_error_message(
-                manager_display_name, e), chainlink_alerter_manager_logger)
+                manager_display_name, e), chainlink_alerters_manager_logger)
             log_and_print(get_reattempting_message(manager_display_name),
-                          chainlink_alerter_manager_logger)
+                          chainlink_alerters_manager_logger)
             # sleep before trying again
             time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
-    return chainlink_alerter_manager
+    return chainlink_alerters_manager
 
 
 def _initialise_evm_node_alerter_manager() -> EVMNodeAlerterManager:
@@ -521,9 +520,9 @@ def run_github_alerters_manager() -> None:
     run_alerters_manager(github_alerter_manager)
 
 
-def run_chainlink_node_alerter_manager() -> None:
-    cl_node_alerter_manager = _initialise_chainlink_node_alerter_manager()
-    run_alerters_manager(cl_node_alerter_manager)
+def run_chainlink_alerters_manager() -> None:
+    cl_alerters_manager = _initialise_chainlink_alerters_manager()
+    run_alerters_manager(cl_alerters_manager)
 
 
 def run_evm_node_alerter_manager() -> None:
@@ -692,8 +691,8 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     terminate_and_join_process(github_alerter_manager_process,
                                GITHUB_ALERTER_MANAGER_NAME)
 
-    terminate_and_join_process(chainlink_node_alerter_manager_process,
-                               CL_NODE_ALERTER_MANAGER_NAME)
+    terminate_and_join_process(chainlink_alerters_manager_process,
+                               CL_ALERTERS_MANAGER_NAME)
 
     terminate_and_join_process(evm_node_alerter_manager_process,
                                EVM_NODE_ALERTER_MANAGER_NAME)
@@ -774,21 +773,18 @@ def _initialise_and_declare_config_queues() -> None:
                                 CONFIG_EXCHANGE,
                                 ALERTS_CONFIGS_ROUTING_KEY_GEN)
 
-            # Chainlink Node Alerters Manager queues
+            # Chainlink Alerters Manager queues
             log_and_print("Creating queue '{}'".format(
-                CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(
-                CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
-                False, True, False, False)
-            log_and_print(
-                "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 CL_ALERTS_CONFIGS_ROUTING_KEY),
-                dummy_logger)
-            rabbitmq.queue_bind(CHAINLINK_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE,
-                                CL_ALERTS_CONFIGS_ROUTING_KEY)
+                CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME, False,
+                                   True, False, False)
+            log_and_print("Binding queue '{}' to '{}' exchange with routing "
+                          "key {}.".format(CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
+                                           CONFIG_EXCHANGE,
+                                           CL_ALERTS_CONFIGS_ROUTING_KEY),
+                          dummy_logger)
+            rabbitmq.queue_bind(CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE, CL_ALERTS_CONFIGS_ROUTING_KEY)
 
             # Chainlink Node Alerter queues
             log_and_print("Creating queue '{}'".format(
@@ -1021,9 +1017,9 @@ if __name__ == '__main__':
         target=run_github_alerters_manager, args=())
     github_alerter_manager_process.start()
 
-    chainlink_node_alerter_manager_process = multiprocessing.Process(
-        target=run_chainlink_node_alerter_manager, args=())
-    chainlink_node_alerter_manager_process.start()
+    chainlink_alerters_manager_process = multiprocessing.Process(
+        target=run_chainlink_alerters_manager, args=())
+    chainlink_alerters_manager_process.start()
 
     evm_node_alerter_manager_process = multiprocessing.Process(
         target=run_evm_node_alerter_manager, args=())
@@ -1059,7 +1055,7 @@ if __name__ == '__main__':
     contract_monitors_manager_process.join()
     system_alerters_manager_process.join()
     github_alerter_manager_process.join()
-    chainlink_node_alerter_manager_process.join()
+    chainlink_alerters_manager_process.join()
     evm_node_alerter_manager_process.join()
     data_transformers_manager_process.join()
     data_store_process.join()

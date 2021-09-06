@@ -9,7 +9,7 @@ from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.alerts.system import SystemAlertsConfig
 from src.configs.factory.alerts.chainlink import (
-    ChainlinkNodeAlertsConfigsFactory)
+    ChainlinkNodeAlertsConfigsFactory, ChainlinkContractsAlertsConfigsFactory)
 from src.configs.factory.alerts.evm import EVMAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (SYSTEM_ALERTER_NAME_TEMPLATE,
@@ -161,6 +161,12 @@ def start_chainlink_node_alerter(
 
 def start_evm_node_alerter(
         evm_alerts_configs_factory: EVMAlertsConfigsFactory) -> None:
+    pass
+
+
+def start_chainlink_contract_alerter(
+        chainlink_alerts_configs_factory: ChainlinkContractsAlertsConfigsFactory
+) -> None:
     pass
 
 
