@@ -1,5 +1,6 @@
 import { Config } from '@stencil/core';
 import { readFileSync } from 'fs';
+import { sass } from '@stencil/sass';
 
 export const config: Config = {
   globalStyle: 'src/global/app.css',
@@ -25,4 +26,7 @@ export const config: Config = {
     },
     logRequests: true
   },
+  plugins: [
+    sass()
+  ]
 };
