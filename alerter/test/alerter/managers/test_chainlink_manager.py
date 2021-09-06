@@ -17,7 +17,9 @@ from src.alerter.alerter_starters import start_chainlink_node_alerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.chainlink import (ChainlinkNodeAlerterManager)
-from src.configs.factory.alerts.chainlink import ChainlinkAlertsConfigsFactory
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
+from src.configs.factory.alerts.chainlink import (
+    ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import CHAINLINK_NODE_ALERTER_NAME
@@ -665,7 +667,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         ("self.config_2", "self.routing_key_2")
     ])
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "add_new_config")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "add_new_config")
     def test_process_configs_calls_config_factory_correctly(
             self, param_config, param_routing_key, mock_add_new_config,
             mock_ack) -> None:
@@ -693,7 +695,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
         ("self.routing_key_2",)
     ])
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "remove_config")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "remove_config")
     def test_process_config_calls_config_factory_remove_config_correctly(
             self, param_routing_key, mock_remove_config, mock_ack) -> None:
         mock_ack.return_value = None
@@ -776,7 +778,7 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
 
         self.assertFalse(
             self.test_manager.alerts_config_factory.config_exists(
-                chain_name))
+                chain_name, ChainlinkNodeAlertsConfig))
 
         blocking_channel = self.test_manager.rabbitmq.channel
         method_chains = pika.spec.Basic.Deliver(
@@ -788,4 +790,4 @@ class TestChainlinkNodeAlerterManager(unittest.TestCase):
 
         self.assertTrue(
             self.test_manager.alerts_config_factory.config_exists(
-                chain_name))
+                chain_name, ChainlinkNodeAlertsConfig))

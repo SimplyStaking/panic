@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Union, Any
+from typing import Union, Any, Type
 
 from src.alerter.alerts.node.chainlink import (
     NoChangeInHeightAlert, BlockHeightUpdatedAlert,
@@ -26,6 +26,9 @@ from src.alerter.alerts.system_alerts import (
     SystemRAMUsageDecreasedBelowThresholdAlert,
     SystemStorageUsageDecreasedBelowThresholdAlert
 )
+from src.configs.alerts.contracts.chainlink import \
+    ChainlinkContractsAlertsConfig
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.monitorables.contracts.chainlink.v3 import V3ChainlinkContract
 from src.monitorables.contracts.chainlink.v4 import V4ChainlinkContract
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
@@ -95,6 +98,9 @@ ErrorSolvedAlert = Union[ChainlinkNodeErrorSolvedAlert]
 DownAlert = Union[NodeWentDownAtAlert]
 StillDownAlert = Union[NodeStillDownAlert]
 BackUpAlert = Union[NodeBackUpAgainAlert]
+
+ChainlinkAlertsConfigs = Union[Type[ChainlinkNodeAlertsConfig],
+                               Type[ChainlinkContractsAlertsConfig]]
 
 
 class OpsgenieSeverities(Enum):

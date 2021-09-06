@@ -14,7 +14,9 @@ from src.alerter.alerter_starters import start_chainlink_node_alerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.manager import AlertersManager
-from src.configs.factory.alerts.chainlink import ChainlinkAlertsConfigsFactory
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
+from src.configs.factory.alerts.chainlink import (
+    ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import CHAINLINK_NODE_ALERTER_NAME
 from src.utils.constants.rabbitmq import (
@@ -31,7 +33,7 @@ class ChainlinkNodeAlerterManager(AlertersManager):
     def __init__(self, logger: logging.Logger, manager_name: str,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(logger, manager_name, rabbitmq)
-        self._alerts_config_factory = ChainlinkAlertsConfigsFactory()
+        self._alerts_config_factory = ChainlinkNodeAlertsConfigsFactory()
         self._alerter_process_dict = {}
 
     @property
@@ -39,7 +41,7 @@ class ChainlinkNodeAlerterManager(AlertersManager):
         return self._alerter_process_dict
 
     @property
-    def alerts_config_factory(self) -> ChainlinkAlertsConfigsFactory:
+    def alerts_config_factory(self) -> ChainlinkNodeAlertsConfigsFactory:
         return self._alerts_config_factory
 
     def _initialise_rabbitmq(self) -> None:
@@ -203,12 +205,11 @@ class ChainlinkNodeAlerterManager(AlertersManager):
                 self.alerts_config_factory.add_new_config(chain_name,
                                                           sent_configs)
                 parent_id = self.alerts_config_factory.get_parent_id(
-                    chain_name)
+                    chain_name, ChainlinkNodeAlertsConfig)
                 alert = ComponentResetAlert(CHAINLINK_NODE_ALERTER_NAME,
                                             datetime.now().timestamp(),
                                             ChainlinkNodeAlerter.__name__,
-                                            parent_id,
-                                            chain_name
+                                            parent_id, chain_name
                                             )
                 self._push_latest_data_to_queue_and_send(alert.alert_data)
             else:

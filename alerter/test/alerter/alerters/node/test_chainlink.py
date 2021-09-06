@@ -27,11 +27,13 @@ from src.alerter.alerts.node.chainlink import (
     ChangeInSourceNodeAlert, GasBumpIncreasedOverNodeGasPriceLimitAlert,
     NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
     PrometheusSourceIsDownAlert, PrometheusSourceBackUpAgainAlert)
-from src.alerter.factory.chainlink_node_alerting_factory import \
-    ChainlinkNodeAlertingFactory
+from src.alerter.factory.chainlink_node_alerting_factory import (
+    ChainlinkNodeAlertingFactory)
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
-from src.configs.factory.alerts.chainlink import ChainlinkAlertsConfigsFactory
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
+from src.configs.factory.alerts.chainlink import (
+    ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
@@ -291,7 +293,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         }
 
         # Test object
-        self.test_configs_factory = ChainlinkAlertsConfigsFactory()
+        self.test_configs_factory = ChainlinkNodeAlertsConfigsFactory()
         self.test_alerting_factory = ChainlinkNodeAlertingFactory(
             self.dummy_logger)
         self.test_cl_node_alerter = ChainlinkNodeAlerter(
@@ -417,8 +419,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
     targeted the factory classes.
     """
 
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "get_parent_id")
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "add_new_config")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "add_new_config")
     @mock.patch.object(ChainlinkNodeAlertingFactory,
                        "remove_chain_alerting_state")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -446,12 +448,13 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         del self.received_configurations['DEFAULT']
         mock_add_new_conf.assert_called_once_with(chain,
                                                   self.received_configurations)
-        mock_get_parent_id.assert_called_once_with(chain)
+        mock_get_parent_id.assert_called_once_with(chain,
+                                                   ChainlinkNodeAlertsConfig)
         mock_remove_alerting_state.assert_called_once_with(self.test_parent_id)
         mock_ack.assert_called_once()
 
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "get_parent_id")
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "remove_config")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "remove_config")
     @mock.patch.object(ChainlinkNodeAlertingFactory,
                        "remove_chain_alerting_state")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -478,14 +481,15 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         parsed_routing_key = self.test_configs_routing_key.split('.')
         chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
         del self.received_configurations['DEFAULT']
-        mock_get_parent_id.assert_called_once_with(chain)
+        mock_get_parent_id.assert_called_once_with(chain,
+                                                   ChainlinkNodeAlertsConfig)
         mock_remove_alerting_state.assert_called_once_with(self.test_parent_id)
         mock_remove_config.assert_called_once_with(chain)
         mock_ack.assert_called_once()
 
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "add_new_config")
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "get_parent_id")
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "remove_config")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "add_new_config")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "remove_config")
     @mock.patch.object(ChainlinkNodeAlertingFactory,
                        "remove_chain_alerting_state")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -514,10 +518,11 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         mock_remove_alerting_state.assert_not_called()
         mock_remove_conf.assert_not_called()
         mock_add_new_conf.assert_not_called()
-        mock_get_parent_id.assert_called_once_with(chain)
+        mock_get_parent_id.assert_called_once_with(chain,
+                                                   ChainlinkNodeAlertsConfig)
         mock_ack.assert_called_once()
 
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "get_parent_id")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_acknowledges_received_data(
             self, mock_ack, mock_get_parent_id) -> None:

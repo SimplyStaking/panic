@@ -11,11 +11,13 @@ from pika.adapters.blocking_connection import BlockingChannel
 import src.alerter.alerts.node.chainlink as cl_alerts
 from src.alerter.alert_severities import Severity
 from src.alerter.alerters.alerter import Alerter
-from src.alerter.factory.chainlink_node_alerting_factory import \
-    ChainlinkNodeAlertingFactory
+from src.alerter.factory.chainlink_node_alerting_factory import (
+    ChainlinkNodeAlertingFactory)
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode as MetricCode
-from src.configs.factory.alerts.chainlink import ChainlinkAlertsConfigsFactory
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
+from src.configs.factory.alerts.chainlink import (
+    ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.data import VALID_CHAINLINK_SOURCES
 from src.utils.constants.rabbitmq import (
@@ -37,7 +39,7 @@ class ChainlinkNodeAlerter(Alerter):
     def __init__(
             self, alerter_name: str, logger: logging.Logger,
             rabbitmq: RabbitMQApi,
-            cl_alerts_configs_factory: ChainlinkAlertsConfigsFactory,
+            cl_alerts_configs_factory: ChainlinkNodeAlertsConfigsFactory,
             max_queue_size: int = 0) -> None:
         super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
 
@@ -45,7 +47,7 @@ class ChainlinkNodeAlerter(Alerter):
         self._alerting_factory = ChainlinkNodeAlertingFactory(logger)
 
     @property
-    def alerts_configs_factory(self) -> ChainlinkAlertsConfigsFactory:
+    def alerts_configs_factory(self) -> ChainlinkNodeAlertsConfigsFactory:
         return self._alerts_configs_factory
 
     @property
@@ -144,7 +146,7 @@ class ChainlinkNodeAlerter(Alerter):
         # We must make sure that the alerts_config has been received for the
         # chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
-            meta_data['node_parent_id'])
+            meta_data['node_parent_id'], ChainlinkNodeAlertsConfig)
         if chain_name is not None:
             configs = self.alerts_configs_factory.configs[chain_name]
             self.alerting_factory.create_alerting_state(
@@ -314,7 +316,7 @@ class ChainlinkNodeAlerter(Alerter):
         # We must make sure that the alerts_config has been received for the
         # chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
-            meta_data['node_parent_id'])
+            meta_data['node_parent_id'], ChainlinkNodeAlertsConfig)
         if chain_name is not None:
             configs = self.alerts_configs_factory.configs[chain_name]
             self.alerting_factory.create_alerting_state(
@@ -382,7 +384,8 @@ class ChainlinkNodeAlerter(Alerter):
 
         # We must make sure that the alerts_config has been received for the
         # chain.
-        chain_name = self.alerts_configs_factory.get_chain_name(parent_id)
+        chain_name = self.alerts_configs_factory.get_chain_name(
+            parent_id, ChainlinkNodeAlertsConfig)
         if chain_name is not None:
             configs = self.alerts_configs_factory.configs[chain_name]
             self.alerting_factory.create_alerting_state(parent_id, origin_id,
@@ -568,7 +571,8 @@ class ChainlinkNodeAlerter(Alerter):
                 # changed. A node's state will be recreated in the next
                 # monitoring round automatically. Note we are sure that a
                 # parent_id is to be returned, as we have just added the config
-                parent_id = self.alerts_configs_factory.get_parent_id(chain)
+                parent_id = self.alerts_configs_factory.get_parent_id(
+                    chain, ChainlinkNodeAlertsConfig)
                 self.alerting_factory.remove_chain_alerting_state(parent_id)
             else:
                 # We must reset the state since a configuration is to be
@@ -576,7 +580,8 @@ class ChainlinkNodeAlerter(Alerter):
                 # the parent_id is obtained from the configs to be removed from
                 # the factory. If the parent_id cannot be found, it means that
                 # no storing took place, therefore in that case do nothing.
-                parent_id = self.alerts_configs_factory.get_parent_id(chain)
+                parent_id = self.alerts_configs_factory.get_parent_id(
+                    chain, ChainlinkNodeAlertsConfig)
                 if parent_id:
                     self.alerting_factory.remove_chain_alerting_state(
                         parent_id)

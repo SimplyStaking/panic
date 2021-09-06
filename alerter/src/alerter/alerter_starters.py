@@ -8,7 +8,8 @@ from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.alerts.system import SystemAlertsConfig
-from src.configs.factory.alerts.chainlink import ChainlinkAlertsConfigsFactory
+from src.configs.factory.alerts.chainlink import (
+    ChainlinkNodeAlertsConfigsFactory)
 from src.configs.factory.alerts.evm import EVMAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (SYSTEM_ALERTER_NAME_TEMPLATE,
@@ -107,7 +108,7 @@ def _initialise_github_alerter() -> GithubAlerter:
 
 
 def _initialise_chainlink_node_alerter(
-        chainlink_alerts_configs_factory: ChainlinkAlertsConfigsFactory
+        chainlink_alerts_configs_factory: ChainlinkNodeAlertsConfigsFactory
 ) -> ChainlinkNodeAlerter:
     alerter_display_name = CHAINLINK_NODE_ALERTER_NAME
 
@@ -151,7 +152,7 @@ def start_system_alerter(system_alerts_config: SystemAlertsConfig,
 
 
 def start_chainlink_node_alerter(
-        chainlink_alerts_configs_factory: ChainlinkAlertsConfigsFactory
+        chainlink_alerts_configs_factory: ChainlinkNodeAlertsConfigsFactory
 ) -> None:
     chainlink_alerter = _initialise_chainlink_node_alerter(
         chainlink_alerts_configs_factory)
