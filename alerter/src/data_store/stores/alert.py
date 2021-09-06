@@ -8,6 +8,9 @@ import pika.exceptions
 from src.alerter.alert_code import InternalAlertCode
 from src.alerter.alert_severities import Severity
 from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerters.node.evm import EVMNodeAlerter
+from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
+from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.data_store.mongo.mongo_api import MongoApi
@@ -16,11 +19,19 @@ from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants.data import (EXPIRE_METRICS,
                                       CHAINLINK_METRICS_TO_STORE,
-                                      SYSTEM_METRICS_TO_STORE)
+                                      SYSTEM_METRICS_TO_STORE,
+                                      CHAINLINK_CONTRACT_METRICS_TO_STORE,
+                                      EVM_METRICS_TO_STORE)
 from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           ALERT_STORE_INPUT_QUEUE_NAME,
                                           ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException)
+
+_LIST_OF_ALERTERS = [SystemAlerter.__name__,
+                     ChainlinkNodeAlerter.__name__,
+                     GithubAlerter.__name__,
+                     EVMNodeAlerter.__name__,
+                     ChainlinkContractAlerter.__name__]
 
 
 class AlertStore(Store):
@@ -157,13 +168,11 @@ class AlertStore(Store):
         if alert['severity'] == Severity.INTERNAL.value:
             if alert['alert_code']['code'] == \
                     InternalAlertCode.ComponentResetAlert.value and \
-                    alert['origin_id'] in [SystemAlerter.__name__,
-                                           ChainlinkNodeAlerter.__name__,
-                                           GithubAlerter.__name__]:
+                    alert['origin_id'] in _LIST_OF_ALERTERS:
                 """
-                The `ComponentResetAlert` indicates that a component or PANIC 
-                has restarted. If this component is an alerter, we will reset 
-                the relevant component metrics for all chains or for a 
+                The `ComponentResetAlert` indicates that a component or PANIC
+                has restarted. If this component is an alerter, we will reset
+                the relevant component metrics for all chains or for a
                 particular chain, depending on whether the parent_id is None or
                 not.
                 """
@@ -179,6 +188,14 @@ class AlertStore(Store):
                     GithubAlerter.__name__: {
                         'metrics_type': 'github',
                         'redis_key_index': 'alert_github2'
+                    },
+                    EVMNodeAlerter.__name__: {
+                        'metrics_type': 'evm node metrics',
+                        'redis_key_index': 'alert_evm_node'
+                    },
+                    ChainlinkContractAlerter.__name__: {
+                        'metrics_type': 'chainlink contract',
+                        'redis_key_index': 'alert_cl_contract'
                     }
                 }
                 alerter_type = alert['origin_id']
@@ -206,7 +223,7 @@ class AlertStore(Store):
                     self.logger.debug("Resetting %s metrics for chain %s.",
                                       metrics_type, alert['parent_id'])
                     """
-                    For the specified chain we need to load all the keys and 
+                    For the specified chain we need to load all the keys and
                     only delete the ones that match the pattern `alert_system*`
                     or `alert_cl_node*`, depending on the alerter_type.
                     Note, REDIS doesn't support this natively.
@@ -242,6 +259,21 @@ class AlertStore(Store):
                 self.redis.hset(
                     Keys.get_hash_parent(alert['parent_id']),
                     eval('Keys.get_alert_{}(key)'.format(alert['metric'])),
+                    json.dumps(metric_data)
+                )
+            elif alert['metric'] in EVM_METRICS_TO_STORE:
+                self.redis.hset(
+                    Keys.get_hash_parent(alert['parent_id']),
+                    eval('Keys.get_alert_evm_{}(key)'.format(alert['metric'])),
+                    json.dumps(metric_data)
+                )
+            elif alert['metric'] in CHAINLINK_CONTRACT_METRICS_TO_STORE:
+                contract_proxy_address = alert['alert_data'][
+                    'contract_proxy_address']
+                self.redis.hset(
+                    Keys.get_hash_parent(alert['parent_id']),
+                    eval('Keys.get_alert_cl_contract_{}(key, '
+                         'contract_proxy_address)'.format(alert['metric'])),
                     json.dumps(metric_data)
                 )
             else:

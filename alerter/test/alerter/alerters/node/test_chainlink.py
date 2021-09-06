@@ -31,8 +31,7 @@ from src.alerter.factory.chainlink_node_alerting_factory import \
     ChainlinkNodeAlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
-from src.configs.factory.chainlink_alerts_configs_factory import \
-    ChainlinkAlertsConfigsFactory
+from src.configs.factory.alerts.chainlink import ChainlinkAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,

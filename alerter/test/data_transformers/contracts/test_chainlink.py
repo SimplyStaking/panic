@@ -24,7 +24,7 @@ from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE,
     CL_CONTRACTS_DT_INPUT_QUEUE_NAME, CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY,
     HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-    CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY)
+    CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (
     PANICException, ReceivedUnexpectedDataException,
     MessageWasNotDeliveredException)
@@ -1067,14 +1067,14 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         )
         expected_data_for_alerting = {
             'exchange': ALERT_EXCHANGE,
-            'routing_key': CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
+            'routing_key': CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY,
             'data': self.test_data_for_alerting_result_v3,
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True
         }
         expected_data_for_saving = {
             'exchange': STORE_EXCHANGE,
-            'routing_key': CL_CONTRACTS_TRANSFORMED_DATA_ROUTING_KEY,
+            'routing_key': CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY,
             'data': self.transformed_data_example_result_v3,
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True

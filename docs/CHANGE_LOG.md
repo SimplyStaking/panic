@@ -5,6 +5,7 @@ Change the contents of this file to this:
 ## 0.3.0
 
  - Updated the Web-Installer to cater for GETH RPC Monitoring
+ - Added EVM node store, Chainlink contract store and tests for both.
 
 ## Unreleased
 
@@ -29,6 +30,7 @@ Change the contents of this file to this:
 - Added ContractMonitorsManager along with its tests.
 - Added EVM Node Data Transformer along with its tests.
 - Added ChainlinkContractsDataTransformer along with its tests.
+- Added EVMNodeAlerterManager and its tests.
 
 ## 0.1.2
 

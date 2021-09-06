@@ -5,12 +5,12 @@ from datetime import timedelta
 
 from src.alerter.factory.chainlink_node_alerting_factory import \
     ChainlinkNodeAlertingFactory
-from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code import \
-    GroupedChainlinkNodeAlertsMetricCode
-from src.configs.alerts.chainlink_node import ChainlinkNodeAlertsConfig
+from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
+    import GroupedChainlinkNodeAlertsMetricCode
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
-from src.utils.timing import TimedTaskTracker, TimedTaskLimiter, \
-    OccurrencesInTimePeriodTracker
+from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
+                              OccurrencesInTimePeriodTracker)
 
 
 class TestChainlinkNodeAlertingFactory(unittest.TestCase):
