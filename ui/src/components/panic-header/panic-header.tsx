@@ -10,9 +10,7 @@ export class PanicHeader {
 
   render() {
     return (
-      <svc-header imgPath={getAssetPath("../assets/logos/panic_logo.png")} imgPosition={"start"} imgLink={HOME_URL}>
-
-      </svc-header>
+      <svc-header imgPath={getAssetPath("../assets/logos/panic_logo.png")} imgPosition={"start"} imgLink={HOME_URL} />
     );
   }
 
