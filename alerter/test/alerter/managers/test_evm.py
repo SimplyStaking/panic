@@ -12,8 +12,8 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
-from src.abstract.publisher_subscriber import \
-    QueuingPublisherSubscriberComponent
+from src.abstract.publisher_subscriber import (
+    QueuingPublisherSubscriberComponent)
 from src.alerter.alerter_starters import start_evm_node_alerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
