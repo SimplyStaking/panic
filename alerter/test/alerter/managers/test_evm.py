@@ -417,7 +417,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
     @mock.patch.object(EVMNodeAlerterManager,
                        "_push_latest_data_to_queue_and_send")
     @mock.patch.object(multiprocessing.Process, "start")
-    def test_create_and_start_alerter_process_if_process_is_running(
+    def test_create_and_start_alerter_process_if_process_is_not_running(
             self, state, state_is_str, mock_start, mock_push_and_send) -> None:
         """
         In this test we will check that the required processes are created and
