@@ -128,7 +128,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         self.test_manager._alerts_config_factory = \
             self.alerts_config_factory_example
         self.assertEqual(self.alerts_config_factory_example,
-                         self.test_manager.node_alerts_config_factory)
+                         self.test_manager.alerts_config_factory)
 
     @mock.patch.object(RabbitMQApi, "start_consuming")
     def test_listen_for_data_calls_start_consuming(
@@ -415,7 +415,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         mock_start.return_value = None
         mock_push_and_send.return_value = None
 
-        self.test_manager._create_and_start_alerter_processes()
+        self.test_manager._create_and_start_alerter_process()
 
         new_entry_process = self.test_manager.alerter_process_dict[
             EVM_NODE_ALERTER_NAME]
@@ -423,7 +423,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         # Check that the process was created correctly
         self.assertTrue(new_entry_process.daemon)
         self.assertEqual(1, len(new_entry_process._args))
-        self.assertEqual(self.test_manager.node_alerts_config_factory,
+        self.assertEqual(self.test_manager.alerts_config_factory,
                          new_entry_process._args[0])
         self.assertEqual(start_evm_node_alerter, new_entry_process._target)
 
@@ -455,7 +455,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         mock_init_proc.return_value = None
         mock_push_and_send.return_value = None
 
-        self.test_manager._create_and_start_alerter_processes()
+        self.test_manager._create_and_start_alerter_process()
 
         mock_push_and_send.assert_not_called()
         mock_init_proc.assert_not_called()
@@ -499,7 +499,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         )
 
         self.assertEqual(expected_configs,
-                         self.test_manager.node_alerts_config_factory.configs)
+                         self.test_manager.alerts_config_factory.configs)
         mock_push_and_send.assert_called_once_with(expected_alert.alert_data)
         mock_ack.assert_called_once()
 
@@ -524,8 +524,8 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
 
         # Store a config directly since we need to test its removal
-        self.test_manager.node_alerts_config_factory.add_new_config(chain_name,
-                                                                    self.config_1)
+        self.test_manager.alerts_config_factory.add_new_config(chain_name,
+                                                               self.config_1)
         expected_configs = {
             chain_name: EVMNodeAlertsConfig(
                 parent_id=self.parent_id_1,
@@ -535,14 +535,14 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
             )
         }
         self.assertEqual(expected_configs,
-                         self.test_manager.node_alerts_config_factory.configs)
+                         self.test_manager.alerts_config_factory.configs)
 
         # Send an empty config for the same chain
         self.test_manager._process_configs(blocking_channel, method_chains,
                                            properties, body)
         expected_configs = {}
         self.assertEqual(expected_configs,
-                         self.test_manager.node_alerts_config_factory.configs)
+                         self.test_manager.alerts_config_factory.configs)
         mock_push_and_send.assert_not_called()
         mock_ack.assert_called_once()
 

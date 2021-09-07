@@ -438,7 +438,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         new_entry['chain'] = self.chain_3
         new_entry['process'] = self.dummy_process3
 
-        self.test_manager._create_and_start_alerter_processes(
+        self.test_manager._create_and_start_alerter_process(
             self.system_alerts_config, self.parent_id_3,
             self.chain_3)
 
@@ -453,7 +453,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         mock_start.return_value = None
         mock_push_and_send.return_value = None
 
-        self.test_manager._create_and_start_alerter_processes(
+        self.test_manager._create_and_start_alerter_process(
             self.system_alerts_config, self.parent_id_3,
             self.chain_3)
 
@@ -475,7 +475,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         mock_push_and_send.return_value = None
         mock_start.return_value = None
 
-        self.test_manager._create_and_start_alerter_processes(
+        self.test_manager._create_and_start_alerter_process(
             self.system_alerts_config, self.parent_id_3,
             self.chain_3)
 
@@ -492,7 +492,7 @@ class TestSystemAlertersManager(unittest.TestCase):
         mock_push_and_send.return_value = None
         mock_start.return_value = None
 
-        self.test_manager._create_and_start_alerter_processes(
+        self.test_manager._create_and_start_alerter_process(
             self.system_alerts_config, self.parent_id_3,
             self.chain_3)
 
