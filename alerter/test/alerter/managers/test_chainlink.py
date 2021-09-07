@@ -12,12 +12,17 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
+from src.abstract.publisher_subscriber import \
+    QueuingPublisherSubscriberComponent
 from src.alerter.alerter_starters import (start_chainlink_node_alerter,
                                           start_chainlink_contract_alerter)
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.chainlink import ChainlinkAlertersManager
+from src.configs.alerts.contracts.chainlink import (
+    ChainlinkContractsAlertsConfig)
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.configs.factory.alerts.chainlink import (
     ChainlinkContractsAlertsConfigsFactory, ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -63,11 +68,9 @@ class TestChainlinkAlertersManager(unittest.TestCase):
             self.dummy_logger, env.RABBIT_IP,
             connection_check_time_interval=self.connection_check_time_interval)
 
-        # Test routing keys and parent_ids
+        # Test routing key and parent_id
         self.routing_key_1 = 'chains.chainlink.matic.alerts_config'
-        self.routing_key_2 = 'chains.chainlink.polygon.alerts_config'
         self.parent_id_1 = "chain_name_d21d780d-92cb-42de-a7c1-11b751654510"
-        self.parent_id_2 = "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4"
 
         self.config_1 = {
             "1": {
@@ -121,61 +124,6 @@ class TestChainlinkAlertersManager(unittest.TestCase):
             "13": {
                 "name": "consensus_failure",
                 "parent_id": self.parent_id_1,
-            },
-        }
-
-        self.config_2 = {
-            "1": {
-                "name": "head_tracker_current_head",
-                "parent_id": self.parent_id_2,
-            },
-            "2": {
-                "name": "head_tracker_heads_received_total",
-                "parent_id": self.parent_id_2,
-            },
-            "3": {
-                "name": "max_unconfirmed_blocks",
-                "parent_id": self.parent_id_2,
-            },
-            "4": {
-                "name": "process_start_time_seconds",
-                "parent_id": self.parent_id_2,
-            },
-            "5": {
-                "name": "tx_manager_gas_bump_exceeds_limit_total",
-                "parent_id": self.parent_id_2,
-            },
-            "6": {
-                "name": "unconfirmed_transactions",
-                "parent_id": self.parent_id_2,
-            },
-            "7": {
-                "name": "run_status_update_total",
-                "parent_id": self.parent_id_2,
-            },
-            "8": {
-                "name": "eth_balance_amount",
-                "parent_id": self.parent_id_2,
-            },
-            "9": {
-                "name": "eth_balance_amount_increase",
-                "parent_id": self.parent_id_2,
-            },
-            "10": {
-                "name": "node_is_down",
-                "parent_id": self.parent_id_2,
-            },
-            "11": {
-                "name": "price_feed_not_observed",
-                "parent_id": self.parent_id_2,
-            },
-            "12": {
-                "name": "price_feed_deviation",
-                "parent_id": self.parent_id_2,
-            },
-            "13": {
-                "name": "consensus_failure",
-                "parent_id": self.parent_id_2,
             },
         }
 
@@ -585,105 +533,157 @@ class TestChainlinkAlertersManager(unittest.TestCase):
         mock_push_and_send.assert_not_called()
         mock_init_proc.assert_not_called()
         mock_start.assert_not_called()
-    #
-    # @freeze_time("2012-01-01")
-    # @mock.patch.object(RabbitMQApi, 'basic_ack')
-    # @mock.patch.object(EVMNodeAlerterManager,
-    #                    "_push_latest_data_to_queue_and_send")
-    # def test_process_configs_if_non_empty_configs_received(
-    #         self, mock_push_and_send, mock_ack) -> None:
-    #     """
-    #     In this test we will check that if non-empty configs are received,
-    #     the process_configs function stores the received configs and sends a
-    #     reset alert
-    #     """
-    #     mock_ack.return_value = None
-    #     mock_push_and_send.return_value = None
-    #
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method_chains = pika.spec.Basic.Deliver(routing_key=self.routing_key_1)
-    #     body = json.dumps(self.config_1)
-    #     properties = pika.spec.BasicProperties()
-    #     parsed_routing_key = self.routing_key_1.split('.')
-    #     chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-    #
-    #     self.test_manager._process_configs(blocking_channel, method_chains,
-    #                                        properties, body)
-    #
-    #     expected_configs = {
-    #         chain_name: EVMNodeAlertsConfig(
-    #             parent_id=self.parent_id_1,
-    #             evm_node_is_down=self.config_1['1'],
-    #             evm_block_syncing_block_height_difference=self.config_1['2'],
-    #             evm_block_syncing_no_change_in_block_height=self.config_1['3']
-    #         )
-    #     }
-    #     expected_alert = ComponentResetAlert(
-    #         EVM_NODE_ALERTER_NAME, datetime.now().timestamp(),
-    #         EVMNodeAlerter.__name__, self.parent_id_1, chain_name
-    #     )
-    #
-    #     self.assertEqual(expected_configs,
-    #                      self.test_manager.node_alerts_config_factory.configs)
-    #     mock_push_and_send.assert_called_once_with(expected_alert.alert_data)
-    #     mock_ack.assert_called_once()
-    #
-    # @mock.patch.object(RabbitMQApi, 'basic_ack')
-    # @mock.patch.object(EVMNodeAlerterManager,
-    #                    "_push_latest_data_to_queue_and_send")
-    # def test_process_configs_if_received_empty_configs(
-    #         self, mock_push_and_send, mock_ack) -> None:
-    #     """
-    #     In this test we will check that if empty configs are received, the
-    #     process_configs function removes the already stored config and does not
-    #     send a reset alert.
-    #     """
-    #     mock_ack.return_value = None
-    #     mock_push_and_send.return_value = None
-    #
-    #     blocking_channel = self.test_manager.rabbitmq.channel
-    #     method_chains = pika.spec.Basic.Deliver(routing_key=self.routing_key_1)
-    #     body = json.dumps({})
-    #     properties = pika.spec.BasicProperties()
-    #     parsed_routing_key = self.routing_key_1.split('.')
-    #     chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-    #
-    #     # Store a config directly since we need to test its removal
-    #     self.test_manager.node_alerts_config_factory.add_new_config(chain_name,
-    #                                                                 self.config_1)
-    #     expected_configs = {
-    #         chain_name: EVMNodeAlertsConfig(
-    #             parent_id=self.parent_id_1,
-    #             evm_node_is_down=self.config_1['1'],
-    #             evm_block_syncing_block_height_difference=self.config_1['2'],
-    #             evm_block_syncing_no_change_in_block_height=self.config_1['3']
-    #         )
-    #     }
-    #     self.assertEqual(expected_configs,
-    #                      self.test_manager.node_alerts_config_factory.configs)
-    #
-    #     # Send an empty config for the same chain
-    #     self.test_manager._process_configs(blocking_channel, method_chains,
-    #                                        properties, body)
-    #     expected_configs = {}
-    #     self.assertEqual(expected_configs,
-    #                      self.test_manager.node_alerts_config_factory.configs)
-    #     mock_push_and_send.assert_not_called()
-    #     mock_ack.assert_called_once()
-    #
-    # @mock.patch.object(QueuingPublisherSubscriberComponent, "_push_to_queue")
-    # @mock.patch.object(EVMNodeAlerterManager, "_send_data")
-    # def test_push_latest_data_to_queue_and_send_pushes_correctly_and_sends(
-    #         self, mock_send_data, mock_push) -> None:
-    #     mock_send_data.return_value = None
-    #     mock_push.return_value = None
-    #     test_dict = {'test_key': 'test_val'}
-    #
-    #     self.test_manager._push_latest_data_to_queue_and_send(test_dict)
-    #
-    #     mock_push.assert_called_once_with(
-    #         data=test_dict, exchange=ALERT_EXCHANGE,
-    #         routing_key=EVM_NODE_ALERT_ROUTING_KEY,
-    #         properties=pika.BasicProperties(delivery_mode=2), mandatory=True
-    #     )
-    #     mock_send_data.assert_called_once()
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(RabbitMQApi, 'basic_ack')
+    @mock.patch.object(ChainlinkAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
+    def test_process_configs_if_non_empty_configs_received(
+            self, mock_push_and_send, mock_ack) -> None:
+        """
+        In this test we will check that if non-empty configs are received,
+        the process_configs function stores the received configs and sends a
+        reset alert
+        """
+        mock_ack.return_value = None
+        mock_push_and_send.return_value = None
+
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method_chains = pika.spec.Basic.Deliver(routing_key=self.routing_key_1)
+        body = json.dumps(self.config_1)
+        properties = pika.spec.BasicProperties()
+        parsed_routing_key = self.routing_key_1.split('.')
+        chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+
+        self.test_manager._process_configs(blocking_channel, method_chains,
+                                           properties, body)
+
+        expected_node_configs = {
+            chain_name: ChainlinkNodeAlertsConfig(
+                parent_id=self.parent_id_1,
+                head_tracker_current_head=self.config_1['1'],
+                head_tracker_heads_received_total=self.config_1['2'],
+                max_unconfirmed_blocks=self.config_1['3'],
+                process_start_time_seconds=self.config_1['4'],
+                tx_manager_gas_bump_exceeds_limit_total=self.config_1['5'],
+                unconfirmed_transactions=self.config_1['6'],
+                run_status_update_total=self.config_1['7'],
+                eth_balance_amount=self.config_1['8'],
+                eth_balance_amount_increase=self.config_1['9'],
+                node_is_down=self.config_1['10']
+            )
+        }
+        expected_contract_configs = {
+            chain_name: ChainlinkContractsAlertsConfig(
+                parent_id=self.parent_id_1,
+                price_feed_not_observed=self.config_1['11'],
+                price_feed_deviation=self.config_1['12'],
+                consensus_failure=self.config_1['13']
+            )
+        }
+        expected_alert_1 = ComponentResetAlert(
+            CHAINLINK_NODE_ALERTER_NAME, datetime.now().timestamp(),
+            ChainlinkNodeAlerter.__name__, self.parent_id_1, chain_name
+        )
+        expected_alert_2 = ComponentResetAlert(
+            CHAINLINK_CONTRACT_ALERTER_NAME, datetime.now().timestamp(),
+            ChainlinkContractAlerter.__name__, self.parent_id_1, chain_name
+        )
+
+        self.assertEqual(expected_node_configs,
+                         self.test_manager.node_alerts_config_factory.configs)
+        self.assertEqual(
+            expected_contract_configs,
+            self.test_manager.contracts_alerts_config_factory.configs)
+        expected_calls = [
+            call(expected_alert_1.alert_data, CL_NODE_ALERT_ROUTING_KEY),
+            call(expected_alert_2.alert_data, CL_CONTRACT_ALERT_ROUTING_KEY)
+        ]
+        mock_push_and_send.assert_has_calls(expected_calls, True)
+        mock_ack.assert_called_once()
+
+    @mock.patch.object(RabbitMQApi, 'basic_ack')
+    @mock.patch.object(ChainlinkAlertersManager,
+                       "_push_latest_data_to_queue_and_send")
+    def test_process_configs_if_received_empty_configs(
+            self, mock_push_and_send, mock_ack) -> None:
+        """
+        In this test we will check that if empty configs are received, the
+        process_configs function removes the already stored config and does not
+        send a reset alert.
+        """
+        mock_ack.return_value = None
+        mock_push_and_send.return_value = None
+
+        blocking_channel = self.test_manager.rabbitmq.channel
+        method_chains = pika.spec.Basic.Deliver(routing_key=self.routing_key_1)
+        body = json.dumps({})
+        properties = pika.spec.BasicProperties()
+        parsed_routing_key = self.routing_key_1.split('.')
+        chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+
+        # Store configs directly since we need to test their removal
+        self.test_manager.node_alerts_config_factory.add_new_config(
+            chain_name, self.config_1)
+        self.test_manager.contracts_alerts_config_factory.add_new_config(
+            chain_name, self.config_1)
+
+        # Make sure that the configs were added
+        expected_node_configs = {
+            chain_name: ChainlinkNodeAlertsConfig(
+                parent_id=self.parent_id_1,
+                head_tracker_current_head=self.config_1['1'],
+                head_tracker_heads_received_total=self.config_1['2'],
+                max_unconfirmed_blocks=self.config_1['3'],
+                process_start_time_seconds=self.config_1['4'],
+                tx_manager_gas_bump_exceeds_limit_total=self.config_1['5'],
+                unconfirmed_transactions=self.config_1['6'],
+                run_status_update_total=self.config_1['7'],
+                eth_balance_amount=self.config_1['8'],
+                eth_balance_amount_increase=self.config_1['9'],
+                node_is_down=self.config_1['10']
+            )
+        }
+        expected_contract_configs = {
+            chain_name: ChainlinkContractsAlertsConfig(
+                parent_id=self.parent_id_1,
+                price_feed_not_observed=self.config_1['11'],
+                price_feed_deviation=self.config_1['12'],
+                consensus_failure=self.config_1['13']
+            )
+        }
+        self.assertEqual(expected_node_configs,
+                         self.test_manager.node_alerts_config_factory.configs)
+        self.assertEqual(
+            expected_contract_configs,
+            self.test_manager.contracts_alerts_config_factory.configs)
+
+        # Send an empty config for the same chain
+        self.test_manager._process_configs(blocking_channel, method_chains,
+                                           properties, body)
+        expected_configs = {}
+        self.assertEqual(expected_configs,
+                         self.test_manager.node_alerts_config_factory.configs)
+        self.assertEqual(
+            expected_configs,
+            self.test_manager.contracts_alerts_config_factory.configs)
+        mock_push_and_send.assert_not_called()
+        mock_ack.assert_called_once()
+
+    @mock.patch.object(QueuingPublisherSubscriberComponent, "_push_to_queue")
+    @mock.patch.object(ChainlinkAlertersManager, "_send_data")
+    def test_push_latest_data_to_queue_and_send_pushes_correctly_and_sends(
+            self, mock_send_data, mock_push) -> None:
+        mock_send_data.return_value = None
+        mock_push.return_value = None
+        test_dict = {'test_key': 'test_val'}
+
+        self.test_manager._push_latest_data_to_queue_and_send(
+            test_dict, self.routing_key_1)
+
+        mock_push.assert_called_once_with(
+            data=test_dict, exchange=ALERT_EXCHANGE,
+            routing_key=self.routing_key_1,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True
+        )
+        mock_send_data.assert_called_once()

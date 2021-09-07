@@ -60,11 +60,9 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
             self.dummy_logger, env.RABBIT_IP,
             connection_check_time_interval=self.connection_check_time_interval)
 
-        # Test routing keys and parent_ids
+        # Test routing key and parent_id
         self.routing_key_1 = 'chains.chainlink.ethereum.alerts_config'
-        self.routing_key_2 = 'chains.chainlink.polygon.alerts_config'
         self.parent_id_1 = "chain_name_d21d780d-92cb-42de-a7c1-11b751654510"
-        self.parent_id_2 = "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4"
 
         self.config_1 = {
             "1": {
@@ -78,20 +76,6 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
             "3": {
                 "name": "evm_block_syncing_no_change_in_block_height",
                 "parent_id": self.parent_id_1,
-            },
-        }
-        self.config_2 = {
-            "1": {
-                "name": "evm_node_is_down",
-                "parent_id": self.parent_id_2,
-            },
-            "2": {
-                "name": "evm_block_syncing_block_height_difference",
-                "parent_id": self.parent_id_2,
-            },
-            "3": {
-                "name": "evm_block_syncing_no_change_in_block_height",
-                "parent_id": self.parent_id_2,
             },
         }
 
