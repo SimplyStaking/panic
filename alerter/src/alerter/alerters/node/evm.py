@@ -1,6 +1,7 @@
 import logging
-from src.message_broker.rabbitmq import RabbitMQApi
+
 from src.alerter.alerters.alerter import Alerter
+from src.message_broker.rabbitmq import RabbitMQApi
 
 
 class EVMNodeAlerter(Alerter):
