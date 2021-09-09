@@ -39,6 +39,7 @@ import {
     resultJson,
 } from "./server/utils";
 import express from "express";
+import cors from "cors";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import {
@@ -54,8 +55,8 @@ import {
     getGitHubKeys,
     getChainlinkKeys
 } from "./server/redis"
-import {MongoInterface} from "./server/mongo";
-import {MongoClientOptions} from "mongodb";
+import { MongoInterface } from "./server/mongo";
+import { MongoClientOptions } from "mongodb";
 import { ERR_STATUS, Severities, SUCCESS_STATUS } from "./server/constants";
 import { stringify } from "querystring";
 const swaggerUi = require('swagger-ui-express');
@@ -82,7 +83,7 @@ app.use(express.static(path.join(__dirname, '../', 'build')));
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use((err: any, req: express.Request, res: express.Response,
-         next: express.NextFunction) => {
+    next: express.NextFunction) => {
     // This check makes sure this is a JSON parsing issue, but it might be
     // coming from any middleware, not just body-parser.
     if (err instanceof SyntaxError && 'body' in err) {
@@ -93,6 +94,7 @@ app.use((err: any, req: express.Request, res: express.Response,
     next();
 });
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use(cors({ origin: [`https://${process.env.UI_DASHBOARD_IP || "localhost"}:${process.env.UI_DASHBOARD_PORT || "3333"}`] }))
 
 // Connect with Redis
 const redisHost = process.env.REDIS_IP || "localhost";
@@ -137,11 +139,11 @@ setInterval(async () => {
 app.post('/server/redis/monitorablesInfo',
     async (req: express.Request, res: express.Response) => {
         console.log('Received POST request for %s %s', req.url, req.body);
-        const {baseChains} = req.body;
+        const { baseChains } = req.body;
 
         // Check if some required keys are missing in the body object, if yes
         // notify the client.
-        const missingKeysList: string[] = missingValues({baseChains});
+        const missingKeysList: string[] = missingValues({ baseChains });
         if (missingKeysList.length !== 0) {
             const err = new MissingKeysInBody(...missingKeysList);
             res.status(err.code).send(errorJson(err.message));
@@ -207,7 +209,7 @@ app.post('/server/redis/alertsOverview',
         const parentIds: AlertsOverviewInput = req.body.parentIds;
         // Check if some required keys are missing in the body object, if yes
         // notify the client.
-        const missingKeysList: string[] = missingValues({parentIds});
+        const missingKeysList: string[] = missingValues({ parentIds });
         if (missingKeysList.length !== 0) {
             const err = new MissingKeysInBody(...missingKeysList);
             res.status(err.code).send(errorJson(err.message));
@@ -283,14 +285,14 @@ app.post('/server/redis/alertsOverview',
                         keysList.forEach(
                             (key: string, i: number): void => {
                                 const value = JSON.parse(values[i]);
+                                console.log(value);
                                 if (value && value.constructor === Object &&
                                     "message" in value && "severity" in value
-                                      && "expiry" in value) {
+                                    && "expiry" in value) {
                                     // Add array of problems if not initialised
                                     // yet and there is indeed problems.
                                     if (value.severity !== Severities.INFO &&
-                                        !result.result[parentId].problems[monitorableId] &&
-                                        !(currentTimestamp >= value.expiry)) {
+                                        !result.result[parentId].problems[monitorableId]) {
                                         result.result[parentId].problems[
                                             monitorableId] = []
                                     }
@@ -304,32 +306,33 @@ app.post('/server/redis/alertsOverview',
                                         result.result[parentId].releases[
                                             monitorableId] = value
                                     }
-                                    if (currentTimestamp >= value.expiry){
-                                      result.result[parentId].info += 1;
-                                    }else{
-                                      // Increase the counter and save the
-                                      // problems.
-                                      if (value.severity === Severities.INFO) {
+                                    console.log(currentTimestamp);
+                                    if (value.expiry && currentTimestamp >= value.expiry) {
                                         result.result[parentId].info += 1;
-                                      } else if (
-                                          value.severity === Severities.CRITICAL
-                                      ) {
-                                          result.result[parentId].critical += 1;
-                                          result.result[parentId].problems[
-                                              monitorableId].push(value)
-                                      } else if (
-                                          value.severity === Severities.WARNING
-                                      ) {
-                                          result.result[parentId].warning += 1;
-                                          result.result[parentId].problems[
-                                              monitorableId].push(value)
-                                      } else if (
-                                          value.severity === Severities.ERROR
-                                      ) {
-                                          result.result[parentId].error += 1;
-                                          result.result[parentId].problems[
-                                              monitorableId].push(value)
-                                      }
+                                    } else {
+                                        // Increase the counter and save the
+                                        // problems.
+                                        if (value.severity === Severities.INFO) {
+                                            result.result[parentId].info += 1;
+                                        } else if (
+                                            value.severity === Severities.CRITICAL
+                                        ) {
+                                            result.result[parentId].critical += 1;
+                                            result.result[parentId].problems[
+                                                monitorableId].push(value)
+                                        } else if (
+                                            value.severity === Severities.WARNING
+                                        ) {
+                                            result.result[parentId].warning += 1;
+                                            result.result[parentId].problems[
+                                                monitorableId].push(value)
+                                        } else if (
+                                            value.severity === Severities.ERROR
+                                        ) {
+                                            result.result[parentId].error += 1;
+                                            result.result[parentId].problems[
+                                                monitorableId].push(value)
+                                        }
                                     }
                                 } else {
                                     result.result[parentId].info += 1;
@@ -367,7 +370,7 @@ app.post('/server/redis/metrics',
 
         // Check if some required keys are missing in the body object, if yes
         // notify the client.
-        const missingKeysList: string[] = missingValues({parentIds});
+        const missingKeysList: string[] = missingValues({ parentIds });
         if (missingKeysList.length !== 0) {
             const err = new MissingKeysInBody(...missingKeysList);
             res.status(err.code).send(errorJson(err.message));
@@ -392,11 +395,11 @@ app.post('/server/redis/metrics',
             redisHashes, `${uniqueAlerterIdentifier}:`);
         const redisHashesPostfix: RedisKeys = addPostfixToKeys(
             redisHashesNamespace, '_');
-        
+
         const metricKeysSystem: SystemKeys = getSystemKeys();
         const metricKeysSystemPostfix: RedisKeys = addPostfixToKeys(
             metricKeysSystem, '_');
-        
+
         const metricKeysGitHub: GitHubKeys = getGitHubKeys();
         const metricKeysGitHubPostfix: RedisKeys = addPostfixToKeys(
             metricKeysGitHub, '_');
@@ -439,23 +442,23 @@ app.post('/server/redis/metrics',
                             return
                         }
                         keysList.forEach(
-                          (key: string, i: number): void => {
-                            // Must be stringified as it doesn't parse `None`
-                            const value = JSON.parse(JSON.stringify(values[i]));
-                            if (monitorableId.includes('system')) {
-                              if(!(monitorableId in result.result[parentId].system)){
-                                result.result[parentId].system[monitorableId] = <SystemKeys>{}
-                              }
-                              result.result[parentId].system[monitorableId][key.replace('_' + monitorableId, '')] = value;
-                            }else if (monitorableId.includes('repo')){
-                              if(!(monitorableId in result.result[parentId].github)){
-                                result.result[parentId].github[monitorableId] = <GitHubKeys>{}
-                              }
-                              result.result[parentId].github[monitorableId][key.replace('_' + monitorableId, '')] = value;
-                            }else{
-                              // Do nothing
-                            }
-                          });
+                            (key: string, i: number): void => {
+                                // Must be stringified as it doesn't parse `None`
+                                const value = JSON.parse(JSON.stringify(values[i]));
+                                if (monitorableId.includes('system')) {
+                                    if (!(monitorableId in result.result[parentId].system)) {
+                                        result.result[parentId].system[monitorableId] = <SystemKeys>{}
+                                    }
+                                    result.result[parentId].system[monitorableId][key.replace('_' + monitorableId, '')] = value;
+                                } else if (monitorableId.includes('repo')) {
+                                    if (!(monitorableId in result.result[parentId].github)) {
+                                        result.result[parentId].github[monitorableId] = <GitHubKeys>{}
+                                    }
+                                    result.result[parentId].github[monitorableId][key.replace('_' + monitorableId, '')] = value;
+                                } else {
+                                    // Do nothing
+                                }
+                            });
                     })
                 }
             }
@@ -510,7 +513,7 @@ app.post('/server/mongo/alerts',
 
         // --------------------- Input Validation -------------------
 
-        const arrayBasedStringParams = {chains, severities, sources};
+        const arrayBasedStringParams = { chains, severities, sources };
         for (const [param, value] of Object.entries(arrayBasedStringParams)) {
             if (!Array.isArray(value) ||
                 !allElementsInListHaveTypeString(value)) {
@@ -528,7 +531,7 @@ app.post('/server/mongo/alerts',
             }
         }
 
-        const positiveFloats = {minTimestamp, maxTimestamp};
+        const positiveFloats = { minTimestamp, maxTimestamp };
         for (const [param, value] of Object.entries(positiveFloats)) {
             const parsedFloat = parseFloat(value);
             if (isNaN(parsedFloat) || parsedFloat < 0) {
@@ -547,32 +550,32 @@ app.post('/server/mongo/alerts',
             return;
         }
 
-        let result = resultJson({alerts: []});
+        let result = resultJson({ alerts: [] });
         if (mongoInterface.client) {
             try {
                 const db = mongoInterface.client.db(mongoDB);
                 if (chains.length > 0) {
                     let queryList: any = [];
                     for (let i = 1; i < chains.length; i++) {
-                        queryList.push({$unionWith: chains[i]})
+                        queryList.push({ $unionWith: chains[i] })
                     }
                     queryList.push(
-                        {$match: {doc_type: "alert"}},
-                        {$unwind: "$alerts"},
+                        { $match: { doc_type: "alert" } },
+                        { $unwind: "$alerts" },
                         {
                             $match: {
-                                "alerts.severity": {$in: severities},
-                                "alerts.origin": {$in: sources},
+                                "alerts.severity": { $in: severities },
+                                "alerts.origin": { $in: sources },
                                 "alerts.timestamp": {
                                     "$gte": parsedMinTimestamp,
                                     "$lte": parsedMaxTimestamp
                                 }
                             }
                         },
-                        {$sort: {"alerts.timestamp": -1, _id: 1}},
-                        {$limit: parsedNoOfAlerts},
-                        {$group: {_id: null, alerts: {$push: "$alerts"}}},
-                        {$project: {_id: 0, alerts: "$alerts"}},
+                        { $sort: { "alerts.timestamp": -1, _id: 1 } },
+                        { $limit: parsedNoOfAlerts },
+                        { $group: { _id: null, alerts: { $push: "$alerts" } } },
+                        { $project: { _id: 0, alerts: "$alerts" } },
                     );
                     const collection = db.collection(chains[0]);
                     const docs = await collection.aggregate(queryList)
@@ -627,7 +630,7 @@ app.post('/server/mongo/metrics',
 
         // --------------------- Input Validation -------------------
 
-        const arrayBasedStringParams = {chains, sources};
+        const arrayBasedStringParams = { chains, sources };
         for (const [param, value] of Object.entries(arrayBasedStringParams)) {
             if (!Array.isArray(value) ||
                 !allElementsInListHaveTypeString(value)) {
@@ -637,7 +640,7 @@ app.post('/server/mongo/metrics',
             }
         }
 
-        const positiveFloats = {minTimestamp, maxTimestamp};
+        const positiveFloats = { minTimestamp, maxTimestamp };
         for (const [param, value] of Object.entries(positiveFloats)) {
             const parsedFloat = parseFloat(value);
             if (isNaN(parsedFloat) || parsedFloat < 0) {
@@ -656,60 +659,60 @@ app.post('/server/mongo/metrics',
             return;
         }
 
-        let result = resultJson({metrics: {}});
+        let result = resultJson({ metrics: {} });
         if (mongoInterface.client) {
             try {
                 const db = mongoInterface.client.db(mongoDB);
                 if (chains.length > 0) {
                     var queryPromise = new Promise<void>((resolve, reject) => {
-                      sources.forEach(async (source: string, i:number): Promise<void> => {
-                        let queryList: any = [];
-                        for (let i = 1; i < chains.length; i++) {
-                          queryList.push({$unionWith: chains[i]})
-                        }
-
-                        if (!(source in result.result.metrics)){
-                          result.result.metrics[source] = []
-                        }
-
-                        let docType;
-                        if(source.includes("system")){
-                          docType = "system"
-                        }
-                        const originSource = "$".concat(source);
-                        const timestampSource = source.concat(".timestamp");
-                        queryList.push(
-                          {$match: {doc_type: docType}},
-                          {$unwind: originSource},
-                          {
-                            $match: {
-                              [timestampSource]: {
-                                "$gte": parsedMinTimestamp,
-                                "$lte": parsedMaxTimestamp
-                              }
+                        sources.forEach(async (source: string, i: number): Promise<void> => {
+                            let queryList: any = [];
+                            for (let i = 1; i < chains.length; i++) {
+                                queryList.push({ $unionWith: chains[i] })
                             }
-                          },
-                          {$sort: {"timestamp": -1, _id: 1}},
-                          {$limit: parsedNoOfMetricsPerSource},
-                        );
-                        const collection = db.collection(chains[0]);
-                        const docs = await collection.aggregate(queryList)
-                          .toArray();
-                        for (const doc of docs) {
-                          result.result.metrics[source] = result.result.metrics[source].concat(
-                              doc[source])
-                        }
-                        if (i === sources.length -1) resolve();
-                      });
+
+                            if (!(source in result.result.metrics)) {
+                                result.result.metrics[source] = []
+                            }
+
+                            let docType;
+                            if (source.includes("system")) {
+                                docType = "system"
+                            }
+                            const originSource = "$".concat(source);
+                            const timestampSource = source.concat(".timestamp");
+                            queryList.push(
+                                { $match: { doc_type: docType } },
+                                { $unwind: originSource },
+                                {
+                                    $match: {
+                                        [timestampSource]: {
+                                            "$gte": parsedMinTimestamp,
+                                            "$lte": parsedMaxTimestamp
+                                        }
+                                    }
+                                },
+                                { $sort: { "timestamp": -1, _id: 1 } },
+                                { $limit: parsedNoOfMetricsPerSource },
+                            );
+                            const collection = db.collection(chains[0]);
+                            const docs = await collection.aggregate(queryList)
+                                .toArray();
+                            for (const doc of docs) {
+                                result.result.metrics[source] = result.result.metrics[source].concat(
+                                    doc[source])
+                            }
+                            if (i === sources.length - 1) resolve();
+                        });
                     });
-                    
+
                     queryPromise.then(() => {
-                      res.status(SUCCESS_STATUS).send(result);
-                      return;
+                        res.status(SUCCESS_STATUS).send(result);
+                        return;
                     });
                 } else {
-                  res.status(SUCCESS_STATUS).send(result);
-                  return;
+                    res.status(SUCCESS_STATUS).send(result);
+                    return;
                 }
             } catch (err) {
                 console.error(err);
@@ -751,7 +754,7 @@ app.get('/*', (req: express.Request, res: express.Response) => {
 
 // ---------------------------------------- Start listen
 
-const port = parseInt(process.env.API_PORT || "9000");
+const port = parseInt(process.env.API_PORT || "9001");
 // Create Https server
 const server = https.createServer(httpsOptions, app);
 // Listen for requests
