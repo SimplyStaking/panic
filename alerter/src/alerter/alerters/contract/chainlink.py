@@ -165,9 +165,10 @@ class ChainlinkContractAlerter(Alerter):
             if str_to_bool(configs.price_feed_not_observed['enabled']):
                 current = data['price_feed_not_observed']['current']
                 previous = data['price_feed_not_observed']['previous']
+
                 sub_config = configs.price_feed_not_observed
                 if current is not None and previous is not None:
-                    self.alerting_factory.classify_no_change_in_alert(
+                    self.alerting_factory.classify_thresholded_time_window_alert(
                         current, previous, sub_config,
                         cl_alerts.PriceFeedNotObserved,
                         cl_alerts.PriceFeedObserved, data_for_alerting,
