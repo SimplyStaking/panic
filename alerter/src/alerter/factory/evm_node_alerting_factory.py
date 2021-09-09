@@ -43,6 +43,11 @@ class EVMNodeAlertingFactory(AlertingFactory):
 
     def __init__(self, component_logger: logging.Logger) -> None:
         super().__init__(component_logger)
+        self._nodes_configs = {}
+
+    @property
+    def nodes_configs(self) -> Dict:
+        return self._nodes_configs
 
     def create_alerting_state(
             self, parent_id: str, node_id: str,
@@ -52,22 +57,24 @@ class EVMNodeAlertingFactory(AlertingFactory):
         state for a node based on the passed alerts config.
         :param parent_id: The id of the chain
         :param node_id: The id of the node
+        :param node_name: The name of the node
         :param evm_node_alerts_config: The alerts configuration
         :return: None
         """
 
         if parent_id not in self.alerting_state:
             self.alerting_state[parent_id] = {}
+            self.nodes_configs[parent_id] = {}
 
         if node_id not in self.alerting_state[parent_id]:
             warning_sent = {
-                AlertsMetricCode.BlockHeightDifference.value: False,
                 AlertsMetricCode.NoChangeInBlockHeight.value: False,
+                AlertsMetricCode.BlockHeightDifference.value: False,
                 AlertsMetricCode.NodeIsDown.value: False
             }
             critical_sent = {
-                AlertsMetricCode.BlockHeightDifference.value: False,
                 AlertsMetricCode.NoChangeInBlockHeight.value: False,
+                AlertsMetricCode.BlockHeightDifference.value: False,
                 AlertsMetricCode.NodeIsDown.value: False
             }
             error_sent = {
@@ -77,12 +84,10 @@ class EVMNodeAlertingFactory(AlertingFactory):
             evm_node_is_down_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 evm_node_alerts_config.evm_node_is_down)
-
             block_height_difference_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 evm_node_alerts_config.
                 evm_block_syncing_block_height_difference)
-
             no_change_in_block_height_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 evm_node_alerts_config.
@@ -97,6 +102,10 @@ class EVMNodeAlertingFactory(AlertingFactory):
                     TimedTaskTracker(timedelta(
                         seconds=evm_node_is_down_thresholds[
                             'warning_threshold'])),
+                AlertsMetricCode.BlockHeightDifference.value:
+                    TimedTaskTracker(timedelta(
+                        seconds=block_height_difference_thresholds[
+                            'warning_threshold']))
             }
             critical_window_timer = {
                 AlertsMetricCode.NoChangeInBlockHeight.value:
@@ -107,6 +116,10 @@ class EVMNodeAlertingFactory(AlertingFactory):
                     TimedTaskTracker(timedelta(
                         seconds=evm_node_is_down_thresholds[
                             'critical_threshold'])),
+                AlertsMetricCode.BlockHeightDifference.value:
+                    TimedTaskTracker(timedelta(
+                        seconds=block_height_difference_thresholds[
+                            'critical_threshold']))
             }
             critical_repeat_timer = {
                 AlertsMetricCode.NoChangeInBlockHeight.value: TimedTaskLimiter(
@@ -119,9 +132,10 @@ class EVMNodeAlertingFactory(AlertingFactory):
                 AlertsMetricCode.BlockHeightDifference.value:
                     TimedTaskLimiter(timedelta(
                         seconds=block_height_difference_thresholds[
-                            'critical_repeat'])),
+                            'critical_repeat']))
             }
 
+            self.nodes_configs[parent_id][node_id] = None
             self.alerting_state[parent_id][node_id] = {
                 'warning_sent': warning_sent,
                 'critical_sent': critical_sent,
@@ -139,3 +153,4 @@ class EVMNodeAlertingFactory(AlertingFactory):
         """
         if parent_id in self.alerting_state:
             del self.alerting_state[parent_id]
+            del self.nodes_configs[parent_id]

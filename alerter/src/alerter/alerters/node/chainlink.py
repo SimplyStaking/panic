@@ -15,7 +15,8 @@ from src.alerter.factory.chainlink_node_alerting_factory import \
     ChainlinkNodeAlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode as MetricCode
-from src.configs.factory.alerts.chainlink import ChainlinkAlertsConfigsFactory
+from src.configs.factory.nodes.chainlink_node_alerts_configs_factory import \
+    ChainlinkAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.data import VALID_CHAINLINK_SOURCES
 from src.utils.constants.rabbitmq import (
@@ -122,14 +123,6 @@ class ChainlinkNodeAlerter(Alerter):
             self.logger.debug("Received unexpected data %s with routing key %s",
                               body, method.routing_key)
             self.rabbitmq.basic_ack(method.delivery_tag, False)
-
-    @staticmethod
-    def _greater_than_condition_function(current: Any, previous: Any) -> bool:
-        return current > previous
-
-    @staticmethod
-    def _not_equal_condition_function(current: Any, previous: Any) -> bool:
-        return current != previous
 
     @staticmethod
     def _prometheus_is_down_condition_function(index_key: Optional[str],
