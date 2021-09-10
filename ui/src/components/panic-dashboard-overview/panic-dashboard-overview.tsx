@@ -28,6 +28,7 @@ function capitalizeFirstLetter(string) {
 export class PanicDashboardOverview {
   // Hard-coded for now. To use ENV variables in the future.
   private apiURL: string = `https://${"localhost"}:${"9000"}/server/`
+  private baseChainsNames: string[] = ["cosmos", "general", "chainlink", "substrate"]
   private baseChains: BaseChains[] = [];
   private updater: number;
   private updateFrequency: number = 3000;
@@ -41,12 +42,7 @@ export class PanicDashboardOverview {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          "baseChains": [
-            "cosmos",
-            "general",
-            "chainlink",
-            "substrate"
-          ]
+          "baseChains": this.baseChainsNames
         })
       }
     ).then(response => response.json())
@@ -165,7 +161,7 @@ export class PanicDashboardOverview {
     return (
       <Host>
         <panic-header></panic-header>
-        <svc-content-container>
+        {this.baseChains.length > 0 && <svc-content-container>
           {this.baseChains.map((baseChain) =>
             <svc-surface label={baseChain.name}>
               {baseChain.chains.map((chain) => {
@@ -183,9 +179,10 @@ export class PanicDashboardOverview {
                     </svc-pie-chart>}
                 </svc-card>
               })}
+              This section displays only warning, critical and error alerts. For a full report, check <b><u>Alerts Overview.</u></b>
             </svc-surface>
           )}
-        </svc-content-container>
+        </svc-content-container>}
         <panic-footer></panic-footer>
       </Host >
     );
