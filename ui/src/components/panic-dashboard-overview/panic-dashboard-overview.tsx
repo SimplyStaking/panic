@@ -1,5 +1,6 @@
 import { Component, Host, h, State } from '@stencil/core';
 import { BaseChains, Chain } from '../../interfaces/chains';
+import { baseChainsNames } from '../../utils/constants';
 import { capitalizeFirstLetter } from '../../utils/helpers';
 
 @Component({
@@ -8,8 +9,7 @@ import { capitalizeFirstLetter } from '../../utils/helpers';
 })
 export class PanicDashboardOverview {
   // Hard-coded for now. To use ENV variables in the future.
-  private apiURL: string = `https://${"localhost"}:${"9000"}/server/`
-  private baseChainsNames: string[] = ["cosmos", "general", "chainlink", "substrate"]
+  private apiURL: string = `https://${"localhost"}:${"9000"}/server/`;
   private baseChains: BaseChains[] = [];
   private updater: number;
   private updateFrequency: number = 3000;
@@ -23,7 +23,7 @@ export class PanicDashboardOverview {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          "baseChains": this.baseChainsNames
+          "baseChains": baseChainsNames
         })
       }
     ).then(response => response.json())
