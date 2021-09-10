@@ -160,7 +160,7 @@ export class PanicDashboardOverview {
                     </svc-pie-chart>}
                 </svc-card>
               })}
-              This section displays only warning, critical and error alerts. For a full report, check <b><u>Alerts Overview.</u></b>
+              <svc-label color="dark" position="start">This section displays only warning, critical and error alerts. For a full report, check <b><u>Alerts Overview.</u></b></svc-label>
             </svc-surface>
           )}
         </svc-content-container>}
