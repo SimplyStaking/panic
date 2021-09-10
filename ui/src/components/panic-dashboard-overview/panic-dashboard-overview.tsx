@@ -159,7 +159,6 @@ export class PanicDashboardOverview {
             <svc-surface label={baseChain.name}>
               {baseChain.chains.map((chain) => {
                 return chain.active && <svc-card>
-                  <svc-label slot="header" position="start" color="dark">{chain.name}</svc-label>
                   {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
                       A green pie chart is shown with no text and without a tooltip */}
                   {chain.totalAlerts > 0 ?
