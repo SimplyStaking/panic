@@ -1,25 +1,6 @@
 import { Component, Host, h, State } from '@stencil/core';
-
-interface BaseChains {
-  readonly name: string;
-  chains: Chain[];
-}
-
-interface Chain {
-  readonly name: string;
-  readonly id: string;
-  repos: string[];
-  systems: string[];
-  criticalAlerts: number;
-  warningAlerts: number;
-  errorAlerts: number;
-  totalAlerts: number;
-  active: Boolean;
-}
-
-function capitalizeFirstLetter(string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
-}
+import { BaseChains, Chain } from '../../interfaces/chains';
+import { capitalizeFirstLetter } from '../../utils/helpers';
 
 @Component({
   tag: 'panic-dashboard-overview',
