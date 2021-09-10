@@ -16,71 +16,75 @@ export class PanicDashboardOverview {
   @State() alertsChanged: Boolean = false;
 
   async componentWillLoad() {
-    await fetch(this.apiURL + 'redis/monitorablesInfo',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          "baseChains": baseChainsNames
-        })
-      }
-    ).then(response => response.json())
-      .then(data => {
-        for (const baseChain in data.result) {
-          if (data.result[baseChain]) {
-            var currentChains: Chain[] = [];
-            var index: number = 0;
-            for (const currentChain in data.result[baseChain]) {
-              // Systems case.
-              var currentSystems: string[] = [];
-              for (const system of data.result[baseChain][currentChain].monitored.systems) {
-                currentSystems.push(Object.keys(system)[0]);
-              }
+    try {
+      const monitorablesInfo: Response = await fetch(this.apiURL + 'redis/monitorablesInfo',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            "baseChains": baseChainsNames
+          })
+        }
+      );
 
-              // Repos case.
-              var currentRepos: string[] = [];
-              for (const type of Object.keys(data.result[baseChain][currentChain].monitored)) {
-                if (type.includes('repo')) {
-                  for (const repo of data.result[baseChain][currentChain].monitored[type]) {
-                    currentRepos.push(Object.keys(repo)[0]);
-                  }
-                }
-              }
+      const data: any = await monitorablesInfo.json();
 
-              currentChains.push({
-                name: capitalizeFirstLetter(currentChain),
-                id: data.result[baseChain][currentChain].parent_id,
-                repos: currentRepos,
-                systems: currentSystems,
-                criticalAlerts: 0,
-                warningAlerts: 0,
-                errorAlerts: 0,
-                totalAlerts: 0,
-                active: index == 0
-              });
-
-              index++;
+      for (const baseChain in data.result) {
+        if (data.result[baseChain]) {
+          var currentChains: Chain[] = [];
+          var index: number = 0;
+          for (const currentChain in data.result[baseChain]) {
+            // Systems case.
+            var currentSystems: string[] = [];
+            for (const system of data.result[baseChain][currentChain].monitored.systems) {
+              currentSystems.push(Object.keys(system)[0]);
             }
 
-            this.baseChains.push({
-              name: capitalizeFirstLetter(baseChain),
-              chains: currentChains
-            });
-          }
-        }
-      }).then(async () => {
-        await this.updateAllAlertsOverview(true);
+            // Repos case.
+            var currentRepos: string[] = [];
+            for (const type of Object.keys(data.result[baseChain][currentChain].monitored)) {
+              if (type.includes('repo')) {
+                for (const repo of data.result[baseChain][currentChain].monitored[type]) {
+                  currentRepos.push(Object.keys(repo)[0]);
+                }
+              }
+            }
 
-      }).then(() => {
-        this.updater = window.setInterval(async () => {
-          await this.updateAllAlertsOverview(false);
-        }, this.updateFrequency)
-      }).catch(console.error);
+            currentChains.push({
+              name: capitalizeFirstLetter(currentChain),
+              id: data.result[baseChain][currentChain].parent_id,
+              repos: currentRepos,
+              systems: currentSystems,
+              criticalAlerts: 0,
+              warningAlerts: 0,
+              errorAlerts: 0,
+              totalAlerts: 0,
+              active: index == 0
+            });
+
+            index++;
+          }
+
+          this.baseChains.push({
+            name: capitalizeFirstLetter(baseChain),
+            chains: currentChains
+          });
+        }
+      }
+
+      await this.updateAllAlertsOverview(true);
+
+      this.updater = window.setInterval(async () => {
+        await this.updateAllAlertsOverview(false);
+      }, this.updateFrequency);
+    } catch (error: any) {
+      console.error(error);
+    }
   }
 
-  async updateAllAlertsOverview(initialCall: Boolean) {
+  async updateAllAlertsOverview(initialCall: Boolean): Promise<void> {
     var changed: Boolean = false;
     var result: {} = {};
     for (var baseChain of this.baseChains) {
@@ -101,31 +105,39 @@ export class PanicDashboardOverview {
     }
   }
 
-  async getAlertsOverview(chain: Chain, initialCall: Boolean): Promise<{}> {
+  async getAlertsOverview(chain: Chain, initialCall: Boolean): Promise<{ chain: Chain, changed: Boolean }> {
     var changed: Boolean = false;
     var chainSources = { parentIds: {} };
     chainSources.parentIds[chain.id] = { systems: [], repos: [] };
     chainSources.parentIds[chain.id].systems = chain.systems;
     chainSources.parentIds[chain.id].repos = chain.repos;
 
-    await fetch(this.apiURL + 'redis/alertsOverview',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(chainSources)
-      }).then(response => response.json())
-      .then(data => {
-        if (!initialCall && ((data.result[chain.id].critical != chain.criticalAlerts) || (data.result[chain.id].warning != chain.warningAlerts) || (data.result[chain.id].error != chain.errorAlerts))) {
-          changed = true;
-        }
-        chain.criticalAlerts = data.result[chain.id].critical;
-        chain.warningAlerts = data.result[chain.id].warning;
-        chain.errorAlerts = data.result[chain.id].error;
-        chain.totalAlerts = chain.criticalAlerts + chain.warningAlerts + chain.errorAlerts;
-      })
-      .catch(console.error);
+    try {
+      const alertsOverview = await fetch(this.apiURL + 'redis/alertsOverview',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(chainSources)
+        });
+
+      const data: any = await alertsOverview.json();
+
+      if (!initialCall && ((data.result[chain.id].critical != chain.criticalAlerts) ||
+        (data.result[chain.id].warning != chain.warningAlerts) ||
+        (data.result[chain.id].error != chain.errorAlerts))) {
+        changed = true;
+      }
+
+      chain.criticalAlerts = data.result[chain.id].critical;
+      chain.warningAlerts = data.result[chain.id].warning;
+      chain.errorAlerts = data.result[chain.id].error;
+      chain.totalAlerts = chain.criticalAlerts + chain.warningAlerts + chain.errorAlerts;
+
+    } catch (error: any) {
+      console.error(error);
+    }
 
     return { chain: chain, changed: changed };
   }
