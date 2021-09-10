@@ -9,11 +9,12 @@ export class PanicDashboardOverview {
   render() {
     return (
       <Host>
-        <panic-header>
-          <svc-header headline={"Dashboard Overview"}>
-            <svc-dropdown-menu />
-          </svc-header>
-        </panic-header>
+        <panic-header />
+
+        <svc-content-container>
+        </svc-content-container>
+
+        <panic-footer />
       </Host>
     );
   }
