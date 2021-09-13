@@ -17,13 +17,13 @@
     "@stencil/router": "^1.0.1",
     "@stencil/sass": "^1.4.1",
     "@types/swiper": "^5.4.3",
-    "stencil-router-v2": "^0.6.0"
+    "stencil-router-v2": "^0.6.0",
+    "@types/react": "^17.0.20",
+    "dotenv": "^10.0.0"
   },
   "license": "MIT",
   "dependencies": {
-    "@types/react": "^17.0.20",
     "cookie-parser": "^1.4.5",
-    "dotenv": "^10.0.0",
     "mongodb": "^3.6.9",
     "redis": "^3.1.2"
   }
