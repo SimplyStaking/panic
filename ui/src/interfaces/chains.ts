@@ -1,4 +1,4 @@
-export interface BaseChains {
+export interface BaseChain {
     readonly name: string;
     chains: Chain[];
 }

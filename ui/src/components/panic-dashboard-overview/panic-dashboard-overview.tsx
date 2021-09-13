@@ -1,144 +1,29 @@
 import { Component, Host, h, State } from '@stencil/core';
-import { BaseChains, Chain } from '../../interfaces/chains';
-import { baseChainsNames } from '../../utils/constants';
-import { Env } from '@stencil/core';
+import { BaseChain } from '../../interfaces/chains';
+import { MonitorablesInfo, UpdateAllAlertsOverview } from '../../utils/API-calls';
 
 @Component({
   tag: 'panic-dashboard-overview',
   styleUrl: 'panic-dashboard-overview.css'
 })
 export class PanicDashboardOverview {
-  private apiURL: string = `https://${Env.API_IP}:${Env.API_PORT}/server/`;
-  private baseChains: BaseChains[] = [];
+  private baseChains: BaseChain[] = [];
   private updater: number;
   private updateFrequency: number = 3000;
   @State() alertsChanged: Boolean = false;
 
   async componentWillLoad() {
     try {
-      const monitorablesInfo: Response = await fetch(this.apiURL + 'redis/monitorablesInfo',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            "baseChains": baseChainsNames
-          })
-        }
-      );
+      this.baseChains = await MonitorablesInfo();
 
-      const data: any = await monitorablesInfo.json();
-
-      for (const baseChain in data.result) {
-        if (data.result[baseChain]) {
-          var currentChains: Chain[] = [];
-          var index: number = 0;
-          for (const currentChain in data.result[baseChain]) {
-            // Systems case.
-            var currentSystems: string[] = [];
-            for (const system of data.result[baseChain][currentChain].monitored.systems) {
-              currentSystems.push(Object.keys(system)[0]);
-            }
-
-            // Repos case.
-            var currentRepos: string[] = [];
-            for (const type of Object.keys(data.result[baseChain][currentChain].monitored)) {
-              if (type.includes('repo')) {
-                for (const repo of data.result[baseChain][currentChain].monitored[type]) {
-                  currentRepos.push(Object.keys(repo)[0]);
-                }
-              }
-            }
-
-            currentChains.push({
-              name: currentChain,
-              id: data.result[baseChain][currentChain].parent_id,
-              repos: currentRepos,
-              systems: currentSystems,
-              criticalAlerts: 0,
-              warningAlerts: 0,
-              errorAlerts: 0,
-              totalAlerts: 0,
-              active: index == 0
-            });
-
-            index++;
-          }
-
-          this.baseChains.push({
-            name: baseChain,
-            chains: currentChains
-          });
-        }
-      }
-
-      await this.updateAllAlertsOverview(true);
+      await UpdateAllAlertsOverview(true, this.baseChains);
 
       this.updater = window.setInterval(async () => {
-        await this.updateAllAlertsOverview(false);
+        await UpdateAllAlertsOverview(false, this.baseChains);
       }, this.updateFrequency);
     } catch (error: any) {
       console.error(error);
     }
-  }
-
-  async updateAllAlertsOverview(initialCall: Boolean): Promise<void> {
-    var changed: Boolean = false;
-    var result: {} = {};
-    for (var baseChain of this.baseChains) {
-      for (var chain of baseChain.chains) {
-        if (chain.active) {
-          result = await this.getAlertsOverview(chain, initialCall);
-          chain = result['chain'];
-
-          if (!initialCall && !changed && result['changed']) {
-            changed = true;
-          }
-        }
-      }
-    }
-
-    if (changed) {
-      this.alertsChanged = !this.alertsChanged;
-    }
-  }
-
-  async getAlertsOverview(chain: Chain, initialCall: Boolean): Promise<{ chain: Chain, changed: Boolean }> {
-    var changed: Boolean = false;
-    var chainSources = { parentIds: {} };
-    chainSources.parentIds[chain.id] = { systems: [], repos: [] };
-    chainSources.parentIds[chain.id].systems = chain.systems;
-    chainSources.parentIds[chain.id].repos = chain.repos;
-
-    try {
-      const alertsOverview = await fetch(this.apiURL + 'redis/alertsOverview',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(chainSources)
-        });
-
-      const data: any = await alertsOverview.json();
-
-      if (!initialCall && ((data.result[chain.id].critical != chain.criticalAlerts) ||
-        (data.result[chain.id].warning != chain.warningAlerts) ||
-        (data.result[chain.id].error != chain.errorAlerts))) {
-        changed = true;
-      }
-
-      chain.criticalAlerts = data.result[chain.id].critical;
-      chain.warningAlerts = data.result[chain.id].warning;
-      chain.errorAlerts = data.result[chain.id].error;
-      chain.totalAlerts = chain.criticalAlerts + chain.warningAlerts + chain.errorAlerts;
-
-    } catch (error: any) {
-      console.error(error);
-    }
-
-    return { chain: chain, changed: changed };
   }
 
   disconnectedCallback() {
