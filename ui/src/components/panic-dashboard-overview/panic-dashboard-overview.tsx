@@ -1,6 +1,6 @@
 import { Component, Host, h, State } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { MonitorablesInfo, UpdateAllAlertsOverview } from '../../utils/API-calls';
+import { getMonitorablesInfo, updateAllBaseChains } from '../../utils/API-calls';
 
 @Component({
   tag: 'panic-dashboard-overview',
@@ -14,15 +14,21 @@ export class PanicDashboardOverview {
 
   async componentWillLoad() {
     try {
-      this.baseChains = await MonitorablesInfo();
+      this.baseChains = await getMonitorablesInfo();
 
-      await UpdateAllAlertsOverview(true, this.baseChains);
+      this.updateIfChanged(await updateAllBaseChains(true, this.baseChains));
 
       this.updater = window.setInterval(async () => {
-        await UpdateAllAlertsOverview(false, this.baseChains);
+        this.updateIfChanged(await updateAllBaseChains(false, this.baseChains));
       }, this.updateFrequency);
     } catch (error: any) {
       console.error(error);
+    }
+  }
+
+  updateIfChanged(changed: Boolean): void {
+    if (changed) {
+      this.alertsChanged = !this.alertsChanged;
     }
   }
 
@@ -37,7 +43,7 @@ export class PanicDashboardOverview {
 
     return (
       <Host>
-        <panic-header></panic-header>
+        <panic-header />
         <svc-content-container>
           {this.baseChains.map((baseChain) =>
             <svc-surface label={baseChain.name}>
@@ -46,10 +52,10 @@ export class PanicDashboardOverview {
                   {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
                       A green pie chart is shown with no text and without a tooltip */}
                   {chain.totalAlerts > 0 ?
-                    <svc-pie-chart class="alerts" slot="small" colors={alertsColors} cols={cols}
+                    <svc-pie-chart key={`${chain.name}-pie-chart`} slot="small" colors={alertsColors} cols={cols}
                       rows={[['Warning', chain.warningAlerts], ['Critical', chain.criticalAlerts], ['Error', chain.errorAlerts]]}>
                     </svc-pie-chart> :
-                    <svc-pie-chart class="no alerts" slot="small" colors={noAlertsColors} cols={cols} rows={[['', 1]]}
+                    <svc-pie-chart key={`${chain.name}-pie-chart`} slot="small" colors={noAlertsColors} cols={cols} rows={[['', 1]]}
                       pie-slice-text="none"
                       tooltip-trigger="none">
                     </svc-pie-chart>}
@@ -59,7 +65,7 @@ export class PanicDashboardOverview {
             </svc-surface>
           )}
         </svc-content-container>
-        <panic-footer></panic-footer>
+        <panic-footer />
       </Host >
     );
   }
