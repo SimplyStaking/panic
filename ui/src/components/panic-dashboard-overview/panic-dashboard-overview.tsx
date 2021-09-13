@@ -1,6 +1,6 @@
 import { Component, Host, h, State } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { getMonitorablesInfo, updateAllBaseChains } from '../../utils/API-calls';
+import { getMonitorablesInfo, updateAllBaseChains } from '../../utils/chains';
 
 @Component({
   tag: 'panic-dashboard-overview',
