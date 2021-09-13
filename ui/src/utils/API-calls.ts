@@ -15,21 +15,21 @@ export async function MonitorablesInfo(): Promise<BaseChain[]> {
     );
 
     const data: any = await monitorablesInfo.json();
-    var baseChains: BaseChain[] = [];
+    let baseChains: BaseChain[] = [];
 
     for (const baseChain in data.result) {
         if (data.result[baseChain]) {
-            var currentChains: Chain[] = [];
-            var index: number = 0;
+            let currentChains: Chain[] = [];
+            let index: number = 0;
             for (const currentChain in data.result[baseChain]) {
                 // Systems case.
-                var currentSystems: string[] = [];
+                let currentSystems: string[] = [];
                 for (const system of data.result[baseChain][currentChain].monitored.systems) {
                     currentSystems.push(Object.keys(system)[0]);
                 }
 
                 // Repos case.
-                var currentRepos: string[] = [];
+                let currentRepos: string[] = [];
                 for (const type of Object.keys(data.result[baseChain][currentChain].monitored)) {
                     if (type.includes('repo')) {
                         for (const repo of data.result[baseChain][currentChain].monitored[type]) {
@@ -64,10 +64,10 @@ export async function MonitorablesInfo(): Promise<BaseChain[]> {
 }
 
 export async function UpdateAllAlertsOverview(initialCall: Boolean, baseChains: BaseChain[]): Promise<void> {
-    var changed: Boolean = false;
-    var result: {} = {};
-    for (var baseChain of baseChains) {
-        for (var chain of baseChain.chains) {
+    let changed: Boolean = false;
+    let result: {} = {};
+    for (let baseChain of baseChains) {
+        for (let chain of baseChain.chains) {
             if (chain.active) {
                 result = await GetAlertsOverview(chain, initialCall);
                 chain = result['chain'];
@@ -85,8 +85,8 @@ export async function UpdateAllAlertsOverview(initialCall: Boolean, baseChains: 
 }
 
 export async function GetAlertsOverview(chain: Chain, initialCall: Boolean): Promise<{ chain: Chain, changed: Boolean }> {
-    var changed: Boolean = false;
-    var chainSources = { parentIds: {} };
+    let changed: Boolean = false;
+    let chainSources = { parentIds: {} };
     chainSources.parentIds[chain.id] = { systems: [], repos: [] };
     chainSources.parentIds[chain.id].systems = chain.systems;
     chainSources.parentIds[chain.id].repos = chain.repos;
