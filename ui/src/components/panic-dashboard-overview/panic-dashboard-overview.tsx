@@ -2,14 +2,14 @@ import { Component, Host, h, State } from '@stencil/core';
 import { BaseChains, Chain } from '../../interfaces/chains';
 import { baseChainsNames } from '../../utils/constants';
 import { capitalizeFirstLetter } from '../../utils/helpers';
+import { Env } from '@stencil/core';
 
 @Component({
   tag: 'panic-dashboard-overview',
   styleUrl: 'panic-dashboard-overview.css'
 })
 export class PanicDashboardOverview {
-  // Hard-coded for now. To use ENV variables in the future.
-  private apiURL: string = `https://${"localhost"}:${"9000"}/server/`;
+  private apiURL: string = `https://localhost:${Env.API_PORT}/server/`;
   private baseChains: BaseChains[] = [];
   private updater: number;
   private updateFrequency: number = 3000;
