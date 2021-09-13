@@ -9,7 +9,7 @@ import { Env } from '@stencil/core';
   styleUrl: 'panic-dashboard-overview.css'
 })
 export class PanicDashboardOverview {
-  private apiURL: string = `https://localhost:${Env.API_PORT}/server/`;
+  private apiURL: string = `https://${Env.API_IP}:${Env.API_PORT}/server/`;
   private baseChains: BaseChains[] = [];
   private updater: number;
   private updateFrequency: number = 3000;

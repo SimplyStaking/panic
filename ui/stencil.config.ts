@@ -4,7 +4,7 @@ import { sass } from '@stencil/sass';
 import * as dotenv from "dotenv";
 
 // Use the environmental variables from the .env file
-dotenv.config();
+dotenv.config({ path: "../.env" });
 
 export const config: Config = {
   globalStyle: 'src/global/app.css',
