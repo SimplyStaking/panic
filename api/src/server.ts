@@ -94,7 +94,9 @@ app.use((err: any, req: express.Request, res: express.Response,
     next();
 });
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-app.use(cors({ origin: [`https://${process.env.UI_DASHBOARD_IP || "localhost"}:${process.env.UI_DASHBOARD_PORT || "3333"}`] }))
+const localUiHost = `https://localhost:${process.env.UI_DASHBOARD_PORT || "3333"}`;
+const UiHost = process.env.UI_DASHBOARD_IP ? `https://${process.env.UI_DASHBOARD_IP}:${process.env.UI_DASHBOARD_PORT || "3333"}` : null;
+app.use(cors({ origin: UiHost ? [UiHost, localUiHost] : [localUiHost] }))
 
 // Connect with Redis
 const redisHost = process.env.REDIS_IP || "localhost";
