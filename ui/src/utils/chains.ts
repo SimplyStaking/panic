@@ -2,23 +2,62 @@ import { BaseChain, Chain } from "../interfaces/chains";
 import { apiURL, baseChainsNames } from "./constants";
 
 /**
- * Gets the base chains from the API and populates them with chain information.
+ * Gets the monitorable information of the base chains from the API.
+ * @returns the monitorable information of the base chains as a JSON object.
+ */
+async function getMonitorablesInfo(): Promise<any> {
+    try {
+        const monitorablesInfo: Response = await fetch(`${apiURL}redis/monitorablesInfo`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "baseChains": baseChainsNames
+                })
+            }
+        );
+
+        return await monitorablesInfo.json();
+    } catch (error: any) {
+        console.error(error);
+    }
+}
+
+/**
+ * Gets the alerts overview of a given chain.
+ * @param chain chain to be checked.
+ * @returns chain data as a JSON object.
+ */
+async function getAlertsOverview(chain: Chain): Promise<any> {
+    let chainSources = { parentIds: {} };
+    chainSources.parentIds[chain.id] = { systems: [], repos: [] };
+    chainSources.parentIds[chain.id].systems = chain.systems;
+    chainSources.parentIds[chain.id].repos = chain.repos;
+
+    try {
+        const alertsOverview = await fetch(`${apiURL}redis/alertsOverview`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(chainSources)
+            });
+
+        return await alertsOverview.json();
+    } catch (error: any) {
+        console.error(error);
+    }
+}
+
+/**
+ * Gets the base chains from the API and formats them with the chain information.
  * @returns list of populated base chains.
  */
-export async function getMonitorablesInfo(): Promise<BaseChain[]> {
-    const monitorablesInfo: Response = await fetch(`${apiURL}redis/monitorablesInfo`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                "baseChains": baseChainsNames
-            })
-        }
-    );
-
-    const data: any = await monitorablesInfo.json();
+export async function getBaseChains(): Promise<BaseChain[]> {
+    const data: any = await getMonitorablesInfo();
     const baseChains: BaseChain[] = [];
 
     for (const baseChain in data.result) {
@@ -83,7 +122,7 @@ export async function getAllBaseChains(baseChains: BaseChain[]): Promise<BaseCha
         });
     }
 
-    const newBaseChains: BaseChain[] = await getMonitorablesInfo();
+    const newBaseChains: BaseChain[] = await getBaseChains();
 
     // Add newly added base chains (if any).
     for (const newBaseChain of newBaseChains) {
@@ -167,31 +206,4 @@ async function getChainAlerts(chain: Chain): Promise<Chain> {
     }
 
     return chain;
-}
-
-/**
- * Gets the alerts overview of a given chain.
- * @param chain chain to be checked.
- * @returns chain data as JSON.
- */
-async function getAlertsOverview(chain: Chain): Promise<any> {
-    let chainSources = { parentIds: {} };
-    chainSources.parentIds[chain.id] = { systems: [], repos: [] };
-    chainSources.parentIds[chain.id].systems = chain.systems;
-    chainSources.parentIds[chain.id].repos = chain.repos;
-
-    try {
-        const alertsOverview = await fetch(`${apiURL}redis/alertsOverview`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(chainSources)
-            });
-
-        return await alertsOverview.json();
-    } catch (error: any) {
-        console.error(error);
-    }
 }

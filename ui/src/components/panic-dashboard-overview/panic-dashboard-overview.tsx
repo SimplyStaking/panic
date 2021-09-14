@@ -1,6 +1,6 @@
 import { Component, Host, h, State } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { getMonitorablesInfo, getAllBaseChains } from '../../utils/chains';
+import { getBaseChains, getAllBaseChains } from '../../utils/chains';
 
 @Component({
   tag: 'panic-dashboard-overview',
@@ -13,7 +13,7 @@ export class PanicDashboardOverview {
 
   async componentWillLoad() {
     try {
-      const baseChains = await getMonitorablesInfo();
+      const baseChains = await getBaseChains();
 
       this.baseChains = await getAllBaseChains(baseChains);
 
