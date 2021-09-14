@@ -109,11 +109,11 @@ export async function getBaseChains(): Promise<BaseChain[]> {
 }
 
 /**
- * Gets the alerts of all of the chains within each base chain.
+ * Updates the alerts of all of the chains within each base chain.
  * @param baseChains base chains to be updated.
  * @returns updated chains.
  */
-export async function getAllBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
+export async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
     const updatedBaseChains: BaseChain[] = [];
     for (const baseChain of baseChains) {
         updatedBaseChains.push({

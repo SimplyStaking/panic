@@ -1,6 +1,6 @@
 import { Component, Host, h, State } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { getBaseChains, getAllBaseChains } from '../../utils/chains';
+import { getBaseChains, updateBaseChains } from '../../utils/chains';
 
 @Component({
   tag: 'panic-dashboard-overview',
@@ -15,10 +15,10 @@ export class PanicDashboardOverview {
     try {
       const baseChains = await getBaseChains();
 
-      this.baseChains = await getAllBaseChains(baseChains);
+      this.baseChains = await updateBaseChains(baseChains);
 
       this.updater = window.setInterval(async () => {
-        this.baseChains = await getAllBaseChains(this.baseChains);
+        this.baseChains = await updateBaseChains(this.baseChains);
       }, this.updateFrequency);
     } catch (error: any) {
       console.error(error);
