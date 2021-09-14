@@ -52,10 +52,10 @@ export class PanicDashboardOverview {
                   {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
                       A green pie chart is shown with no text and without a tooltip */}
                   {chain.totalAlerts > 0 ?
-                    <svc-pie-chart key={`${chain.name}-pie-chart`} slot="small" colors={alertsColors} cols={cols}
+                    <svc-pie-chart key={`${chain.name}-pie-chart-alerts`} slot="small" colors={alertsColors} cols={cols}
                       rows={[['Warning', chain.warningAlerts], ['Critical', chain.criticalAlerts], ['Error', chain.errorAlerts]]}>
                     </svc-pie-chart> :
-                    <svc-pie-chart key={`${chain.name}-pie-chart`} slot="small" colors={noAlertsColors} cols={cols} rows={[['', 1]]}
+                    <svc-pie-chart key={`${chain.name}-pie-chart-no-alerts`} slot="small" colors={noAlertsColors} cols={cols} rows={[['', 1]]}
                       pie-slice-text="none"
                       tooltip-trigger="none">
                     </svc-pie-chart>}
