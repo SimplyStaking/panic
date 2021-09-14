@@ -13,9 +13,9 @@ export class PanicDashboardOverview {
 
   async componentWillLoad() {
     try {
-      this.baseChains = await getMonitorablesInfo();
+      const baseChains = await getMonitorablesInfo();
 
-      this.baseChains = await getAllBaseChains(this.baseChains);
+      this.baseChains = await getAllBaseChains(baseChains);
 
       this.updater = window.setInterval(async () => {
         this.baseChains = await getAllBaseChains(this.baseChains);
@@ -33,7 +33,6 @@ export class PanicDashboardOverview {
     const alertsColors: string[] = ['#f4dd77', '#f7797b', '#a39293'];
     const noAlertsColors: string[] = ['#b0ea8f'];
     const cols = [{ title: 'Alert', type: 'string' }, { title: 'Amount', type: 'number' }];
-    //console.log(this.baseChains);
 
     return (
       <Host>
