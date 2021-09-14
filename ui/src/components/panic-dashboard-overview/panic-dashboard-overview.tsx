@@ -1,34 +1,27 @@
 import { Component, Host, h, State } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { getMonitorablesInfo, updateAllBaseChains } from '../../utils/chains';
+import { getMonitorablesInfo, getAllBaseChains } from '../../utils/chains';
 
 @Component({
   tag: 'panic-dashboard-overview',
   styleUrl: 'panic-dashboard-overview.css'
 })
 export class PanicDashboardOverview {
-  private baseChains: BaseChain[] = [];
+  @State() baseChains: BaseChain[] = [];
   private updater: number;
   private updateFrequency: number = 3000;
-  @State() alertsChanged: Boolean = false;
 
   async componentWillLoad() {
     try {
       this.baseChains = await getMonitorablesInfo();
 
-      this.updateIfChanged(await updateAllBaseChains(true, this.baseChains));
+      this.baseChains = await getAllBaseChains(this.baseChains);
 
       this.updater = window.setInterval(async () => {
-        this.updateIfChanged(await updateAllBaseChains(false, this.baseChains));
+        this.baseChains = await getAllBaseChains(this.baseChains);
       }, this.updateFrequency);
     } catch (error: any) {
       console.error(error);
-    }
-  }
-
-  updateIfChanged(changed: Boolean): void {
-    if (changed) {
-      this.alertsChanged = !this.alertsChanged;
     }
   }
 
@@ -40,6 +33,7 @@ export class PanicDashboardOverview {
     const alertsColors: string[] = ['#f4dd77', '#f7797b', '#a39293'];
     const noAlertsColors: string[] = ['#b0ea8f'];
     const cols = [{ title: 'Alert', type: 'string' }, { title: 'Amount', type: 'number' }];
+    //console.log(this.baseChains);
 
     return (
       <Host>

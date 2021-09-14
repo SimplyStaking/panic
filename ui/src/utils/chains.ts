@@ -68,48 +68,37 @@ export async function getMonitorablesInfo(): Promise<BaseChain[]> {
 }
 
 /**
- * Updates the alerts of all of the chains within each base chain.
- * @param initialCall whether this is the first call.
+ * Gets the alerts of all of the chains within each base chain.
  * @param baseChains base chains to be updated.
- * @returns whether any chain was changed.
+ * @returns updated chains.
  */
-export async function updateAllBaseChains(initialCall: Boolean, baseChains: BaseChain[]): Promise<Boolean> {
-    let changed: Boolean = false;
-    let result: {} = {};
+export async function getAllBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
+    const updatedBaseChains: BaseChain[] = [];
     for (let baseChain of baseChains) {
-        for (let chain of baseChain.chains) {
+        const updatedBaseChain: BaseChain = {
+            name: baseChain.name,
+            chains: baseChain.chains
+        };
+        for (let chain of updatedBaseChain.chains) {
             if (chain.active) {
-                result = await updateChainAlerts(chain, initialCall);
-                chain = result['chain'];
-
-                if (!initialCall && !changed && result['changed']) {
-                    changed = true;
-                }
+                const result = await getChainAlerts(chain);
+                chain = result;
             }
         }
+        updatedBaseChains.push(updatedBaseChain);
     }
 
-    return changed;
+    return updatedBaseChains;
 }
 
 /**
  * Updates the alerts of a given chain while noting whether it changed.
  * @param chain chain to be updated.
- * @param initialCall whether this is the first call.
  * @returns updated chain and whether it was changed.
  */
-async function updateChainAlerts(chain: Chain, initialCall: Boolean): Promise<{ chain: Chain, changed: Boolean }> {
-    let changed: Boolean = false;
-
+async function getChainAlerts(chain: Chain): Promise<Chain> {
     try {
         const data: any = await getAlertsOverview(chain);
-
-        if (!initialCall && ((data.result[chain.id].critical !== chain.criticalAlerts) ||
-            (data.result[chain.id].warning !== chain.warningAlerts) ||
-            (data.result[chain.id].error !== chain.errorAlerts))) {
-            changed = true;
-        }
-
         chain.criticalAlerts = data.result[chain.id].critical;
         chain.warningAlerts = data.result[chain.id].warning;
         chain.errorAlerts = data.result[chain.id].error;
@@ -119,7 +108,7 @@ async function updateChainAlerts(chain: Chain, initialCall: Boolean): Promise<{ 
         console.error(error);
     }
 
-    return { chain: chain, changed: changed };
+    return chain;
 }
 
 /**
