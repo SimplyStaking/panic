@@ -1,4 +1,4 @@
-import { ChainsAPI, getAlertsOverview } from "../chains";
+import { ChainsAPI } from "../chains";
 import { baseChainsNames } from "../constants";
 
 fetch = jest.fn(() =>
