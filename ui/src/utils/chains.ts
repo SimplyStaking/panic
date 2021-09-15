@@ -161,8 +161,7 @@ async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
     for (const updatedBaseChain of updatedBaseChains) {
         for (let chain of updatedBaseChain.chains) {
             if (chain.active) {
-                const result = await getChainAlerts(chain);
-                chain = result;
+                chain = await getChainAlerts(chain);
             }
         }
     }
@@ -236,9 +235,9 @@ function removeNewlyRemovedBaseChains(updatedBaseChains: BaseChain[], newBaseCha
 }
 
 /**
- * Updates the alerts of a given chain while noting whether it changed.
- * @param chain chain to be updated.
- * @returns updated chain and whether it was changed.
+ * Gets the alerts of a given chain.
+ * @param chain chain to be checked.
+ * @returns updated chain.
  */
 async function getChainAlerts(chain: Chain): Promise<Chain> {
     const data: any = await getAlertsOverview(chain);
