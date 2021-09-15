@@ -26,7 +26,7 @@ async function getMonitorablesInfo(): Promise<any> {
 
         return await monitorablesInfo.json();
     } catch (error: any) {
-        console.log(error);
+        console.log('Error getting monitorables info -', error);
         return { result: {} }
     }
 }
@@ -54,7 +54,8 @@ async function getAlertsOverview(chain: Chain): Promise<any> {
 
         return await alertsOverview.json();
     } catch (error: any) {
-        console.error(error);
+        console.log(`Error getting Chain Alerts for chain ID: ${chain.id} -`, error);
+        return { result: {} };
     }
 }
 
@@ -71,10 +72,20 @@ async function getBaseChains(): Promise<BaseChain[]> {
             const currentChains: Chain[] = [];
             let index: number = 0;
             for (const currentChain in data.result[baseChain]) {
-                // Systems case.
+                // Skip chain if monitored field does not exist.
+                if (!data.result[baseChain][currentChain].monitored) {
+                    continue;
+                }
+
+                // Get Systems.
                 const currentSystems: string[] = getSystems(data.result[baseChain][currentChain].monitored.systems);
-                // Repos case.
+                // Get Repos.
                 const currentRepos: string[] = getRepos(data.result[baseChain][currentChain].monitored);
+
+                // Skip chain if it does not contain any monitorable sources.
+                if (currentSystems.length + currentRepos.length === 0) {
+                    continue;
+                }
 
                 currentChains.push({
                     name: currentChain,
@@ -89,6 +100,11 @@ async function getBaseChains(): Promise<BaseChain[]> {
                 });
 
                 index++;
+            }
+
+            // Skip base chain if its chains do not contain any monitorable sources.
+            if (currentChains.length == 0) {
+                continue;
             }
 
             baseChains.push({
@@ -133,18 +149,10 @@ function getRepos(monitored: any): string[] {
  * @returns updated chains.
  */
 async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
-    let updatedBaseChains: BaseChain[] = [];
-    for (const baseChain of baseChains) {
-        updatedBaseChains.push({
-            name: baseChain.name,
-            chains: baseChain.chains
-        });
-    }
-
     const newBaseChains: BaseChain[] = await getBaseChains();
 
     // Add newly added base chains (if any).
-    updatedBaseChains = addNewlyAddedBaseChains(updatedBaseChains, newBaseChains);
+    let updatedBaseChains: BaseChain[] = addNewlyAddedBaseChains(baseChains, newBaseChains);
 
     // Remove newly removed base chains (if any).
     updatedBaseChains = removeNewlyRemovedBaseChains(updatedBaseChains, newBaseChains);
@@ -162,6 +170,12 @@ async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
     return updatedBaseChains;
 }
 
+/**
+ * Adds newly added base chains while also checking newly added/removed chains within.
+ * @param updatedBaseChains base chains to be updated.
+ * @param newBaseChains new base chains (latest from API).
+ * @returns updated base chains.
+ */
 function addNewlyAddedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: BaseChain[]): BaseChain[] {
     const finalBaseChains: BaseChain[] = [];
 
@@ -202,6 +216,12 @@ function addNewlyAddedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: 
     return finalBaseChains;
 }
 
+/**
+ * Removes newly removed base chains.
+ * @param updatedBaseChains base chains to be updated.
+ * @param newBaseChains new base chains (latest from API).
+ * @returns updated base chains.
+ */
 function removeNewlyRemovedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: BaseChain[]): BaseChain[] {
     const finalBaseChains: BaseChain[] = [];
 
@@ -221,15 +241,13 @@ function removeNewlyRemovedBaseChains(updatedBaseChains: BaseChain[], newBaseCha
  * @returns updated chain and whether it was changed.
  */
 async function getChainAlerts(chain: Chain): Promise<Chain> {
-    try {
-        const data: any = await getAlertsOverview(chain);
-        chain.criticalAlerts = data.result[chain.id].critical;
-        chain.warningAlerts = data.result[chain.id].warning;
-        chain.errorAlerts = data.result[chain.id].error;
-        chain.totalAlerts = chain.criticalAlerts + chain.warningAlerts + chain.errorAlerts;
+    const data: any = await getAlertsOverview(chain);
 
-    } catch (error: any) {
-        console.error(error);
+    if (data.result[chain.id]) {
+        chain.criticalAlerts = data.result[chain.id].critical ? data.result[chain.id].critical : 0;
+        chain.warningAlerts = data.result[chain.id].warning ? data.result[chain.id].warning : 0;
+        chain.errorAlerts = data.result[chain.id].error ? data.result[chain.id].error : 0;
+        chain.totalAlerts = chain.criticalAlerts + chain.warningAlerts + chain.errorAlerts;
     }
 
     return chain;
