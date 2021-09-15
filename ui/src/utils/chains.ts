@@ -1,6 +1,11 @@
 import { BaseChain, Chain } from "../interfaces/chains";
 import { apiURL, baseChainsNames } from "./constants";
 
+export const ChainsAPI = {
+    updateBaseChains: updateBaseChains,
+    getBaseChains: getBaseChains
+}
+
 /**
  * Gets the monitorable information of the base chains from the API.
  * @returns the monitorable information of the base chains as a JSON object.
@@ -57,7 +62,7 @@ async function getAlertsOverview(chain: Chain): Promise<any> {
  * Gets the base chains from the API and formats them with the chain information.
  * @returns list of populated base chains.
  */
-export async function getBaseChains(): Promise<BaseChain[]> {
+async function getBaseChains(): Promise<BaseChain[]> {
     const data: any = await getMonitorablesInfo();
     const baseChains: BaseChain[] = [];
 
@@ -127,7 +132,7 @@ function getRepos(monitored: any): string[] {
  * @param baseChains base chains to be updated.
  * @returns updated chains.
  */
-export async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
+async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
     let updatedBaseChains: BaseChain[] = [];
     for (const baseChain of baseChains) {
         updatedBaseChains.push({
