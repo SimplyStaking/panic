@@ -21,7 +21,8 @@ async function getMonitorablesInfo(): Promise<any> {
 
         return await monitorablesInfo.json();
     } catch (error: any) {
-        console.error(error);
+        console.log(error);
+        return { result: {} }
     }
 }
 
@@ -66,22 +67,9 @@ export async function getBaseChains(): Promise<BaseChain[]> {
             let index: number = 0;
             for (const currentChain in data.result[baseChain]) {
                 // Systems case.
-                const currentSystems: string[] = [];
-                if (data.result[baseChain][currentChain].monitored.systems) {
-                    for (const system of data.result[baseChain][currentChain].monitored.systems) {
-                        currentSystems.push(Object.keys(system)[0]);
-                    }
-                }
-
+                const currentSystems: string[] = getSystems(data.result[baseChain][currentChain].monitored.systems);
                 // Repos case.
-                const currentRepos: string[] = [];
-                for (const type of Object.keys(data.result[baseChain][currentChain].monitored)) {
-                    if (type.includes('repo')) {
-                        for (const repo of data.result[baseChain][currentChain].monitored[type]) {
-                            currentRepos.push(Object.keys(repo)[0]);
-                        }
-                    }
-                }
+                const currentRepos: string[] = getRepos(data.result[baseChain][currentChain].monitored);
 
                 currentChains.push({
                     name: currentChain,
@@ -105,7 +93,33 @@ export async function getBaseChains(): Promise<BaseChain[]> {
         }
     }
 
+
     return baseChains;
+}
+
+function getSystems(systems: any): string[] {
+    const currentSystems: string[] = [];
+
+    if (systems) {
+        for (const system of systems) {
+            currentSystems.push(Object.keys(system)[0]);
+        }
+    }
+
+    return currentSystems;
+}
+
+function getRepos(monitored: any): string[] {
+    const currentRepos: string[] = [];
+
+    for (const type of Object.keys(monitored)) {
+        if (type.includes('repo')) {
+            for (const repo of monitored[type]) {
+                currentRepos.push(Object.keys(repo)[0]);
+            }
+        }
+    }
+    return currentRepos;
 }
 
 /**
@@ -114,7 +128,7 @@ export async function getBaseChains(): Promise<BaseChain[]> {
  * @returns updated chains.
  */
 export async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
-    const updatedBaseChains: BaseChain[] = [];
+    let updatedBaseChains: BaseChain[] = [];
     for (const baseChain of baseChains) {
         updatedBaseChains.push({
             name: baseChain.name,
@@ -125,55 +139,10 @@ export async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseCha
     const newBaseChains: BaseChain[] = await getBaseChains();
 
     // Add newly added base chains (if any).
-    for (const newBaseChain of newBaseChains) {
-        const updatedBaseChain: BaseChain = updatedBaseChains.find(baseChain => baseChain.name === newBaseChain.name);
-        if (!updatedBaseChain) {
-            // Add new base chain.
-            updatedBaseChains.push(newBaseChain);
-        } else {
-            // Check for newly added/removed chains within base chain.
-            for (const newChain of newBaseChain.chains) {
-                // Add newly added chains (if any).
-                if (!updatedBaseChain.chains.find(chain => chain.id === newChain.id)) {
-                    newChain.active = false;
-                    updatedBaseChain.chains.push(newChain);
-                }
-            }
-
-            // Remove newly removed chains (if any).
-            const removedChains: Chain[] = [];
-            for (const updatedChain of updatedBaseChain.chains) {
-                if (!newBaseChain.chains.find(chain => chain.id === updatedChain.id)) {
-                    removedChains.push(updatedChain);
-                }
-            }
-            for (const removedChain of removedChains) {
-                const index = updatedBaseChain.chains.indexOf(removedChain);
-                if (index > -1) {
-                    updatedBaseChain.chains.splice(index, 1);
-                } else {
-                    console.error('This should always exist.');
-                }
-            }
-        }
-    }
+    updatedBaseChains = addNewlyAddedBaseChains(updatedBaseChains, newBaseChains);
 
     // Remove newly removed base chains (if any).
-    const removedBaseChains: BaseChain[] = [];
-    for (const updatedBaseChain of updatedBaseChains) {
-        if (!newBaseChains.find(baseChain => baseChain.name === updatedBaseChain.name)) {
-            removedBaseChains.push(updatedBaseChain);
-        }
-    }
-    for (const removedBaseChain of removedBaseChains) {
-        const index = updatedBaseChains.indexOf(removedBaseChain);
-        if (index > -1) {
-            updatedBaseChains.splice(index, 1);
-        } else {
-            console.error('This should always exist.');
-        }
-    }
-
+    updatedBaseChains = removeNewlyRemovedBaseChains(updatedBaseChains, newBaseChains);
 
     // Populate each active chain within each base chain.
     for (const updatedBaseChain of updatedBaseChains) {
@@ -186,6 +155,59 @@ export async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseCha
     }
 
     return updatedBaseChains;
+}
+
+function addNewlyAddedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: BaseChain[]): BaseChain[] {
+    const finalBaseChains: BaseChain[] = [];
+
+    for (let newBaseChain of newBaseChains) {
+        const updatedBaseChain: BaseChain = updatedBaseChains.find(baseChain => baseChain.name === newBaseChain.name);
+        if (updatedBaseChain) {
+            // Add base chain.
+            const finalBaseChain: BaseChain = { name: updatedBaseChain.name, chains: [] };
+            // Check for newly added/removed chains within base chain.
+            for (const newChain of newBaseChain.chains) {
+                // Add newly added chains (if any).
+                if (!updatedBaseChain.chains.find(chain => chain.id === newChain.id)) {
+                    newChain.active = false;
+                    finalBaseChain.chains.push(newChain);
+                }
+            }
+
+            // Do not add newly removed chains (if any) / Add common chains only.
+            for (const updatedChain of updatedBaseChain.chains) {
+                if (newBaseChain.chains.find(chain => chain.id === updatedChain.id)) {
+                    finalBaseChain.chains.push(updatedChain);
+                }
+            }
+
+            // Check for case if active chain was removed.
+            if (!finalBaseChain.chains.find(chain => chain.active)) {
+                finalBaseChain.chains[0].active = true;
+            }
+
+            // Add base chain.
+            finalBaseChains.push(finalBaseChain);
+        } else {
+            // Add newly added base chain.
+            finalBaseChains.push(newBaseChain);
+        }
+    }
+
+    return finalBaseChains;
+}
+
+function removeNewlyRemovedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: BaseChain[]): BaseChain[] {
+    const finalBaseChains: BaseChain[] = [];
+
+    // Do not add newly removed base chains (if any) / Add common base chains only.
+    for (const updatedBaseChain of updatedBaseChains) {
+        if (newBaseChains.find(baseChain => baseChain.name === updatedBaseChain.name)) {
+            finalBaseChains.push(updatedBaseChain);
+        }
+    }
+
+    return finalBaseChains;
 }
 
 /**

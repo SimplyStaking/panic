@@ -9,7 +9,7 @@ import { getBaseChains, updateBaseChains } from '../../utils/chains';
 export class PanicDashboardOverview {
   @State() baseChains: BaseChain[] = [];
   private updater: number;
-  private updateFrequency: number = 3000;
+  private updateFrequency: number = 5000;
 
   async componentWillLoad() {
     try {
