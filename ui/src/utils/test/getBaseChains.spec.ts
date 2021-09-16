@@ -1,13 +1,13 @@
 import { ChainsAPI } from "../chains";
-import { baseChainsNames } from "../constants";
+import { baseChainsNames, fetchMock } from "../constants";
 
 beforeEach(() => {
-    fetch.resetMocks();
+    fetchMock.resetMocks();
 });
 
 describe('getBaseChains() function', () => {
     it('should not return any base chains when API is down', async () => {
-        fetch.mockReject(() => Promise.reject("API is down"));
+        fetchMock.mockReject(() => Promise.reject("API is down"));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -20,7 +20,7 @@ describe('getBaseChains() function', () => {
             monitorablesInfoNoBaseChains.result[baseChainName] = null;
         }
 
-        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoNoBaseChains));
+        fetchMock.mockResponseOnce(JSON.stringify(monitorablesInfoNoBaseChains));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -34,7 +34,7 @@ describe('getBaseChains() function', () => {
         }
         monitorablesInfo1BaseChain0Chains.result[baseChainsNames[0]] = {};
 
-        fetch.mockResponseOnce(JSON.stringify(monitorablesInfo1BaseChain0Chains));
+        fetchMock.mockResponseOnce(JSON.stringify(monitorablesInfo1BaseChain0Chains));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -48,7 +48,7 @@ describe('getBaseChains() function', () => {
         }
 
         monitorablesInfoWithoutMonitored.result[baseChainsNames[0]] = { 'test chain': { parent_id: "test_chain" } };
-        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoWithoutMonitored));
+        fetchMock.mockResponseOnce(JSON.stringify(monitorablesInfoWithoutMonitored));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -62,7 +62,7 @@ describe('getBaseChains() function', () => {
         }
         monitorablesInfoEmptyMonitored.result[baseChainsNames[0]] = { 'test chain': { parent_id: "test_chain", monitored: {} } };
 
-        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoEmptyMonitored));
+        fetchMock.mockResponseOnce(JSON.stringify(monitorablesInfoEmptyMonitored));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -76,7 +76,7 @@ describe('getBaseChains() function', () => {
         }
         monitorablesInfoEmptySystems.result[baseChainsNames[0]] = { 'test chain': { parent_id: "test_chain", monitored: { systems: [] } } };
 
-        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoEmptySystems));
+        fetchMock.mockResponseOnce(JSON.stringify(monitorablesInfoEmptySystems));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -91,7 +91,7 @@ describe('getBaseChains() function', () => {
 
         monitorablesInfoEmptyRepos.result[baseChainsNames[0]] = { 'test chain': { parent_id: "test_chain", monitored: { github_repos: [] } } };
 
-        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoEmptyRepos));
+        fetchMock.mockResponseOnce(JSON.stringify(monitorablesInfoEmptyRepos));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -112,7 +112,7 @@ describe('getBaseChains() function', () => {
             }
         };
 
-        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoMockData));
+        fetchMock.mockResponseOnce(JSON.stringify(monitorablesInfoMockData));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([{

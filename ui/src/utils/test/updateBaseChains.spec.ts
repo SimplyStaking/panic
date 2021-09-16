@@ -1,13 +1,13 @@
 import { ChainsAPI } from "../chains";
-import { baseChainsNames } from "../constants";
+import { baseChainsNames, fetchMock } from "../constants";
 
 beforeEach(() => {
-    fetch.resetMocks();
+    fetchMock.resetMocks();
 });
 
 describe('getBaseChains() function', () => {
     it('should not return any base chains when API is down', async () => {
-        fetch.mockReject(() => Promise.reject("API is down"));
+        fetchMock.mockReject(() => Promise.reject("API is down"));
         const baseChains = await ChainsAPI.updateBaseChains([{
             name: '', chains: [
                 {
@@ -44,7 +44,7 @@ describe('getBaseChains() function', () => {
     };
 
     it('should not update chain when getAlertsOverview fails', async () => {
-        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoMockData))
+        fetchMock.mockResponseOnce(JSON.stringify(monitorablesInfoMockData))
             .mockReject(() => Promise.reject("API is down"));
 
         const baseChains = await ChainsAPI.updateBaseChains(mockBaseChainsData);
@@ -58,7 +58,7 @@ describe('getBaseChains() function', () => {
             result: { test_chain: { critical: 0, warning: 0, error: 0 } }
         };
 
-        fetch.mockResponses([JSON.stringify(monitorablesInfoMockData)],
+        fetchMock.mockResponses([JSON.stringify(monitorablesInfoMockData)],
             [JSON.stringify(alertsOverviewMockData)]);
 
         const baseChains = await ChainsAPI.updateBaseChains(mockBaseChainsData);
@@ -76,7 +76,7 @@ describe('getBaseChains() function', () => {
         mockBaseChainsData2[0].chains[0].errorAlerts = 2;
         mockBaseChainsData2[0].chains[0].totalAlerts = 6;
 
-        fetch.mockResponses([JSON.stringify(monitorablesInfoMockData)],
+        fetchMock.mockResponses([JSON.stringify(monitorablesInfoMockData)],
             [JSON.stringify(alertsOverviewMockData2)]);
 
         const baseChains = await ChainsAPI.updateBaseChains(mockBaseChainsData);
