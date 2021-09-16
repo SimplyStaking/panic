@@ -17,21 +17,11 @@
     "@stencil/core": "^2.0.0",
     "@stencil/router": "^1.0.1",
     "@stencil/sass": "^1.4.1",
-    "@types/jest": "^26.0.21",
-    "@types/puppeteer": "^5.4.3",
-    "@types/react": "^17.0.20",
     "@types/swiper": "^5.4.3",
     "dotenv": "^10.0.0",
-    "jest": "^26.6.3",
-    "jest-cli": "^26.6.3",
     "jest-fetch-mock": "^3.0.3",
-    "puppeteer": "^5.5.0",
     "stencil-router-v2": "^0.6.0"
   },
   "license": "MIT",
-  "dependencies": {
-    "cookie-parser": "^1.4.5",
-    "mongodb": "^3.6.9",
-    "redis": "^3.1.2"
-  }
+  "dependencies": {}
 }
