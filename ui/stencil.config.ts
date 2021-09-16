@@ -36,5 +36,11 @@ export const config: Config = {
   env: {
     API_IP: process.env.API_IP,
     API_PORT: process.env.API_PORT
+  },
+  testing: {
+    "automock": false,
+    "setupFiles": [
+      "./setupJest.ts"
+    ]
   }
 };

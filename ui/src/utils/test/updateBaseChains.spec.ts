@@ -1,7 +1,5 @@
 import { ChainsAPI } from "../chains";
 import { baseChainsNames } from "../constants";
-import { enableFetchMocks } from 'jest-fetch-mock'
-enableFetchMocks()
 
 beforeEach(() => {
     fetch.resetMocks();
