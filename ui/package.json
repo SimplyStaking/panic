@@ -9,7 +9,7 @@
     "build": "stencil build",
     "start": "stencil build --serve --watch",
     "test": "stencil test --spec --e2e",
-    "test.spec": "stencil test --spec",
+    "test.spec": "stencil test --spec --verbose",
     "test.watch": "stencil test --spec --e2e --watchAll",
     "generate": "stencil generate"
   },
