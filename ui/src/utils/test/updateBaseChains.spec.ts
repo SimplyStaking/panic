@@ -55,13 +55,13 @@ describe('getBaseChains() function', () => {
         expect(fetch).toHaveBeenCalledTimes(2);
     });
 
-    const alertsOverviewMockData = {
-        result: { test_chain: { critical: 0, warning: 0, error: 0 } }
-    };
-
     it('should not change base chains if alerts did not change', async () => {
-        fetch.mockResponseOnce(JSON.stringify((monitorablesInfoMockData)))
-            .mockResponseOnce(JSON.stringify((alertsOverviewMockData)));
+        const alertsOverviewMockData = {
+            result: { test_chain: { critical: 0, warning: 0, error: 0 } }
+        };
+
+        fetch.mockResponses([JSON.stringify(monitorablesInfoMockData)],
+            [JSON.stringify(alertsOverviewMockData)]);
 
         const baseChains = await ChainsAPI.updateBaseChains(mockBaseChainsData);
 
@@ -69,23 +69,17 @@ describe('getBaseChains() function', () => {
         expect(fetch).toHaveBeenCalledTimes(2);
     });
 
-
-    const alertsOverviewMockData2 = {
-        result: { test_chain: { critical: 1, warning: 3, error: 2 } }
-    };
-
-    const mockBaseChainsData2 = [{
-        name: 'cosmos', chains: [
-            {
-                name: 'test chain', id: 'test_chain', repos: ['test_repo'],
-                systems: ['test_system'], criticalAlerts: 1, warningAlerts: 3,
-                errorAlerts: 2, totalAlerts: 6, active: true
-            }]
-    }];
-
     it('should update base chains if alerts changed', async () => {
-        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoMockData))
-            .mockResponseOnce(JSON.stringify(alertsOverviewMockData2));
+        const alertsOverviewMockData2 = {
+            result: { test_chain: { critical: 1, warning: 3, error: 2 } }
+        };
+
+        const mockBaseChainsData2 = [...mockBaseChainsData];
+        mockBaseChainsData2[0].chains[0].errorAlerts = 2;
+        mockBaseChainsData2[0].chains[0].totalAlerts = 6;
+
+        fetch.mockResponses([JSON.stringify(monitorablesInfoMockData)],
+            [JSON.stringify(alertsOverviewMockData2)]);
 
         const baseChains = await ChainsAPI.updateBaseChains(mockBaseChainsData);
 
