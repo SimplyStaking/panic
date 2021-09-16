@@ -1,16 +1,15 @@
 import { ChainsAPI } from "../chains";
 import { baseChainsNames } from "../constants";
-import { mockImplementationOnceResolveHandler } from "../mock";
-
-fetch = jest.fn(() =>
-    Promise.reject("API is down"));
+import { enableFetchMocks } from 'jest-fetch-mock'
+enableFetchMocks()
 
 beforeEach(() => {
-    fetch.mockClear();
+    fetch.resetMocks();
 });
 
 describe('getBaseChains() function', () => {
     it('should not return any base chains when API is down', async () => {
+        fetch.mockReject(() => Promise.reject("API is down"));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -23,7 +22,7 @@ describe('getBaseChains() function', () => {
     }
 
     it('should not return any base chains when there are no base chains', async () => {
-        fetch.mockImplementationOnce(mockImplementationOnceResolveHandler(monitorablesInfoNoBaseChains));
+        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoNoBaseChains));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -38,7 +37,7 @@ describe('getBaseChains() function', () => {
     monitorablesInfo1BaseChain0Chains.result[baseChainsNames[0]] = {};
 
     it('should not return a base chain if it does not contain any chains', async () => {
-        fetch.mockImplementationOnce(mockImplementationOnceResolveHandler(monitorablesInfo1BaseChain0Chains));
+        fetch.mockResponseOnce(JSON.stringify(monitorablesInfo1BaseChain0Chains));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -53,7 +52,7 @@ describe('getBaseChains() function', () => {
     monitorablesInfoWithoutMonitored.result[baseChainsNames[0]] = { 'test chain': { parent_id: "test_chain" } };
 
     it('should not return a base chain if all of its chains do not have the monitored field', async () => {
-        fetch.mockImplementationOnce(mockImplementationOnceResolveHandler(monitorablesInfoWithoutMonitored));
+        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoWithoutMonitored));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -68,7 +67,7 @@ describe('getBaseChains() function', () => {
     monitorablesInfoEmptyMonitored.result[baseChainsNames[0]] = { 'test chain': { parent_id: "test_chain", monitored: {} } };
 
     it('should not return a base chain if no sources are available within its chains', async () => {
-        fetch.mockImplementationOnce(mockImplementationOnceResolveHandler(monitorablesInfoWithoutMonitored));
+        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoWithoutMonitored));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -83,7 +82,7 @@ describe('getBaseChains() function', () => {
     monitorablesInfoEmptySystems.result[baseChainsNames[0]] = { 'test chain': { parent_id: "test_chain", monitored: { systems: [] } } };
 
     it('should not return a base chain if no systems (and no repos) are available within its chains', async () => {
-        fetch.mockImplementationOnce(mockImplementationOnceResolveHandler(monitorablesInfoEmptySystems));
+        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoEmptySystems));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -98,7 +97,7 @@ describe('getBaseChains() function', () => {
 
         monitorablesInfoEmptyRepos.result[baseChainsNames[0]] = { 'test chain': { parent_id: "test_chain", monitored: { github_repos: [] } } };
 
-        fetch.mockImplementationOnce(mockImplementationOnceResolveHandler(monitorablesInfoEmptyRepos));
+        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoEmptyRepos));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([]);
@@ -120,9 +119,7 @@ describe('getBaseChains() function', () => {
     };
 
     it('should return the base chain when its chains contain valid sources', async () => {
-        fetch.mockImplementationOnce(() => Promise.resolve({
-            json: () => Promise.resolve(monitorablesInfoMockData),
-        }));
+        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoMockData));
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([{

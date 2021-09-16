@@ -1,15 +1,15 @@
 import { ChainsAPI } from "../chains";
 import { baseChainsNames } from "../constants";
-
-fetch = jest.fn(() =>
-    Promise.reject("API is down"));
+import { enableFetchMocks } from 'jest-fetch-mock'
+enableFetchMocks()
 
 beforeEach(() => {
-    fetch.mockClear();
+    fetch.resetMocks();
 });
 
 describe('getBaseChains() function', () => {
     it('should not return any base chains when API is down', async () => {
+        fetch.mockReject(() => Promise.reject("API is down"));
         const baseChains = await ChainsAPI.updateBaseChains([{
             name: '', chains: [
                 {
@@ -46,9 +46,8 @@ describe('getBaseChains() function', () => {
     };
 
     it('should not update chain when getAlertsOverview fails', async () => {
-        fetch.mockImplementationOnce(() => Promise.resolve({
-            json: () => Promise.resolve(monitorablesInfoMockData),
-        })).mockImplementationOnce(() => Promise.reject("API is down"));
+        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoMockData))
+            .mockReject(() => Promise.reject("API is down"));
 
         const baseChains = await ChainsAPI.updateBaseChains(mockBaseChainsData);
 
@@ -61,11 +60,8 @@ describe('getBaseChains() function', () => {
     };
 
     it('should not change base chains if alerts did not change', async () => {
-        fetch.mockImplementationOnce(() => Promise.resolve({
-            json: () => Promise.resolve(monitorablesInfoMockData),
-        })).mockImplementationOnce(() => Promise.resolve({
-            json: () => Promise.resolve(alertsOverviewMockData),
-        }));
+        fetch.mockResponseOnce(JSON.stringify((monitorablesInfoMockData)))
+            .mockResponseOnce(JSON.stringify((alertsOverviewMockData)));
 
         const baseChains = await ChainsAPI.updateBaseChains(mockBaseChainsData);
 
@@ -88,11 +84,8 @@ describe('getBaseChains() function', () => {
     }];
 
     it('should update base chains if alerts changed', async () => {
-        fetch.mockImplementationOnce(() => Promise.resolve({
-            json: () => Promise.resolve(monitorablesInfoMockData),
-        })).mockImplementationOnce(() => Promise.resolve({
-            json: () => Promise.resolve(alertsOverviewMockData2),
-        }));
+        fetch.mockResponseOnce(JSON.stringify(monitorablesInfoMockData))
+            .mockResponseOnce(JSON.stringify(alertsOverviewMockData2));
 
         const baseChains = await ChainsAPI.updateBaseChains(mockBaseChainsData);
 
