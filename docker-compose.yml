@@ -196,6 +196,8 @@ services:
       - 'DB_PORT=${DB_PORT}'
       - 'DB_NAME=${DB_NAME}'
       - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}'
+      - 'UI_DASHBOARD_IP=${UI_DASHBOARD_IP}'
+      - 'UI_DASHBOARD_PORT=${UI_DASHBOARD_PORT}'
     build:
       context: './'
       dockerfile: './api/Dockerfile'
@@ -216,6 +218,8 @@ services:
   ui:
     environment:
       - 'UI_DASHBOARD_PORT=${UI_DASHBOARD_PORT}'
+      - 'API_IP=${API_IP}'
+      - 'API_PORT=${API_PORT}'
     build:
       context: './'
       dockerfile: './ui/Dockerfile'

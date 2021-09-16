@@ -1,6 +1,10 @@
 import { Config } from '@stencil/core';
 import { readFileSync } from 'fs';
 import { sass } from '@stencil/sass';
+import * as dotenv from "dotenv";
+
+// Use the environmental variables from the .env file
+dotenv.config({ path: "../.env" });
 
 export const config: Config = {
   globalStyle: 'src/global/app.css',
@@ -28,5 +32,9 @@ export const config: Config = {
   },
   plugins: [
     sass()
-  ]
+  ],
+  env: {
+    API_IP: process.env.API_IP,
+    API_PORT: process.env.API_PORT
+  }
 };
