@@ -1,6 +1,7 @@
 export interface BaseChain {
     readonly name: string;
     chains: Chain[];
+    allFilter: boolean;
 }
 
 export interface Chain {
