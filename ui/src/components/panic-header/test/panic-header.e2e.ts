@@ -6,6 +6,6 @@ describe('panic-header', () => {
     await page.setContent('<panic-header></panic-header>');
 
     const element = await page.find('panic-header');
-    expect(element).toHaveClass('hydrated');
+    expect(element).toMatchSnapshot();
   });
 });
