@@ -1,7 +1,0 @@
-panic-dashboard-overview svc-card.chain-card {
-    margin-bottom: 10px;
-}
-
-panic-dashboard-overview svc-label ion-label::first-letter {
-    text-transform: capitalize;
- }
