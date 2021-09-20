@@ -7,11 +7,10 @@ import pika.exceptions
 
 from src.alerter.alert_code import InternalAlertCode
 from src.alerter.alert_severities import Severity
-from src.alerter.alerters.github import GithubAlerter
-from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
+from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys

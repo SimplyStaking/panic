@@ -154,7 +154,7 @@ class EVMNodeStore(Store):
             self.redis.hset(
                 Keys.get_hash_parent(parent_id),
                 Keys.get_evm_node_went_down_at(node_id), str(metrics[
-                    'went_down_at'])
+                                                                 'went_down_at'])
             )
 
     def _process_mongo_store(self, data: Dict) -> None:

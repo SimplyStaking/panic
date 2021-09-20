@@ -1,4 +1,3 @@
-import copy
 import json
 import logging
 import unittest
@@ -430,7 +429,8 @@ class TestEVMNodeStore(unittest.TestCase):
 
         self.assertEqual(
             None, self.redis.hget(redis_hash,
-                                  Keys.get_evm_node_current_height(self.node_id))
+                                  Keys.get_evm_node_current_height(
+                                      self.node_id))
         )
         self.assertEqual(None, self.redis.hget(
             redis_hash, Keys.get_evm_node_last_monitored(self.node_id)

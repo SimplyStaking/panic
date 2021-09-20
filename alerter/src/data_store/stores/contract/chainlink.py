@@ -13,7 +13,6 @@ from src.utils.constants.rabbitmq import (
     STORE_EXCHANGE, TOPIC, CL_CONTRACT_STORE_INPUT_QUEUE_NAME,
     CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
-                                  NodeIsDownException,
                                   ReceivedUnexpectedDataException)
 
 
@@ -134,29 +133,29 @@ class ChainlinkContractStore(Store):
 
             self.redis.hset_multiple(redis_hash, {
                 Keys.get_cl_contract_version(node_id, proxy_address):
-                str(contract_data['contractVersion']),
+                    str(contract_data['contractVersion']),
                 Keys.get_cl_contract_aggregator_address(
                     node_id, proxy_address):
-                str(contract_data['aggregatorAddress']),
+                    str(contract_data['aggregatorAddress']),
                 Keys.get_cl_contract_latest_round(
                     node_id, proxy_address):
-                str(contract_data['latestRound']),
+                    str(contract_data['latestRound']),
                 Keys.get_cl_contract_latest_answer(
                     node_id, proxy_address):
-                str(contract_data['latestAnswer']),
+                    str(contract_data['latestAnswer']),
                 Keys.get_cl_contract_latest_timestamp(
                     node_id, proxy_address):
-                str(contract_data['latestTimestamp']),
+                    str(contract_data['latestTimestamp']),
                 Keys.get_cl_contract_answered_in_round(
                     node_id, proxy_address):
-                str(contract_data['answeredInRound']),
+                    str(contract_data['answeredInRound']),
                 payment_key: payment_value,
                 Keys.get_cl_contract_historical_rounds(
                     node_id, proxy_address):
-                json.dumps(contract_data['historicalRounds']),
+                    json.dumps(contract_data['historicalRounds']),
                 Keys.get_cl_contract_last_monitored(
                     node_id, proxy_address):
-                str(meta_data['last_monitored'])
+                    str(meta_data['last_monitored'])
             })
 
     def _process_mongo_store(self, data: Dict) -> None:
@@ -207,19 +206,19 @@ class ChainlinkContractStore(Store):
                             'node_id': str(node_id),
                             'node_name': str(node_name),
                             'contractVersion': str(contract_data[
-                                'contractVersion']),
+                                                       'contractVersion']),
                             'aggregatorAddress': str(contract_data[
-                                'aggregatorAddress']),
+                                                         'aggregatorAddress']),
                             'latestRound': str(contract_data[
-                                'latestRound']),
+                                                   'latestRound']),
                             'latestAnswer': str(contract_data[
-                                'latestAnswer']),
+                                                    'latestAnswer']),
                             'latestTimestamp': str(contract_data[
-                                'latestTimestamp']),
+                                                       'latestTimestamp']),
                             'answeredInRound': str(contract_data[
-                                'answeredInRound']),
+                                                       'answeredInRound']),
                             payment_key: str(contract_data[
-                                payment_key]),
+                                                 payment_key]),
                             'historicalRounds': json.dumps(
                                 contract_data['historicalRounds']),
                             'timestamp': meta_data['last_monitored'],

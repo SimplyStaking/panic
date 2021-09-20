@@ -21,7 +21,7 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (
     SYSTEM_MONITORS_MANAGER_NAME, GITHUB_MONITORS_MANAGER_NAME,
     DATA_TRANSFORMERS_MANAGER_NAME, SYSTEM_ALERTERS_MANAGER_NAME,
-    GITHUB_ALERTER_MANAGER_NAME, CL_NODE_ALERTER_MANAGER_NAME,
+    GITHUB_ALERTER_MANAGER_NAME, CL_ALERTERS_MANAGER_NAME,
     DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME,
     CHANNELS_MANAGER_NAME, HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME,
     NODE_MONITORS_MANAGER_NAME, EVM_NODE_ALERTER_MANAGER_NAME,
@@ -302,8 +302,7 @@ class TelegramCommandHandlers(CommandHandler):
              "self._get_manager_component_hb_status"),
             (GITHUB_ALERTER_MANAGER_NAME,
              "self._get_manager_component_hb_status"),
-            (CL_NODE_ALERTER_MANAGER_NAME,
-             "self._get_manager_component_hb_status"),
+            (CL_ALERTERS_MANAGER_NAME, "self._get_manager_component_hb_status"),
             (EVM_NODE_ALERTER_MANAGER_NAME,
              "self._get_manager_component_hb_status"),
             (DATA_STORE_MANAGER_NAME, "self._get_manager_component_hb_status"),

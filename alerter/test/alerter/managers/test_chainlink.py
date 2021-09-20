@@ -14,21 +14,27 @@ from parameterized import parameterized
 
 from src.abstract.publisher_subscriber import \
     QueuingPublisherSubscriberComponent
-from src.alerter.alerter_starters import start_evm_node_alerter
-from src.alerter.alerters.node.evm import EVMNodeAlerter
+from src.alerter.alerter_starters import (start_chainlink_node_alerter,
+                                          start_chainlink_contract_alerter)
+from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
+from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
-from src.alerter.managers.evm import EVMNodeAlerterManager
-from src.configs.alerts.node.evm import EVMNodeAlertsConfig
-from src.configs.factory.alerts.evm import EVMAlertsConfigsFactory
+from src.alerter.managers.chainlink import ChainlinkAlertersManager
+from src.configs.alerts.contracts.chainlink import (
+    ChainlinkContractsAlertsConfig)
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
+from src.configs.factory.alerts.chainlink import (
+    ChainlinkContractsAlertsConfigsFactory, ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants.names import EVM_NODE_ALERTER_NAME
+from src.utils.constants.names import (CHAINLINK_NODE_ALERTER_NAME,
+                                       CHAINLINK_CONTRACT_ALERTER_NAME)
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, ALERT_EXCHANGE,
-    EVM_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
-    EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME, PING_ROUTING_KEY,
-    CL_ALERTS_CONFIGS_ROUTING_KEY, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-    EVM_NODE_ALERT_ROUTING_KEY)
+    CL_ALERTERS_MAN_HB_QUEUE_NAME, CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
+    PING_ROUTING_KEY, CL_ALERTS_CONFIGS_ROUTING_KEY,
+    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, CL_NODE_ALERT_ROUTING_KEY,
+    CL_CONTRACT_ALERT_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import (
     delete_exchange_if_exists, delete_queue_if_exists, disconnect_from_rabbit,
@@ -37,12 +43,12 @@ from test.utils.utils import (
 from test.utils.utils import infinite_fn
 
 
-class TestEVMNodeAlerterManager(unittest.TestCase):
+class TestChainlinkAlertersManager(unittest.TestCase):
     def setUp(self) -> None:
         # Some dummy objects
         self.dummy_logger = logging.getLogger('Dummy')
         self.dummy_logger.disabled = True
-        self.manager_name = 'test_evm_node_alerters_manager'
+        self.manager_name = 'test_chainlink_alerters_manager'
         self.test_queue_name = 'Test Queue'
         self.test_data_str = 'test data'
         self.test_heartbeat = {
@@ -50,8 +56,10 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
             'is_alive': True,
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
-        self.dummy_process = Process(target=infinite_fn, args=())
-        self.dummy_process.daemon = True
+        self.dummy_process_1 = Process(target=infinite_fn, args=())
+        self.dummy_process_1.daemon = True
+        self.dummy_process_2 = Process(target=infinite_fn, args=())
+        self.dummy_process_2.daemon = True
         self.test_exception = PANICException('test_exception', 1)
 
         # RabbitMQ initialisation
@@ -60,73 +68,118 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
             self.dummy_logger, env.RABBIT_IP,
             connection_check_time_interval=self.connection_check_time_interval)
 
-        # Test routing keys and parent_ids
-        self.routing_key_1 = 'chains.chainlink.ethereum.alerts_config'
-        self.routing_key_2 = 'chains.chainlink.polygon.alerts_config'
+        # Test routing key and parent_id
+        self.routing_key_1 = 'chains.chainlink.matic.alerts_config'
         self.parent_id_1 = "chain_name_d21d780d-92cb-42de-a7c1-11b751654510"
-        self.parent_id_2 = "chain_name_28a13d92-740f-4ae9-ade3-3248d76faaa4"
 
         self.config_1 = {
             "1": {
-                "name": "evm_node_is_down",
+                "name": "head_tracker_current_head",
                 "parent_id": self.parent_id_1,
             },
             "2": {
-                "name": "evm_block_syncing_block_height_difference",
+                "name": "head_tracker_heads_received_total",
                 "parent_id": self.parent_id_1,
             },
             "3": {
-                "name": "evm_block_syncing_no_change_in_block_height",
+                "name": "max_unconfirmed_blocks",
                 "parent_id": self.parent_id_1,
             },
-        }
-        self.config_2 = {
-            "1": {
-                "name": "evm_node_is_down",
-                "parent_id": self.parent_id_2,
+            "4": {
+                "name": "process_start_time_seconds",
+                "parent_id": self.parent_id_1,
             },
-            "2": {
-                "name": "evm_block_syncing_block_height_difference",
-                "parent_id": self.parent_id_2,
+            "5": {
+                "name": "tx_manager_gas_bump_exceeds_limit_total",
+                "parent_id": self.parent_id_1,
             },
-            "3": {
-                "name": "evm_block_syncing_no_change_in_block_height",
-                "parent_id": self.parent_id_2,
+            "6": {
+                "name": "unconfirmed_transactions",
+                "parent_id": self.parent_id_1,
+            },
+            "7": {
+                "name": "run_status_update_total",
+                "parent_id": self.parent_id_1,
+            },
+            "8": {
+                "name": "eth_balance_amount",
+                "parent_id": self.parent_id_1,
+            },
+            "9": {
+                "name": "eth_balance_amount_increase",
+                "parent_id": self.parent_id_1,
+            },
+            "10": {
+                "name": "node_is_down",
+                "parent_id": self.parent_id_1,
+            },
+            "11": {
+                "name": "price_feed_not_observed",
+                "parent_id": self.parent_id_1,
+            },
+            "12": {
+                "name": "price_feed_deviation",
+                "parent_id": self.parent_id_1,
+            },
+            "13": {
+                "name": "consensus_failure",
+                "parent_id": self.parent_id_1,
             },
         }
 
-        self.test_manager = EVMNodeAlerterManager(
+        self.test_manager = ChainlinkAlertersManager(
             self.dummy_logger, self.manager_name, self.rabbitmq)
         self.alerter_process_dict_example = {
-            EVM_NODE_ALERTER_NAME: self.dummy_process,
-            'ANOTHER_TEST_ALERTER': self.dummy_process
+            CHAINLINK_NODE_ALERTER_NAME: self.dummy_process_1,
+            CHAINLINK_CONTRACT_ALERTER_NAME: self.dummy_process_2,
         }
-        self.alerts_config_factory_example = EVMAlertsConfigsFactory()
+        self.node_alerts_config_factory = ChainlinkNodeAlertsConfigsFactory()
+        self.contract_alerts_config_factory = \
+            ChainlinkContractsAlertsConfigsFactory()
+        self.configs_processor_helper_example = {
+            CHAINLINK_NODE_ALERTER_NAME: {
+                'alerterClass': ChainlinkNodeAlerter,
+                'configsClass': ChainlinkNodeAlertsConfig,
+                'factory': self.node_alerts_config_factory,
+                'routing_key': CL_NODE_ALERT_ROUTING_KEY,
+                'starter': start_chainlink_node_alerter,
+            },
+            CHAINLINK_CONTRACT_ALERTER_NAME: {
+                'alerterClass': ChainlinkContractAlerter,
+                'configsClass': ChainlinkContractsAlertsConfig,
+                'factory': self.contract_alerts_config_factory,
+                'routing_key': CL_CONTRACT_ALERT_ROUTING_KEY,
+                'starter': start_chainlink_contract_alerter,
+            },
+        }
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         connect_to_rabbit(self.test_manager.rabbitmq)
 
+        delete_queue_if_exists(self.test_manager.rabbitmq, self.test_queue_name)
+        delete_queue_if_exists(self.test_manager.rabbitmq,
+                               CL_ALERTERS_MAN_HB_QUEUE_NAME)
+        delete_queue_if_exists(self.test_manager.rabbitmq,
+                               CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME)
         delete_exchange_if_exists(self.test_manager.rabbitmq,
                                   HEALTH_CHECK_EXCHANGE)
         delete_exchange_if_exists(self.test_manager.rabbitmq, ALERT_EXCHANGE)
         delete_exchange_if_exists(self.test_manager.rabbitmq, CONFIG_EXCHANGE)
-        delete_queue_if_exists(self.test_manager.rabbitmq, self.test_queue_name)
-        delete_queue_if_exists(self.test_manager.rabbitmq,
-                               EVM_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
-        delete_queue_if_exists(self.test_manager.rabbitmq,
-                               EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME)
 
         disconnect_from_rabbit(self.test_manager.rabbitmq)
 
         self.dummy_logger = None
-        self.dummy_process = None
+        self.dummy_process_1 = None
+        self.dummy_process_2 = None
         self.connection_check_time_interval = None
         self.rabbitmq = None
         self.test_exception = None
-        self.alerts_config_factory_example = None
+        self.node_alerts_config_factory = None
+        self.contract_alerts_config_factory = None
         self.alerter_process_dict_example = None
         self.test_manager = None
+        self.configs_processor_helper_example = None
 
     def test_str_returns_manager_name(self) -> None:
         self.assertEqual(self.manager_name, str(self.test_manager))
@@ -140,11 +193,24 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         self.assertEqual(self.alerter_process_dict_example,
                          self.test_manager.alerter_process_dict)
 
-    def test_alerts_config_factory_returns_alerts_config_factory(self) -> None:
-        self.test_manager._alerts_config_factory = \
-            self.alerts_config_factory_example
-        self.assertEqual(self.alerts_config_factory_example,
-                         self.test_manager.alerts_config_factory)
+    def test_config_factory_properties_return_correctly(self) -> None:
+        # Test for the contract alerts config factory
+        self.test_manager._contracts_alerts_config_factory = \
+            self.contract_alerts_config_factory
+        self.assertEqual(self.contract_alerts_config_factory,
+                         self.test_manager.contracts_alerts_config_factory)
+
+        # Test for the node alerts config factory
+        self.test_manager._node_alerts_config_factory = \
+            self.node_alerts_config_factory
+        self.assertEqual(self.node_alerts_config_factory,
+                         self.test_manager.node_alerts_config_factory)
+
+    def test_configs_processor_helper_return_correctly(self) -> None:
+        self.test_manager._configs_processor_helper = \
+            self.configs_processor_helper_example
+        self.assertEqual(self.configs_processor_helper_example,
+                         self.test_manager.configs_processor_helper)
 
     @mock.patch.object(RabbitMQApi, "start_consuming")
     def test_listen_for_data_calls_start_consuming(
@@ -165,10 +231,9 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         # To make sure that the exchanges and queues have not already been
         # declared
         self.rabbitmq.connect()
+        self.test_manager.rabbitmq.queue_delete(CL_ALERTERS_MAN_HB_QUEUE_NAME)
         self.test_manager.rabbitmq.queue_delete(
-            EVM_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
-        self.test_manager.rabbitmq.queue_delete(
-            EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME)
+            CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME)
         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
         self.test_manager.rabbitmq.exchange_delete(ALERT_EXCHANGE)
@@ -203,25 +268,23 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         # Re-declare queue to get the number of messages, and check that the
         # message received is the message sent
         res = self.test_manager.rabbitmq.queue_declare(
-            EVM_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME, False, True, False,
-            False)
+            CL_ALERTERS_MAN_HB_QUEUE_NAME, False, True, False, False)
         self.assertEqual(1, res.method.message_count)
         _, _, body = self.test_manager.rabbitmq.basic_get(
-            EVM_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME)
+            CL_ALERTERS_MAN_HB_QUEUE_NAME)
         self.assertEqual('test_str', body.decode())
 
         res = self.test_manager.rabbitmq.queue_declare(
-            EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME, False, True, False,
-            False)
+            CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME, False, True, False, False)
         self.assertEqual(1, res.method.message_count)
         _, _, body = self.test_manager.rabbitmq.basic_get(
-            EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME)
+            CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME)
         self.assertEqual('another_test_str', body.decode())
 
         expected_calls = [
-            call(EVM_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME,
-                 self.test_manager._process_ping, True, False, None),
-            call(EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+            call(CL_ALERTERS_MAN_HB_QUEUE_NAME, self.test_manager._process_ping,
+                 True, False, None),
+            call(CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
                  self.test_manager._process_configs, False, False, None)
         ]
         mock_basic_consume.assert_has_calls(expected_calls, True)
@@ -255,22 +318,22 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         self.assertEqual(1, res.method.message_count)
 
         # Check that the message received is actually the HB
-        _, _, body = self.test_manager.rabbitmq.basic_get(
-            self.test_queue_name)
+        _, _, body = self.test_manager.rabbitmq.basic_get(self.test_queue_name)
         self.assertEqual(self.test_heartbeat, json.loads(body))
 
     @parameterized.expand([
         ([True, True], [],),
-        ([True, False], ['ANOTHER_TEST_ALERTER'],),
-        ([False, True], [EVM_NODE_ALERTER_NAME],),
-        ([False, False], [EVM_NODE_ALERTER_NAME, 'ANOTHER_TEST_ALERTER'],),
+        ([True, False], [CHAINLINK_CONTRACT_ALERTER_NAME],),
+        ([False, True], [CHAINLINK_NODE_ALERTER_NAME],),
+        ([False, False], [CHAINLINK_NODE_ALERTER_NAME,
+                          CHAINLINK_CONTRACT_ALERTER_NAME],),
     ])
     @freeze_time("2012-01-01")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "is_alive")
-    @mock.patch.object(EVMNodeAlerterManager,
-                       "_create_and_start_alerter_process")
-    @mock.patch.object(EVMNodeAlerterManager, "_send_heartbeat")
+    @mock.patch.object(ChainlinkAlertersManager,
+                       "_create_and_start_alerter_processes")
+    @mock.patch.object(ChainlinkAlertersManager, "_send_heartbeat")
     def test_process_ping_sends_a_valid_hb(
             self, is_alive_side_effect, dead_alerters, mock_send_hb,
             mock_create_and_start, mock_is_alive, mock_join) -> None:
@@ -314,9 +377,9 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
     @freeze_time("2012-01-01")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "is_alive")
-    @mock.patch.object(EVMNodeAlerterManager,
-                       "_create_and_start_alerter_process")
-    @mock.patch.object(EVMNodeAlerterManager, "_send_heartbeat")
+    @mock.patch.object(ChainlinkAlertersManager,
+                       "_create_and_start_alerter_processes")
+    @mock.patch.object(ChainlinkAlertersManager, "_send_heartbeat")
     def test_process_ping_restarts_dead_processes_correctly(
             self, is_alive_side_effect, expected_restart, mock_send_hb,
             mock_create_and_start, mock_is_alive, mock_join) -> None:
@@ -345,7 +408,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
             mock_create_and_start.assert_not_called()
 
     @mock.patch.object(multiprocessing.Process, "is_alive")
-    @mock.patch.object(EVMNodeAlerterManager, "_send_heartbeat")
+    @mock.patch.object(ChainlinkAlertersManager, "_send_heartbeat")
     def test_process_ping_does_not_send_hb_if_processing_fails(
             self, mock_send_hb, mock_is_alive) -> None:
         mock_is_alive.side_effect = self.test_exception
@@ -395,7 +458,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
          pika.exceptions.AMQPChannelError('test'),),
         (Exception, Exception('test'),),
     ])
-    @mock.patch.object(EVMNodeAlerterManager, "_send_heartbeat")
+    @mock.patch.object(ChainlinkAlertersManager, "_send_heartbeat")
     def test_process_ping_raises_unrecognised_error_if_raised_by_send_heartbeat(
             self, exception_class, exception_instance, mock_send_hb) -> None:
         mock_send_hb.side_effect = exception_instance
@@ -414,14 +477,14 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         ('self.alerter_process_dict_example', True)
     ])
     @freeze_time("2012-01-01")
-    @mock.patch.object(EVMNodeAlerterManager,
+    @mock.patch.object(ChainlinkAlertersManager,
                        "_push_latest_data_to_queue_and_send")
     @mock.patch.object(multiprocessing.Process, "start")
-    def test_create_and_start_alerter_process_if_process_is_running(
+    def test_create_and_start_alerter_processes_if_processes_not_running(
             self, state, state_is_str, mock_start, mock_push_and_send) -> None:
         """
         In this test we will check that the required processes are created and
-        started, and that a reset alert is sent. We will perform this test for
+        started, and that reset alerts are sent. We will perform this test for
         both when the function is executed for the first time (empty state), and
         for when the process is dead (state non empty but dummy process not
         running by default)
@@ -431,28 +494,45 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         mock_start.return_value = None
         mock_push_and_send.return_value = None
 
-        self.test_manager._create_and_start_alerter_process()
+        self.test_manager._create_and_start_alerter_processes()
 
-        new_entry_process = self.test_manager.alerter_process_dict[
-            EVM_NODE_ALERTER_NAME]
+        node_alerter_process = self.test_manager.alerter_process_dict[
+            CHAINLINK_NODE_ALERTER_NAME]
+        contract_alerter_process = self.test_manager.alerter_process_dict[
+            CHAINLINK_CONTRACT_ALERTER_NAME]
 
-        # Check that the process was created correctly
-        self.assertTrue(new_entry_process.daemon)
-        self.assertEqual(1, len(new_entry_process._args))
-        self.assertEqual(self.test_manager.alerts_config_factory,
-                         new_entry_process._args[0])
-        self.assertEqual(start_evm_node_alerter, new_entry_process._target)
+        # Check that the processes were created correctly
+        self.assertTrue(node_alerter_process.daemon)
+        self.assertEqual(1, len(node_alerter_process._args))
+        self.assertEqual(self.test_manager.node_alerts_config_factory,
+                         node_alerter_process._args[0])
+        self.assertEqual(start_chainlink_node_alerter,
+                         node_alerter_process._target)
 
-        # Check that the process was started
-        mock_start.assert_called_once()
+        self.assertTrue(contract_alerter_process.daemon)
+        self.assertEqual(1, len(contract_alerter_process._args))
+        self.assertEqual(self.test_manager.contracts_alerts_config_factory,
+                         contract_alerter_process._args[0])
+        self.assertEqual(start_chainlink_contract_alerter,
+                         contract_alerter_process._target)
 
-        # Check that a reset alert was sent
-        expected_alert = ComponentResetAlert(
-            EVM_NODE_ALERTER_NAME, datetime.now().timestamp(),
-            EVMNodeAlerter.__name__)
-        mock_push_and_send.assert_called_once_with(expected_alert.alert_data)
+        # Check that the processes were started
+        self.assertEqual(2, mock_start.call_count)
 
-    @mock.patch.object(EVMNodeAlerterManager,
+        # Check that 2 reset alerts were sent
+        expected_alert_1 = ComponentResetAlert(
+            CHAINLINK_NODE_ALERTER_NAME, datetime.now().timestamp(),
+            ChainlinkNodeAlerter.__name__)
+        expected_alert_2 = ComponentResetAlert(
+            CHAINLINK_CONTRACT_ALERTER_NAME, datetime.now().timestamp(),
+            ChainlinkContractAlerter.__name__)
+        expected_calls = [
+            call(expected_alert_1.alert_data, CL_NODE_ALERT_ROUTING_KEY),
+            call(expected_alert_2.alert_data, CL_CONTRACT_ALERT_ROUTING_KEY)
+        ]
+        mock_push_and_send.assert_has_calls(expected_calls, True)
+
+    @mock.patch.object(ChainlinkAlertersManager,
                        "_push_latest_data_to_queue_and_send")
     @mock.patch.object(multiprocessing, "Process")
     @mock.patch.object(multiprocessing.Process, "is_alive")
@@ -471,7 +551,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         mock_init_proc.return_value = None
         mock_push_and_send.return_value = None
 
-        self.test_manager._create_and_start_alerter_process()
+        self.test_manager._create_and_start_alerter_processes()
 
         mock_push_and_send.assert_not_called()
         mock_init_proc.assert_not_called()
@@ -479,7 +559,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
 
     @freeze_time("2012-01-01")
     @mock.patch.object(RabbitMQApi, 'basic_ack')
-    @mock.patch.object(EVMNodeAlerterManager,
+    @mock.patch.object(ChainlinkAlertersManager,
                        "_push_latest_data_to_queue_and_send")
     def test_process_configs_if_non_empty_configs_received(
             self, mock_push_and_send, mock_ack) -> None:
@@ -501,26 +581,52 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         self.test_manager._process_configs(blocking_channel, method_chains,
                                            properties, body)
 
-        expected_configs = {
-            chain_name: EVMNodeAlertsConfig(
+        expected_node_configs = {
+            chain_name: ChainlinkNodeAlertsConfig(
                 parent_id=self.parent_id_1,
-                evm_node_is_down=self.config_1['1'],
-                evm_block_syncing_block_height_difference=self.config_1['2'],
-                evm_block_syncing_no_change_in_block_height=self.config_1['3']
+                head_tracker_current_head=self.config_1['1'],
+                head_tracker_heads_received_total=self.config_1['2'],
+                max_unconfirmed_blocks=self.config_1['3'],
+                process_start_time_seconds=self.config_1['4'],
+                tx_manager_gas_bump_exceeds_limit_total=self.config_1['5'],
+                unconfirmed_transactions=self.config_1['6'],
+                run_status_update_total=self.config_1['7'],
+                eth_balance_amount=self.config_1['8'],
+                eth_balance_amount_increase=self.config_1['9'],
+                node_is_down=self.config_1['10']
             )
         }
-        expected_alert = ComponentResetAlert(
-            EVM_NODE_ALERTER_NAME, datetime.now().timestamp(),
-            EVMNodeAlerter.__name__, self.parent_id_1, chain_name
+        expected_contract_configs = {
+            chain_name: ChainlinkContractsAlertsConfig(
+                parent_id=self.parent_id_1,
+                price_feed_not_observed=self.config_1['11'],
+                price_feed_deviation=self.config_1['12'],
+                consensus_failure=self.config_1['13']
+            )
+        }
+        expected_alert_1 = ComponentResetAlert(
+            CHAINLINK_NODE_ALERTER_NAME, datetime.now().timestamp(),
+            ChainlinkNodeAlerter.__name__, self.parent_id_1, chain_name
+        )
+        expected_alert_2 = ComponentResetAlert(
+            CHAINLINK_CONTRACT_ALERTER_NAME, datetime.now().timestamp(),
+            ChainlinkContractAlerter.__name__, self.parent_id_1, chain_name
         )
 
-        self.assertEqual(expected_configs,
-                         self.test_manager.alerts_config_factory.configs)
-        mock_push_and_send.assert_called_once_with(expected_alert.alert_data)
+        self.assertEqual(expected_node_configs,
+                         self.test_manager.node_alerts_config_factory.configs)
+        self.assertEqual(
+            expected_contract_configs,
+            self.test_manager.contracts_alerts_config_factory.configs)
+        expected_calls = [
+            call(expected_alert_1.alert_data, CL_NODE_ALERT_ROUTING_KEY),
+            call(expected_alert_2.alert_data, CL_CONTRACT_ALERT_ROUTING_KEY)
+        ]
+        mock_push_and_send.assert_has_calls(expected_calls, True)
         mock_ack.assert_called_once()
 
     @mock.patch.object(RabbitMQApi, 'basic_ack')
-    @mock.patch.object(EVMNodeAlerterManager,
+    @mock.patch.object(ChainlinkAlertersManager,
                        "_push_latest_data_to_queue_and_send")
     def test_process_configs_if_received_empty_configs(
             self, mock_push_and_send, mock_ack) -> None:
@@ -539,42 +645,68 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         parsed_routing_key = self.routing_key_1.split('.')
         chain_name = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
 
-        # Store a config directly since we need to test its removal
-        self.test_manager.alerts_config_factory.add_new_config(chain_name,
-                                                               self.config_1)
-        expected_configs = {
-            chain_name: EVMNodeAlertsConfig(
+        # Store configs directly since we need to test their removal
+        self.test_manager.node_alerts_config_factory.add_new_config(
+            chain_name, self.config_1)
+        self.test_manager.contracts_alerts_config_factory.add_new_config(
+            chain_name, self.config_1)
+
+        # Make sure that the configs were added
+        expected_node_configs = {
+            chain_name: ChainlinkNodeAlertsConfig(
                 parent_id=self.parent_id_1,
-                evm_node_is_down=self.config_1['1'],
-                evm_block_syncing_block_height_difference=self.config_1['2'],
-                evm_block_syncing_no_change_in_block_height=self.config_1['3']
+                head_tracker_current_head=self.config_1['1'],
+                head_tracker_heads_received_total=self.config_1['2'],
+                max_unconfirmed_blocks=self.config_1['3'],
+                process_start_time_seconds=self.config_1['4'],
+                tx_manager_gas_bump_exceeds_limit_total=self.config_1['5'],
+                unconfirmed_transactions=self.config_1['6'],
+                run_status_update_total=self.config_1['7'],
+                eth_balance_amount=self.config_1['8'],
+                eth_balance_amount_increase=self.config_1['9'],
+                node_is_down=self.config_1['10']
             )
         }
-        self.assertEqual(expected_configs,
-                         self.test_manager.alerts_config_factory.configs)
+        expected_contract_configs = {
+            chain_name: ChainlinkContractsAlertsConfig(
+                parent_id=self.parent_id_1,
+                price_feed_not_observed=self.config_1['11'],
+                price_feed_deviation=self.config_1['12'],
+                consensus_failure=self.config_1['13']
+            )
+        }
+        self.assertEqual(expected_node_configs,
+                         self.test_manager.node_alerts_config_factory.configs)
+        self.assertEqual(
+            expected_contract_configs,
+            self.test_manager.contracts_alerts_config_factory.configs)
 
         # Send an empty config for the same chain
         self.test_manager._process_configs(blocking_channel, method_chains,
                                            properties, body)
         expected_configs = {}
         self.assertEqual(expected_configs,
-                         self.test_manager.alerts_config_factory.configs)
+                         self.test_manager.node_alerts_config_factory.configs)
+        self.assertEqual(
+            expected_configs,
+            self.test_manager.contracts_alerts_config_factory.configs)
         mock_push_and_send.assert_not_called()
         mock_ack.assert_called_once()
 
     @mock.patch.object(QueuingPublisherSubscriberComponent, "_push_to_queue")
-    @mock.patch.object(EVMNodeAlerterManager, "_send_data")
+    @mock.patch.object(ChainlinkAlertersManager, "_send_data")
     def test_push_latest_data_to_queue_and_send_pushes_correctly_and_sends(
             self, mock_send_data, mock_push) -> None:
         mock_send_data.return_value = None
         mock_push.return_value = None
         test_dict = {'test_key': 'test_val'}
 
-        self.test_manager._push_latest_data_to_queue_and_send(test_dict)
+        self.test_manager._push_latest_data_to_queue_and_send(
+            test_dict, self.routing_key_1)
 
         mock_push.assert_called_once_with(
             data=test_dict, exchange=ALERT_EXCHANGE,
-            routing_key=EVM_NODE_ALERT_ROUTING_KEY,
+            routing_key=self.routing_key_1,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True
         )
         mock_send_data.assert_called_once()
