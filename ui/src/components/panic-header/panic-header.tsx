@@ -23,7 +23,7 @@ export class PanicHeader implements PanicHeaderInterface {
 
       this._menuOptions.push({
         label: baseChain.name,
-        url: `/${baseChain.name}`
+        url: `/systems-overview/${baseChain.name}`
       });
     }
   }
