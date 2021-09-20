@@ -41,6 +41,22 @@ class ChainlinkAlertersManager(AlertersManager):
         self._contracts_alerts_config_factory = \
             ChainlinkContractsAlertsConfigsFactory()
         self._alerter_process_dict = {}
+        self._configs_processor_helper = {
+            CHAINLINK_NODE_ALERTER_NAME: {
+                'alerterClass': ChainlinkNodeAlerter,
+                'configsClass': ChainlinkNodeAlertsConfig,
+                'factory': self.node_alerts_config_factory,
+                'routing_key': CL_NODE_ALERT_ROUTING_KEY,
+                'starter': start_chainlink_node_alerter,
+            },
+            CHAINLINK_CONTRACT_ALERTER_NAME: {
+                'alerterClass': ChainlinkContractAlerter,
+                'configsClass': ChainlinkContractsAlertsConfig,
+                'factory': self.contracts_alerts_config_factory,
+                'routing_key': CL_CONTRACT_ALERT_ROUTING_KEY,
+                'starter': start_chainlink_contract_alerter,
+            },
+        }
 
     @property
     def alerter_process_dict(self) -> Dict:
@@ -54,6 +70,10 @@ class ChainlinkAlertersManager(AlertersManager):
     @property
     def node_alerts_config_factory(self) -> ChainlinkNodeAlertsConfigsFactory:
         return self._node_alerts_config_factory
+
+    @property
+    def configs_processor_helper(self) -> Dict:
+        return self._configs_processor_helper
 
     def _initialise_rabbitmq(self) -> None:
         self.rabbitmq.connect_till_successful()
@@ -152,22 +172,8 @@ class ChainlinkAlertersManager(AlertersManager):
         started or they are not alive. This must be done in case of a restart of
         the manager.
         """
-        configuration = {
-            CHAINLINK_NODE_ALERTER_NAME: {
-                'starter': start_chainlink_node_alerter,
-                'class': ChainlinkNodeAlerter,
-                'factory': self.node_alerts_config_factory,
-                'routing_key': CL_NODE_ALERT_ROUTING_KEY
-            },
-            CHAINLINK_CONTRACT_ALERTER_NAME: {
-                'starter': start_chainlink_contract_alerter,
-                'class': ChainlinkContractAlerter,
-                'factory': self.contracts_alerts_config_factory,
-                'routing_key': CL_CONTRACT_ALERT_ROUTING_KEY
-            },
-        }
-
-        for alerter_name, alerter_details in configuration.items():
+        for alerter_name, alerter_details in \
+                self.configs_processor_helper.items():
             if (alerter_name not in self.alerter_process_dict or
                     not self.alerter_process_dict[alerter_name].is_alive()):
                 """
@@ -176,9 +182,9 @@ class ChainlinkAlertersManager(AlertersManager):
                 will achieve this. This is sent on startup of the manager and if
                 the alerter process is deemed to be dead.
                 """
-                alert = ComponentResetAlert(alerter_name,
-                                            datetime.now().timestamp(),
-                                            alerter_details['class'].__name__)
+                alert = ComponentResetAlert(
+                    alerter_name, datetime.now().timestamp(),
+                    alerter_details['alerterClass'].__name__)
                 self._push_latest_data_to_queue_and_send(
                     alert.alert_data, alerter_details['routing_key'])
 
@@ -219,23 +225,9 @@ class ChainlinkAlertersManager(AlertersManager):
             We also check if the configuration has been updated, if it has then
             the metrics in Redis need to be reset.
             """
-            configuration = {
-                CHAINLINK_NODE_ALERTER_NAME: {
-                    'alerterClass': ChainlinkNodeAlerter,
-                    'configsClass': ChainlinkNodeAlertsConfig,
-                    'factory': self.node_alerts_config_factory,
-                    'routing_key': CL_NODE_ALERT_ROUTING_KEY
-                },
-                CHAINLINK_CONTRACT_ALERTER_NAME: {
-                    'alerterClass': ChainlinkContractAlerter,
-                    'configsClass': ChainlinkContractsAlertsConfig,
-                    'factory': self.contracts_alerts_config_factory,
-                    'routing_key': CL_CONTRACT_ALERT_ROUTING_KEY
-                },
-            }
-
             if bool(sent_configs):
-                for alerter_name, alerter_details in configuration.items():
+                for alerter_name, alerter_details in \
+                        self.configs_processor_helper.items():
                     configs_factory = alerter_details['factory']
                     alerter_class = alerter_details['alerterClass']
                     configs_class = alerter_details['configsClass']
@@ -249,7 +241,7 @@ class ChainlinkAlertersManager(AlertersManager):
                     self._push_latest_data_to_queue_and_send(
                         alert.alert_data, alerter_details['routing_key'])
             else:
-                for _, alerter_details in configuration.items():
+                for _, alerter_details in self.configs_processor_helper.items():
                     configs_factory = alerter_details['factory']
                     configs_factory.remove_config(chain_name)
 

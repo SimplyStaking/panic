@@ -136,6 +136,22 @@ class TestChainlinkAlertersManager(unittest.TestCase):
         self.node_alerts_config_factory = ChainlinkNodeAlertsConfigsFactory()
         self.contract_alerts_config_factory = \
             ChainlinkContractsAlertsConfigsFactory()
+        self.configs_processor_helper_example = {
+            CHAINLINK_NODE_ALERTER_NAME: {
+                'alerterClass': ChainlinkNodeAlerter,
+                'configsClass': ChainlinkNodeAlertsConfig,
+                'factory': self.node_alerts_config_factory,
+                'routing_key': CL_NODE_ALERT_ROUTING_KEY,
+                'starter': start_chainlink_node_alerter,
+            },
+            CHAINLINK_CONTRACT_ALERTER_NAME: {
+                'alerterClass': ChainlinkContractAlerter,
+                'configsClass': ChainlinkContractsAlertsConfig,
+                'factory': self.contract_alerts_config_factory,
+                'routing_key': CL_CONTRACT_ALERT_ROUTING_KEY,
+                'starter': start_chainlink_contract_alerter,
+            },
+        }
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
@@ -163,6 +179,7 @@ class TestChainlinkAlertersManager(unittest.TestCase):
         self.contract_alerts_config_factory = None
         self.alerter_process_dict_example = None
         self.test_manager = None
+        self.configs_processor_helper_example = None
 
     def test_str_returns_manager_name(self) -> None:
         self.assertEqual(self.manager_name, str(self.test_manager))
@@ -188,6 +205,12 @@ class TestChainlinkAlertersManager(unittest.TestCase):
             self.node_alerts_config_factory
         self.assertEqual(self.node_alerts_config_factory,
                          self.test_manager.node_alerts_config_factory)
+
+    def test_configs_processor_helper_return_correctly(self) -> None:
+        self.test_manager._configs_processor_helper = \
+            self.configs_processor_helper_example
+        self.assertEqual(self.configs_processor_helper_example,
+                         self.test_manager.configs_processor_helper)
 
     @mock.patch.object(RabbitMQApi, "start_consuming")
     def test_listen_for_data_calls_start_consuming(
