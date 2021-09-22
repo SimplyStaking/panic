@@ -28,7 +28,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
   }
 
   @Listen('ionChange')
-  async changedValue(event: CustomEvent) {
+  changedValue(event: CustomEvent) {
     try {
       const parent = (event.target as HTMLElement).parentElement;
       const parentClassList = parent.classList;
@@ -38,7 +38,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
         const baseChainName = parent.id;
         const chainName = event.detail['value'];
 
-        this.baseChains = await ChainsAPI.updateActiveChain(this.baseChains, baseChainName, chainName);
+        this.baseChains = ChainsAPI.updateActiveChain(this.baseChains, baseChainName, chainName);
         // Severity Filter case
       } else if (parentClassList.contains('severity-filter')) {
       }

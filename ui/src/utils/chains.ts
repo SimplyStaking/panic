@@ -286,7 +286,7 @@ async function getChainAlerts(chain: Chain): Promise<Chain> {
  * @param activeChainName name of new active chain.
  * @returns updated base chains.
  */
-async function updateActiveChain(baseChains: BaseChain[], baseChainName: string, activeChainName: string): Promise<BaseChain[]> {
+function updateActiveChain(baseChains: BaseChain[], baseChainName: string, activeChainName: string): BaseChain[] {
     const finalBaseChains: BaseChain[] = [];
 
     for (const baseChain of baseChains) {
