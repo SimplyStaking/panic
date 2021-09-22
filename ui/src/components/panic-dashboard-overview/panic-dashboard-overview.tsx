@@ -1,4 +1,4 @@
-import { Component, Host, h, State } from '@stencil/core';
+import { Component, Host, h, State, Listen } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
 import { ChainsAPI } from '../../utils/chains';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
@@ -27,6 +27,27 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
     }
   }
 
+  @Listen('ionChange')
+  async changedValue(event: CustomEvent) {
+    try {
+      const parent = (event.target as HTMLElement).parentElement;
+      const parentClassList = parent.classList;
+
+      // Chain Filter case
+      if (parentClassList.contains('chain-filter')) {
+        const baseChainName = parent.id;
+        const chainName = event.detail['value'];
+
+        this.baseChains = await ChainsAPI.updateActiveChain(this.baseChains, baseChainName, chainName);
+        // Severity Filter case
+      } else if (parentClassList.contains('severity-filter')) {
+      }
+
+    } catch (error: any) {
+      console.error(error);
+    }
+  }
+
   disconnectedCallback() {
     window.clearInterval(this._updater);
   }
@@ -44,7 +65,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
             <svc-surface label={baseChain.name}>
               {baseChain.chains.map((chain) => {
                 return chain.active && <svc-card class="chain-card">
-                  <svc-select slot="header" placeholder="Chains" value='string' options={baseChain.chains.map(chain => ({ value: chain.name, label: chain.name }))}></svc-select>
+                  <svc-select id={baseChain.name} class="chain-filter" slot="header" value="all" header="Choose Chain" options={baseChain.chains.map(chain => ({ value: chain.name, label: chain.name }))}></svc-select>
 
                   {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
                       A green pie chart is shown with no text and without a tooltip */}

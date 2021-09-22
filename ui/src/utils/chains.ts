@@ -3,7 +3,8 @@ import { allChain, apiURL, baseChainsNames } from "./constants";
 
 export const ChainsAPI = {
     updateBaseChains: updateBaseChains,
-    getBaseChains: getBaseChains
+    getBaseChains: getBaseChains,
+    updateActiveChain: updateActiveChain
 }
 
 /**
@@ -174,8 +175,10 @@ async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
         let totalWarningAlerts: number = 0;
         let totalErrorAlerts: number = 0;
         for (let chain of updatedBaseChain.chains) {
-            if ((chain.active || updatedBaseChain.allFilter) && chain.id !== 'all') {
-                chain = await getChainAlerts(chain);
+            if (chain.id !== 'all') {
+                if ((chain.active || updatedBaseChain.allFilter)) {
+                    chain = await getChainAlerts(chain);
+                }
                 totalCriticalAlerts += chain.criticalAlerts;
                 totalWarningAlerts += chain.warningAlerts;
                 totalErrorAlerts += chain.errorAlerts;
@@ -205,7 +208,7 @@ function addNewlyAddedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: 
     for (let newBaseChain of newBaseChains) {
         const updatedBaseChain: BaseChain = updatedBaseChains.find(baseChain => baseChain.name === newBaseChain.name);
         if (updatedBaseChain) {
-            // Add base chain.
+            // Create base chain.
             const finalBaseChain: BaseChain = { name: updatedBaseChain.name, chains: [], allFilter: updatedBaseChain.allFilter };
             // Check for newly added/removed chains within base chain.
             for (const newChain of newBaseChain.chains) {
@@ -274,4 +277,33 @@ async function getChainAlerts(chain: Chain): Promise<Chain> {
     }
 
     return chain;
+}
+
+/**
+ * Updates the active chain of a given base chain.
+ * @param baseChains base chains to be updated.
+ * @param baseChainName name of base chain to be updated.
+ * @param activeChainName name of new active chain.
+ * @returns updated base chains.
+ */
+async function updateActiveChain(baseChains: BaseChain[], baseChainName: string, activeChainName: string): Promise<BaseChain[]> {
+    const finalBaseChains: BaseChain[] = [];
+
+    for (const baseChain of baseChains) {
+        // Update active chain within base chain if it is the altered base chain.
+        if (baseChain.name === baseChainName) {
+            const updatedBaseChain: BaseChain = { name: baseChain.name, chains: [], allFilter: activeChainName === 'all' };
+            for (const chain of baseChain.chains) {
+                chain.active = chain.name === activeChainName;
+                updatedBaseChain.chains.push(chain);
+            }
+            // Add updated base chain.
+            finalBaseChains.push(updatedBaseChain);
+        } else {
+            // Add base chain.
+            finalBaseChains.push(baseChain);
+        }
+    }
+
+    return finalBaseChains;
 }
