@@ -6,6 +6,6 @@ describe('panic-dashboard-overview', () => {
     await page.setContent('<panic-dashboard-overview></panic-dashboard-overview>');
 
     const element = await page.find('panic-dashboard-overview');
-    expect(element).toHaveClass('hydrated');
+    expect(element).toMatchSnapshot();
   });
 });

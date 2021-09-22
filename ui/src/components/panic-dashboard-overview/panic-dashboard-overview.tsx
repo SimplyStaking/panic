@@ -1,15 +1,17 @@
 import { Component, Host, h, State } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
 import { ChainsAPI } from '../../utils/chains';
+import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
 
 @Component({
   tag: 'panic-dashboard-overview',
-  styleUrl: 'panic-dashboard-overview.css'
+  styleUrl: 'panic-dashboard-overview.scss'
 })
-export class PanicDashboardOverview {
+export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
+
   @State() baseChains: BaseChain[] = [];
-  private updater: number;
-  private updateFrequency: number = 5000;
+  _updater: number;
+  _updateFrequency: number = 5000;
 
   async componentWillLoad() {
     try {
@@ -17,16 +19,16 @@ export class PanicDashboardOverview {
 
       this.baseChains = await ChainsAPI.updateBaseChains(baseChains);
 
-      this.updater = window.setInterval(async () => {
+      this._updater = window.setInterval(async () => {
         this.baseChains = await ChainsAPI.updateBaseChains(this.baseChains);
-      }, this.updateFrequency);
+      }, this._updateFrequency);
     } catch (error: any) {
       console.error(error);
     }
   }
 
   disconnectedCallback() {
-    window.clearInterval(this.updater);
+    window.clearInterval(this._updater);
   }
 
   render() {
@@ -54,7 +56,7 @@ export class PanicDashboardOverview {
                     </svc-pie-chart>}
                 </svc-card>
               })}
-              <svc-label color="dark" position="start">This section displays only warning, critical and error alerts. For a full report, check <b><u>Alerts Overview.</u></b></svc-label>
+              <svc-label color="dark" position="start">This section displays only warning, critical and error alerts. For a full report, check <svc-anchor label={"Alerts Overview"} url={"#alerts-overview"}/> </svc-label>
             </svc-surface>
           )}
         </svc-content-container>
