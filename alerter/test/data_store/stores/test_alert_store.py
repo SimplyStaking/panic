@@ -12,9 +12,9 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
+from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
-from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.data_store.mongo.mongo_api import MongoApi
@@ -220,7 +220,7 @@ class TestAlertStore(unittest.TestCase):
             'message': self.message_5,
             'timestamp': self.last_monitored,
             'alert_data': {'contract_proxy_address':
-                           '0x5DcB78343780E1B1e578ae0590dc1e868792a435'}
+                               '0x5DcB78343780E1B1e578ae0590dc1e868792a435'}
         }
         self.alert_data_5_1 = copy.deepcopy(self.alert_data_5)
         self.alert_data_5_1['parent_id'] = self.parent_id2
@@ -809,7 +809,7 @@ class TestAlertStore(unittest.TestCase):
         metric_key_1 = eval(
             "Keys.get_alert_cl_contract_{}(self.alert_data_5['origin_id'], "
             "self.alert_data_5['alert_data']['contract_proxy_address'])".
-            format(self.alert_data_5['metric']))
+                format(self.alert_data_5['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
 
         self.test_store._process_redis_store(self.alert_data_5_1)
@@ -817,7 +817,7 @@ class TestAlertStore(unittest.TestCase):
         metric_key_2 = eval(
             "Keys.get_alert_cl_contract_{}(self.alert_data_5_1['origin_id'], "
             "self.alert_data_5_1['alert_data']['contract_proxy_address'])".
-            format(self.alert_data_5_1['metric']))
+                format(self.alert_data_5_1['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
 
         self.test_store._process_redis_store(
@@ -835,7 +835,7 @@ class TestAlertStore(unittest.TestCase):
         metric_key_1 = eval(
             "Keys.get_alert_cl_contract_{}(self.alert_data_5['origin_id'], "
             "self.alert_data_5['alert_data']['contract_proxy_address'])".
-            format(self.alert_data_5['metric']))
+                format(self.alert_data_5['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
 
         self.test_store._process_redis_store(self.alert_data_5_1)
@@ -843,7 +843,7 @@ class TestAlertStore(unittest.TestCase):
         metric_key_2 = eval(
             "Keys.get_alert_cl_contract_{}(self.alert_data_5_1['origin_id'], "
             "self.alert_data_5_1['alert_data']['contract_proxy_address'])".
-            format(self.alert_data_5_1['metric']))
+                format(self.alert_data_5_1['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
 
         self.test_store._process_redis_store(
@@ -860,14 +860,14 @@ class TestAlertStore(unittest.TestCase):
         chain_hash_1 = Keys.get_hash_parent(self.alert_data_6['parent_id'])
         metric_key_1 = eval(
             "Keys.get_alert_evm_{}(self.alert_data_6['origin_id'])".
-            format(self.alert_data_6['metric']))
+                format(self.alert_data_6['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
 
         self.test_store._process_redis_store(self.alert_data_6_1)
         chain_hash_2 = Keys.get_hash_parent(self.alert_data_6_1['parent_id'])
         metric_key_2 = eval(
             "Keys.get_alert_evm_{}(self.alert_data_6_1['origin_id'])".
-            format(self.alert_data_6_1['metric']))
+                format(self.alert_data_6_1['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
 
         self.test_store._process_redis_store(
@@ -884,14 +884,14 @@ class TestAlertStore(unittest.TestCase):
         chain_hash_1 = Keys.get_hash_parent(self.alert_data_6['parent_id'])
         metric_key_1 = eval(
             "Keys.get_alert_evm_{}(self.alert_data_6['origin_id'])".
-            format(self.alert_data_6['metric']))
+                format(self.alert_data_6['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
 
         self.test_store._process_redis_store(self.alert_data_6_1)
         chain_hash_2 = Keys.get_hash_parent(self.alert_data_6_1['parent_id'])
         metric_key_2 = eval(
             "Keys.get_alert_evm_{}(self.alert_data_6_1['origin_id'])".
-            format(self.alert_data_6_1['metric']))
+                format(self.alert_data_6_1['metric']))
         self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
 
         self.test_store._process_redis_store(
@@ -910,7 +910,7 @@ class TestAlertStore(unittest.TestCase):
         # we always delete all github metrics for all chains
         self.test_store._process_redis_store(self.alert_data_github_1)
         chain_hash_1 = Keys.get_hash_parent(self.alert_data_github_1[
-            'parent_id'])
+                                                'parent_id'])
         metric_key_1 = eval(
             "Keys.get_alert_{}(self.alert_data_github_1['origin_id'])".format(
                 self.alert_data_github_1['metric']))
@@ -918,7 +918,7 @@ class TestAlertStore(unittest.TestCase):
 
         self.test_store._process_redis_store(self.alert_data_github_2)
         chain_hash_2 = Keys.get_hash_parent(self.alert_data_github_2[
-            'parent_id'])
+                                                'parent_id'])
         metric_key_2 = eval(
             "Keys.get_alert_{}(self.alert_data_github_2['origin_id'])".format(
                 self.alert_data_github_2['metric']))
@@ -926,7 +926,7 @@ class TestAlertStore(unittest.TestCase):
 
         self.test_store._process_redis_store(self.alert_data_github_3)
         chain_hash_3 = Keys.get_hash_parent(self.alert_data_github_3[
-            'parent_id'])
+                                                'parent_id'])
         metric_key_3 = eval(
             "Keys.get_alert_{}(self.alert_data_github_3['origin_id'])".format(
                 self.alert_data_github_3['metric']))

@@ -1,6 +1,5 @@
-from typing import Dict
-
 from abc import abstractmethod, ABC
+from typing import Dict
 
 
 class AlertData(ABC):
@@ -8,6 +7,7 @@ class AlertData(ABC):
     Define an empty object which will hold the extra data needed for special
     alerts.
     """
+
     def __init__(self):
         self._alert_data = {}
 

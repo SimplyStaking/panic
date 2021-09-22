@@ -1,4 +1,3 @@
-import copy
 import json
 import logging
 import unittest
@@ -219,7 +218,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                         "answeredInRound": self.test_answered_in_round_3,
                         "withdrawablePayment":
                             self.test_withdrawable_payment_3,
-                        "historicalRounds":  self.test_historical_rounds_3,
+                        "historicalRounds": self.test_historical_rounds_3,
                     },
                     self.test_proxy_address_3_1: {
                         "contractVersion": self.test_contract_version_3,
@@ -230,7 +229,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                         "answeredInRound": self.test_answered_in_round_3_1,
                         "withdrawablePayment":
                             self.test_withdrawable_payment_3_1,
-                        "historicalRounds":  self.test_historical_rounds_3_1,
+                        "historicalRounds": self.test_historical_rounds_3_1,
                     }
                 }
             }
@@ -252,7 +251,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                         "latestTimestamp": self.test_latest_timestamp_4,
                         "answeredInRound": self.test_answered_in_round_4,
                         "owedPayment": self.test_owed_payment_4,
-                        "historicalRounds":  self.test_historical_rounds_4,
+                        "historicalRounds": self.test_historical_rounds_4,
                     },
                     self.test_proxy_address_4_1: {
                         "contractVersion": self.test_contract_version_4,
@@ -262,7 +261,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                         "latestTimestamp": self.test_latest_timestamp_4_1,
                         "answeredInRound": self.test_answered_in_round_4_1,
                         "owedPayment": self.test_owed_payment_4_1,
-                        "historicalRounds":  self.test_historical_rounds_4_1,
+                        "historicalRounds": self.test_historical_rounds_4_1,
                     }
                 }
             }
@@ -567,28 +566,28 @@ class TestChainlinkContractStore(unittest.TestCase):
                 convert_to_int(self.redis.hget(
                     redis_hash, Keys.get_cl_contract_latest_round(
                         self.node_id, proxy_address)).decode("utf-8"),
-                    'bad_val'))
+                               'bad_val'))
 
             self.assertEqual(
                 contract_data['latestAnswer'],
                 convert_to_int(self.redis.hget(
                     redis_hash, Keys.get_cl_contract_latest_answer(
                         self.node_id, proxy_address)).decode("utf-8"),
-                    'bad_val'))
+                               'bad_val'))
 
             self.assertEqual(
                 contract_data['latestTimestamp'],
                 convert_to_int(self.redis.hget(
                     redis_hash, Keys.get_cl_contract_latest_timestamp(
                         self.node_id, proxy_address)).decode("utf-8"),
-                    'bad_val'))
+                               'bad_val'))
 
             self.assertEqual(
                 contract_data['answeredInRound'],
                 convert_to_int(self.redis.hget(
                     redis_hash, Keys.get_cl_contract_answered_in_round(
                         self.node_id, proxy_address)).decode("utf-8"),
-                    'bad_val'))
+                               'bad_val'))
 
             self.assertEqual(
                 json.dumps(contract_data['historicalRounds']),
@@ -601,7 +600,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                 convert_to_float(self.redis.hget(
                     redis_hash, Keys.get_cl_contract_last_monitored(
                         self.node_id, proxy_address)).decode("utf-8"),
-                    'bad_val'))
+                                 'bad_val'))
 
             if int(contract_data['contractVersion']) == 3:
                 self.assertEqual(
@@ -609,14 +608,14 @@ class TestChainlinkContractStore(unittest.TestCase):
                     convert_to_int(self.redis.hget(
                         redis_hash, Keys.get_cl_contract_withdrawable_payment(
                             self.node_id, proxy_address)).decode("utf-8"),
-                        'bad_val'))
+                                   'bad_val'))
             elif int(contract_data['contractVersion']) == 4:
                 self.assertEqual(
                     contract_data['owedPayment'],
                     convert_to_int(self.redis.hget(
                         redis_hash, Keys.get_cl_contract_owed_payment(
                             self.node_id, proxy_address)).decode("utf-8"),
-                        'bad_val'))
+                                   'bad_val'))
 
     @mock.patch.object(RedisApi, "set_unsafe")
     @mock.patch.object(RedisApi, "hset_unsafe")
@@ -668,16 +667,16 @@ class TestChainlinkContractStore(unittest.TestCase):
                     document['doc_type'],
                     document['n_entries'],
                     convert_to_int(document[proxy_address][0][
-                        'contractVersion'], 'bad_val'),
+                                       'contractVersion'], 'bad_val'),
                     document[proxy_address][0]['aggregatorAddress'],
                     convert_to_int(document[proxy_address][0]['latestRound'],
                                    'bad_val'),
                     convert_to_int(document[proxy_address][0]['latestAnswer'],
                                    'bad_val'),
                     convert_to_float(document[proxy_address][0][
-                        'latestTimestamp'], 'bad_val'),
+                                         'latestTimestamp'], 'bad_val'),
                     convert_to_int(document[proxy_address][0][
-                        'answeredInRound'], 'bad_val'),
+                                       'answeredInRound'], 'bad_val'),
                     convert_to_int(
                         document[proxy_address][0]['withdrawablePayment'],
                         'bad_val'),
@@ -703,16 +702,16 @@ class TestChainlinkContractStore(unittest.TestCase):
                     document['doc_type'],
                     document['n_entries'],
                     convert_to_int(document[proxy_address][0][
-                        'contractVersion'], 'bad_val'),
+                                       'contractVersion'], 'bad_val'),
                     document[proxy_address][0]['aggregatorAddress'],
                     convert_to_int(document[proxy_address][0]['latestRound'],
                                    'bad_val'),
                     convert_to_int(document[proxy_address][0]['latestAnswer'],
                                    'bad_val'),
                     convert_to_float(document[proxy_address][0][
-                        'latestTimestamp'], 'bad_val'),
+                                         'latestTimestamp'], 'bad_val'),
                     convert_to_int(document[proxy_address][0][
-                        'answeredInRound'], 'bad_val'),
+                                       'answeredInRound'], 'bad_val'),
                     convert_to_int(
                         document[proxy_address][0]['owedPayment'],
                         'bad_val'),

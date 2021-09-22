@@ -3,18 +3,16 @@ import unittest
 
 from parameterized import parameterized
 
-from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.configs.alerts.node.evm import EVMNodeAlertsConfig
-from src.configs.factory.alerts.chainlink import ChainlinkAlertsConfigsFactory
 from src.configs.factory.alerts.evm import EVMAlertsConfigsFactory
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
 
-class TestAlertsConfigsFactory(unittest.TestCase):
+class TestEVMAlertsConfigsFactory(unittest.TestCase):
     """
-    This test suite tests all the different alerts configs factories. It is done
-    using parameterized.expand. This was done in this way to avoid code
-    duplication.
+    Although currently there is only one type of EVM alerts config, the tests
+    were conducted using parameterize.expand, just in case in the future we
+    add more config types.
     """
 
     def setUp(self) -> None:
@@ -25,38 +23,16 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         self.test_chain_name_2 = 'chainlink bsc'
 
         """
-        First we will construct the received alerts configurations for both
-        Chainlink and EVM chains
+        First we will construct the received alerts configurations.
         """
 
-        chainlink_config_metrics = [
-            'system_is_down', 'open_file_descriptors', 'system_cpu_usage',
-            'system_storage_usage', 'system_ram_usage',
-            'head_tracker_current_head', 'head_tracker_heads_received_total',
-            'tx_manager_gas_bump_exceeds_limit_total', 'eth_balance_amount',
-            'unconfirmed_transactions', 'run_status_update_total',
-            'max_unconfirmed_blocks', 'eth_balance_amount_increase',
-            'process_start_time_seconds', 'node_is_down'
-        ]
         evm_config_metrics = [
             'evm_node_is_down', 'evm_block_syncing_block_height_difference',
             'evm_block_syncing_no_change_in_block_height',
         ]
-
-        self.received_config_example_1_chainlink = {}
-        self.received_config_example_2_chainlink = {}
         self.received_config_example_1_evm = {}
         self.received_config_example_2_evm = {}
 
-        for i in range(len(chainlink_config_metrics)):
-            self.received_config_example_1_chainlink[str(i)] = {
-                'name': chainlink_config_metrics[i],
-                'parent_id': self.test_parent_id_1
-            }
-            self.received_config_example_2_chainlink[str(i)] = {
-                'name': chainlink_config_metrics[i],
-                'parent_id': self.test_parent_id_2
-            }
         for i in range(len(evm_config_metrics)):
             self.received_config_example_1_evm[str(i)] = {
                 'name': evm_config_metrics[i],
@@ -71,14 +47,6 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         Now we will construct the expected config objects
         """
 
-        filtered_1_chainlink = {}
-        for _, config in self.received_config_example_1_chainlink.items():
-            filtered_1_chainlink[config['name']] = copy.deepcopy(config)
-
-        filtered_2_chainlink = {}
-        for _, config in self.received_config_example_2_chainlink.items():
-            filtered_2_chainlink[config['name']] = copy.deepcopy(config)
-
         filtered_1_evm = {}
         for _, config in self.received_config_example_1_evm.items():
             filtered_1_evm[config['name']] = copy.deepcopy(config)
@@ -87,48 +55,6 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         for _, config in self.received_config_example_2_evm.items():
             filtered_2_evm[config['name']] = copy.deepcopy(config)
 
-        self.alerts_config_1_chainlink = ChainlinkNodeAlertsConfig(
-            parent_id=self.test_parent_id_1,
-            head_tracker_current_head=filtered_1_chainlink[
-                'head_tracker_current_head'],
-            head_tracker_heads_received_total=filtered_1_chainlink[
-                'head_tracker_heads_received_total'],
-            max_unconfirmed_blocks=filtered_1_chainlink[
-                'max_unconfirmed_blocks'],
-            process_start_time_seconds=filtered_1_chainlink[
-                'process_start_time_seconds'],
-            tx_manager_gas_bump_exceeds_limit_total=filtered_1_chainlink[
-                'tx_manager_gas_bump_exceeds_limit_total'],
-            unconfirmed_transactions=filtered_1_chainlink[
-                'unconfirmed_transactions'],
-            run_status_update_total=filtered_1_chainlink[
-                'run_status_update_total'],
-            eth_balance_amount=filtered_1_chainlink['eth_balance_amount'],
-            eth_balance_amount_increase=filtered_1_chainlink[
-                'eth_balance_amount_increase'],
-            node_is_down=filtered_1_chainlink['node_is_down']
-        )
-        self.alerts_config_2_chainlink = ChainlinkNodeAlertsConfig(
-            parent_id=self.test_parent_id_2,
-            head_tracker_current_head=filtered_2_chainlink[
-                'head_tracker_current_head'],
-            head_tracker_heads_received_total=filtered_2_chainlink[
-                'head_tracker_heads_received_total'],
-            max_unconfirmed_blocks=filtered_2_chainlink[
-                'max_unconfirmed_blocks'],
-            process_start_time_seconds=filtered_2_chainlink[
-                'process_start_time_seconds'],
-            tx_manager_gas_bump_exceeds_limit_total=filtered_2_chainlink[
-                'tx_manager_gas_bump_exceeds_limit_total'],
-            unconfirmed_transactions=filtered_2_chainlink[
-                'unconfirmed_transactions'],
-            run_status_update_total=filtered_2_chainlink[
-                'run_status_update_total'],
-            eth_balance_amount=filtered_2_chainlink['eth_balance_amount'],
-            eth_balance_amount_increase=filtered_2_chainlink[
-                'eth_balance_amount_increase'],
-            node_is_down=filtered_2_chainlink['node_is_down']
-        )
         self.alerts_config_1_evm = EVMNodeAlertsConfig(
             parent_id=self.test_parent_id_1,
             evm_node_is_down=filtered_1_evm['evm_node_is_down'],
@@ -146,27 +72,16 @@ class TestAlertsConfigsFactory(unittest.TestCase):
                 'evm_block_syncing_no_change_in_block_height']
         )
 
-        self.chainlink_configs_factory = ChainlinkAlertsConfigsFactory()
         self.evm_configs_factory = EVMAlertsConfigsFactory()
 
     def tearDown(self) -> None:
-        self.received_config_example_1_chainlink = None
-        self.received_config_example_2_chainlink = None
         self.received_config_example_1_evm = None
         self.received_config_example_2_evm = None
-        self.alerts_config_1_chainlink = None
-        self.alerts_config_2_chainlink = None
         self.alerts_config_1_evm = None
         self.alerts_config_2_evm = None
-        self.chainlink_configs_factory = None
         self.evm_configs_factory = None
 
     @parameterized.expand([
-        ('self.chainlink_configs_factory',
-         'self.received_config_example_1_chainlink',
-         'self.alerts_config_1_chainlink',
-         'self.received_config_example_2_chainlink',
-         'self.alerts_config_2_chainlink',),
         ('self.evm_configs_factory', 'self.received_config_example_1_evm',
          'self.alerts_config_1_evm', 'self.received_config_example_2_evm',
          'self.alerts_config_2_evm',)
@@ -206,8 +121,6 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         self.assertEqual(expected_state, configs_factory.configs)
 
     @parameterized.expand([
-        ('self.chainlink_configs_factory',
-         'self.received_config_example_1_chainlink',),
         ('self.evm_configs_factory', 'self.received_config_example_1_evm',)
     ])
     def test_add_new_config_raises_ParentIdsMissMatch_if_parent_ids_not_equal(
@@ -229,8 +142,6 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         self.assertEqual(old_state, configs_factory.configs)
 
     @parameterized.expand([
-        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',
-         'self.alerts_config_2_chainlink',),
         ('self.evm_configs_factory', 'self.alerts_config_1_evm',
          'self.alerts_config_2_evm',)
     ])
@@ -253,8 +164,6 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         self.assertEqual(expected_state, configs_factory.configs)
 
     @parameterized.expand([
-        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',
-         'self.alerts_config_2_chainlink',),
         ('self.evm_configs_factory', 'self.alerts_config_1_evm',
          'self.alerts_config_2_evm',)
     ])
@@ -278,8 +187,6 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         self.assertEqual(state, configs_factory.configs)
 
     @parameterized.expand([
-        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',
-         'self.alerts_config_2_chainlink',),
         ('self.evm_configs_factory', 'self.alerts_config_1_evm',
          'self.alerts_config_2_evm',)
     ])
@@ -297,7 +204,6 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         self.assertTrue(configs_factory.config_exists(self.test_chain_name_1))
 
     @parameterized.expand([
-        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',),
         ('self.evm_configs_factory', 'self.alerts_config_1_evm',)
     ])
     def test_config_exists_returns_false_if_config_does_not_exists(
@@ -318,8 +224,6 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         self.assertFalse(configs_factory.config_exists(self.test_chain_name_2))
 
     @parameterized.expand([
-        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',
-         'self.alerts_config_2_chainlink',),
         ('self.evm_configs_factory', 'self.alerts_config_1_evm',
          'self.alerts_config_2_evm',)
     ])
@@ -339,7 +243,6 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         self.assertEqual(self.test_parent_id_1, actual_output)
 
     @parameterized.expand([
-        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',),
         ('self.evm_configs_factory', 'self.alerts_config_1_evm',)
     ])
     def test_get_parent_id_returns_none_if_chain_does_not_exist_in_state(
@@ -360,8 +263,6 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         self.assertIsNone(configs_factory.get_parent_id('bad_chain'))
 
     @parameterized.expand([
-        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',
-         'self.alerts_config_2_chainlink',),
         ('self.evm_configs_factory', 'self.alerts_config_1_evm',
          'self.alerts_config_2_evm',)
     ])
@@ -381,7 +282,6 @@ class TestAlertsConfigsFactory(unittest.TestCase):
         self.assertEqual(self.test_chain_name_1, actual_output)
 
     @parameterized.expand([
-        ('self.chainlink_configs_factory', 'self.alerts_config_1_chainlink',),
         ('self.evm_configs_factory', 'self.alerts_config_1_evm',)
     ])
     def test_get_chain_name_returns_none_if_no_config_exists_for_parent_id(
