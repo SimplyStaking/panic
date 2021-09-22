@@ -4,8 +4,17 @@ panic-dashboard-overview {
     }
 
     svc-label {
-        ion-label::first-letter {
+        ion-label {
             text-transform: capitalize;
          }
+    }
+
+    svc-label.chain-name {
+        margin-top: 10px;
+        margin-left: 10px;
+    }
+
+    svc-label.info-message {
+        margin-left: 10px;
     }
 }

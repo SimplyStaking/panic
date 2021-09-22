@@ -56,7 +56,8 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                     </svc-pie-chart>}
                 </svc-card>
               })}
-              <svc-label color="dark" position="start">This section displays only warning, critical and error alerts. For a full report, check <svc-anchor label={"Alerts Overview"} url={"#alerts-overview"}/> </svc-label>
+              <svc-label color="dark" position="start" class="info-message">This section displays only warning, critical and error alerts. For a full report, check <svc-anchor label={"Alerts Overview"} url={"#alerts-overview"} /> </svc-label>
+
             </svc-surface>
           )}
         </svc-content-container>
