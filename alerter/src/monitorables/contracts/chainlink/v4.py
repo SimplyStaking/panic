@@ -48,7 +48,7 @@ class V4ChainlinkContract(ChainlinkContract):
         :return: A list of all variable names representing integer metrics.
         """
         return ['_latest_round', '_latest_answer', '_answered_in_round',
-                '_owed_payment']
+                '_owed_payment', '_last_round_observed']
 
     @staticmethod
     def get_float_metric_attributes() -> List[str]:
@@ -72,3 +72,4 @@ class V4ChainlinkContract(ChainlinkContract):
         self.set_historical_rounds([])
         self.set_owed_payment(None)
         self.set_last_monitored(None)
+        self.set_last_round_observed(None)

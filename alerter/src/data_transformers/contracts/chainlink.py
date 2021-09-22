@@ -183,12 +183,32 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                 cl_contract.set_historical_rounds(
                     contract_data['historicalRounds'])
 
+                if contract_data['historicalRounds']:
+                    sorted_historical_rounds = sorted(
+                        contract_data['historicalRounds'],
+                        key=lambda k: k['roundId'],
+                        reverse=True)
+                    if cl_contract.version == 3:
+                        cl_contract.set_last_round_observed(
+                            int(sorted_historical_rounds[0]['roundId']))
+                    elif cl_contract.version == 4:
+                        round_data = next((
+                            item for item in
+                            sorted_historical_rounds if
+                            item['nodeSubmission'] is not None), None)
+                        if round_data:
+                            cl_contract.set_last_round_observed(
+                                int(round_data['roundId']))
+
+                if cl_contract.last_round_observed is None:
+                    cl_contract.set_last_round_observed(
+                        int(contract_data['latestRound']))
+
                 if cl_contract.version == 3:
                     cl_contract.set_withdrawable_payment(
                         contract_data['withdrawablePayment'])
                 elif cl_contract.version == 4:
                     cl_contract.set_owed_payment(contract_data['owedPayment'])
-
                 cl_contract.set_last_monitored(meta_data['last_monitored'])
         elif 'error' in transformed_data:
             pass
@@ -243,6 +263,31 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                         processed_data_metrics[proxy_address][metric][
                             'current'] = value
 
+                last_round_observed = None
+                # Get the current value of the last round the price feed was
+                # observed.
+                if contract_data['historicalRounds']:
+                    sorted_historical_rounds = sorted(
+                        contract_data['historicalRounds'],
+                        key=lambda k: k['roundId'],
+                        reverse=True)
+                    if int(contract_data['aggregatorAddress']) == 3:
+                        last_round_observed = int(sorted_historical_rounds[0][
+                            'roundId'])
+                    elif int(contract_data['aggregatorAddress']) == 4:
+                        round_data = next((
+                            item for item in
+                            sorted_historical_rounds if
+                            item['nodeSubmission'] is not None), None)
+                        if round_data:
+                            last_round_observed = int(round_data['roundId'])
+
+                if (cl_contract.last_round_observed is None and
+                        last_round_observed is None):
+                    last_round_observed = int(contract_data['latestRound'])
+
+                processed_data_metrics[proxy_address][
+                    'lastRoundObserved']['current'] = last_round_observed
                 # Add the current value of the ignored metrics
                 processed_data_metrics[proxy_address][
                     'contractVersion'] = td_metrics[proxy_address][
@@ -262,6 +307,8 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                     'previous'] = cl_contract.answered_in_round
                 processed_data_metrics[proxy_address]['historicalRounds'][
                     'previous'] = cl_contract.historical_rounds
+                processed_data_metrics[proxy_address]['lastRoundObserved'][
+                    'previous'] = cl_contract.last_round_observed
 
                 if cl_contract.version == 3:
                     processed_data_metrics[proxy_address][
@@ -310,7 +357,6 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                              round_answer) * 100), None)
         elif 'error' in data:
             # In case of errors only remove the monitor_name from the meta data
-
             transformed_data = copy.deepcopy(data)
             del transformed_data['error']['meta_data']['monitor_name']
         else:
@@ -441,7 +487,8 @@ class ChainlinkContractsDataTransformer(DataTransformer):
         # acknowledgement fails, the data is processed again and we do not have
         # duplication of data in the queue
         if not processing_error:
-            self._place_latest_data_on_queue(data_for_alerting, data_for_saving)
+            self._place_latest_data_on_queue(
+                data_for_alerting, data_for_saving)
 
         # Send any data waiting in the publisher queue, if any
         try:

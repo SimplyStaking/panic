@@ -18,6 +18,12 @@ class ChainlinkContract(ABC):
         self._answered_in_round = None
         self._historical_rounds = []
 
+        """
+        _last_round_observed: This is a custom metric extrapolated from
+        historical rounds. This is used to aid in alerting on missed price
+        feed observations.
+        """
+        self._last_round_observed = None
         # This stores the timestamp of the last successful monitoring round.
         self._last_monitored = None
 
@@ -68,6 +74,10 @@ class ChainlinkContract(ABC):
         return self._historical_rounds
 
     @property
+    def last_round_observed(self) -> Optional[int]:
+        return self._last_round_observed
+
+    @property
     def last_monitored(self) -> Optional[float]:
         return self._last_monitored
 
@@ -91,6 +101,10 @@ class ChainlinkContract(ABC):
 
     def set_answered_in_round(self, answered_in_round: Optional[int]) -> None:
         self._answered_in_round = answered_in_round
+
+    def set_last_round_observed(self,
+                                last_round_observed: Optional[int]) -> None:
+        self._last_round_observed = last_round_observed
 
     @abstractmethod
     def historical_rounds_valid(self,

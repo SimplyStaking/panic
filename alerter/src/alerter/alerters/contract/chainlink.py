@@ -143,70 +143,136 @@ class ChainlinkContractAlerter(Alerter):
             configs = self.alerts_configs_factory.configs[chain_name]
 
             # Create an alert state for each node/contract pair
-            for contract_proxy_address, value in data.items():
+            for proxy_address, value in data.items():
                 self.alerting_factory.create_alerting_state(
                     meta_data['node_parent_id'], meta_data['node_id'],
-                    contract_proxy_address, configs)
+                    proxy_address, configs)
 
-            # Check if some errors have been resolved
-            self.alerting_factory.classify_error_alert(
-                ExceptionCodes.ErrorRetrievingChainlinkContractData.value,
-                cl_alerts.ErrorRetrievingChainlinkContractData,
-                cl_alerts.ChainlinkContractDataNowBeingRetrieved,
-                data_for_alerting, meta_data['node_parent_id'],
-                meta_data['node_id'], meta_data['node_name'],
-                meta_data['last_monitored'],
-                MetricCode.ErrorRetrievingChainlinkContractData.value,
-                "", "Chainlink contract data is now being retrieved!", None
-            )
+                # Check if some errors have been resolved
+                self.alerting_factory.classify_error_alert(
+                    ExceptionCodes.ErrorRetrievingChainlinkContractData.value,
+                    cl_alerts.ErrorRetrievingChainlinkContractData,
+                    cl_alerts.ChainlinkContractDataNowBeingRetrieved,
+                    data_for_alerting, meta_data['node_parent_id'],
+                    meta_data['node_id'], meta_data['node_name'],
+                    meta_data['last_monitored'],
+                    MetricCode.ErrorRetrievingChainlinkContractData.value,
+                    "", "Chainlink contract data is now being retrieved!", None
+                )
 
-            # TODO FIX ALL OF THESE ALERTS
-            # Check if the alert rules are satisfied for the metrics
-            if str_to_bool(configs.price_feed_not_observed['enabled']):
-                current = data['price_feed_not_observed']['current']
-                previous = data['price_feed_not_observed']['previous']
+                current_historical_rounds = data[proxy_address][
+                    'historicalRounds']['current']
+                previous_historical_rounds = data[proxy_address][
+                    'historicalRounds']['previous']
 
-                sub_config = configs.price_feed_not_observed
-                if current is not None and previous is not None:
+                if (None not in [current_historical_rounds,
+                                 previous_historical_rounds]):
+                    # Compile all the historical rounds into one list to make
+                    # querying easier
+                    all_historical_rounds = current_historical_rounds + [
+                        x for x in previous_historical_rounds if x not in
+                        current_historical_rounds
+                    ]
+                elif current_historical_rounds:
+                    all_historical_rounds = current_historical_rounds
+                elif previous_historical_rounds:
+                    all_historical_rounds = previous_historical_rounds
+                else:
+                    all_historical_rounds = None
+
+                # Check if any historical rounds exist in the data
+                if all_historical_rounds:
+                    # Sort the historical rounds in descending ordering
+                    sorted_historical_rounds = sorted(
+                        all_historical_rounds, key=lambda k: k['roundId'],
+                        reverse=True)
+                else:
+                    sorted_historical_rounds = None
+
+                curr_latest_round = data[proxy_address]['latestRound'][
+                    'current']
+                prev_latest_round = data[proxy_address]['latestRound'][
+                    'previous']
+
+                last_round_observed = data[proxy_address]['lastRoundObserved'][
+                    'current']
+                # This data is re-used in other alerts so it needs to be
+                # calculated beforehand
+                current_missed_observations = 0
+                if (None not in [curr_latest_round, last_round_observed]):
+                    current_missed_observations = curr_latest_round - \
+                        last_round_observed
+                else:
+                    current_missed_observations = None
+
+                # Check if the alert rules are satisfied for the metrics
+                if (str_to_bool(configs.price_feed_not_observed['enabled'])
+                        and current_missed_observations is not None):
+                    sub_config = configs.price_feed_not_observed
                     self.alerting_factory.classify_thresholded_time_window_alert(
-                        current, previous, sub_config,
+                        current_missed_observations, sub_config,
                         cl_alerts.PriceFeedNotObserved,
                         cl_alerts.PriceFeedObserved, data_for_alerting,
                         meta_data['node_parent_id'], meta_data['node_id'],
+                        proxy_address,
                         MetricCode.PriceFeedNotObserved.value,
                         meta_data['node_name'], meta_data['last_monitored']
                     )
 
-            # Check if the alert rules are satisfied for the metrics
-            if str_to_bool(configs.price_feed_deviation['enabled']):
-                current = data['price_feed_deviation']['current']
-                previous = data['price_feed_deviation']['previous']
-                sub_config = configs.price_feed_deviation
-                if current is not None and previous is not None:
-                    self.alerting_factory.classify_no_change_in_alert(
-                        current, previous, sub_config,
-                        cl_alerts.PriceFeedDeviating,
-                        cl_alerts.PriceFeedNoLongerDeviating, data_for_alerting,
-                        meta_data['node_parent_id'], meta_data['node_id'],
-                        MetricCode.PriceFeedDeviating.value,
-                        meta_data['node_name'], meta_data['last_monitored']
-                    )
+                # Check if the alert rules are satisfied for the metrics
+                if (str_to_bool(configs.price_feed_deviation['enabled']) and
+                    None not in [current_missed_observations,
+                                 sorted_historical_rounds],
+                        current_missed_observations == 0):
+                    sub_config = configs.price_feed_deviation
+                    current_deviation = sorted_historical_rounds[0][
+                        'deviation']
 
-            if str_to_bool(
-                    configs.consensus_failure['enabled']):
-                current = data['consensus_failure']['current']
-                previous = data['consensus_failure']['previous']
-                sub_config = configs.tx_manager_gas_bump_exceeds_limit_total
-                if current is not None and previous is not None:
-                    self.alerting_factory.classify_conditional_alert(
-                        cl_alerts.GasBumpIncreasedOverNodeGasPriceLimitAlert,
-                        self._greater_than_condition_function, [
-                            current, previous], [
-                            meta_data['node_name'], sub_config['severity'],
-                            meta_data['last_monitored'],
-                            meta_data['node_parent_id'], meta_data['node_id']
-                        ], data_for_alerting
-                    )
+                    if current_deviation:
+                        self.alerting_factory.classify_thresholded_time_window_alert(
+                            current_deviation, sub_config,
+                            cl_alerts.PriceFeedDeviating,
+                            cl_alerts.PriceFeedNoLongerDeviating,
+                            data_for_alerting,
+                            meta_data['node_parent_id'],
+                            meta_data['node_id'],
+                            proxy_address,
+                            MetricCode.PriceFeedDeviating.value,
+                            meta_data['node_name'],
+                            meta_data['last_monitored']
+                        )
+
+                # Check if consensus failure alert is enabled and that the data
+                # needed to alert on this is available. We only check the
+                # historical rounds for consensus failures as, if we check the
+                # current round as well we risk alerting double on the same
+                # consensus failure.
+                if (str_to_bool(configs.consensus_failure['enabled']) and
+                    None not in [curr_latest_round,
+                                 prev_latest_round,
+                                 all_historical_rounds]):
+
+                    # Attempt to get the previous historical round
+                    round_to_find = curr_latest_round - 1
+                    previous_round = next((
+                        item for item in all_historical_rounds if item[
+                            'roundId'] == round_to_find), None)
+                    sub_config = configs.consensus_failure
+                    if (previous_round is not None and
+                        previous_round['answeredInRound'] !=
+                            previous_round['latestRound']):
+                        self.alerting_factory.classify_conditional_alert(
+                            cl_alerts.ConsensusFailure,
+                            self._not_equal_condition_function, [
+                                True, False],
+                            [
+                                meta_data['node_name'],
+                                sub_config['severity'],
+                                meta_data['last_monitored'],
+                                meta_data['node_parent_id'],
+                                meta_data['node_id']
+                            ], data_for_alerting,
+                        )
 
     def _process_error(self, data: Dict, data_for_alerting: List) -> None:
         meta_data = data['meta_data']
