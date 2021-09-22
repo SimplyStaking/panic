@@ -64,8 +64,8 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
           {this.baseChains.map((baseChain) =>
             <svc-surface label={baseChain.name}>
               {baseChain.chains.map((chain) => {
-                return chain.active && <svc-card class="chain-card">
-                  <svc-select id={baseChain.name} class="chain-filter" slot="header" value="all" header="Choose Chain" options={baseChain.chains.map(chain => ({ value: chain.name, label: chain.name }))}></svc-select>
+                return chain.active && <svc-card class="panic-dashboard-overview__chain-card">
+                  <svc-select id={baseChain.name} class="panic-dashboard-overview__chain-filter" slot="header" value="all" header="Choose Chain" options={baseChain.chains.map(chain => ({ value: chain.name, label: chain.name }))}></svc-select>
 
                   {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
                       A green pie chart is shown with no text and without a tooltip */}
@@ -79,7 +79,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                     </svc-pie-chart>}
                 </svc-card>
               })}
-              <svc-label color="dark" position="start" class="info-message">This section displays only warning, critical and error alerts. For a full report, check <svc-anchor label={"Alerts Overview"} url={"#alerts-overview"} /> </svc-label>
+              <svc-label color="dark" position="start" class="panic-dashboard-overview__info-message">This section displays only warning, critical and error alerts. For a full report, check <svc-anchor label={"Alerts Overview"} url={"#alerts-overview"} /> </svc-label>
 
             </svc-surface>
           )}

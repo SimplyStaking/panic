@@ -1,25 +1,23 @@
-panic-dashboard-overview {
-    svc-card {
-        &.chain-card {
-            margin-bottom: 10px;
-        }
+.panic-dashboard-overview {
+    &__chain-card {
+        margin-bottom: 10px;
     }
 
+    &__chain-name {
+        margin-top: 10px;
+        margin-left: 10px;
+     }
+
+     &__info-message {
+        margin-left: 10px;
+     }
+}
+
+panic-dashboard-overview {
     div {
         &.svc-surface__label {
             text-transform: capitalize;
         }
-    }
-
-    svc-label {
-         &.chain-name {
-            margin-top: 10px;
-            margin-left: 10px;
-         }
-
-         &.info-message {
-            margin-left: 10px;
-         }
     }
 
     svc-select {
