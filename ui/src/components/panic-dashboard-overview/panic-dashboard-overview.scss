@@ -1,0 +1,26 @@
+panic-dashboard-overview {
+    svc-card {
+        &.chain-card {
+            margin-bottom: 10px;
+        }
+    }
+
+    div {
+        &.svc-surface__label {
+            text-transform: capitalize;
+        }
+    }
+
+    svc-label {
+         &.chain-name {
+            margin-top: 10px;
+            margin-left: 10px;
+         }
+
+         &.info-message {
+            margin-left: 10px;
+         }
+    }
+
+    }
+}
