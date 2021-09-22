@@ -35,13 +35,13 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
       const parentClassList = parent.classList;
 
       // Chain Filter case
-      if (parentClassList.contains('chain-filter')) {
+      if (parentClassList.contains('panic-dashboard-overview__chain-filter')) {
         const baseChainName = parent.id;
         const chainName = event.detail['value'];
 
         this.baseChains = ChainsAPI.updateActiveChain(this.baseChains, baseChainName, chainName);
         // Severity Filter case
-      } else if (parentClassList.contains('severity-filter')) {
+      } else if (parentClassList.contains('panic-dashboard-overview__severity-filter')) {
       }
 
     } catch (error: any) {
