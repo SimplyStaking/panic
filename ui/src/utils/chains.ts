@@ -3,8 +3,7 @@ import { allChain, apiURL, baseChainsNames } from "./constants";
 
 export const ChainsAPI = {
     updateBaseChains: updateBaseChains,
-    getBaseChains: getBaseChains,
-    updateActiveChain: updateActiveChain
+    getBaseChains: getBaseChains
 }
 
 /**
@@ -277,33 +276,4 @@ async function getChainAlerts(chain: Chain): Promise<Chain> {
     }
 
     return chain;
-}
-
-/**
- * Updates the active chain of a given base chain.
- * @param baseChains base chains to be updated.
- * @param baseChainName name of base chain to be updated.
- * @param activeChainName name of new active chain.
- * @returns updated base chains.
- */
-function updateActiveChain(baseChains: BaseChain[], baseChainName: string, activeChainName: string): BaseChain[] {
-    const finalBaseChains: BaseChain[] = [];
-
-    for (const baseChain of baseChains) {
-        // Update active chain within base chain if it is the altered base chain.
-        if (baseChain.name === baseChainName) {
-            const updatedBaseChain: BaseChain = { name: baseChain.name, chains: [], allFilter: activeChainName === 'all' };
-            for (const chain of baseChain.chains) {
-                chain.active = chain.name === activeChainName;
-                updatedBaseChain.chains.push(chain);
-            }
-            // Add updated base chain.
-            finalBaseChains.push(updatedBaseChain);
-        } else {
-            // Add base chain.
-            finalBaseChains.push(baseChain);
-        }
-    }
-
-    return finalBaseChains;
 }
