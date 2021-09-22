@@ -1,5 +1,5 @@
 import { ChainsAPI } from "../chains";
-import { baseChainsNames, fetchMock } from "../constants";
+import { allChain, baseChainsNames, fetchMock } from "../constants";
 
 beforeEach(() => {
     fetchMock.resetMocks();
@@ -116,10 +116,10 @@ describe('getBaseChains() function', () => {
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([{
-            name: 'cosmos', chains: [{
+            name: 'cosmos', allFilter: true, chains: [allChain, {
                 id: "test_chain", name: 'test chain', repos: ['test_repo'],
                 systems: ['test_system'], criticalAlerts: 0, warningAlerts: 0,
-                errorAlerts: 0, totalAlerts: 0, active: true
+                errorAlerts: 0, totalAlerts: 0, active: false
             }]
         }]);
         expect(fetch).toHaveBeenCalledTimes(1);

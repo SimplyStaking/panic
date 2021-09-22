@@ -69,7 +69,7 @@ async function getBaseChains(): Promise<BaseChain[]> {
 
     for (const baseChain in data.result) {
         if (data.result[baseChain]) {
-            const currentChains: Chain[] = [{ ...allChain }];
+            const currentChains: Chain[] = [];
             for (const currentChain in data.result[baseChain]) {
                 // Skip chain if monitored field does not exist.
                 if (!data.result[baseChain][currentChain].monitored) {
@@ -104,6 +104,8 @@ async function getBaseChains(): Promise<BaseChain[]> {
                 continue;
             }
 
+            currentChains.unshift({ ...allChain })
+
             baseChains.push({
                 name: baseChain,
                 chains: currentChains,
@@ -116,6 +118,11 @@ async function getBaseChains(): Promise<BaseChain[]> {
     return baseChains;
 }
 
+/**
+ * Returns a list of system IDs given a systems object.
+ * @param systems object retrieved from JSON.
+ * @returns list of system IDs.
+ */
 function getSystems(systems: any): string[] {
     const currentSystems: string[] = [];
 
@@ -128,6 +135,11 @@ function getSystems(systems: any): string[] {
     return currentSystems;
 }
 
+/**
+ * Returns a list of repo IDs given a repos object.
+ * @param repos object retrieved from JSON.
+ * @returns list of repo IDs.
+ */
 function getRepos(monitored: any): string[] {
     const currentRepos: string[] = [];
 
