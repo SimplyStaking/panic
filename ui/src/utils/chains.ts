@@ -69,7 +69,7 @@ async function getBaseChains(): Promise<BaseChain[]> {
 
     for (const baseChain in data.result) {
         if (data.result[baseChain]) {
-            const currentChains: Chain[] = [{ ...allChain }];
+            const currentChains: Chain[] = [];
             for (const currentChain in data.result[baseChain]) {
                 // Skip chain if monitored field does not exist.
                 if (!data.result[baseChain][currentChain].monitored) {
@@ -104,6 +104,8 @@ async function getBaseChains(): Promise<BaseChain[]> {
                 continue;
             }
 
+            currentChains.unshift({ ...allChain })
+
             baseChains.push({
                 name: baseChain,
                 chains: currentChains,
@@ -116,6 +118,11 @@ async function getBaseChains(): Promise<BaseChain[]> {
     return baseChains;
 }
 
+/**
+ * Returns a list of system IDs given a systems object.
+ * @param systems object retrieved from JSON.
+ * @returns list of system IDs.
+ */
 function getSystems(systems: any): string[] {
     const currentSystems: string[] = [];
 
@@ -128,6 +135,11 @@ function getSystems(systems: any): string[] {
     return currentSystems;
 }
 
+/**
+ * Returns a list of repo IDs given a repos object.
+ * @param repos object retrieved from JSON.
+ * @returns list of repo IDs.
+ */
 function getRepos(monitored: any): string[] {
     const currentRepos: string[] = [];
 
@@ -162,8 +174,10 @@ async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
         let totalWarningAlerts: number = 0;
         let totalErrorAlerts: number = 0;
         for (let chain of updatedBaseChain.chains) {
-            if ((chain.active || updatedBaseChain.allFilter) && chain.id !== 'all') {
-                chain = await getChainAlerts(chain);
+            if (chain.id !== 'all') {
+                if ((chain.active || updatedBaseChain.allFilter)) {
+                    chain = await getChainAlerts(chain);
+                }
                 totalCriticalAlerts += chain.criticalAlerts;
                 totalWarningAlerts += chain.warningAlerts;
                 totalErrorAlerts += chain.errorAlerts;
@@ -193,7 +207,7 @@ function addNewlyAddedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: 
     for (let newBaseChain of newBaseChains) {
         const updatedBaseChain: BaseChain = updatedBaseChains.find(baseChain => baseChain.name === newBaseChain.name);
         if (updatedBaseChain) {
-            // Add base chain.
+            // Create base chain.
             const finalBaseChain: BaseChain = { name: updatedBaseChain.name, chains: [], allFilter: updatedBaseChain.allFilter };
             // Check for newly added/removed chains within base chain.
             for (const newChain of newBaseChain.chains) {
@@ -262,4 +276,17 @@ async function getChainAlerts(chain: Chain): Promise<Chain> {
     }
 
     return chain;
+}
+
+export function filterActiveChains(baseChain: BaseChain): BaseChain {
+    if (baseChain.name === this.baseChainName) {
+        baseChain.allFilter = this.chainName === 'all';
+        baseChain.chains.filter(function (chain: Chain): Chain {
+            chain.active = chain.name === this.chainName;
+
+            return chain;
+        }, this);
+    }
+
+    return baseChain;
 }
