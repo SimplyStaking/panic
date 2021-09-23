@@ -7,7 +7,7 @@ export const apiURL: string = `https://${Env.API_IP}:${Env.API_PORT}/server/`;
 export const allChain: Chain = {
     name: 'all', id: 'all', repos: [], systems: [],
     criticalAlerts: 0, warningAlerts: 0, errorAlerts: 0,
-    totalAlerts: 0, active: true
+    alerts: [], active: true
 };
 
 // Test Related

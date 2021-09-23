@@ -13,7 +13,7 @@ describe('getBaseChains() function', () => {
                 allChain,
                 {
                     name: 'test', id: 'test', repos: [], systems: [], criticalAlerts: 0,
-                    warningAlerts: 0, errorAlerts: 0, totalAlerts: 0, active: false
+                    warningAlerts: 0, errorAlerts: 0, alerts: [], active: false
                 }]
         }]);
 
@@ -27,7 +27,7 @@ describe('getBaseChains() function', () => {
             {
                 name: 'test chain', id: 'test_chain', repos: ['test_repo'],
                 systems: ['test_system'], criticalAlerts: 0, warningAlerts: 0,
-                errorAlerts: 0, totalAlerts: 0, active: false
+                errorAlerts: 0, alerts: [], active: false
             }]
     }];
 
@@ -71,12 +71,23 @@ describe('getBaseChains() function', () => {
 
     it('should update base chains if alerts changed', async () => {
         const alertsOverviewMockData2 = {
-            result: { test_chain: { critical: 1, warning: 3, error: 2 } }
+            result: {
+                test_chain: {
+                    critical: 1, warning: 3, error: 2,
+                    problems: {
+                        test_chain: [{ severity: 'WARNING', message: 'test alert 1', timestamp: 12345 },
+                        { severity: 'WARNING', message: 'test alert 2', timestamp: 12345 },
+                        { severity: 'WARNING', message: 'test alert 3', timestamp: 12345 },
+                        { severity: 'ERROR', message: 'test alert 4', timestamp: 12345 },
+                        { severity: 'ERROR', message: 'test alert 5', timestamp: 12345 }]
+                    }
+                }
+            }
         };
 
         const mockBaseChainsData2 = [...mockBaseChainsData];
         mockBaseChainsData2[0].chains[0].errorAlerts = 2;
-        mockBaseChainsData2[0].chains[0].totalAlerts = 6;
+        mockBaseChainsData2[0].chains[0].alerts.length = 6;
 
         fetchMock.mockResponses([JSON.stringify(monitorablesInfoMockData)],
             [JSON.stringify(alertsOverviewMockData2)]);

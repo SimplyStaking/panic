@@ -2,8 +2,8 @@ import { h } from '@stencil/core';
 import { BaseChain } from '../interfaces/chains';
 
 
-export const getPieChartJSX = (chainName: string, criticalAlerts: number, warningAlerts: number, errorAlerts: number, totalAlerts: number): any => {
-    const hasAlerts = totalAlerts > 0;
+export const getPieChartJSX = (chainName: string, criticalAlerts: number, warningAlerts: number, errorAlerts: number): any => {
+    const hasAlerts = criticalAlerts + warningAlerts + errorAlerts > 0;
     // PieChart config with alerts
     const cols = [{ title: 'Alert', type: 'string' }, { title: 'Amount', type: 'number' }];
     const rows = [['Critical', criticalAlerts], ['Warning', warningAlerts], ['Error', errorAlerts]];

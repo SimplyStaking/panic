@@ -119,7 +119,7 @@ describe('getBaseChains() function', () => {
             name: 'cosmos', allFilter: true, chains: [allChain, {
                 id: "test_chain", name: 'test chain', repos: ['test_repo'],
                 systems: ['test_system'], criticalAlerts: 0, warningAlerts: 0,
-                errorAlerts: 0, totalAlerts: 0, active: false
+                errorAlerts: 0, alerts: [], active: false
             }]
         }]);
         expect(fetch).toHaveBeenCalledTimes(1);

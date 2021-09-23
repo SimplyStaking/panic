@@ -12,6 +12,18 @@ export interface Chain {
     criticalAlerts: number;
     warningAlerts: number;
     errorAlerts: number;
-    totalAlerts: number;
+    alerts: Alert[];
     active: Boolean;
+}
+
+export interface Alert {
+    readonly severity: Severity;
+    readonly message: string;
+    readonly timestamp: number;
+}
+
+export enum Severity {
+    CRITICAL,
+    WARNING,
+    ERROR
 }
