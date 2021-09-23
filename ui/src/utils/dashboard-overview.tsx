@@ -1,7 +1,8 @@
 import { h } from '@stencil/core';
-import { Alert, BaseChain } from '../interfaces/chains';
+import { Alert, BaseChain, Severity } from '../interfaces/chains';
 import { DataTableRecordType } from '../lib/types/types/datatable';
 import { SelectOptionType } from '../lib/types/types/select';
+import { criticalIcon, errorIcon, warningIcon } from './constants';
 
 /**
  * Formats base chain to SelectOptionType type.
@@ -20,12 +21,12 @@ export const getSelectOptionTypeFromBaseChain = (baseChain: BaseChain): SelectOp
  * @param errorAlerts number of error alerts.
  * @returns populated pie chart JSX.
  */
-export const getPieChartJSX = (chainName: string, criticalAlerts: number, warningAlerts: number, errorAlerts: number): any => {
+export const getPieChartJSX = (chainName: string, criticalAlerts: number, warningAlerts: number, errorAlerts: number): JSX.Element => {
     const hasAlerts = criticalAlerts + warningAlerts + errorAlerts > 0;
     // PieChart config with alerts
     const cols = [{ title: 'Alert', type: 'string' }, { title: 'Amount', type: 'number' }];
     const rows = [['Critical', criticalAlerts], ['Warning', warningAlerts], ['Error', errorAlerts]];
-    const alertsColors: string[] = ['#f4dd77', '#f7797b', '#a39293'];
+    const alertsColors: string[] = ['#a39293', '#f4dd77', '#f7797b'];
     // PieChart config without alerts
     const noAlertsRows = [['', 1]];
     const noAlertsColors: string[] = ['#b0ea8f'];
@@ -46,14 +47,13 @@ export const getPieChartJSX = (chainName: string, criticalAlerts: number, warnin
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-export const getDataTableJSX = (chainName: string, alerts: Alert[]): any => {
+export const getDataTableJSX = (chainName: string, alerts: Alert[]): JSX.Element => {
     const hasAlerts = alerts.length > 0;
     const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
     const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts) : [];
 
     return <svc-data-table
         key={hasAlerts ? `${chainName}-data-table-no-alerts` : `${chainName}-data-table-alerts`}
-        slot="large"
         cols={cols}
         rows={rows}
         no-records-message="There are no alerts to display at this time"
@@ -67,7 +67,20 @@ export const getDataTableJSX = (chainName: string, alerts: Alert[]): any => {
  */
 const getDataTableRecordTypeFromAlerts = (alerts: Alert[]): DataTableRecordType => {
     return alerts.map(alert => [
-        { label: alert.severity.toString(), value: alert.severity },
+        { label: getSeverityIcon(alert.severity), value: alert.severity },
         { label: new Date(alert.timestamp * 1000).toLocaleString(), value: new Date(alert.timestamp * 1000) },
         { label: alert.message, value: alert.message }]);
+}
+
+const getSeverityIcon = (severity: Severity): JSX.Element => {
+    switch (severity) {
+        case Severity.CRITICAL:
+            return criticalIcon;
+        case Severity.WARNING:
+            return warningIcon;
+        case Severity.ERROR:
+            return errorIcon;
+        default:
+            break;
+    }
 }

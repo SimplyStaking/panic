@@ -23,7 +23,7 @@ export interface Alert {
 }
 
 export enum Severity {
-    CRITICAL,
-    WARNING,
-    ERROR
+    CRITICAL = 'CRITICAL',
+    WARNING = 'WARNING',
+    ERROR = 'ERROR'
 }
