@@ -1,7 +1,7 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
 import { ChainsAPI, filterActiveChains } from '../../utils/chains';
-import { getPieChartJSX, getSubChainsByBaseChain } from '../../utils/dashboard-overview';
+import { getDataTableJSX, getPieChartJSX, getSelectOptionTypeFromBaseChain } from '../../utils/dashboard-overview';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
 
 @Component({
@@ -57,11 +57,13 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                   <svc-filter event-name="filter-changed" debounce={100}>
                     <svc-card class="panic-dashboard-overview__chain-card">
                       <input name='base-chain-name' value={baseChain.name} hidden />
-                      <svc-select name="chain-name" id={baseChain.name} class="panic-dashboard-overview__chain-filter" slot="header" value="all" header="Choose Chain" options={getSubChainsByBaseChain(baseChain)}></svc-select>
+                      <svc-select name="chain-name" id={baseChain.name} class="panic-dashboard-overview__chain-filter" slot="header" value="all" header="Choose Chain" options={getSelectOptionTypeFromBaseChain(baseChain)}></svc-select>
 
                       {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
                       A green pie chart is shown with no text and without a tooltip */}
                       {getPieChartJSX(chain.name, chain.criticalAlerts, chain.warningAlerts, chain.errorAlerts)}
+
+                      {getDataTableJSX(chain.name, chain.alerts)}
                     </svc-card>
                   </svc-filter>
               })}
