@@ -28,21 +28,13 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
     }
   }
 
-  @Listen('ionChange')
-  changedValue(event: CustomEvent) {
+  @Listen('filter-changed')
+  filterChanged(event: CustomEvent) {
     try {
-      const parent = (event.target as HTMLElement).parentElement;
-      const parentClassList = parent.classList;
+      const baseChainName = event.detail['base-chain-name'];
+      const chainName = event.detail['chain-name'];
 
-      // Chain Filter case
-      if (parentClassList.contains('panic-dashboard-overview__chain-filter')) {
-        const baseChainName = parent.id;
-        const chainName = event.detail['value'];
-
-        this.baseChains = this.baseChains.filter(filterActiveChains, { baseChainName, chainName });
-        // Severity Filter case
-      } else if (parentClassList.contains('panic-dashboard-overview__severity-filter')) {
-      }
+      this.baseChains = this.baseChains.filter(filterActiveChains, { baseChainName, chainName });
 
     } catch (error: any) {
       console.error(error);
@@ -61,13 +53,17 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
           {this.baseChains.map((baseChain) =>
             <svc-surface label={baseChain.name}>
               {baseChain.chains.map((chain) => {
-                return chain.active && <svc-card class="panic-dashboard-overview__chain-card">
-                  <svc-select id={baseChain.name} class="panic-dashboard-overview__chain-filter" slot="header" value="all" header="Choose Chain" options={getSubChainsByBaseChain(baseChain)}></svc-select>
+                return chain.active &&
+                  <svc-filter event-name="filter-changed" debounce={100}>
+                    <svc-card class="panic-dashboard-overview__chain-card">
+                      <input name='base-chain-name' value={baseChain.name} hidden />
+                      <svc-select name="chain-name" id={baseChain.name} class="panic-dashboard-overview__chain-filter" slot="header" value="all" header="Choose Chain" options={getSubChainsByBaseChain(baseChain)}></svc-select>
 
-                  {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
+                      {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
                       A green pie chart is shown with no text and without a tooltip */}
-                  {getPieChartJSX(chain.name, chain.criticalAlerts, chain.warningAlerts, chain.errorAlerts, chain.totalAlerts)}
-                </svc-card>
+                      {getPieChartJSX(chain.name, chain.criticalAlerts, chain.warningAlerts, chain.errorAlerts, chain.totalAlerts)}
+                    </svc-card>
+                  </svc-filter>
               })}
               <svc-label color="dark" position="start" class="panic-dashboard-overview__info-message">This section displays only warning, critical and error alerts. For a full report, check <svc-anchor label={"Alerts Overview."} url={"#alerts-overview"} /> </svc-label>
 
