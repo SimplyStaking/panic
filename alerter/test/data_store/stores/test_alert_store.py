@@ -592,6 +592,7 @@ class TestAlertStore(unittest.TestCase):
 
         metric_data = {'severity': data['severity'],
                        'message': data['message'],
+                       'timestamp': data['timestamp'],
                        'expiry': None}
         key = data['origin_id']
 
