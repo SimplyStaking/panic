@@ -1,6 +1,6 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { ChainsAPI } from '../../utils/chains';
+import { ChainsAPI, filterActiveChains } from '../../utils/chains';
 import { getPieChartJSX, getSubChainsByBaseChain } from '../../utils/dashboard-overview';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
 
@@ -39,18 +39,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
         const baseChainName = parent.id;
         const chainName = event.detail['value'];
 
-        this.baseChains = this.baseChains.filter(function (baseChain) {
-          if (baseChain.name === baseChainName) {
-            baseChain.allFilter = chainName === 'all';
-            baseChain.chains.filter(function (chain) {
-              chain.active = chain.name === chainName;
-
-              return chain;
-            });
-          }
-
-          return baseChain;
-        });
+        this.baseChains = this.baseChains.filter(filterActiveChains, { baseChainName, chainName });
         // Severity Filter case
       } else if (parentClassList.contains('panic-dashboard-overview__severity-filter')) {
       }

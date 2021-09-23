@@ -277,3 +277,16 @@ async function getChainAlerts(chain: Chain): Promise<Chain> {
 
     return chain;
 }
+
+export function filterActiveChains(baseChain: BaseChain): BaseChain {
+    if (baseChain.name === this.baseChainName) {
+        baseChain.allFilter = this.chainName === 'all';
+        baseChain.chains.filter(function (chain: Chain): Chain {
+            chain.active = chain.name === this.chainName;
+
+            return chain;
+        }, this);
+    }
+
+    return baseChain;
+}
