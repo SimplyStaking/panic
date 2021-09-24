@@ -10,9 +10,9 @@ export const allChain: Chain = {
     alerts: [], active: true
 };
 
-export const criticalIcon = <svc-button icon-name="skull" icon-position="icon-only"></svc-button>;
-export const warningIcon = <svc-button icon-name="warning" icon-position="icon-only"></svc-button>;
-export const errorIcon = <svc-button icon-name="alert-circle" icon-position="icon-only"></svc-button>;
+export const criticalIcon = <svc-button icon-name="skull" icon-position="icon-only" />;
+export const warningIcon = <svc-button icon-name="warning" icon-position="icon-only" />;
+export const errorIcon = <svc-button icon-name="alert-circle" icon-position="icon-only" />;
 
 // Test Related
 export const fetchMock: any = fetch as any;
