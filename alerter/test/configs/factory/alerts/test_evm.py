@@ -3,8 +3,8 @@ import unittest
 
 from parameterized import parameterized
 
-from src.configs.alerts.node.evm import EVMNodeAlertsConfig
-from src.configs.factory.alerts.evm import EVMAlertsConfigsFactory
+from src.configs.alerts.node.evm import EVMAlertsConfigsFactory
+from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
 
@@ -55,7 +55,7 @@ class TestEVMAlertsConfigsFactory(unittest.TestCase):
         for _, config in self.received_config_example_2_evm.items():
             filtered_2_evm[config['name']] = copy.deepcopy(config)
 
-        self.alerts_config_1_evm = EVMNodeAlertsConfig(
+        self.alerts_config_1_evm = EVMAlertsConfigsFactory(
             parent_id=self.test_parent_id_1,
             evm_node_is_down=filtered_1_evm['evm_node_is_down'],
             evm_block_syncing_block_height_difference=filtered_1_evm[
@@ -63,7 +63,7 @@ class TestEVMAlertsConfigsFactory(unittest.TestCase):
             evm_block_syncing_no_change_in_block_height=filtered_1_evm[
                 'evm_block_syncing_no_change_in_block_height']
         )
-        self.alerts_config_2_evm = EVMNodeAlertsConfig(
+        self.alerts_config_2_evm = EVMAlertsConfigsFactory(
             parent_id=self.test_parent_id_2,
             evm_node_is_down=filtered_2_evm['evm_node_is_down'],
             evm_block_syncing_block_height_difference=filtered_2_evm[
@@ -72,7 +72,7 @@ class TestEVMAlertsConfigsFactory(unittest.TestCase):
                 'evm_block_syncing_no_change_in_block_height']
         )
 
-        self.evm_configs_factory = EVMAlertsConfigsFactory()
+        self.evm_configs_factory = EVMNodeAlertsConfigsFactory()
 
     def tearDown(self) -> None:
         self.received_config_example_1_evm = None

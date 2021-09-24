@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timezone, timedelta
-
+from typing import Dict, List, Any, Type, Callable, Optional
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.grouped_alerts_metric_code.contract. \
     chainlink_contract_metric_code import \

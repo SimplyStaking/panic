@@ -17,7 +17,7 @@ from src.alerter.factory.evm_node_alerting_factory import \
     EVMNodeAlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode as MetricCode
-from src.configs.factory.alerts.node.evm import EVMAlertsConfigsFactory
+from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.data import VALID_CHAINLINK_SOURCES
 from src.utils.constants.rabbitmq import (
@@ -41,7 +41,7 @@ class EVMNodeAlerter(Alerter):
 
     def __init__(
             self, alerter_name: str, logger: logging.Logger,
-            evm_alerts_configs_factory: EVMAlertsConfigsFactory,
+            evm_alerts_configs_factory: EVMNodeAlertsConfigsFactory,
             rabbitmq: RabbitMQApi, max_queue_size: int = 0) -> None:
         super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
 
@@ -49,7 +49,7 @@ class EVMNodeAlerter(Alerter):
         self._alerting_factory = EVMNodeAlertingFactory(logger)
 
     @property
-    def alerts_configs_factory(self) -> EVMAlertsConfigsFactory:
+    def alerts_configs_factory(self) -> EVMNodeAlertsConfigsFactory:
         return self._alerts_configs_factory
 
     @property

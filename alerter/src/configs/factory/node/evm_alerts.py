@@ -1,7 +1,7 @@
 import copy
 from typing import Dict, Optional
 
-from src.configs.alerts.node.evm import EVMNodeAlertsConfig
+from src.configs.alerts.node.evm import EVMAlertsConfigsFactory
 from src.configs.factory.configs_factory import ConfigsFactory
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
@@ -30,7 +30,7 @@ class EVMNodeAlertsConfigsFactory(ConfigsFactory):
         for _, config in sent_configs.items():
             filtered[config['name']] = copy.deepcopy(config)
 
-        evm_node_alerts_config = EVMNodeAlertsConfig(
+        evm_node_alerts_config = EVMAlertsConfigsFactory(
             parent_id=parent_id,
             evm_node_is_down=filtered['evm_node_is_down'],
             evm_block_syncing_block_height_difference=filtered[
@@ -53,7 +53,7 @@ class EVMNodeAlertsConfigsFactory(ConfigsFactory):
                : False otherwise
         """
         return (chain_name in self.configs
-                and type(self.configs[chain_name]) == EVMNodeAlertsConfig)
+                and type(self.configs[chain_name]) == EVMAlertsConfigsFactory)
 
     def get_parent_id(self, chain_name: str) -> Optional[str]:
         """
@@ -76,7 +76,7 @@ class EVMNodeAlertsConfigsFactory(ConfigsFactory):
                : None otherwise
         """
         for chain_name, config in self.configs.items():
-            if type(config) == EVMNodeAlertsConfig \
+            if type(config) == EVMAlertsConfigsFactory \
                     and config.parent_id == parent_id:
                 return chain_name
 

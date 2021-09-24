@@ -246,5 +246,7 @@ def save_chainlink_contract_to_redis(
         Keys.get_cl_contract_historical_rounds(node_id, proxy_address):
             json.dumps(cl_contract.historical_rounds),
         Keys.get_cl_contract_last_monitored(node_id, proxy_address):
-            str(cl_contract.last_monitored)
+            str(cl_contract.last_monitored),
+        Keys.get_cl_contract_last_round_observed(node_id, proxy_address):
+            str(cl_contract.last_round_observed)
     })

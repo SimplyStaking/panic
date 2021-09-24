@@ -29,7 +29,11 @@ CL_CONTRACTS_DT_INPUT_QUEUE_NAME = \
 DT_MAN_HEARTBEAT_QUEUE_NAME = 'data_transformers_manager_heartbeat_queue'
 SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE = "system_alerter_input_queue_{}"
 GITHUB_ALERTER_INPUT_QUEUE_NAME = 'github_alerter_input_queue'
+EVM_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME = \
+    'evm_node_alerter_input_configs_queue'
 CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME = 'cl_node_alerter_input_configs_queue'
+CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME = \
+    'cl_contract_alerter_input_configs_queue'
 SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = \
     'system_alerters_manager_heartbeat_queue'
 SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME = \
@@ -82,6 +86,7 @@ CL_NODE_ALERT_ROUTING_KEY = 'alert.node.chainlink'
 CL_CONTRACT_ALERT_ROUTING_KEY = 'alert.contract.chainlink'
 EVM_NODE_ALERT_ROUTING_KEY = 'alert.node.evm'
 CL_ALERTS_CONFIGS_ROUTING_KEY = 'chains.chainlink.*.alerts_config'
+EVM_ALERTS_CONFIGS_ROUTING_KEY = 'chains.chainlink.*.alerts_config'
 ALERTS_CONFIGS_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
 ALERTS_CONFIGS_ROUTING_KEY_GEN = 'general.alerts_config'
 ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'

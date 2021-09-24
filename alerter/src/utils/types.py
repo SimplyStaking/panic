@@ -26,8 +26,8 @@ from src.alerter.alerts.system_alerts import (
     SystemRAMUsageDecreasedBelowThresholdAlert,
     SystemStorageUsageDecreasedBelowThresholdAlert
 )
-from src.configs.alerts.contracts.chainlink import \
-    ChainlinkContractsAlertsConfig
+from src.configs.alerts.contract.chainlink import \
+    ChainlinkContractAlertsConfig
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.monitorables.contracts.chainlink.v3 import V3ChainlinkContract
 from src.monitorables.contracts.chainlink.v4 import V4ChainlinkContract
@@ -100,7 +100,7 @@ StillDownAlert = Union[NodeStillDownAlert]
 BackUpAlert = Union[NodeBackUpAgainAlert]
 
 ChainlinkAlertsConfigs = Union[Type[ChainlinkNodeAlertsConfig],
-                               Type[ChainlinkContractsAlertsConfig]]
+                               Type[ChainlinkContractAlertsConfig]]
 
 
 class OpsgenieSeverities(Enum):

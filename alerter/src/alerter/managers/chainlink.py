@@ -16,11 +16,11 @@ from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.manager import AlertersManager
-from src.configs.alerts.contracts.chainlink import (
-    ChainlinkContractsAlertsConfig)
+from src.configs.alerts.contract.chainlink import (
+    ChainlinkContractAlertsConfig)
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
-from src.configs.factory.alerts.chainlink import (
-    ChainlinkNodeAlertsConfigsFactory, ChainlinkContractsAlertsConfigsFactory)
+from src.configs.factory.node.chainlink_alerts import (
+    ChainlinkNodeAlertsConfigsFactory, ChainlinkContractAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (CHAINLINK_NODE_ALERTER_NAME,
                                        CHAINLINK_CONTRACT_ALERTER_NAME)
@@ -39,7 +39,7 @@ class ChainlinkAlertersManager(AlertersManager):
         super().__init__(logger, manager_name, rabbitmq)
         self._node_alerts_config_factory = ChainlinkNodeAlertsConfigsFactory()
         self._contracts_alerts_config_factory = \
-            ChainlinkContractsAlertsConfigsFactory()
+            ChainlinkContractAlertsConfigsFactory()
         self._alerter_process_dict = {}
         self._configs_processor_helper = {
             CHAINLINK_NODE_ALERTER_NAME: {
@@ -51,7 +51,7 @@ class ChainlinkAlertersManager(AlertersManager):
             },
             CHAINLINK_CONTRACT_ALERTER_NAME: {
                 'alerterClass': ChainlinkContractAlerter,
-                'configsClass': ChainlinkContractsAlertsConfig,
+                'configsClass': ChainlinkContractAlertsConfig,
                 'factory': self.contracts_alerts_config_factory,
                 'routing_key': CL_CONTRACT_ALERT_ROUTING_KEY,
                 'starter': start_chainlink_contract_alerter,
@@ -64,7 +64,7 @@ class ChainlinkAlertersManager(AlertersManager):
 
     @property
     def contracts_alerts_config_factory(
-            self) -> ChainlinkContractsAlertsConfigsFactory:
+            self) -> ChainlinkContractAlertsConfigsFactory:
         return self._contracts_alerts_config_factory
 
     @property

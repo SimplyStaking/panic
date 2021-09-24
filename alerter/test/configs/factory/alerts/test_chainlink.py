@@ -3,11 +3,12 @@ import unittest
 
 from parameterized import parameterized
 
-from src.configs.alerts.contracts.chainlink import (
-    ChainlinkContractsAlertsConfig)
+from src.configs.alerts.contract.chainlink import (
+    ChainlinkContractAlertsConfig)
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
-from src.configs.factory.alerts.chainlink import (
-    ChainlinkNodeAlertsConfigsFactory, ChainlinkContractsAlertsConfigsFactory)
+from src.configs.factory.node.chainlink_alerts import (
+    ChainlinkNodeAlertsConfigsFactory, ChainlinkContractAlertsConfigsFactory
+)
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
 
@@ -39,7 +40,7 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
         ]
         chainlink_contracts_config_metrics = [
             'price_feed_not_observed', 'price_feed_deviation',
-            'consensus_failure'
+            'consensus_failure', 'error_retrieving_chainlink_contract_data'
         ]
 
         self.received_config_example_1_cl_node = {}
@@ -128,24 +129,28 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
                 'eth_balance_amount_increase'],
             node_is_down=filtered_2_cl_node['node_is_down']
         )
-        self.alerts_config_1_cl_contract = ChainlinkContractsAlertsConfig(
+        self.alerts_config_1_cl_contract = ChainlinkContractAlertsConfig(
             parent_id=self.test_parent_id_1,
             price_feed_not_observed=filtered_1_cl_contract[
                 'price_feed_not_observed'],
             price_feed_deviation=filtered_1_cl_contract['price_feed_deviation'],
-            consensus_failure=filtered_1_cl_contract['consensus_failure']
+            consensus_failure=filtered_1_cl_contract['consensus_failure'],
+            error_retrieving_chainlink_contract_data=filtered_1_cl_contract[
+                'error_retrieving_chainlink_contract_data']
         )
-        self.alerts_config_2_cl_contract = ChainlinkContractsAlertsConfig(
+        self.alerts_config_2_cl_contract = ChainlinkContractAlertsConfig(
             parent_id=self.test_parent_id_2,
             price_feed_not_observed=filtered_2_cl_contract[
                 'price_feed_not_observed'],
             price_feed_deviation=filtered_2_cl_contract['price_feed_deviation'],
-            consensus_failure=filtered_2_cl_contract['consensus_failure']
+            consensus_failure=filtered_2_cl_contract['consensus_failure'],
+            error_retrieving_chainlink_contract_data=filtered_2_cl_contract[
+                'error_retrieving_chainlink_contract_data']
         )
 
         self.cl_node_configs_factory = ChainlinkNodeAlertsConfigsFactory()
         self.cl_contracts_configs_factory = \
-            ChainlinkContractsAlertsConfigsFactory()
+            ChainlinkContractAlertsConfigsFactory()
 
     def tearDown(self) -> None:
         self.received_config_example_1_cl_node = None
@@ -285,7 +290,7 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
          'self.alerts_config_2_cl_node', ChainlinkNodeAlertsConfig),
         ('self.cl_contracts_configs_factory',
          'self.alerts_config_1_cl_contract',
-         'self.alerts_config_2_cl_contract', ChainlinkContractsAlertsConfig),
+         'self.alerts_config_2_cl_contract', ChainlinkContractAlertsConfig),
     ])
     def test_config_exists_returns_true_if_config_exists(
             self, configs_factory, alerts_config_1, alerts_config_2,
@@ -306,7 +311,7 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
         ('self.cl_node_configs_factory', 'self.alerts_config_1_cl_node',
          ChainlinkNodeAlertsConfig),
         ('self.cl_contracts_configs_factory',
-         'self.alerts_config_1_cl_contract', ChainlinkContractsAlertsConfig),
+         'self.alerts_config_1_cl_contract', ChainlinkContractAlertsConfig),
     ])
     def test_config_exists_returns_false_if_config_does_not_exists(
             self, configs_factory, alerts_config_1, config_type) -> None:
@@ -332,7 +337,7 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
          'self.alerts_config_2_cl_node', ChainlinkNodeAlertsConfig),
         ('self.cl_contracts_configs_factory',
          'self.alerts_config_1_cl_contract', 'self.alerts_config_2_cl_contract',
-         ChainlinkContractsAlertsConfig),
+         ChainlinkContractAlertsConfig),
     ])
     def test_get_parent_id_gets_id_from_stored_config_if_chain_exists_in_state(
             self, configs_factory, alerts_config_1, alerts_config_2,
@@ -355,7 +360,7 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
         ('self.cl_node_configs_factory', 'self.alerts_config_1_cl_node',
          ChainlinkNodeAlertsConfig),
         ('self.cl_contracts_configs_factory',
-         'self.alerts_config_1_cl_contract', ChainlinkContractsAlertsConfig),
+         'self.alerts_config_1_cl_contract', ChainlinkContractAlertsConfig),
     ])
     def test_get_parent_id_returns_none_if_chain_does_not_exist_in_state(
             self, configs_factory, alerts_config_1, config_type) -> None:
@@ -381,7 +386,7 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
          'self.alerts_config_2_cl_node', ChainlinkNodeAlertsConfig),
         ('self.cl_contracts_configs_factory',
          'self.alerts_config_1_cl_contract', 'self.alerts_config_2_cl_contract',
-         ChainlinkContractsAlertsConfig),
+         ChainlinkContractAlertsConfig),
     ])
     def test_get_chain_name_gets_name_given_the_parent_id_if_config_exists(
             self, configs_factory, alerts_config_1, alerts_config_2,
@@ -404,7 +409,7 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
         ('self.cl_node_configs_factory', 'self.alerts_config_1_cl_node',
          ChainlinkNodeAlertsConfig),
         ('self.cl_contracts_configs_factory',
-         'self.alerts_config_1_cl_contract', ChainlinkContractsAlertsConfig),
+         'self.alerts_config_1_cl_contract', ChainlinkContractAlertsConfig),
     ])
     def test_get_chain_name_returns_none_if_no_config_exists_for_parent_id(
             self, configs_factory, alerts_config_1, config_type) -> None:
@@ -422,4 +427,5 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
         configs_factory._configs = state
         self.assertIsNone(configs_factory.get_chain_name(self.test_parent_id_2,
                                                          config_type))
-        self.assertIsNone(configs_factory.get_chain_name('bad_id', config_type))
+        self.assertIsNone(
+            configs_factory.get_chain_name('bad_id', config_type))

@@ -1,10 +1,10 @@
 import logging
 from datetime import timedelta
-
+from typing import Dict
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode as AlertsMetricCode
-from src.configs.alerts.evm_node import EVMNodeAlertsConfig
+from src.configs.alerts.node.evm import EVMAlertsConfigsFactory
 from src.utils.configs import parse_alert_time_thresholds
 from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
                               OccurrencesInTimePeriodTracker)
@@ -51,7 +51,7 @@ class EVMNodeAlertingFactory(AlertingFactory):
 
     def create_alerting_state(
             self, parent_id: str, node_id: str,
-            evm_node_alerts_config: ChainlinkEVMAlertsConfig) -> None:
+            evm_node_alerts_config: EVMAlertsConfigsFactory) -> None:
         """
         If no state is already stored, this function will create a new alerting
         state for a node based on the passed alerts config.

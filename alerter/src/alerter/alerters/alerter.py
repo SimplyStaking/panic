@@ -2,7 +2,7 @@ import logging
 import sys
 from abc import abstractmethod
 from types import FrameType
-from typing import Dict
+from typing import Dict, Any
 
 import pika.exceptions
 

@@ -18,8 +18,8 @@ from src.alerter.alerter_starters import start_evm_node_alerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.evm import EVMNodeAlerterManager
-from src.configs.alerts.node.evm import EVMNodeAlertsConfig
-from src.configs.factory.alerts.evm import EVMAlertsConfigsFactory
+from src.configs.alerts.node.evm import EVMAlertsConfigsFactory
+from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import EVM_NODE_ALERTER_NAME
@@ -85,7 +85,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
             EVM_NODE_ALERTER_NAME: self.dummy_process,
             'ANOTHER_TEST_ALERTER': self.dummy_process
         }
-        self.alerts_config_factory_example = EVMAlertsConfigsFactory()
+        self.alerts_config_factory_example = EVMNodeAlertsConfigsFactory()
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
@@ -486,7 +486,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
                                            properties, body)
 
         expected_configs = {
-            chain_name: EVMNodeAlertsConfig(
+            chain_name: EVMAlertsConfigsFactory(
                 parent_id=self.parent_id_1,
                 evm_node_is_down=self.config_1['1'],
                 evm_block_syncing_block_height_difference=self.config_1['2'],
@@ -527,7 +527,7 @@ class TestEVMNodeAlerterManager(unittest.TestCase):
         self.test_manager.alerts_config_factory.add_new_config(chain_name,
                                                                self.config_1)
         expected_configs = {
-            chain_name: EVMNodeAlertsConfig(
+            chain_name: EVMAlertsConfigsFactory(
                 parent_id=self.parent_id_1,
                 evm_node_is_down=self.config_1['1'],
                 evm_block_syncing_block_height_difference=self.config_1['2'],

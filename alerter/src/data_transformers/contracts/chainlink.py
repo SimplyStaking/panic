@@ -271,10 +271,10 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                         contract_data['historicalRounds'],
                         key=lambda k: k['roundId'],
                         reverse=True)
-                    if int(contract_data['aggregatorAddress']) == 3:
+                    if int(contract_data['contractVersion']) == 3:
                         last_round_observed = int(sorted_historical_rounds[0][
                             'roundId'])
-                    elif int(contract_data['aggregatorAddress']) == 4:
+                    elif int(contract_data['contractVersion']) == 4:
                         round_data = next((
                             item for item in
                             sorted_historical_rounds if
@@ -286,6 +286,8 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                         last_round_observed is None):
                     last_round_observed = int(contract_data['latestRound'])
 
+                # Add the key to the dictionary
+                processed_data_metrics[proxy_address]['lastRoundObserved'] = {}
                 processed_data_metrics[proxy_address][
                     'lastRoundObserved']['current'] = last_round_observed
                 # Add the current value of the ignored metrics

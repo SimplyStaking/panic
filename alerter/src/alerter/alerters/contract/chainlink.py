@@ -15,7 +15,7 @@ from src.alerter.factory.chainlink_contract_alerting_factory import \
     ChainlinkContractAlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode as MetricCode
-from src.configs.factory.contract.chainlink_alerts import \
+from src.configs.factory.node.chainlink_alerts import \
     ChainlinkContractAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.data import VALID_CHAINLINK_SOURCES

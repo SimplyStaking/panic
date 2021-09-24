@@ -14,7 +14,7 @@ from src.alerter.alerter_starters import start_evm_node_alerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.manager import AlertersManager
-from src.configs.factory.alerts.evm import EVMAlertsConfigsFactory
+from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import EVM_NODE_ALERTER_NAME
 from src.utils.constants.rabbitmq import (
@@ -30,7 +30,7 @@ class EVMNodeAlerterManager(AlertersManager):
     def __init__(self, logger: logging.Logger, manager_name: str,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(logger, manager_name, rabbitmq)
-        self._alerts_config_factory = EVMAlertsConfigsFactory()
+        self._alerts_config_factory = EVMNodeAlertsConfigsFactory()
         self._alerter_process_dict = {}
 
     @property
@@ -38,7 +38,7 @@ class EVMNodeAlerterManager(AlertersManager):
         return self._alerter_process_dict
 
     @property
-    def alerts_config_factory(self) -> EVMAlertsConfigsFactory:
+    def alerts_config_factory(self) -> EVMNodeAlertsConfigsFactory:
         return self._alerts_config_factory
 
     def _initialise_rabbitmq(self) -> None:
