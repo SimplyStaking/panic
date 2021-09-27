@@ -63,7 +63,9 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                       A green pie chart is shown with no text and without a tooltip */}
                       {getPieChartJSX(chain.name, chain.criticalAlerts, chain.warningAlerts, chain.errorAlerts)}
 
-                      <div slot="large">{getDataTableJSX(chain.name, chain.alerts)}</div>
+                      <div slot="large">
+                        {getDataTableJSX(chain.name, chain.alerts)}
+                      </div>
                     </svc-card>
                   </svc-filter>
               })}
