@@ -109,7 +109,7 @@ async function getBaseChains(): Promise<BaseChain[]> {
             baseChains.push({
                 name: baseChain,
                 chains: currentChains,
-                chainFilter: 'all',
+                activeChain: 'all',
                 severityFilter: getAllSeverityValues()
             });
         }
@@ -177,7 +177,7 @@ async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
         let totalAlerts: Alert[] = [];
         for (let chain of updatedBaseChain.chains) {
             if (chain.id !== 'all') {
-                if ((chain.active || updatedBaseChain.chainFilter === 'all')) {
+                if ((chain.active || updatedBaseChain.activeChain === 'all')) {
                     chain = await getChainAlerts(chain, updatedBaseChain.severityFilter);
                 }
                 totalCriticalAlerts += chain.criticalAlerts;
@@ -211,7 +211,7 @@ function addNewlyAddedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: 
         const updatedBaseChain: BaseChain = updatedBaseChains.find(baseChain => baseChain.name === newBaseChain.name);
         if (updatedBaseChain) {
             // Create base chain.
-            const finalBaseChain: BaseChain = { name: updatedBaseChain.name, chains: [], chainFilter: updatedBaseChain.chainFilter, severityFilter: updatedBaseChain.severityFilter };
+            const finalBaseChain: BaseChain = { name: updatedBaseChain.name, chains: [], activeChain: updatedBaseChain.activeChain, severityFilter: updatedBaseChain.severityFilter };
             // Check for newly added/removed chains within base chain.
             for (const newChain of newBaseChain.chains) {
                 // Add newly added chains (if any).
@@ -308,22 +308,26 @@ function parseAlerts(problems: any): Alert[] {
 }
 
 /**
- * Updates the active alerts of all of the chains within each base chain.
- * @param baseChains base chains to be filtered.
- * @param this object passed from filter() function.
- * @returns updated base chain.
+ * Updates the new active chain within a respective base chain.
+ * @param baseChains base chains which contains the respective base chain.
+ * @param baseChainName name of base chain to be updated.
+ * @param chainName name of new active chain to be updated.
+ * @returns updated base chains.
  */
-export function filterActiveChains(baseChain: BaseChain): BaseChain {
-    if (baseChain.name === this.baseChainName) {
-        baseChain.chainFilter = this.chainName;
-        baseChain.chains.filter(function (chain: Chain): Chain {
-            chain.active = chain.name === this.chainName;
+export function updateActiveChains(baseChains: BaseChain[], baseChainName: string, chainName: string): BaseChain[] {
+    const updatedBaseChains: BaseChain[] = [];
 
-            return chain;
-        }, this);
+    for (const updatedBaseChain of baseChains) {
+        if (updatedBaseChain.name === baseChainName) {
+            updatedBaseChain.activeChain = chainName;
+            for (const updatedChain of updatedBaseChain.chains) {
+                updatedChain.active = updatedChain.name === chainName;
+            }
+        }
+        updatedBaseChains.push(updatedBaseChain);
     }
 
-    return baseChain;
+    return updatedBaseChains
 }
 
 export function getAllSeverityValues(): Severity[] {

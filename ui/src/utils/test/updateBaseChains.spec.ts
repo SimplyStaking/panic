@@ -9,7 +9,7 @@ describe('getBaseChains() function', () => {
     it('should not return any base chains when API is down', async () => {
         fetchMock.mockReject(() => Promise.reject("API is down"));
         const baseChains = await ChainsAPI.updateBaseChains([{
-            name: '', chainFilter: 'all', severityFilter: getAllSeverityValues(),
+            name: '', activeChain: 'all', severityFilter: getAllSeverityValues(),
             chains: [
                 allChain,
                 {
@@ -23,7 +23,7 @@ describe('getBaseChains() function', () => {
     });
 
     const mockBaseChainsData = [{
-        name: 'cosmos', chainFilter: 'all', severityFilter: getAllSeverityValues(),
+        name: 'cosmos', activeChain: 'all', severityFilter: getAllSeverityValues(),
         chains: [
             allChain,
             {

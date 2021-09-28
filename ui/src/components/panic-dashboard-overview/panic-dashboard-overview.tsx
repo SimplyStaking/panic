@@ -1,6 +1,6 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { ChainsAPI, filterActiveChains } from '../../utils/chains';
+import { ChainsAPI, updateActiveChains } from '../../utils/chains';
 import { getDataTableJSX, getPieChartJSX, getChainFilterOptionsFromBaseChain, getSeverityFilterOptions } from '../../utils/dashboard-overview';
 import { arrayEquals } from '../../utils/helpers';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
@@ -39,12 +39,12 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
       const baseChain: BaseChain = this.baseChains.find(baseChain => baseChain.name === baseChainName);
 
       // Update active chain if chain filter was changed.
-      if (baseChain.chainFilter !== selectedChainName) {
-        this.baseChains = this.baseChains.filter(filterActiveChains, { baseChainName, chainName: selectedChainName });
-        // Update severities shown if severity filter was changed.
+      if (baseChain.activeChain !== selectedChainName) {
+        this.baseChains = updateActiveChains(this.baseChains, baseChainName, selectedChainName);
       } else {
         const alertsSeverity = event.detail['alerts-severity'];
         const selectedAlerts = alertsSeverity.split(',');
+        // Update severities shown if severity filter was changed.
         if (!arrayEquals(baseChain.severityFilter, selectedAlerts)) {
           baseChain.severityFilter = selectedAlerts;
           this.baseChains = await ChainsAPI.updateBaseChains(this.baseChains);
