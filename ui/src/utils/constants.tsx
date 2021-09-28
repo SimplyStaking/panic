@@ -1,6 +1,12 @@
 import { Env, h } from '@stencil/core';
 import { Chain } from '../interfaces/chains';
 
+export enum Severity {
+    CRITICAL = 'Critical',
+    WARNING = 'Warning',
+    ERROR = 'Error'
+}
+
 export const HOME_URL = '/';
 export const baseChainsNames: string[] = ["cosmos", "general", "chainlink", "substrate"];
 export const apiURL: string = `https://${Env.API_IP}:${Env.API_PORT}/server/`;

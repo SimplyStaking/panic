@@ -1,3 +1,5 @@
+import { Severity } from "../utils/constants";
+
 export interface BaseChain {
     readonly name: string;
     chains: Chain[];
@@ -20,10 +22,4 @@ export interface Alert {
     readonly severity: Severity;
     readonly message: string;
     readonly timestamp: number;
-}
-
-export enum Severity {
-    CRITICAL = 'CRITICAL',
-    WARNING = 'WARNING',
-    ERROR = 'ERROR'
 }

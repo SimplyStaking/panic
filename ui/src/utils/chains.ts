@@ -1,5 +1,5 @@
-import { Alert, BaseChain, Chain, Severity } from "../interfaces/chains";
-import { allChain, apiURL, baseChainsNames } from "./constants";
+import { Alert, BaseChain, Chain } from "../interfaces/chains";
+import { allChain, apiURL, baseChainsNames, Severity } from "./constants";
 
 export const ChainsAPI = {
     updateBaseChains: updateBaseChains,

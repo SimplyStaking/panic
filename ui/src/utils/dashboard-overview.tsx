@@ -1,16 +1,24 @@
 import { h } from '@stencil/core';
-import { Alert, BaseChain, Severity } from '../interfaces/chains';
+import { Alert, BaseChain } from '../interfaces/chains';
 import { DataTableRecordType } from '../lib/types/types/datatable';
-import { SelectOptionType } from '../lib/types/types/select';
-import { criticalIcon, errorIcon, warningIcon } from './constants';
+import { SelectOptionType, SelectOptionValueType } from '../lib/types/types/select';
+import { criticalIcon, errorIcon, Severity, warningIcon } from './constants';
 
 /**
  * Formats base chain to SelectOptionType type.
  * @param baseChain base chain to be converted.
  * @returns populated list of required object type.
  */
-export const getSelectOptionTypeFromBaseChain = (baseChain: BaseChain): SelectOptionType => {
+export const getChainFilterOptionsFromBaseChain = (baseChain: BaseChain): SelectOptionType => {
     return baseChain.chains.map(chain => ({ label: chain.name, value: chain.name }))
+}
+
+export const getSeverityFilterOptions = (): SelectOptionType => {
+    return Object.keys(Severity).map(severity => ({ label: Severity[severity], value: severity }));
+}
+
+export const getSeverityFilterDefaultValue = (): SelectOptionValueType => {
+    return Object.keys(Severity).map(severity => severity);
 }
 
 /**
@@ -73,7 +81,7 @@ const getDataTableRecordTypeFromAlerts = (alerts: Alert[]): DataTableRecordType 
 }
 
 const getSeverityIcon = (severity: Severity): JSX.Element => {
-    switch (severity) {
+    switch (Severity[severity]) {
         case Severity.CRITICAL:
             return criticalIcon;
         case Severity.WARNING:
