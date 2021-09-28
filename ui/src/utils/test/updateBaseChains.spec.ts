@@ -1,4 +1,4 @@
-import { ChainsAPI } from "../chains";
+import { ChainsAPI, getAllSeverityValues } from "../chains";
 import { allChain, baseChainsNames, fetchMock } from "../constants";
 
 beforeEach(() => {
@@ -9,7 +9,8 @@ describe('getBaseChains() function', () => {
     it('should not return any base chains when API is down', async () => {
         fetchMock.mockReject(() => Promise.reject("API is down"));
         const baseChains = await ChainsAPI.updateBaseChains([{
-            name: '', allFilter: true, chains: [
+            name: '', chainFilter: 'all', severityFilter: getAllSeverityValues(),
+            chains: [
                 allChain,
                 {
                     name: 'test', id: 'test', repos: [], systems: [], criticalAlerts: 0,
@@ -22,7 +23,8 @@ describe('getBaseChains() function', () => {
     });
 
     const mockBaseChainsData = [{
-        name: 'cosmos', allFilter: true, chains: [
+        name: 'cosmos', chainFilter: 'all', severityFilter: getAllSeverityValues(),
+        chains: [
             allChain,
             {
                 name: 'test chain', id: 'test_chain', repos: ['test_repo'],

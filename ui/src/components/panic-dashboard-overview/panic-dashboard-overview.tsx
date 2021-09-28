@@ -1,7 +1,8 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
 import { ChainsAPI, filterActiveChains } from '../../utils/chains';
-import { getDataTableJSX, getPieChartJSX, getChainFilterOptionsFromBaseChain, getSeverityFilterOptions, getSeverityFilterDefaultValue } from '../../utils/dashboard-overview';
+import { getDataTableJSX, getPieChartJSX, getChainFilterOptionsFromBaseChain, getSeverityFilterOptions } from '../../utils/dashboard-overview';
+import { arrayEquals } from '../../utils/helpers';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
 
 @Component({
@@ -29,16 +30,26 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
   }
 
   @Listen('filter-changed')
-  filterChanged(event: CustomEvent) {
+  async filterChanged(event: CustomEvent) {
     try {
       const baseChainName = event.detail['base-chain-name'];
-      const chainName = event.detail['chain-name'];
-      const alertsSeverity = event.detail['alerts-severity'];
+      const selectedChainName = event.detail['chain-name'];
 
-      console.log(alertsSeverity);
+      // Get base chain which contains the altered filters.
+      const baseChain: BaseChain = this.baseChains.find(baseChain => baseChain.name === baseChainName);
 
-      this.baseChains = this.baseChains.filter(filterActiveChains, { baseChainName, chainName });
-
+      // Update active chain if chain filter was changed.
+      if (baseChain.chainFilter !== selectedChainName) {
+        this.baseChains = this.baseChains.filter(filterActiveChains, { baseChainName, chainName: selectedChainName });
+        // Update severities shown if severity filter was changed.
+      } else {
+        const alertsSeverity = event.detail['alerts-severity'];
+        const selectedAlerts = alertsSeverity.split(',');
+        if (!arrayEquals(baseChain.severityFilter, selectedAlerts)) {
+          baseChain.severityFilter = selectedAlerts;
+          this.baseChains = await ChainsAPI.updateBaseChains(this.baseChains);
+        }
+      }
     } catch (error: any) {
       console.error(error);
     }
@@ -82,7 +93,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                           id={baseChain.name + '_severity-filter'}
                           class="panic-dashboard-overview__severity-filter"
                           multiple={true}
-                          value={getSeverityFilterDefaultValue()}
+                          value={baseChain.severityFilter}
                           header="Select Alerts Severity"
                           placeholder="No Alerts Severities Selected"
                           options={getSeverityFilterOptions()}>

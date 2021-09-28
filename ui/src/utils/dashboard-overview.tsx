@@ -1,7 +1,7 @@
 import { h } from '@stencil/core';
 import { Alert, BaseChain } from '../interfaces/chains';
 import { DataTableRecordType } from '../lib/types/types/datatable';
-import { SelectOptionType, SelectOptionValueType } from '../lib/types/types/select';
+import { SelectOptionType } from '../lib/types/types/select';
 import { criticalIcon, errorIcon, Severity, warningIcon } from './constants';
 
 /**
@@ -15,10 +15,6 @@ export const getChainFilterOptionsFromBaseChain = (baseChain: BaseChain): Select
 
 export const getSeverityFilterOptions = (): SelectOptionType => {
     return Object.keys(Severity).map(severity => ({ label: Severity[severity], value: severity }));
-}
-
-export const getSeverityFilterDefaultValue = (): SelectOptionValueType => {
-    return Object.keys(Severity).map(severity => severity);
 }
 
 /**

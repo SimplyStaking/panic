@@ -3,7 +3,8 @@ import { Severity } from "../utils/constants";
 export interface BaseChain {
     readonly name: string;
     chains: Chain[];
-    allFilter: boolean;
+    chainFilter: string;
+    severityFilter: Severity[];
 }
 
 export interface Chain {
