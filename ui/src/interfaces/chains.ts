@@ -4,7 +4,7 @@ export interface BaseChain {
     readonly name: string;
     chains: Chain[];
     activeChain: string;
-    severityFilter: Severity[];
+    activeSeverities: Severity[];
 }
 
 export interface Chain {

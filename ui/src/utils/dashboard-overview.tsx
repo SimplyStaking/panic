@@ -51,10 +51,10 @@ export const getPieChartJSX = (chainName: string, criticalAlerts: number, warnin
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-export const getDataTableJSX = (chainName: string, alerts: Alert[]): JSX.Element => {
+export const getDataTableJSX = (chainName: string, alerts: Alert[], activeSeverities: Severity[]): JSX.Element => {
     const hasAlerts = alerts.length > 0;
     const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
-    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts) : [];
+    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, activeSeverities) : [];
 
     return <svc-data-table
         key={hasAlerts ? `${chainName}-data-table-no-alerts` : `${chainName}-data-table-alerts`}
@@ -65,12 +65,17 @@ export const getDataTableJSX = (chainName: string, alerts: Alert[]): JSX.Element
 }
 
 /**
- * Formats alerts to DataTableRecordType type.
+ * Filters alerts which have an active severity and formats alerts to DataTableRecordType type.
  * @param alerts list of alerts.
+ * @param activeSeverities list of active severities.
  * @returns populated list of lists of required object type.
  */
-const getDataTableRecordTypeFromAlerts = (alerts: Alert[]): DataTableRecordType => {
-    return alerts.map(alert => [
+const getDataTableRecordTypeFromAlerts = (alerts: Alert[], activeSeverities: Severity[]): DataTableRecordType => {
+    const filteredAlerts = alerts.filter(function (alert) {
+        return activeSeverities.includes(alert.severity);
+    });
+
+    return filteredAlerts.map(alert => [
         { label: getSeverityIcon(alert.severity), value: alert.severity },
         { label: new Date(alert.timestamp * 1000).toLocaleString(), value: new Date(alert.timestamp * 1000) },
         { label: alert.message, value: alert.message }]);

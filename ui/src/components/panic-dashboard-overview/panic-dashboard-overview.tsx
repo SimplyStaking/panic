@@ -1,6 +1,6 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { ChainsAPI, updateActiveChains } from '../../utils/chains';
+import { ChainsAPI, recreateBaseChains, updateActiveChains } from '../../utils/chains';
 import { getDataTableJSX, getPieChartJSX, getChainFilterOptionsFromBaseChain, getSeverityFilterOptions } from '../../utils/dashboard-overview';
 import { arrayEquals } from '../../utils/helpers';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
@@ -45,9 +45,9 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
         const alertsSeverity = event.detail['alerts-severity'];
         const selectedAlerts = alertsSeverity.split(',');
         // Update severities shown if severity filter was changed.
-        if (!arrayEquals(baseChain.severityFilter, selectedAlerts)) {
-          baseChain.severityFilter = selectedAlerts;
-          this.baseChains = await ChainsAPI.updateBaseChains(this.baseChains);
+        if (!arrayEquals(baseChain.activeSeverities, selectedAlerts)) {
+          baseChain.activeSeverities = selectedAlerts;
+          this.baseChains = recreateBaseChains(this.baseChains);
         }
       }
     } catch (error: any) {
@@ -93,14 +93,14 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                           id={baseChain.name + '_severity-filter'}
                           class="panic-dashboard-overview__severity-filter"
                           multiple={true}
-                          value={baseChain.severityFilter}
+                          value={baseChain.activeSeverities}
                           header="Select Alerts Severity"
                           placeholder="No Alerts Severities Selected"
                           options={getSeverityFilterOptions()}>
                         </svc-select>
 
                         {/* Data table */}
-                        {getDataTableJSX(chain.name, chain.alerts)}
+                        {getDataTableJSX(chain.name, chain.alerts, baseChain.activeSeverities)}
                       </div>
                     </svc-card>
                   </svc-filter>
