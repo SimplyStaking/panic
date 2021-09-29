@@ -29,8 +29,20 @@ export const getSeverityFilterOptions = (): SelectOptionType => {
  * @param errorAlerts number of error alerts.
  * @returns populated pie chart JSX.
  */
-export const getPieChartJSX = (chainName: string, criticalAlerts: number, warningAlerts: number, errorAlerts: number): JSX.Element => {
-    const hasAlerts = criticalAlerts + warningAlerts + errorAlerts > 0;
+export const getPieChartJSX = (baseChain: BaseChain): JSX.Element => {
+    let criticalAlerts: number = 0;
+    let warningAlerts: number = 0;
+    let errorAlerts: number = 0;
+
+    for (const chain of baseChain.chains) {
+        if (baseChain.activeChains.includes(chain.name)) {
+            criticalAlerts += chain.alerts.filter(alert => Severity[alert.severity] === Severity.CRITICAL).length;
+            warningAlerts += chain.alerts.filter(alert => Severity[alert.severity] === Severity.WARNING).length;
+            errorAlerts += chain.alerts.filter(alert => Severity[alert.severity] === Severity.ERROR).length;
+        }
+    }
+
+    const hasAlerts: boolean = criticalAlerts + warningAlerts + errorAlerts > 0;
     // PieChart config with alerts
     const cols = [{ title: 'Alert', type: 'string' }, { title: 'Amount', type: 'number' }];
     const rows = [['Critical', criticalAlerts], ['Warning', warningAlerts], ['Error', errorAlerts]];
@@ -40,7 +52,7 @@ export const getPieChartJSX = (chainName: string, criticalAlerts: number, warnin
     const noAlertsColors: string[] = ['#b0ea8f'];
 
     return <svc-pie-chart
-        key={hasAlerts ? `${chainName}-pie-chart-no-alerts` : `${chainName}-pie-chart-alerts`}
+        key={hasAlerts ? `${baseChain.name}-pie-chart-no-alerts` : `${baseChain.name}-pie-chart-alerts`}
         slot="small"
         colors={hasAlerts ? alertsColors : noAlertsColors}
         cols={cols}
@@ -55,13 +67,21 @@ export const getPieChartJSX = (chainName: string, criticalAlerts: number, warnin
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-export const getDataTableJSX = (chainName: string, alerts: Alert[], activeSeverities: Severity[]): JSX.Element => {
+export const getDataTableJSX = (baseChain: BaseChain): JSX.Element => {
+    let alerts: Alert[] = [];
+
+    for (const chain of baseChain.chains) {
+        if (baseChain.activeChains.includes(chain.name)) {
+            alerts.push.apply(alerts, chain.alerts);
+        }
+    }
+
     const hasAlerts = alerts.length > 0;
     const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
-    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, activeSeverities) : [];
+    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, baseChain.activeSeverities) : [];
 
     return <svc-data-table
-        key={hasAlerts ? `${chainName}-data-table-no-alerts` : `${chainName}-data-table-alerts`}
+        key={hasAlerts ? `${baseChain.name}-data-table-no-alerts` : `${baseChain.name}-data-table-alerts`}
         cols={cols}
         rows={rows}
         no-records-message="There are no alerts to display at this time"
@@ -69,7 +89,7 @@ export const getDataTableJSX = (chainName: string, alerts: Alert[], activeSeveri
 }
 
 /**
- * Filters alerts which have an active severity and formats alerts to DataTableRecordType type.
+ * Filters alerts which do not have an active severity and formats alerts to DataTableRecordType type.
  * @param alerts list of alerts.
  * @param activeSeverities list of active severities.
  * @returns populated list of lists of required object type.
