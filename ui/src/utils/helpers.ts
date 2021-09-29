@@ -4,8 +4,6 @@
  * @returns true if arrays are equal, false if not.
  */
 export function arrayEquals(a: any[], b: any[]) {
-    return Array.isArray(a) &&
-        Array.isArray(b) &&
-        a.length === b.length &&
+    return a.length === b.length &&
         a.every((val, index) => val === b[index]);
 }
