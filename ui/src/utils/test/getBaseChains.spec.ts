@@ -1,5 +1,5 @@
 import { ChainsAPI, getAllSeverityValues } from "../chains";
-import { allChain, baseChainsNames, fetchMock } from "../constants";
+import { baseChainsNames, fetchMock } from "../constants";
 
 beforeEach(() => {
     fetchMock.resetMocks();
@@ -116,11 +116,11 @@ describe('getBaseChains() function', () => {
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([{
-            name: 'cosmos', activeChain: 'all', activeSeverities: getAllSeverityValues(),
-            chains: [allChain, {
+            name: 'cosmos', activeChains: ['test chain'],
+            activeSeverities: getAllSeverityValues(),
+            chains: [{
                 id: "test_chain", name: 'test chain', repos: ['test_repo'],
-                systems: ['test_system'], criticalAlerts: 0, warningAlerts: 0,
-                errorAlerts: 0, alerts: [], active: false
+                systems: ['test_system'], alerts: [], active: true
             }]
         }]);
         expect(fetch).toHaveBeenCalledTimes(1);

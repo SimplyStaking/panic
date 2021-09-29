@@ -1,5 +1,5 @@
 import { ChainsAPI, getAllSeverityValues } from "../chains";
-import { allChain, baseChainsNames, fetchMock } from "../constants";
+import { baseChainsNames, fetchMock } from "../constants";
 
 beforeEach(() => {
     fetchMock.resetMocks();
@@ -9,12 +9,11 @@ describe('getBaseChains() function', () => {
     it('should not return any base chains when API is down', async () => {
         fetchMock.mockReject(() => Promise.reject("API is down"));
         const baseChains = await ChainsAPI.updateBaseChains([{
-            name: '', activeChain: 'all', activeSeverities: getAllSeverityValues(),
+            name: '', activeChains: ['test chain'], activeSeverities: getAllSeverityValues(),
             chains: [
-                allChain,
                 {
-                    name: 'test', id: 'test', repos: [], systems: [], criticalAlerts: 0,
-                    warningAlerts: 0, errorAlerts: 0, alerts: [], active: false
+                    name: 'test chain', id: 'test', repos: [],
+                    systems: [], alerts: [], active: true
                 }]
         }]);
 
@@ -23,13 +22,11 @@ describe('getBaseChains() function', () => {
     });
 
     const mockBaseChainsData = [{
-        name: 'cosmos', activeChain: 'all', activeSeverities: getAllSeverityValues(),
+        name: 'cosmos', activeChains: ['test chain'], activeSeverities: getAllSeverityValues(),
         chains: [
-            allChain,
             {
                 name: 'test chain', id: 'test_chain', repos: ['test_repo'],
-                systems: ['test_system'], criticalAlerts: 0, warningAlerts: 0,
-                errorAlerts: 0, alerts: [], active: false
+                systems: ['test_system'], alerts: [], active: true
             }]
     }];
 
@@ -88,8 +85,12 @@ describe('getBaseChains() function', () => {
         };
 
         const mockBaseChainsData2 = [...mockBaseChainsData];
-        mockBaseChainsData2[0].chains[0].errorAlerts = 2;
-        mockBaseChainsData2[0].chains[0].alerts.length = 6;
+        mockBaseChainsData2[0].chains[0].alerts.push(
+            { severity: 'WARNING', message: 'test alert 1', timestamp: 12345 },
+            { severity: 'WARNING', message: 'test alert 2', timestamp: 12345 },
+            { severity: 'WARNING', message: 'test alert 3', timestamp: 12345 },
+            { severity: 'ERROR', message: 'test alert 4', timestamp: 12345 },
+            { severity: 'ERROR', message: 'test alert 5', timestamp: 12345 });
 
         fetchMock.mockResponses([JSON.stringify(monitorablesInfoMockData)],
             [JSON.stringify(alertsOverviewMockData2)]);
