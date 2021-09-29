@@ -296,21 +296,6 @@ export function updateActiveChains(baseChains: BaseChain[], baseChainName: strin
 }
 
 /**
- * Recreates a list of base chains (used to re-render).
- * @param baseChains base chains list to be recreated.
- * @returns recreated base chains.
- */
-export function recreateBaseChains(baseChains: BaseChain[]): BaseChain[] {
-    const updatedBaseChains: BaseChain[] = [];
-
-    for (const updatedBaseChain of baseChains) {
-        updatedBaseChains.push(updatedBaseChain);
-    }
-
-    return updatedBaseChains
-}
-
-/**
  * Returns all severity keys in a list.
  * @returns list of all severity keys.
  */

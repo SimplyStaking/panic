@@ -1,6 +1,6 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { ChainsAPI, getActiveChainNames, recreateBaseChains, updateActiveChains } from '../../utils/chains';
+import { ChainsAPI, getActiveChainNames, updateActiveChains } from '../../utils/chains';
 import { getDataTableJSX, getPieChartJSX, getChainFilterOptionsFromBaseChain, getSeverityFilterOptions } from '../../utils/dashboard-overview';
 import { arrayEquals } from '../../utils/helpers';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
@@ -46,7 +46,8 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
         // Update severities shown if severity filter was changed.
         if (!arrayEquals(baseChain.activeSeverities, selectedAlerts)) {
           baseChain.activeSeverities = selectedAlerts;
-          this.baseChains = recreateBaseChains(this.baseChains);
+          // This is done to re-render since the above does not.
+          this.baseChains = [...this.baseChains];
         }
       }
     } catch (error: any) {
