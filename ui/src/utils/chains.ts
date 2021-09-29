@@ -341,6 +341,10 @@ export function recreateBaseChains(baseChains: BaseChain[]): BaseChain[] {
     return updatedBaseChains
 }
 
+/**
+ * Returns all severity keys in a list.
+ * @returns list of all severity keys.
+ */
 export function getAllSeverityValues(): Severity[] {
     return Object.keys(Severity).map(severity => severity as Severity);
 }

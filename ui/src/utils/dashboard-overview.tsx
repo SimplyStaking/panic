@@ -13,6 +13,10 @@ export const getChainFilterOptionsFromBaseChain = (baseChain: BaseChain): Select
     return baseChain.chains.map(chain => ({ label: chain.name, value: chain.name }))
 }
 
+/**
+ * Formats Severity enum to SelectOptionType type.
+ * @returns populated list of required object type.
+ */
 export const getSeverityFilterOptions = (): SelectOptionType => {
     return Object.keys(Severity).map(severity => ({ label: Severity[severity], value: severity }));
 }
@@ -71,16 +75,23 @@ export const getDataTableJSX = (chainName: string, alerts: Alert[], activeSeveri
  * @returns populated list of lists of required object type.
  */
 const getDataTableRecordTypeFromAlerts = (alerts: Alert[], activeSeverities: Severity[]): DataTableRecordType => {
+    // Filter alerts.
     const filteredAlerts = alerts.filter(function (alert) {
         return activeSeverities.includes(alert.severity);
     });
 
+    // Format filtered alerts into DataTableRecordType type.
     return filteredAlerts.map(alert => [
         { label: getSeverityIcon(alert.severity), value: alert.severity },
         { label: new Date(alert.timestamp * 1000).toLocaleString(), value: new Date(alert.timestamp * 1000) },
         { label: alert.message, value: alert.message }]);
 }
 
+/**
+ * Returns icon JSX according to the severity passed.
+ * @param severity the alert severity.
+ * @returns icon JSX which corresponds to the severity.
+ */
 const getSeverityIcon = (severity: Severity): JSX.Element => {
     switch (Severity[severity]) {
         case Severity.CRITICAL:
