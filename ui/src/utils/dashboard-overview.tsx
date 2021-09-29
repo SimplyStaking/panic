@@ -1,7 +1,7 @@
 import { h } from '@stencil/core';
 import { Alert, BaseChain } from '../interfaces/chains';
 import { DataTableRecordType } from '../lib/types/types/datatable';
-import { SelectOptionType, SelectOptionValueType } from '../lib/types/types/select';
+import { SelectOptionType } from '../lib/types/types/select';
 import { criticalIcon, errorIcon, Severity, warningIcon } from './constants';
 
 /**
@@ -13,12 +13,12 @@ export const getChainFilterOptionsFromBaseChain = (baseChain: BaseChain): Select
     return baseChain.chains.map(chain => ({ label: chain.name, value: chain.name }))
 }
 
+/**
+ * Formats Severity enum to SelectOptionType type.
+ * @returns populated list of required object type.
+ */
 export const getSeverityFilterOptions = (): SelectOptionType => {
     return Object.keys(Severity).map(severity => ({ label: Severity[severity], value: severity }));
-}
-
-export const getSeverityFilterDefaultValue = (): SelectOptionValueType => {
-    return Object.keys(Severity).map(severity => severity);
 }
 
 /**
@@ -29,8 +29,20 @@ export const getSeverityFilterDefaultValue = (): SelectOptionValueType => {
  * @param errorAlerts number of error alerts.
  * @returns populated pie chart JSX.
  */
-export const getPieChartJSX = (chainName: string, criticalAlerts: number, warningAlerts: number, errorAlerts: number): JSX.Element => {
-    const hasAlerts = criticalAlerts + warningAlerts + errorAlerts > 0;
+export const getPieChartJSX = (baseChain: BaseChain): JSX.Element => {
+    let criticalAlerts: number = 0;
+    let warningAlerts: number = 0;
+    let errorAlerts: number = 0;
+
+    for (const chain of baseChain.chains) {
+        if (baseChain.activeChains.includes(chain.name)) {
+            criticalAlerts += chain.alerts.filter(alert => Severity[alert.severity] === Severity.CRITICAL).length;
+            warningAlerts += chain.alerts.filter(alert => Severity[alert.severity] === Severity.WARNING).length;
+            errorAlerts += chain.alerts.filter(alert => Severity[alert.severity] === Severity.ERROR).length;
+        }
+    }
+
+    const hasAlerts: boolean = criticalAlerts + warningAlerts + errorAlerts > 0;
     // PieChart config with alerts
     const cols = [{ title: 'Alert', type: 'string' }, { title: 'Amount', type: 'number' }];
     const rows = [['Critical', criticalAlerts], ['Warning', warningAlerts], ['Error', errorAlerts]];
@@ -40,7 +52,7 @@ export const getPieChartJSX = (chainName: string, criticalAlerts: number, warnin
     const noAlertsColors: string[] = ['#b0ea8f'];
 
     return <svc-pie-chart
-        key={hasAlerts ? `${chainName}-pie-chart-no-alerts` : `${chainName}-pie-chart-alerts`}
+        key={hasAlerts ? `${baseChain.name}-pie-chart-no-alerts` : `${baseChain.name}-pie-chart-alerts`}
         slot="small"
         colors={hasAlerts ? alertsColors : noAlertsColors}
         cols={cols}
@@ -55,13 +67,21 @@ export const getPieChartJSX = (chainName: string, criticalAlerts: number, warnin
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-export const getDataTableJSX = (chainName: string, alerts: Alert[]): JSX.Element => {
+export const getDataTableJSX = (baseChain: BaseChain): JSX.Element => {
+    let alerts: Alert[] = [];
+
+    for (const chain of baseChain.chains) {
+        if (baseChain.activeChains.includes(chain.name)) {
+            alerts.push.apply(alerts, chain.alerts);
+        }
+    }
+
     const hasAlerts = alerts.length > 0;
     const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
-    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts) : [];
+    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, baseChain.activeSeverities) : [];
 
     return <svc-data-table
-        key={hasAlerts ? `${chainName}-data-table-no-alerts` : `${chainName}-data-table-alerts`}
+        key={hasAlerts ? `${baseChain.name}-data-table-no-alerts` : `${baseChain.name}-data-table-alerts`}
         cols={cols}
         rows={rows}
         no-records-message="There are no alerts to display at this time"
@@ -69,17 +89,29 @@ export const getDataTableJSX = (chainName: string, alerts: Alert[]): JSX.Element
 }
 
 /**
- * Formats alerts to DataTableRecordType type.
+ * Filters alerts which do not have an active severity and formats alerts to DataTableRecordType type.
  * @param alerts list of alerts.
+ * @param activeSeverities list of active severities.
  * @returns populated list of lists of required object type.
  */
-const getDataTableRecordTypeFromAlerts = (alerts: Alert[]): DataTableRecordType => {
-    return alerts.map(alert => [
+const getDataTableRecordTypeFromAlerts = (alerts: Alert[], activeSeverities: Severity[]): DataTableRecordType => {
+    // Filter alerts.
+    const filteredAlerts = alerts.filter(function (alert) {
+        return activeSeverities.includes(alert.severity);
+    });
+
+    // Format filtered alerts into DataTableRecordType type.
+    return filteredAlerts.map(alert => [
         { label: getSeverityIcon(alert.severity), value: alert.severity },
         { label: new Date(alert.timestamp * 1000).toLocaleString(), value: new Date(alert.timestamp * 1000) },
         { label: alert.message, value: alert.message }]);
 }
 
+/**
+ * Returns icon JSX according to the severity passed.
+ * @param severity the alert severity.
+ * @returns icon JSX which corresponds to the severity.
+ */
 const getSeverityIcon = (severity: Severity): JSX.Element => {
     switch (Severity[severity]) {
         case Severity.CRITICAL:
