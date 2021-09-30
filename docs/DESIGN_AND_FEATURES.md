@@ -3,7 +3,7 @@
 - [**High-Level Design**](#high-level-design)
 - [**Alert Types**](#alert-types)
 - [**Alerting Channels**](#alerting-channels)
-- [**Telegram Commands**](#telegram-commands)
+- [**Telegram and Slack Commands**](#telegram-and-slack-commands)
 - [**List of Alerts**](#list-of-alerts)
 
 ## High-Level Design
@@ -28,14 +28,14 @@ For system monitoring and alerting, PANIC operates as follows:
 - The **Data Store** also received data from the **System Data Transformer** via **RabbitMQ** and saves this data to both **Redis** and **MongoDB** as required.
 - When the **Alert Router** receives an alert from the **System Alerter** via **RabbitMQ**, it checks the configurations to determine which channels should receive this alert. As a result, this alert is then routed to the appropriate channel and the **Data Store** (so that the alert is stored in a **Mongo** database) via **RabbitMQ**.
 - When a **Channel Handler** receives an alert via **RabbitMQ**, it simply forwards it to the channel it handles and the **Node Operator** would be notified via this channel.
-- If the user sets-up a **Telegram Channel** with **Commands** enabled, the user would be able to control and query PANIC via Telegram Bot Commands. A list of available commands is given [here](#telegram-commands).
+- If the user sets-up a **Telegram** or **Slack** Channel with **Commands** enabled, the user would be able to control and query PANIC via Telegram Bot/Slack App Commands. A list of available commands is given [here](#telegram-and-slack-commands).
 
 For GitHub repository monitoring and alerting, PANIC operates similarly to the above but the data flows through GitHub repository dedicated processes.
 
 **Notes**: 
 
 - In future releases, the node operator will be able to use PANIC to monitor Substrate and Cosmos-SDK based nodes and get alerts based on blockchain-specific metrics obtained from various data sources.
-- Another important component which is not depicted above is the **Health-Checker** component. The **Health-Checker** was not included in the image above as it is not part of the monitoring and alerting process, in fact it runs in its own Docker container. The **Health-Checker** component constitutes of two separate components, the **Ping Publisher** and the **Heartbeat Handler**. The **Ping Publisher** sends ping requests to PANIC's components every 30 seconds via **RabbitMQ**, and the **Heartbeat Handler** listens for heartbeats and saves them to **Redis**. This mechanism makes it possible to deduce whether PANIC's components are running as expected when the node operator enters the `/status` command described [here](#telegram-commands).
+- Another important component which is not depicted above is the **Health-Checker** component. The **Health-Checker** was not included in the image above as it is not part of the monitoring and alerting process, in fact it runs in its own Docker container. The **Health-Checker** component constitutes of two separate components, the **Ping Publisher** and the **Heartbeat Handler**. The **Ping Publisher** sends ping requests to PANIC's components every 30 seconds via **RabbitMQ**, and the **Heartbeat Handler** listens for heartbeats and saves them to **Redis**. This mechanism makes it possible to deduce whether PANIC's components are running as expected when the node operator enters the `/status` command described [here](#telegram-and-slack-commands).
 
 ## Alert Types
 
@@ -59,6 +59,7 @@ PANIC supports the following alerting channels:
 | `Console` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts printed to standard output (`stdout`) of the alerter's Docker container. |
 | `Log` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts logged to an alerts log (`alerter/log/alerts.log`). |
 | `Telegram` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts delivered to a Telegram chat via a Telegram bot in the form of a text message. |
+| `Slack` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts delivered to a Slack channel via a Slack app in the form of a text message. |
 | `E-mail` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts sent as emails using an SMTP server, with option for authentication. |
 | `Twilio` | `CRITICAL` | None | Alerts trigger a phone call to grab the node operator's attention. |
 | `Opsenie` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All | Alerts are sent to the node operator's Opsgenie environment using the following severity mapping: `CRITICAL` → `P1`, `WARNING` → `P3`, `ERROR` → `P3`, `INFO` → `P5`|
@@ -71,21 +72,21 @@ For example the node operator may have the following setup:
 - A Telegram Channel for Cosmos alerts with all severities enabled.
 - A Twilio Channel for all chains added to PANIC.
 
-## Telegram Commands
+## Telegram and Slack Commands
 
-Telegram bots in PANIC serve two purposes. As mentioned above, they are used to send alerts. However they can also accept commands, allowing the node operator to have some control over the alerter and check its status.
+Telegram bots and Slack apps in PANIC serve two purposes. As mentioned above, they are used to send alerts. However they can also accept commands, allowing the node operator to have some control over the alerter and check its status.
 
 PANIC supports the following commands:
 
 | Command | Parameters | Description |
 |---|---|---|
 | `/start` | None | A welcome message is returned. |
-| `/ping` | None | Pings the Telegram Commands Handler associated with the Telegram Chat and returns `PONG!`. The user can use this command to check that the associated Telegram Commands Handler is running. |
+| `/ping` | None | Pings the Telegram/Slack Commands Handler associated with the Telegram Chat/Slack Channel and returns `PONG!`. The user can use this command to check that the associated Telegram/Slack Commands Handler is running. |
 | `/help` | None | Returns a guide of acceptable commands and their description. |
-| `/mute` | List of severities, for example: `/mute INFO CRITICAL` | Suppose that the user types `/mute INFO CRITICAL` in a Telegram chat associated with the chain `Polkadot`. The `/mute` command mutes `INFO` and `CRITICAL` alerts on all channels (Including all other channels which are set-up, for example Opsgenie) for the chain `Polkadot`. If no severities are given, all `Polkadot` alerts are muted on all channels. |
-| `/unmute` | None | Suppose that the user types `/unmute` in a Telegram chat associated with the chain `Polkadot`. This command will unmute all alert severities on all channels (Including all other channels which are set-up ex. Opsgenie) for the chain `Polkadot`. |
-| `/muteall` | List of severities, for example: `/muteall INFO CRITICAL` | Suppose that the user types `/muteall INFO CRITICAL` in a Telegram chat associated with the chain `Polkadot`. The `/muteall` command mutes `INFO` and `CRITICAL` alerts on all channels (Including all other channels which are set-up, for example Opsgenie) for every chain being monitored (including the GENERAL chain). If no severities are given, all alerts for all chains being monitored are muted on all channels. |
-| `/unmuteall` | None | Suppose that the user types `/unmuteall` in a Telegram chat associated with the chain `Polkadot`. This command unmutes all alert severities on all channels (Including all other channels which are set-up ex. Opsgenie) for every chain being monitored (including the GENERAL chain). |
+| `/mute` | List of severities, for example: `/mute INFO CRITICAL` | Suppose that the user types `/mute INFO CRITICAL` in a Telegram Chat/Slack Channel associated with the chain `Polkadot`. The `/mute` command mutes `INFO` and `CRITICAL` alerts on all channels (Including all other channels which are set-up, for example Opsgenie) for the chain `Polkadot`. If no severities are given, all `Polkadot` alerts are muted on all channels. |
+| `/unmute` | None | Suppose that the user types `/unmute` in a Telegram Chat/Slack Channel associated with the chain `Polkadot`. This command will unmute all alert severities on all channels (Including all other channels which are set-up ex. Opsgenie) for the chain `Polkadot`. |
+| `/muteall` | List of severities, for example: `/muteall INFO CRITICAL` | Suppose that the user types `/muteall INFO CRITICAL` in a Telegram Chat/Slack Channel associated with the chain `Polkadot`. The `/muteall` command mutes `INFO` and `CRITICAL` alerts on all channels (Including all other channels which are set-up, for example Opsgenie) for every chain being monitored (including the GENERAL chain). If no severities are given, all alerts for all chains being monitored are muted on all channels. |
+| `/unmuteall` | None | Suppose that the user types `/unmuteall` in a Telegram Chat/Slack Channel associated with the chain `Polkadot`. This command unmutes all alert severities on all channels (Including all other channels which are set-up ex. Opsgenie) for every chain being monitored (including the GENERAL chain). |
 | `/status` | None | Returns whether the components that constitute PANIC are running or not. If there are problems, the problems are highlighted in the status message. |
 
 ## List of Alerts

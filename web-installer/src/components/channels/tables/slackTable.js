@@ -27,8 +27,9 @@ const SlackTable = ({ slacks, removeSlackDetails }) => {
           <TableHead>
             <TableRow>
               <StyledTableCell align="center">Slack Name</StyledTableCell>
-              <StyledTableCell align="center">Token</StyledTableCell>
-              <StyledTableCell align="center">Chat Name</StyledTableCell>
+              <StyledTableCell align="center">Bot Token</StyledTableCell>
+              <StyledTableCell align="center">App Token</StyledTableCell>
+              <StyledTableCell align="center">Bot Channel ID</StyledTableCell>
               <StyledTableCell align="center">Info</StyledTableCell>
               <StyledTableCell align="center">Warning</StyledTableCell>
               <StyledTableCell align="center">Critical</StyledTableCell>
@@ -45,10 +46,13 @@ const SlackTable = ({ slacks, removeSlackDetails }) => {
                   {slacks.byId[slack].channel_name}
                 </StyledTableCell>
                 <StyledTableCell align="center">
-                  {slacks.byId[slack].token}
+                  {slacks.byId[slack].bot_token}
                 </StyledTableCell>
                 <StyledTableCell align="center">
-                  {slacks.byId[slack].chat_name}
+                  {slacks.byId[slack].app_token}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {slacks.byId[slack].bot_channel_id}
                 </StyledTableCell>
                 <StyledTableCell align="center">
                   {slacks.byId[slack].info ? (
@@ -115,8 +119,9 @@ SlackTable.propTypes = {
     byId: PropTypes.shape({
       id: PropTypes.string,
       channel_name: PropTypes.string,
-      token: PropTypes.string,
-      chat_name: PropTypes.string,
+      bot_token: PropTypes.string,
+      app_token: PropTypes.string,
+      bot_channel_id: PropTypes.string,
       info: PropTypes.bool,
       warning: PropTypes.bool,
       critical: PropTypes.bool,

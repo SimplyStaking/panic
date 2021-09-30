@@ -8,13 +8,15 @@ import SlackSchema from './schemas/slackSchema';
 const Form = withFormik({
   mapPropsToErrors: () => ({
     channel_name: '',
-    chat_name: '',
-    token: '',
+    bot_token: '',
+    app_token: '',
+    bot_channel_id: '',
   }),
   mapPropsToValues: () => ({
     channel_name: '',
-    chat_name: '',
-    token: '',
+    bot_token: '',
+    app_token: '',
+    bot_channel_id: '',
     info: false,
     warning: false,
     critical: false,
@@ -27,8 +29,9 @@ const Form = withFormik({
     const { saveSlackDetails } = props;
     const payload = {
       channel_name: values.channel_name,
-      token: values.token,
-      chat_name: values.chat_name,
+      bot_token: values.bot_token,
+      app_token: values.app_token,
+      bot_channel_id: values.bot_channel_id,
       info: values.info,
       warning: values.warning,
       critical: values.critical,

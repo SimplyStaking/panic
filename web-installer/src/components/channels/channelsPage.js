@@ -139,11 +139,11 @@ function ChannelsPage() {
                         }}
                       >
                         <Tab label="Telegram" {...a11yProps(0)} />
-                        <Tab label="Email" {...a11yProps(1)} />
-                        <Tab label="OpsGenie" {...a11yProps(2)} />
-                        <Tab label="PagerDuty" {...a11yProps(3)} />
-                        <Tab label="Twilio" {...a11yProps(4)} />
-                        <Tab label="Slack" {...a11yProps(5)} />
+                        <Tab label="Slack" {...a11yProps(1)} />
+                        <Tab label="Email" {...a11yProps(2)} />
+                        <Tab label="OpsGenie" {...a11yProps(3)} />
+                        <Tab label="PagerDuty" {...a11yProps(4)} />
+                        <Tab label="Twilio" {...a11yProps(5)} />
                       </Tabs>
                     </AppBar>
                     <TabPanel value={value} index={0}>
@@ -151,24 +151,24 @@ function ChannelsPage() {
                       <TelegramTableContainer />
                     </TabPanel>
                     <TabPanel value={value} index={1}>
+                      <SlackFormContainer />
+                      <SlackTableContainer />
+                    </TabPanel>
+                    <TabPanel value={value} index={2}>
                       <EmailFormContainer />
                       <EmailTableContainer />
                     </TabPanel>
-                    <TabPanel value={value} index={2}>
+                    <TabPanel value={value} index={3}>
                       <OpsGenieFormContainer />
                       <OpsGenieTableContainer />
                     </TabPanel>
-                    <TabPanel value={value} index={3}>
+                    <TabPanel value={value} index={4}>
                       <PagerDutyFormContainer />
                       <PagerDutyTableContainer />
                     </TabPanel>
-                    <TabPanel value={value} index={4}>
+                    <TabPanel value={value} index={5}>
                       <TwilioFormContainer />
                       <TwilioTableContainer />
-                    </TabPanel>
-                    <TabPanel value={value} index={5}>
-                      <SlackFormContainer />
-                      <SlackTableContainer />
                     </TabPanel>
                   </div>
                 </Grid>
