@@ -108,8 +108,8 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                     slot="header"
                     multiple={true}
                     value={getActiveChainNames(baseChain.chains)}
-                    header="Select Chain"
-                    placeholder="No Chains Selected"
+                    header="Select chains"
+                    placeholder="Select chains"
                     options={getChainFilterOptionsFromBaseChain(baseChain)}>
                   </svc-select>
 
@@ -125,8 +125,8 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                       class="panic-dashboard-overview__severity-filter"
                       multiple={true}
                       value={baseChain.activeSeverities}
-                      header="Select Severity"
-                      placeholder="No Severities Selected"
+                      header="Select severities"
+                      placeholder="Select severities"
                       options={getSeverityFilterOptions()}>
                     </svc-select>
 

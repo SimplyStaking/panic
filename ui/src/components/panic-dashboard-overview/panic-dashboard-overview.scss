@@ -31,16 +31,25 @@ panic-dashboard-overview {
             &::part(text-title){
                 font-weight: bold;
             }
-
-            &::part(placeholder){
-                color: #ff0000;
-                opacity: 1;
-            }
         }
     }
-    
+
     svc-data-table {
         display: flex;
+        max-height: 258px;
+    }
+
+    svc-card{
+        border: 1px #a8a8a8 solid;
+
+        & > div.svc-card__slots > div.svc-card__container-large > div {
+            & > svc-data-table{
+                border-radius: var(--svc-card-border-radius);
+            }
+    
+            border: 1px #a8a8a8 solid;
+            border-radius: var(--svc-card-border-radius);
+        }
     }
 }
 
