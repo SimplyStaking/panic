@@ -27,6 +27,15 @@ panic-dashboard-overview {
             &::part(text){
                 text-transform: capitalize;
             }
+
+            &::part(text-title){
+                font-weight: bold;
+            }
+
+            &::part(placeholder){
+                color: #ff0000;
+                opacity: 1;
+            }
         }
     }
     
