@@ -33,6 +33,7 @@ Change the contents of this file to this:
 - Web-Installer bug fixes and removing outdated alerts.
 - Added Chainlink Node Alerter logic and tests.
 - Integrated Slack as an alerting channel and command handler.
+- Added new components heartbeat to Slack.
 
 ## 0.1.2
 
