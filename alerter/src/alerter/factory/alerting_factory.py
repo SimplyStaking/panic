@@ -277,7 +277,6 @@ class AlertingFactory(ABC):
 
         # Now check if any of the thresholds are surpassed. We will not generate
         # a warning alert if we are immediately in critical state.
-
         if critical_enabled and current >= critical_threshold:
             if not critical_window_timer.timer_started:
                 critical_window_timer.start_timer(monitoring_datetime)
@@ -507,6 +506,129 @@ class AlertingFactory(ABC):
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
+
+    def classify_thresholded_alert(
+            self, current: Any, config: Dict,
+            increased_above_threshold_alert: Type[IncreasedAboveThresholdAlert],
+            decreased_below_threshold_alert: Type[DecreasedBelowThresholdAlert],
+            data_for_alerting: List, parent_id: str, monitorable_id: str,
+            metric_name: str, monitorable_name: str, monitoring_timestamp: float
+    ) -> None:
+        """
+        This function raises a critical/warning increase above threshold alert
+        if the current value is bigger than the respective thresholds. If the
+        critical repeat time is constantly elapsed, the increase alert is
+        re-raised with a critical severity each time. Also, an increase above
+        threshold info alert is raised whenever the current value is greater
+        than a threshold. Note, a warning increase is re-raised if
+        warning_threshold <= current < critical_threshold <= previous. This is
+        done so that in the UI the respective metric is shown in warning state
+        and not in info state.
+        :param current: Current metric value
+        :param config: The metric's configuration to obtain the thresholds
+        :param increased_above_threshold_alert: The alert to be raised if the
+        current value is no longer smaller than a threshold
+        :param decreased_below_threshold_alert: The alert to be raised if the
+        current value is smaller than a threshold
+        :param data_for_alerting: The list to be appended with alerts
+        :param parent_id: The id of the base chain
+        :param monitorable_id: The id of the monitorable
+        :param metric_name: The name of the metric
+        :param monitorable_name: The name of the monitorable
+        :param monitoring_timestamp: The data timestamp
+        :return: None
+        """
+        # Parse warning thresholds and limiters
+        warning_enabled = str_to_bool(config['warning_enabled'])
+        warning_threshold = convert_to_float(config['warning_threshold'], None)
+        warning_sent = self.alerting_state[parent_id][monitorable_id][
+            'warning_sent']
+
+        # Parse critical thresholds and limiters
+        critical_enabled = str_to_bool(config['critical_enabled'])
+        critical_threshold = convert_to_float(config['critical_threshold'],
+                                              None)
+        critical_repeat_enabled = str_to_bool(config['critical_repeat_enabled'])
+        critical_repeat_limiter = self.alerting_state[parent_id][
+            monitorable_id]['critical_repeat_timer'][metric_name]
+        critical_sent = self.alerting_state[parent_id][monitorable_id][
+            'critical_sent']
+
+        monitoring_datetime = datetime.fromtimestamp(monitoring_timestamp)
+
+        # First check for a decrease below critical threshold and then check for
+        # a decrease below warning threshold as
+        # warning_threshold <= critical_threshold
+        if critical_sent[metric_name] and current < critical_threshold:
+            alert = decreased_below_threshold_alert(
+                monitorable_name, current, Severity.INFO.value,
+                monitoring_timestamp, Severity.CRITICAL.value, parent_id,
+                monitorable_id)
+            data_for_alerting.append(alert.alert_data)
+            self.component_logger.debug("Successfully classified alert %s",
+                                        alert.alert_data)
+            self.alerting_state[parent_id][monitorable_id][
+                'critical_sent'][metric_name] = False
+            critical_repeat_limiter.reset()
+
+            # If this is the case we still need to raise a warning alert to
+            # show the correct metric state in the UI.
+            if warning_sent[metric_name] and current >= warning_threshold:
+                self.alerting_state[parent_id][monitorable_id]['warning_sent'][
+                    metric_name] = False
+
+        if warning_sent[metric_name] and current < warning_threshold:
+            alert = decreased_below_threshold_alert(
+                monitorable_name, current, Severity.INFO.value,
+                monitoring_timestamp, Severity.WARNING.value, parent_id,
+                monitorable_id)
+            data_for_alerting.append(alert.alert_data)
+            self.component_logger.debug("Successfully classified alert %s",
+                                        alert.alert_data)
+            self.alerting_state[parent_id][monitorable_id]['warning_sent'][
+                metric_name] = False
+
+        # Now check if the current value is smaller than any of the thresholds.
+        # First check for critical and do not raise a warning alert if we are
+        # immediately in critical state.
+        if critical_enabled and current >= critical_threshold:
+            if not critical_sent[metric_name]:
+                alert = increased_above_threshold_alert(
+                    monitorable_name, current, Severity.CRITICAL.value,
+                    monitoring_timestamp, Severity.CRITICAL.value, parent_id,
+                    monitorable_id)
+                data_for_alerting.append(alert.alert_data)
+                self.component_logger.debug("Successfully classified alert %s",
+                                            alert.alert_data)
+                self.alerting_state[parent_id][monitorable_id][
+                    'critical_sent'][metric_name] = True
+                critical_repeat_limiter.set_last_time_that_did_task(
+                    monitoring_datetime)
+            elif (critical_repeat_enabled
+                  and critical_repeat_limiter.can_do_task(monitoring_datetime)):
+                alert = increased_above_threshold_alert(
+                    monitorable_name, current, Severity.CRITICAL.value,
+                    monitoring_timestamp, Severity.CRITICAL.value, parent_id,
+                    monitorable_id)
+                data_for_alerting.append(alert.alert_data)
+                self.component_logger.debug("Successfully classified alert %s",
+                                            alert.alert_data)
+                critical_repeat_limiter.set_last_time_that_did_task(
+                    monitoring_datetime)
+
+        if (warning_enabled
+                and not warning_sent[metric_name]
+                and not critical_sent[metric_name]
+                and current >= warning_threshold):
+            alert = increased_above_threshold_alert(
+                monitorable_name, current, Severity.WARNING.value,
+                monitoring_timestamp, Severity.WARNING.value, parent_id,
+                monitorable_id)
+            data_for_alerting.append(alert.alert_data)
+            self.component_logger.debug("Successfully classified alert %s",
+                                        alert.alert_data)
+            self.alerting_state[parent_id][monitorable_id][
+                'warning_sent'][metric_name] = True
 
     def classify_thresholded_alert_reverse(
             self, current: Any, config: Dict,

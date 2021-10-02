@@ -13,10 +13,11 @@ from src.alerter.alert_severities import Severity
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.factory.chainlink_contract_alerting_factory import \
     ChainlinkContractAlertingFactory
-from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
-    import GroupedChainlinkNodeAlertsMetricCode as MetricCode
+from src.alerter.grouped_alerts_metric_code.contract.chainlink_contract_metric_code \
+    import GroupedChainlinkContractAlertsMetricCode as MetricCode
 from src.configs.factory.node.chainlink_alerts import \
     ChainlinkContractAlertsConfigsFactory
+from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.data import VALID_CHAINLINK_SOURCES
 from src.utils.constants.rabbitmq import (
@@ -138,7 +139,7 @@ class ChainlinkContractAlerter(Alerter):
         # We must make sure that the alerts_config has been received for the
         # chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
-            meta_data['node_parent_id'])
+            meta_data['node_parent_id'], ChainlinkContractAlertsConfig)
         if chain_name is not None:
             configs = self.alerts_configs_factory.configs[chain_name]
 
@@ -173,15 +174,15 @@ class ChainlinkContractAlerter(Alerter):
                         x for x in previous_historical_rounds if x not in
                         current_historical_rounds
                     ]
-                elif current_historical_rounds:
+                elif current_historical_rounds is not None:
                     all_historical_rounds = current_historical_rounds
-                elif previous_historical_rounds:
+                elif previous_historical_rounds is not None:
                     all_historical_rounds = previous_historical_rounds
                 else:
                     all_historical_rounds = None
 
                 # Check if any historical rounds exist in the data
-                if all_historical_rounds:
+                if all_historical_rounds is not None:
                     # Sort the historical rounds in descending ordering
                     sorted_historical_rounds = sorted(
                         all_historical_rounds, key=lambda k: k['roundId'],
@@ -222,13 +223,13 @@ class ChainlinkContractAlerter(Alerter):
                 # Check if the alert rules are satisfied for the metrics
                 if (str_to_bool(configs.price_feed_deviation['enabled']) and
                     None not in [current_missed_observations,
-                                 sorted_historical_rounds],
+                                 sorted_historical_rounds] and
                         current_missed_observations == 0):
                     sub_config = configs.price_feed_deviation
                     current_deviation = sorted_historical_rounds[0][
                         'deviation']
 
-                    if current_deviation:
+                    if current_deviation is not None:
                         self.alerting_factory.classify_thresholded_time_window_alert(
                             current_deviation, sub_config,
                             cl_alerts.PriceFeedDeviating,
@@ -237,7 +238,7 @@ class ChainlinkContractAlerter(Alerter):
                             meta_data['node_parent_id'],
                             meta_data['node_id'],
                             proxy_address,
-                            MetricCode.PriceFeedDeviating.value,
+                            MetricCode.PriceFeedDeviation.value,
                             meta_data['node_name'],
                             meta_data['last_monitored']
                         )
@@ -279,7 +280,7 @@ class ChainlinkContractAlerter(Alerter):
         # We must make sure that the alerts_config has been received for the
         # chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
-            meta_data['node_parent_id'])
+            meta_data['node_parent_id'], ChainlinkContractAlertsConfig)
         if chain_name is not None:
             configs = self.alerts_configs_factory.configs[chain_name]
 
@@ -311,9 +312,10 @@ class ChainlinkContractAlerter(Alerter):
         data_for_alerting = []
         try:
             if 'result' in data_received:
-                self._process_result(data_received, data_for_alerting)
+                self._process_result(data_received['result'],
+                                     data_for_alerting)
             elif 'error' in data_received:
-                self._process_error(data_received, data_for_alerting)
+                self._process_error(data_received['error'], data_for_alerting)
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_transformed_data".format(self))

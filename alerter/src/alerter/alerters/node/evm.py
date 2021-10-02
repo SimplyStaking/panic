@@ -8,7 +8,7 @@ from typing import List, Dict, Optional, Any
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
-import src.alerter.alerts.node.chainlink as evm_alerts
+import src.alerter.alerts.node.evm as evm_alerts
 from src.alerter.alert_severities import Severity
 from src.alerter.alerters.alerter import Alerter
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -19,7 +19,6 @@ from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode as MetricCode
 from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants.data import VALID_CHAINLINK_SOURCES
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, TOPIC, EVM_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     EVM_NODE_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
@@ -184,9 +183,8 @@ class EVMNodeAlerter(Alerter):
                     node_heights = list(self.alerting_factory.nodes_configs[
                         meta_data['node_parent_id']].values())
                     difference = max(node_heights) - current
-
                     self.alerting_factory. \
-                        classify_thresholded_time_window_alert(
+                        classify_thresholded_alert(
                             difference, sub_config,
                             evm_alerts.
                             BlockHeightDifferenceIncreasedAboveThresholdAlert,
@@ -232,9 +230,11 @@ class EVMNodeAlerter(Alerter):
         data_for_alerting = []
         try:
             if 'result' in data_received:
-                self._process_result(data_received, data_for_alerting)
+                self._process_result(data_received['result'],
+                                     data_for_alerting)
             elif 'error' in data_received:
-                self._process_error(data_received, data_for_alerting)
+                self._process_error(data_received['error'],
+                                    data_for_alerting)
             else:
                 raise ReceivedUnexpectedDataException(
                     "{}: _process_transformed_data".format(self))

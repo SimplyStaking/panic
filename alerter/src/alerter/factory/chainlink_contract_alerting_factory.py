@@ -111,7 +111,7 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
             }
 
         if node_id not in self.alerting_state[parent_id]:
-            self.alerting_state[parent_id][node_id] = []
+            self.alerting_state[parent_id][node_id] = {}
 
         if contract_proxy_address not in self.alerting_state[parent_id][
                 node_id]:

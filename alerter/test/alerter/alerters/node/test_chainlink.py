@@ -385,7 +385,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
     @parameterized.expand([
         (CL_NODE_TRANSFORMED_DATA_ROUTING_KEY, 'mock_proc_trans',),
         ('chains.chainlink.bsc.alerts_config', 'mock_proc_confs',),
-        ('uncrecognized_routing_key', 'mock_basic_ack',),
+        ('unrecognized_routing_key', 'mock_basic_ack',),
     ])
     @mock.patch.object(ChainlinkNodeAlerter, "_process_transformed_data")
     @mock.patch.object(ChainlinkNodeAlerter, "_process_configs")
@@ -416,7 +416,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
 
     """
     In the majority of the tests below we will perform mocking. The tests for
-    config processing and alerting were performed in seperate test files which
+    config processing and alerting were performed in separate test files which
     targeted the factory classes.
     """
 

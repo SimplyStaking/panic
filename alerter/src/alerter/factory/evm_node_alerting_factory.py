@@ -102,10 +102,6 @@ class EVMNodeAlertingFactory(AlertingFactory):
                     TimedTaskTracker(timedelta(
                         seconds=evm_node_is_down_thresholds[
                             'warning_threshold'])),
-                AlertsMetricCode.BlockHeightDifference.value:
-                    TimedTaskTracker(timedelta(
-                        seconds=block_height_difference_thresholds[
-                            'warning_threshold']))
             }
             critical_window_timer = {
                 AlertsMetricCode.NoChangeInBlockHeight.value:
@@ -116,10 +112,6 @@ class EVMNodeAlertingFactory(AlertingFactory):
                     TimedTaskTracker(timedelta(
                         seconds=evm_node_is_down_thresholds[
                             'critical_threshold'])),
-                AlertsMetricCode.BlockHeightDifference.value:
-                    TimedTaskTracker(timedelta(
-                        seconds=block_height_difference_thresholds[
-                            'critical_threshold']))
             }
             critical_repeat_timer = {
                 AlertsMetricCode.NoChangeInBlockHeight.value: TimedTaskLimiter(

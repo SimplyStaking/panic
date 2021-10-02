@@ -8,7 +8,7 @@ class GroupedChainlinkContractAlertsMetricCode(GroupedAlertsMetricCode):
     ErrorRetrievingChainlinkContractData = \
         'error_retrieving_chainlink_contract_data'
 
-
+# @TODO REMOVE
 """
 name=price_feed_not_observed
 parent_id=chain_name_2be935b4-1072-469c-a5ff-1495f032fefa
