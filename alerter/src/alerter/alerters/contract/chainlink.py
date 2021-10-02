@@ -25,7 +25,6 @@ from src.utils.constants.rabbitmq import (
     CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
     CONFIG_EXCHANGE, CL_CONTRACT_ALERT_ROUTING_KEY,
     CL_ALERTS_CONFIGS_ROUTING_KEY)
-from src.utils.data import transformed_data_processing_helper
 from src.utils.exception_codes import ExceptionCodes
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)

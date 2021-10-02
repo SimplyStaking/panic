@@ -133,7 +133,6 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
                         timedelta(seconds=price_feed_deviation_thresholds[
                             'critical_repeat']))
             }
-
             self.alerting_state[parent_id][node_id][contract_proxy_address] = {
                 'warning_sent': warning_sent,
                 'critical_sent': critical_sent,
