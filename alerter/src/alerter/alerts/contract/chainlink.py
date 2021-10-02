@@ -4,106 +4,100 @@ from src.alerter.alert_code.contract.chainlink_alert_code import (
     ChainlinkContractAlertCode)
 from src.alerter.alerts.alert import Alert
 from src.alerter.grouped_alerts_metric_code.contract.chainlink_contract_metric_code \
-    import GroupedChainlinkContractAlertsMetricCode
+    import GroupedChainlinkContractAlertsMetricCode as MetricCode
 from src.utils.datetime import strfdelta
 
 
-# @TODO Change the words
-class PriceFeedNotObserved(Alert):
-    def __init__(self, origin_name: str, duration: float, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 last_processed_block: int) -> None:
+class PriceFeedObservationsIncreasedAboveThreshold(Alert):
+    def __init__(self, origin_name: str, missed_observations: int,
+                 severity: str, timestamp: float, threshold_severity: str,
+                 parent_id: str, origin_id: str, proxy_address: str) -> None:
         super().__init__(
             ChainlinkContractAlertCode.PriceFeedNotObserved,
-            "The latest block height processed by {} was at least {} "
-            "ago. Last processed block: {}.".format(origin_name, strfdelta(
-                timedelta(seconds=duration),
-                "{hours}h, {minutes}m, {seconds}s"), last_processed_block),
+            "The Chainlink {} node's missed observations have increased above "
+            "threshold {} to {} missed observations for the price feed {} of "
+            "the chain {}.".format(
+                origin_name, threshold_severity, missed_observations,
+                proxy_address, parent_id),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkContractAlertsMetricCode.PriceFeedNotObserved)
+            MetricCode.PriceFeedNotObserved,
+            {'contract_proxy_address': proxy_address})
 
 
-class PriceFeedObserved(Alert):
-    def __init__(self, origin_name: str, duration: float, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 last_processed_block: int) -> None:
+class PriceFeedObservationsDecreasedBelowThreshold(Alert):
+    def __init__(self, origin_name: str, missed_observations: int,
+                 severity: str, timestamp: float, threshold_severity: str,
+                 parent_id: str, origin_id: str, proxy_address: str) -> None:
         super().__init__(
             ChainlinkContractAlertCode.PriceFeedObserved,
-            "The latest block height processed by {} was at least {} "
-            "ago. Last processed block: {}.".format(origin_name, strfdelta(
-                timedelta(seconds=duration),
-                "{hours}h, {minutes}m, {seconds}s"), last_processed_block),
+            "The Chainlink {} node's missed observations have decreased below "
+            "threshold {} to {} missed observations for the price feed {} of "
+            "the chain {}.".format(
+                origin_name, threshold_severity, missed_observations,
+                proxy_address, parent_id),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkContractAlertsMetricCode.PriceFeedNotObserved)
+            MetricCode.PriceFeedNotObserved,
+            {'contract_proxy_address': proxy_address})
 
 
-class PriceFeedDeviating(Alert):
-    def __init__(self, origin_name: str, duration: float, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 last_processed_block: int) -> None:
+class PriceFeedDeviationInreasedAboveThreshold(Alert):
+    def __init__(self, origin_name: str, deviation: float, severity: str,
+                 timestamp: float, threshold_severity: str,
+                 parent_id: str, origin_id: str, proxy_address: str) -> None:
         super().__init__(
-            ChainlinkContractAlertCode.PriceFeedDeviating,
-            "The latest block height processed by {} was at least {} "
-            "ago. Last processed block: {}.".format(origin_name, strfdelta(
-                timedelta(seconds=duration),
-                "{hours}h, {minutes}m, {seconds}s"), last_processed_block),
+            ChainlinkContractAlertCode.PriceFeedDeviationInreasedAboveThreshold,
+            "The Chainlink {} node's submission has increased above the "
+            "threshold {} to {}% deviation for the price feed {} of the chain "
+            "{}.".format(origin_name, threshold_severity, deviation,
+                         proxy_address, parent_id),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkContractAlertsMetricCode.PriceFeedDeviation)
+            MetricCode.PriceFeedDeviation,
+            {'contract_proxy_address': proxy_address})
 
 
-class PriceFeedNoLongerDeviating(Alert):
-    def __init__(self, origin_name: str, duration: float, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 last_processed_block: int) -> None:
+class PriceFeedDeciationDecreasedBelowThreshold(Alert):
+    def __init__(self, origin_name: str, deviation: float, severity: str,
+                 timestamp: float, threshold_severity: str, parent_id: str,
+                 origin_id: str, proxy_address: str) -> None:
         super().__init__(
-            ChainlinkContractAlertCode.PriceFeedNoLongerDeviating,
-            "The latest block height processed by {} was at least {} "
-            "ago. Last processed block: {}.".format(origin_name, strfdelta(
-                timedelta(seconds=duration),
-                "{hours}h, {minutes}m, {seconds}s"), last_processed_block),
+            ChainlinkContractAlertCode.PriceFeedDeciationDecreasedBelowThreshold,
+            "The Chainlink {} node's submission has decreased below the "
+            "threshold {} to {}% deviation for the price feed {} of the chain "
+            "{}.".format(origin_name, threshold_severity, deviation,
+                         proxy_address, parent_id),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkContractAlertsMetricCode.PriceFeedDeviation)
+            MetricCode.PriceFeedDeviation,
+            {'contract_proxy_address': proxy_address})
 
 
 class ConsensusFailure(Alert):
-    def __init__(self, origin_name: str, duration: float, severity: str,
+    def __init__(self, origin_name: str, severity: str,
                  timestamp: float, parent_id: str, origin_id: str,
-                 last_processed_block: int) -> None:
+                 proxy_address: str) -> None:
         super().__init__(
-            ChainlinkContractAlertCode.ConsensusNowBeingReached,
-            "The latest block height processed by {} was at least {} "
-            "ago. Last processed block: {}.".format(origin_name, strfdelta(
-                timedelta(seconds=duration),
-                "{hours}h, {minutes}m, {seconds}s"), last_processed_block),
+            ChainlinkContractAlertCode.ConsensusNotReached,
+            "The Price Feed {} has a Consensus failure for the chain {}."
+            "The Chainlink Node observing the price feed is {}."
+            .format(proxy_address, parent_id, origin_name),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkContractAlertsMetricCode.ConsensusFailure)
+            MetricCode.ConsensusFailure)
 
 
 class ErrorRetrievingChainlinkContractData(Alert):
-    def __init__(self, origin_name: str, duration: float, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 last_processed_block: int) -> None:
+    def __init__(self, origin_name: str, message: str, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
         super().__init__(
             ChainlinkContractAlertCode.ErrorRetrievingChainlinkContractData,
-            "The latest block height processed by {} was at least {} "
-            "ago. Last processed block: {}.".format(origin_name, strfdelta(
-                timedelta(seconds=duration),
-                "{hours}h, {minutes}m, {seconds}s"), last_processed_block),
-            severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkContractAlertsMetricCode.
-            ErrorRetrievingChainlinkContractData)
+            "{}: {}".format(parent_id, message), severity, timestamp,
+            parent_id, origin_id,
+            MetricCode.ErrorRetrievingChainlinkContractData)
 
 
 class ChainlinkContractDataNowBeingRetrieved(Alert):
-    def __init__(self, origin_name: str, duration: float, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 last_processed_block: int) -> None:
+    def __init__(self, origin_name: str, message: str, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
         super().__init__(
             ChainlinkContractAlertCode.ChainlinkContractDataNowBeingRetrieved,
-            "The latest block height processed by {} was at least {} "
-            "ago. Last processed block: {}.".format(origin_name, strfdelta(
-                timedelta(seconds=duration),
-                "{hours}h, {minutes}m, {seconds}s"), last_processed_block),
-            severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkContractAlertsMetricCode.
-            ErrorRetrievingChainlinkContractData)
+            "{}: {}".format(parent_id, message), severity, timestamp,
+            parent_id, origin_id,
+            MetricCode.ErrorRetrievingChainlinkContractData)

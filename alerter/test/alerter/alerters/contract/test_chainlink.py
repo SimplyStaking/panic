@@ -13,8 +13,10 @@ from parameterized import parameterized
 
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerts.contract.chainlink import (
-    PriceFeedNotObserved, PriceFeedObserved,
-    PriceFeedDeviating, PriceFeedNoLongerDeviating,
+    PriceFeedObservationsDecreasedBelowThreshold,
+    PriceFeedObservationsIncreasedAboveThreshold,
+    PriceFeedDeviationInreasedAboveThreshold,
+    PriceFeedDeciationDecreasedBelowThreshold,
     ConsensusFailure, ErrorRetrievingChainlinkContractData,
     ChainlinkContractDataNowBeingRetrieved)
 from src.alerter.factory.chainlink_contract_alerting_factory import \
@@ -578,7 +580,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_no_change_in_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
-                       "classify_thresholded_time_window_alert")
+                       "classify_thresholded_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_thresholded_in_time_period_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
@@ -608,7 +610,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_no_change_in_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
-                       "classify_thresholded_time_window_alert")
+                       "classify_thresholded_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_thresholded_in_time_period_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
@@ -671,7 +673,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_no_change_in_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
-                       "classify_thresholded_time_window_alert")
+                       "classify_thresholded_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_thresholded_in_time_period_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
@@ -731,7 +733,8 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         self.assertEqual(1, mock_thresh_alert.call_count)
         call_1 = call(
             eval(mock_observed), configs.price_feed_not_observed,
-            PriceFeedNotObserved, PriceFeedObserved,
+            PriceFeedObservationsIncreasedAboveThreshold,
+            PriceFeedObservationsDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, meta_data['node_id'],
             eval(mock_proxy), MetricCode.PriceFeedNotObserved.value,
             meta_data['node_name'], meta_data['last_monitored'])
@@ -759,7 +762,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
           "self.test_contract_proxy_address_1", 100.0),
     ])
     @mock.patch.object(ChainlinkContractAlertingFactory,
-                       "classify_thresholded_time_window_alert")
+                       "classify_thresholded_alert")
     def test_price_feed_deviation_executed_correctly(
             self, mock_result_data, mock_curr_hist, mock_prev_hist,
             call_count, mock_proxy, mock_deviation, mock_thresh_alert) -> None:
@@ -801,9 +804,10 @@ class TestChainlinkContractAlerter(unittest.TestCase):
             result_data['result'], data_for_alerting)
         calls = mock_thresh_alert.call_args_list
         call_1 = call(
-            mock_deviation, configs.price_feed_deviation, PriceFeedDeviating,
-            PriceFeedNoLongerDeviating, data_for_alerting, self.test_parent_id,
-            meta_data['node_id'], eval(mock_proxy),
+            mock_deviation, configs.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeciationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, meta_data['node_id'], eval(mock_proxy),
             MetricCode.PriceFeedDeviation.value, meta_data['node_name'],
             meta_data['last_monitored']
         )

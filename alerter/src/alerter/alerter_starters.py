@@ -5,7 +5,9 @@ import pika.exceptions
 
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
+from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.alerts.system import SystemAlertsConfig
 from src.configs.factory.node.chainlink_alerts import (
@@ -14,7 +16,9 @@ from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (SYSTEM_ALERTER_NAME_TEMPLATE,
                                        GITHUB_ALERTER_NAME,
-                                       CHAINLINK_NODE_ALERTER_NAME)
+                                       CHAINLINK_NODE_ALERTER_NAME,
+                                       CHAINLINK_CONTRACT_ALERTER_NAME,
+                                       EVM_NODE_ALERTER_NAME)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
                                           RESTART_SLEEPING_PERIOD)
 from src.utils.env import (ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL,
@@ -140,6 +144,72 @@ def _initialise_chainlink_node_alerter(
     return chainlink_alerter
 
 
+def _initialise_chainlink_contract_alerter(
+        chainlink_alerts_configs_factory: ChainlinkContractAlertsConfigsFactory
+) -> ChainlinkContractAlerter:
+    alerter_display_name = CHAINLINK_CONTRACT_ALERTER_NAME
+
+    chainlink_alerter_logger = _initialise_alerter_logger(
+        alerter_display_name, ChainlinkContractAlerter.__name__)
+
+    # Try initialising an alerter until successful
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=chainlink_alerter_logger.getChild(RabbitMQApi.__name__),
+                host=RABBIT_IP)
+            chainlink_alerter = ChainlinkContractAlerter(
+                alerter_display_name,
+                chainlink_alerter_logger,
+                rabbitmq,
+                chainlink_alerts_configs_factory,
+                ALERTER_PUBLISHING_QUEUE_SIZE
+            )
+            log_and_print("Successfully initialised {}".format(
+                alerter_display_name), chainlink_alerter_logger)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(alerter_display_name, e)
+            log_and_print(msg, chainlink_alerter_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return chainlink_alerter
+
+
+def _initialise_evm_node_alerter(
+    evm_alerts_configs_factory: EVMNodeAlertsConfigsFactory
+) -> EVMNodeAlerter:
+    alerter_display_name = EVM_NODE_ALERTER_NAME
+
+    chainlink_alerter_logger = _initialise_alerter_logger(
+        alerter_display_name, EVMNodeAlerter.__name__)
+
+    # Try initialising an alerter until successful
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=chainlink_alerter_logger.getChild(RabbitMQApi.__name__),
+                host=RABBIT_IP)
+            chainlink_alerter = EVMNodeAlerter(
+                alerter_display_name,
+                chainlink_alerter_logger,
+                rabbitmq,
+                evm_alerts_configs_factory,
+                ALERTER_PUBLISHING_QUEUE_SIZE
+            )
+            log_and_print("Successfully initialised {}".format(
+                alerter_display_name), chainlink_alerter_logger)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(alerter_display_name, e)
+            log_and_print(msg, chainlink_alerter_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return chainlink_alerter
+
+
 def start_github_alerter() -> None:
     github_alerter = _initialise_github_alerter()
     start_alerter(github_alerter)
@@ -159,15 +229,18 @@ def start_chainlink_node_alerter(
     start_alerter(chainlink_alerter)
 
 
+def start_chainlink_contract_alerter(
+      chainlink_alerts_configs_factory: ChainlinkContractAlertsConfigsFactory
+) -> None:
+    chainlink_contract_alerter = _initialise_chainlink_contract_alerter(
+        chainlink_alerts_configs_factory)
+    start_alerter(chainlink_contract_alerter)
+
+
 def start_evm_node_alerter(
         evm_alerts_configs_factory: EVMNodeAlertsConfigsFactory) -> None:
-    pass
-
-
-def start_chainlink_contract_alerter(
-        chainlink_alerts_configs_factory: ChainlinkContractAlertsConfigsFactory
-) -> None:
-    pass
+    evm_alerter = _initialise_evm_node_alerter(evm_alerts_configs_factory)
+    start_alerter(evm_alerter)
 
 
 def start_alerter(alerter: Alerter) -> None:

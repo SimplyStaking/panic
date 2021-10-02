@@ -210,12 +210,12 @@ class ChainlinkContractAlerter(Alerter):
                 if (str_to_bool(configs.price_feed_not_observed['enabled'])
                         and current_missed_observations is not None):
                     sub_config = configs.price_feed_not_observed
-                    self.alerting_factory.classify_thresholded_time_window_alert(
+                    self.alerting_factory.classify_thresholded_alert(
                         current_missed_observations, sub_config,
-                        cl_alerts.PriceFeedNotObserved,
-                        cl_alerts.PriceFeedObserved, data_for_alerting,
-                        meta_data['node_parent_id'], meta_data['node_id'],
-                        proxy_address,
+                        cl_alerts.PriceFeedObservationsIncreasedAboveThreshold,
+                        cl_alerts.PriceFeedObservationsDecreasedBelowThreshold,
+                        data_for_alerting, meta_data['node_parent_id'],
+                        meta_data['node_id'], proxy_address,
                         MetricCode.PriceFeedNotObserved.value,
                         meta_data['node_name'], meta_data['last_monitored']
                     )
@@ -230,10 +230,10 @@ class ChainlinkContractAlerter(Alerter):
                         'deviation']
 
                     if current_deviation is not None:
-                        self.alerting_factory.classify_thresholded_time_window_alert(
+                        self.alerting_factory.classify_thresholded_alert(
                             current_deviation, sub_config,
-                            cl_alerts.PriceFeedDeviating,
-                            cl_alerts.PriceFeedNoLongerDeviating,
+                            cl_alerts.PriceFeedDeviationInreasedAboveThreshold,
+                            cl_alerts.PriceFeedDeciationDecreasedBelowThreshold,
                             data_for_alerting,
                             meta_data['node_parent_id'],
                             meta_data['node_id'],
@@ -271,7 +271,8 @@ class ChainlinkContractAlerter(Alerter):
                                 sub_config['severity'],
                                 meta_data['last_monitored'],
                                 meta_data['node_parent_id'],
-                                meta_data['node_id']
+                                meta_data['node_id'],
+                                proxy_address
                             ], data_for_alerting,
                         )
 
