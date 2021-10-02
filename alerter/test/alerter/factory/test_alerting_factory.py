@@ -36,7 +36,7 @@ from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
 
 """
 We will use some chainlink and evm node alerts and configurations for the tests
-below. This should not effect the validity and scope of the tests because the 
+below. This should not effect the validity and scope of the tests because the
 implementation was conducted to be as general as possible.
 """
 
@@ -399,6 +399,8 @@ class TestAlertingFactory(unittest.TestCase):
         self.dummy_logger = None
         self.test_alerts_config = None
         self.test_factory_instance = None
+        self.test_evm_factory_instance = None
+        self.test_evm_factory_instance = None
 
     def test_alerting_state_returns_alerting_state(self) -> None:
         self.test_factory_instance._alerting_state = self.test_alerting_state
@@ -1890,20 +1892,22 @@ class TestAlertingFactory(unittest.TestCase):
         """
         In this test we will check that no alert is raised whenever both warning
         and critical alerts are disabled. We will perform this test for both
-        when current <= critical and current <= warning. For an alert to be
-        raised when current > critical or current > warning it must be that one
+        when current>= critical and current >= warning. For an alert to be
+        raised when current < critical or current < warning it must be that one
         of the severities is enabled.
         """
-        self.test_alerts_config.eth_balance_amount[
+        self.evm_node_alerts_config.evm_block_syncing_block_height_difference[
             'warning_enabled'] = 'False'
-        self.test_alerts_config.eth_balance_amount[
+        self.evm_node_alerts_config.evm_block_syncing_block_height_difference[
             'critical_enabled'] = 'False'
 
         data_for_alerting = []
-        current = float(self.test_alerts_config.eth_balance_amount[
-            'critical_threshold']) - 1
+        current = float(self.evm_node_alerts_config
+                        .evm_block_syncing_block_height_difference[
+                            'critical_threshold']) + 1
         self.test_evm_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config.eth_balance_amount,
+            current, self.evm_node_alerts_config
+            .evm_block_syncing_block_height_difference,
             BlockHeightDifferenceIncreasedAboveThresholdAlert,
             BlockHeightDifferenceDecreasedBelowThresholdAlert,
             data_for_alerting,
@@ -1976,9 +1980,9 @@ class TestAlertingFactory(unittest.TestCase):
         self.test_evm_factory_instance.classify_thresholded_alert(
             current, self.evm_node_alerts_config
             .evm_block_syncing_block_height_difference,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
+            BlockHeightDifferenceIncreasedAboveThresholdAlert,
+            BlockHeightDifferenceDecreasedBelowThresholdAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
             EVMAlertsMetricCode.BlockHeightDifference.value,
             self.test_node_name, datetime.now().timestamp() + 1
         )
@@ -1988,7 +1992,7 @@ class TestAlertingFactory(unittest.TestCase):
     def test_classify_thresholded_raises_critical_if_repeat_elapsed(
             self) -> None:
         """
-        In this test we will check that a critical below threshold alert is
+        In this test we will check that a critical above threshold alert is
         re-raised if the critical repeat window elapses. We will also check that
         if the critical window does not elapse, a critical alert is not
         re-raised.
@@ -2057,7 +2061,7 @@ class TestAlertingFactory(unittest.TestCase):
             self) -> None:
         """
         In this test we will check that if critical_repeat is disabled, a
-        decreased below critical alert is not re-raised.
+        increase above critical alert is not re-raised.
         """
         self.evm_node_alerts_config.evm_block_syncing_block_height_difference[
             'critical_repeat_enabled'] = "False"
@@ -2185,9 +2189,9 @@ class TestAlertingFactory(unittest.TestCase):
         self.test_evm_factory_instance.classify_thresholded_alert(
             current, self.evm_node_alerts_config
             .evm_block_syncing_block_height_difference,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
+            BlockHeightDifferenceIncreasedAboveThresholdAlert,
+            BlockHeightDifferenceDecreasedBelowThresholdAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
             EVMAlertsMetricCode.BlockHeightDifference.value,
             self.test_node_name, datetime.now().timestamp()
         )
@@ -2195,23 +2199,25 @@ class TestAlertingFactory(unittest.TestCase):
         data_for_alerting.clear()
 
         # Check that 2 alerts are raised, below critical and above warning
-        current = float(self.test_alerts_config.eth_balance_amount[
-            'critical_threshold']) + 1
+        current = float(self.evm_node_alerts_config
+                        .evm_block_syncing_block_height_difference[
+                            'critical_threshold']) - 1
         alert_timestamp = datetime.now().timestamp() + 10
         self.test_evm_factory_instance.classify_thresholded_alert(
             current, self.evm_node_alerts_config
             .evm_block_syncing_block_height_difference,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
+            BlockHeightDifferenceIncreasedAboveThresholdAlert,
+            BlockHeightDifferenceDecreasedBelowThresholdAlert,
+            data_for_alerting,
             self.test_parent_id, self.test_node_id,
             EVMAlertsMetricCode.BlockHeightDifference.value,
             self.test_node_name, alert_timestamp
         )
 
-        expected_alert_1 = EthBalanceDecreasedBelowThresholdAlert(
+        expected_alert_1 = BlockHeightDifferenceDecreasedBelowThresholdAlert(
             self.test_node_name, current, 'INFO', alert_timestamp,
             'CRITICAL', self.test_parent_id, self.test_node_id)
-        expected_alert_2 = EthBalanceIncreasedAboveThresholdAlert(
+        expected_alert_2 = BlockHeightDifferenceIncreasedAboveThresholdAlert(
             self.test_node_name, current, 'WARNING', alert_timestamp,
             'WARNING', self.test_parent_id, self.test_node_id)
         self.assertEqual(2, len(data_for_alerting))
