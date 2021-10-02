@@ -54,7 +54,7 @@ class BlockHeightDifferenceDecreasedBelowThresholdAlert(Alert):
                  origin_id: str) -> None:
         super().__init__(
             EVMNodeAlertCode
-            .MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
+            .BlockHeightDifferenceDecreasedBelowThresholdAlert,
             "{} maximum number of blocks between node block heights "
             "has DECREASED below {} threshold. This node is now {} blocks "
             "behind the node with the highest block height".format(
