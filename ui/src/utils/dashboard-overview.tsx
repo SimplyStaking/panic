@@ -60,7 +60,6 @@ export const getPieChartJSX = (baseChain: BaseChain): JSX.Element => {
 
     return <svc-pie-chart
         key={hasAlerts ? `${baseChain.name}-pie-chart-no-alerts` : `${baseChain.name}-pie-chart-alerts`}
-        slot="small"
         colors={hasAlerts ? alertsColors : noAlertsColors}
         cols={cols}
         rows={hasAlerts ? rows : noAlertsRows}
