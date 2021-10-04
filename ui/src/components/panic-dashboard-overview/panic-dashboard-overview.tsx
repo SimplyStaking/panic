@@ -95,6 +95,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
       <Host>
         <panic-header />
         <svc-content-container>
+          <h1 class='panic-dashboard-overview__title'>DASHBOARD OVERVIEW</h1>
           {this.baseChains.map((baseChain) =>
             <svc-surface label={baseChain.name}>
               <svc-filter event-name="filter-changed" debounce={100}>

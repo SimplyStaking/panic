@@ -1,4 +1,10 @@
 .panic-dashboard-overview {
+    &__title {
+        text-align: center;
+        font-size: 25px;
+        margin: 10px 0px 20px;
+    }
+
     &__chain-card {
         margin-bottom: 10px;
     }
