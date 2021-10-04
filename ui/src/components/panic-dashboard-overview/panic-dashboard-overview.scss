@@ -81,6 +81,21 @@ panic-dashboard-overview {
     svc-data-table {
         display: flex;
         max-height: 258px;
+
+        & svc-button {
+            & ion-button {
+                width: 27px !important;
+                height: 27px !important;
+
+                &::part(native) {
+                    cursor: unset;
+                }
+
+                & ion-icon {
+                    font-size: 1.4em;
+                }
+            }
+        }
     }
 
     svc-card {
