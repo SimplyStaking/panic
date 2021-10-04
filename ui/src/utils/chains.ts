@@ -245,18 +245,18 @@ async function getChainAlerts(chain: Chain): Promise<Chain> {
     const data: any = await getAlertsOverview(chain);
 
     if (data.result[chain.id]) {
-        chain.alerts = parseAlerts(data.result[chain.id].problems);
+        chain.alerts = parseRedisAlerts(data.result[chain.id].problems);
     }
 
     return chain;
 }
 
 /**
- * Parses the problems JSON object to a list of alerts.
+ * Parses the problems JSON object from Redis to a list of alerts.
  * @param problems JSON object.
  * @returns list of alerts.
  */
-function parseAlerts(problems: any): Alert[] {
+function parseRedisAlerts(problems: any): Alert[] {
     const alerts: Alert[] = []
 
     for (const source in problems) {

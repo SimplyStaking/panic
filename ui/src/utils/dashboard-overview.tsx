@@ -2,7 +2,7 @@ import { h } from '@stencil/core';
 import { Alert, BaseChain } from '../interfaces/chains';
 import { DataTableRecordType } from '../lib/types/types/datatable';
 import { SelectOptionType } from '../lib/types/types/select';
-import { criticalIcon, errorIcon, Severity, warningIcon } from './constants';
+import { criticalIcon, errorIcon, infoIcon, Severity, warningIcon } from './constants';
 
 /**
  * Formats base chain to SelectOptionType type.
@@ -18,7 +18,14 @@ export const getChainFilterOptionsFromBaseChain = (baseChain: BaseChain): Select
  * @returns populated list of required object type.
  */
 export const getSeverityFilterOptions = (): SelectOptionType => {
-    return Object.keys(Severity).map(severity => ({ label: Severity[severity], value: severity }));
+    return Object.keys(Severity).reduce(function (filtered, severity) {
+        // Skip INFO severity since this is not required in dashboard overview.
+        if (severity !== 'INFO') {
+            filtered.push({ label: Severity[severity], value: severity });
+        }
+        return filtered;
+    }, []);
+    // return Object.keys(Severity).map(severity => ({ label: Severity[severity], value: severity }));
 }
 
 /**
@@ -120,6 +127,8 @@ const getSeverityIcon = (severity: Severity): Object => {
             return warningIcon;
         case Severity.ERROR:
             return errorIcon;
+        case Severity.INFO:
+            return infoIcon;
         default:
             return {};
     }
