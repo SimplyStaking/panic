@@ -99,39 +99,41 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
             <svc-surface label={baseChain.name}>
               <svc-filter event-name="filter-changed" debounce={100}>
                 <svc-card class="panic-dashboard-overview__chain-card">
-                  <input name='base-chain-name' value={baseChain.name} hidden />
-                  {/* Chain filter */}
-                  <svc-select
-                    name="chain-name"
-                    id={baseChain.name + '_chain-filter'}
-                    class="panic-dashboard-overview__chain-filter"
-                    slot="header"
-                    multiple={true}
-                    value={getActiveChainNames(baseChain.chains)}
-                    header="Select chains"
-                    placeholder="Select chains"
-                    options={getChainFilterOptionsFromBaseChain(baseChain)}>
-                  </svc-select>
-
-                  {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
-                      A green pie chart is shown with no text and without a tooltip */}
-                  {getPieChartJSX(baseChain)}
-
-                  <div slot="large">
-                    {/* Severity filter */}
+                  <div slot='content' id='expanded'>
+                    <input name='base-chain-name' value={baseChain.name} hidden />
+                    {/* Chain filter */}
                     <svc-select
-                      name="alerts-severity"
-                      id={baseChain.name + '_severity-filter'}
-                      class="panic-dashboard-overview__severity-filter"
+                      name="chain-name"
+                      id={baseChain.name + '_chain-filter'}
+                      class="panic-dashboard-overview__chain-filter"
+                      slot="header"
                       multiple={true}
-                      value={baseChain.activeSeverities}
-                      header="Select severities"
-                      placeholder="Select severities"
-                      options={getSeverityFilterOptions()}>
+                      value={getActiveChainNames(baseChain.chains)}
+                      header="Select chains"
+                      placeholder="Select chains"
+                      options={getChainFilterOptionsFromBaseChain(baseChain)}>
                     </svc-select>
 
-                    {/* Data table */}
-                    {getDataTableJSX(baseChain)}
+                    {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
+                      A green pie chart is shown with no text and without a tooltip */}
+                    {getPieChartJSX(baseChain)}
+
+                    <div slot="large">
+                      {/* Severity filter */}
+                      <svc-select
+                        name="alerts-severity"
+                        id={baseChain.name + '_severity-filter'}
+                        class="panic-dashboard-overview__severity-filter"
+                        multiple={true}
+                        value={baseChain.activeSeverities}
+                        header="Select severities"
+                        placeholder="Select severities"
+                        options={getSeverityFilterOptions()}>
+                      </svc-select>
+
+                      {/* Data table */}
+                      {getDataTableJSX(baseChain)}
+                    </div>
                   </div>
                 </svc-card>
               </svc-filter>

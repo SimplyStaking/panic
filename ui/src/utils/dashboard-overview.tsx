@@ -108,11 +108,11 @@ const getDataTableRecordTypeFromAlerts = (alerts: Alert[], activeSeverities: Sev
 }
 
 /**
- * Returns icon JSX according to the severity passed.
+ * Returns icon markup as object according to the severity passed.
  * @param severity the alert severity.
- * @returns icon JSX which corresponds to the severity.
+ * @returns icon markup as object which corresponds to the severity.
  */
-const getSeverityIcon = (severity: Severity): JSX.Element => {
+const getSeverityIcon = (severity: Severity): Object => {
     switch (Severity[severity]) {
         case Severity.CRITICAL:
             return criticalIcon;
@@ -121,6 +121,6 @@ const getSeverityIcon = (severity: Severity): JSX.Element => {
         case Severity.ERROR:
             return errorIcon;
         default:
-            break;
+            return {};
     }
 }
