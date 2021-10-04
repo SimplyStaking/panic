@@ -13,6 +13,9 @@ Change the contents of this file to this:
 - Added ChainlinkContractsDataTransformer along with its tests.
 - Added EVMNodeAlerterManager and its tests.
 - Added the ChainlinkAlertersManager and its tests.
+- Added EVMNodeAlerter and its tests.
+- Added ChainlinkNodeAlerter and its tests.
+- Added ChainlinkContractAlerter and its tests.
 
 ## Unreleased
 
