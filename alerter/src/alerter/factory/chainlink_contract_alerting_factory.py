@@ -328,7 +328,6 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
 
         error_sent = self.alerting_state[parent_id]['chain_errors'][
             'error_sent'][metric_name]
-
         if error_sent and received_error_code != error_code_to_detect:
             alert = error_solved_alert(
                 monitorable_name, resolved_message, Severity.INFO.value,

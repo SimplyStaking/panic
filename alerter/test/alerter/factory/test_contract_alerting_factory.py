@@ -24,6 +24,7 @@ from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
 from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
                               OccurrencesInTimePeriodTracker)
+from src.utils.exceptions import ErrorRetrievingChainlinkContractData as ERCCD
 
 """
 We will use some chainlink contract alerts and configurations for the tests
@@ -538,14 +539,15 @@ class TestAlertingFactory(unittest.TestCase):
     @freeze_time("2012-01-01")
     def test_classify_error_alert_raises_error_alert_if_matched_error_codes(
             self) -> None:
-        test_err = ErrorRetrievingChainlinkContractData('test_url')
+        test_err = ERCCD(self.test_node_id, self.test_parent_id)
         data_for_alerting = []
 
         self.test_factory_instance.classify_error_alert(
-            test_err.code, ErrorRetrievingChainlinkContractData, ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
+            test_err.code, ErrorRetrievingChainlinkContractData,
+            ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
             self.test_parent_id, self.test_node_id, self.test_node_name,
             datetime.now().timestamp(),
-            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "error msg",
+            MetricCode.ErrorRetrievingChainlinkContractData.value, "error msg",
             "resolved msg", test_err.code
         )
 
@@ -558,21 +560,22 @@ class TestAlertingFactory(unittest.TestCase):
     @freeze_time("2012-01-01")
     def test_classify_error_alert_does_nothing_if_no_err_received_and_no_raised(
             self) -> None:
-        test_err = ErrorRetrievingChainlinkContractData('test_url')
+        test_err = ERCCD(self.test_node_id, self.test_parent_id)
         data_for_alerting = []
 
         self.test_factory_instance.classify_error_alert(
-            test_err.code, ErrorRetrievingChainlinkContractData, ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
+            test_err.code, ErrorRetrievingChainlinkContractData,
+            ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
             self.test_parent_id, self.test_node_id, self.test_node_name,
             datetime.now().timestamp(),
-            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "error msg",
+            MetricCode.ErrorRetrievingChainlinkContractData.value, "error msg",
             "resolved msg", None
         )
 
         self.assertEqual([], data_for_alerting)
 
     @parameterized.expand([
-        (None,), (MetricNotFoundException('test-metric', 'test_url').code,),
+        (None,), (5004,),
     ])
     @freeze_time("2012-01-01")
     def test_classify_error_alert_raises_err_solved_if_alerted_and_no_error(
@@ -582,7 +585,7 @@ class TestAlertingFactory(unittest.TestCase):
         no error is detected or a new error is detected after reporting a
         different error
         """
-        test_err = ErrorRetrievingChainlinkContractData('test_url')
+        test_err = ERCCD('test-node', 'test-parent')
         data_for_alerting = []
 
         # Generate first error alert
@@ -591,7 +594,7 @@ class TestAlertingFactory(unittest.TestCase):
             ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
             self.test_parent_id, self.test_node_id, self.test_node_name,
             datetime.now().timestamp(),
-            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "error msg",
+            MetricCode.ErrorRetrievingChainlinkContractData.value, "error msg",
             "resolved msg", test_err.code
         )
         self.assertEqual(1, len(data_for_alerting))
@@ -600,10 +603,11 @@ class TestAlertingFactory(unittest.TestCase):
         # Generate solved alert
         alerted_timestamp = datetime.now().timestamp() + 10
         self.test_factory_instance.classify_error_alert(
-            test_err.code, ErrorRetrievingChainlinkContractData, ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
+            test_err.code, ErrorRetrievingChainlinkContractData,
+            ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
             self.test_parent_id, self.test_node_id, self.test_node_name,
             alerted_timestamp,
-            GroupedChainlinkNodeAlertsMetricCode.InvalidUrl.value, "error msg",
+            MetricCode.ErrorRetrievingChainlinkContractData.value, "error msg",
             "resolved msg", code
         )
 
