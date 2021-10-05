@@ -57,7 +57,8 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
     try {
       const baseChainName: string = event.detail['base-chain-name'];
       const selectedChains: string[] = event.detail['chain-name'].split(',');
-      // Clean array if no chains are selected.
+
+      // Remove empty string element from array if no chains are selected.
       if (selectedChains.length > 0 && selectedChains[0] === '') {
         selectedChains.pop();
       }
@@ -70,10 +71,12 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
         this.baseChains = updateActiveChains(this.baseChains, baseChainName, selectedChains);
       } else {
         const selectedAlerts = event.detail['alerts-severity'].split(',');
-        // Clean array if no alerts are selected.
+
+        // Remove empty string element from array if no alerts are selected.
         if (selectedAlerts.length > 0 && selectedAlerts[0] === '') {
           selectedAlerts.pop();
         }
+
         // Update severities shown if severity filter was changed.
         if (!arrayEquals(baseChain.activeSeverities, selectedAlerts)) {
           baseChain.activeSeverities = selectedAlerts;
