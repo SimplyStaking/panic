@@ -41,7 +41,6 @@ from src.utils.constants.rabbitmq import (
     CL_NODE_ALERT_ROUTING_KEY)
 from src.utils.env import RABBIT_IP
 from src.utils.exceptions import PANICException, NodeIsDownException
-from src.utils.exception_codes import ExceptionCodes
 from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
                               delete_exchange_if_exists, disconnect_from_rabbit)
 
@@ -675,7 +674,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
-            ExceptionCodes.InvalidUrlException.value, InvalidUrlAlert,
+            5009, InvalidUrlAlert,
             ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
@@ -684,7 +683,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             "Prometheus url is now valid!. Last source used {}.".format(
                 self.test_last_prometheus_source_used_new), None)
         call_2 = call(
-            ExceptionCodes.MetricNotFoundException.value,
+            5003,
             MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
@@ -731,7 +730,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
-            ExceptionCodes.InvalidUrlException.value, InvalidUrlAlert,
+            5009, InvalidUrlAlert,
             ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
@@ -740,7 +739,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             "Prometheus url is now valid!. Last source used {}.".format(
                 self.test_last_prometheus_source_used_new), None)
         call_2 = call(
-            ExceptionCodes.MetricNotFoundException.value,
+            5003,
             MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
@@ -932,7 +931,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         error_msg = self.test_prom_non_down_error['message']
         error_code = self.test_prom_non_down_error['code']
         call_1 = call(
-            ExceptionCodes.InvalidUrlException.value, InvalidUrlAlert,
+            5009, InvalidUrlAlert,
             ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
@@ -941,7 +940,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             "Prometheus url is now valid!. Last source used {}.".format(
                 self.test_last_prometheus_source_used_new), error_code)
         call_2 = call(
-            ExceptionCodes.MetricNotFoundException.value,
+            5003,
             MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
@@ -997,7 +996,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         (None, None, False,),
         ('error', 10, False,),
         ('error', None, False,),
-        ('error', ExceptionCodes.NodeIsDownException.value, True,),
+        ('error', 5015, True,),
     ])
     def test_prometheus_is_down_condition_function_returns_correctly(
             self, index_key, code, expected_result) -> None:

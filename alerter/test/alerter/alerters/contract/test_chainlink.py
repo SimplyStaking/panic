@@ -33,7 +33,6 @@ from src.utils.constants.rabbitmq import (
     CL_ALERTS_CONFIGS_ROUTING_KEY)
 from src.utils.env import RABBIT_IP
 from src.utils.exceptions import PANICException
-from src.utils.exception_codes import ExceptionCodes
 from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
                               delete_exchange_if_exists, disconnect_from_rabbit)
 from src.utils.types import str_to_bool
@@ -651,7 +650,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(1, mock_error_alert.call_count)
         call_1 = call(
-            ExceptionCodes.ErrorRetrievingChainlinkContractData.value,
+            5020,
             ErrorRetrievingChainlinkContractData,
             ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
             self.test_parent_id, self.test_node_id_2,
@@ -707,7 +706,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(1, mock_error_alert.call_count)
         call_1 = call(
-            ExceptionCodes.ErrorRetrievingChainlinkContractData.value,
+            5020,
             ErrorRetrievingChainlinkContractData,
             ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
             self.test_parent_id, meta_data['node_id'],
@@ -837,7 +836,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
             self.test_node_down_error, data_for_alerting)
 
         mock_error_alert.assert_called_once_with(
-            ExceptionCodes.ErrorRetrievingChainlinkContractData.value,
+            5020,
             ErrorRetrievingChainlinkContractData,
             ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
             self.test_parent_id, "", "", self.test_latest_timestamp_1,

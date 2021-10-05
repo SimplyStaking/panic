@@ -23,8 +23,7 @@ from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
                                           SYSTEM_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException,
-                                  ReceivedUnexpectedDataException,
-                                  ExceptionCodes)
+                                  ReceivedUnexpectedDataException)
 from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,
@@ -217,7 +216,7 @@ class TestSystemStore(unittest.TestCase):
                 "data": {
                     "went_down_at": self.last_monitored
                 },
-                "code": ExceptionCodes.SystemIsDownException.value
+                "code": 5004
             }
         }
         self.system_data_key_error = {

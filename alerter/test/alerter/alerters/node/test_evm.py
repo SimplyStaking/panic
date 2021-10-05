@@ -33,7 +33,6 @@ from src.utils.constants.rabbitmq import (
     EVM_NODE_ALERT_ROUTING_KEY)
 from src.utils.env import RABBIT_IP
 from src.utils.exceptions import PANICException, NodeIsDownException
-from src.utils.exception_codes import ExceptionCodes
 from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
                               delete_exchange_if_exists, disconnect_from_rabbit)
 
@@ -512,7 +511,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(1, mock_error_alert.call_count)
         call_1 = call(
-            ExceptionCodes.InvalidUrlException.value, InvalidUrlAlert,
+            5009, InvalidUrlAlert,
             ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             self.test_node_name,
@@ -556,7 +555,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(1, mock_error_alert.call_count)
         call_1 = call(
-            ExceptionCodes.InvalidUrlException.value, InvalidUrlAlert,
+            5009, InvalidUrlAlert,
             ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id,
             self.test_node_name,
@@ -611,7 +610,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
             self.test_node_down_error, data_for_alerting)
 
         mock_error_alert.assert_called_once_with(
-            ExceptionCodes.InvalidUrlException.value,
+            5009,
             InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_node_id, self.test_node_name,
             self.test_last_monitored,

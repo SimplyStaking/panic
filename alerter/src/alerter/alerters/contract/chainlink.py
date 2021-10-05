@@ -25,7 +25,6 @@ from src.utils.constants.rabbitmq import (
     CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
     CONFIG_EXCHANGE, CL_CONTRACT_ALERT_ROUTING_KEY,
     CL_ALERTS_CONFIGS_ROUTING_KEY)
-from src.utils.exception_codes import ExceptionCodes
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 from src.utils.types import str_to_bool
@@ -150,7 +149,7 @@ class ChainlinkContractAlerter(Alerter):
 
                 # Check if some errors have been resolved
                 self.alerting_factory.classify_error_alert(
-                    ExceptionCodes.ErrorRetrievingChainlinkContractData.value,
+                    5020,
                     cl_alerts.ErrorRetrievingChainlinkContractData,
                     cl_alerts.ChainlinkContractDataNowBeingRetrieved,
                     data_for_alerting, meta_data['node_parent_id'],
@@ -290,7 +289,7 @@ class ChainlinkContractAlerter(Alerter):
             # Detect whether some errors need to be raised, or have been
             # resolved.
             self.alerting_factory.classify_error_alert(
-                ExceptionCodes.ErrorRetrievingChainlinkContractData.value,
+                5020,
                 cl_alerts.ErrorRetrievingChainlinkContractData,
                 cl_alerts.ChainlinkContractDataNowBeingRetrieved,
                 data_for_alerting, meta_data['node_parent_id'],

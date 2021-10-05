@@ -14,7 +14,6 @@ from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           SYSTEM_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   SystemIsDownException,
-                                  ExceptionCodes,
                                   MessageWasNotDeliveredException)
 
 
@@ -191,7 +190,7 @@ class SystemStore(Store):
         error_code = data['code']
         system_name = meta_data['system_name']
 
-        if error_code == ExceptionCodes.SystemIsDownException.value:
+        if error_code == 5004:
             system_id = meta_data['system_id']
             parent_id = meta_data['system_parent_id']
             metrics = data['data']

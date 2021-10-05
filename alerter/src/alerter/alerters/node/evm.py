@@ -27,7 +27,6 @@ from src.utils.constants.rabbitmq import (
 from src.utils.data import transformed_data_processing_helper
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
-from src.utils.exception_codes import ExceptionCodes
 from src.utils.types import str_to_bool
 
 
@@ -142,7 +141,7 @@ class EVMNodeAlerter(Alerter):
 
             # Check if some errors have been resolved
             self.alerting_factory.classify_error_alert(
-                ExceptionCodes.InvalidUrlException.value,
+                5009,
                 evm_alerts.InvalidUrlAlert, evm_alerts.ValidUrlAlert,
                 data_for_alerting, meta_data['node_parent_id'],
                 meta_data['node_id'], meta_data['node_name'],
@@ -210,7 +209,7 @@ class EVMNodeAlerter(Alerter):
             # Detect whether some errors need to be raised, or have been
             # resolved.
             self.alerting_factory.classify_error_alert(
-                ExceptionCodes.InvalidUrlException.value,
+                5009,
                 evm_alerts.InvalidUrlAlert, evm_alerts.ValidUrlAlert,
                 data_for_alerting, meta_data['node_parent_id'],
                 meta_data['node_id'], meta_data['node_name'], meta_data['time'],
