@@ -258,13 +258,117 @@ const chainlinkThresholdAlerts = {
       },
       enabled: true,
     },
+    12: {
+      name: 'Chainlink Contracts: Could not retrieve contracts from Wei Watchers.',
+      identifier: 'contracts_not_retrieved',
+      description:
+        'If Wei Watchers is unreachable for some reason this alert will be raised.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 200,
+        enabled: true,
+      },
+      critical: {
+        threshold: 300,
+        repeat: 500,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    13: {
+      name: 'Chainlink Contracts: No synced data source was available.',
+      identifier: 'no_synced_data_sources',
+      description:
+        'If there are no synced data sources available to retrieve contract data from '
+        + 'this alert will be raised.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 200,
+        enabled: true,
+      },
+      critical: {
+        threshold: 300,
+        repeat: 500,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    14: {
+      name: 'EVM Node: Node is Down.',
+      identifier: 'evm_node_is_down',
+      description:
+        'If the EVM node is not reachable for a period of time this alert will be '
+        + 'raised.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 300,
+        enabled: true,
+      },
+      critical: {
+        threshold: 300,
+        repeat: 500,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    15: {
+      name: 'EVM Node: block height difference between nodes.',
+      identifier: 'evm_block_syncing_block_height_difference',
+      description:
+        'If the block height difference between monitored EVM nodes is greater '
+        + 'than the specified thresholds this alert will be raised.',
+      adornment: 'Blocks',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 700,
+        enabled: true,
+      },
+      critical: {
+        threshold: 1000,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    16: {
+      name: 'EVM Node: block height not changed after a period of time.',
+      identifier: 'evm_block_syncing_no_change_in_block_height',
+      description:
+        'If the block height has not changed after a period of time this alert '
+        + 'is raised.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 200,
+        enabled: true,
+      },
+      critical: {
+        threshold: 300,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
   },
-  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
+  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16'],
 };
 
 const chainlinkTimeWindowAlerts = {
   byId: {
-    12: {
+    17: {
       name: 'Chainlink node: Number of unconfirmed transactions.',
       identifier: 'unconfirmed_transactions',
       description:
@@ -288,7 +392,7 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-    13: {
+    18: {
       name: 'Chainlink node: Run status update total.',
       identifier: 'run_status_update_total',
       description: 'Number of jobs that have had an error over a time period.',
@@ -309,7 +413,7 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-    14: {
+    19: {
       name: 'Chainlink node: Max Unconfirmed Blocks.',
       identifier: 'max_unconfirmed_blocks',
       description:
@@ -334,12 +438,12 @@ const chainlinkTimeWindowAlerts = {
       enabled: true,
     },
   },
-  allIds: ['12', '13', '14'],
+  allIds: ['17', '18', '19'],
 };
 
 const chainlinkSeverityAlerts = {
   byId: {
-    15: {
+    20: {
       name: 'Chainlink node: Node Switch',
       identifier: 'process_start_time_seconds',
       description:
@@ -349,7 +453,7 @@ const chainlinkSeverityAlerts = {
       parent_id: '',
       enabled: true,
     },
-    16: {
+    21: {
       name: 'Ethereum Balance Topped Up',
       identifier: 'eth_balance_amount_increase',
       description: 'Whenever the ethereum balance of a node is topped up you will get alerted.',
@@ -357,7 +461,7 @@ const chainlinkSeverityAlerts = {
       parent_id: '',
       enabled: true,
     },
-    17: {
+    22: {
       name: "Chainlink node: Gas price increases over the node's price limit",
       identifier: 'tx_manager_gas_bump_exceeds_limit_total',
       description:
@@ -367,7 +471,7 @@ const chainlinkSeverityAlerts = {
       parent_id: '',
       enabled: true,
     },
-    18: {
+    23: {
       name: 'Chainlink Contracts: Consensus Failure',
       identifier: 'consensus_failure',
       description:
@@ -379,7 +483,7 @@ const chainlinkSeverityAlerts = {
       enabled: true,
     },
   },
-  allIds: ['15', '16', '17', '18'],
+  allIds: ['20', '21', '22', '23'],
 };
 
 // Reducers to add and remove chainlink node configurations from global state
