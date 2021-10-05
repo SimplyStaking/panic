@@ -1,0 +1,38 @@
+.panic-dashboard-overview {
+    &__chain-card {
+        margin-bottom: 10px;
+    }
+
+    &__chain-name {
+        margin-top: 10px;
+        margin-left: 10px;
+     }
+
+     &__info-message {
+        margin-left: 10px;
+     }
+}
+
+panic-dashboard-overview {
+    div {
+        &.svc-surface__label {
+            text-transform: capitalize;
+        }
+    }
+
+    svc-select {
+        ion-select{
+            border-bottom: 1px #a8a8a8 solid;
+
+            &::part(text){
+                text-transform: capitalize;
+            }
+        }
+    }
+}
+
+ion-alert {
+    div > div.alert-radio-label.sc-ion-alert-md {
+        text-transform: capitalize;
+    }
+}

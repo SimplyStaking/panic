@@ -95,7 +95,8 @@ class TelegramAlertsHandler(ChannelHandler):
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         alert_json = json.loads(body)
-        self.logger.debug("Received %s. Now processing this alert.", alert_json)
+        self.logger.debug(
+            "Received %s. Now processing this alert.", alert_json)
 
         processing_error = False
         alert = None
@@ -158,7 +159,8 @@ class TelegramAlertsHandler(ChannelHandler):
             self.alerts_queue.get()
         self.alerts_queue.put(alert)
 
-        self.logger.debug("%s added to the alerts queue", alert.alert_code.name)
+        self.logger.debug("%s added to the alerts queue",
+                          alert.alert_code.name)
 
     def _send_alerts(self) -> None:
         empty = True

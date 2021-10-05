@@ -38,7 +38,7 @@ const SlackForm = ({
       </Typography>
       <Divider />
       <form onSubmit={handleSubmit} className="root">
-        <Box m={2} p={3}>
+        <Box m={2} p={4}>
           <Grid container spacing={1} justify="center" alignItems="center">
             <Grid item xs={12}>
               <CssTextField
@@ -75,14 +75,14 @@ const SlackForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="token-outlined-full-width"
-                error={!!(errors.token)}
-                value={values.token}
-                label="Token"
+                error={!!(errors.app_token)}
+                value={values.app_token}
+                label="App-Level Token"
                 type="text"
                 style={{ margin: 8 }}
-                name="token"
-                placeholder={Data.slack.tokenPlaceholder}
-                helperText={errors.token ? errors.token : ''}
+                name="app_token"
+                placeholder={Data.slack.appTokenPlaceholder}
+                helperText={errors.app_token ? errors.app_token : ''}
                 onChange={handleChange}
                 fullWidth
                 margin="normal"
@@ -95,7 +95,39 @@ const SlackForm = ({
                   endAdornment: (
                     <InputAdornment position="end">
                       <MuiThemeProvider theme={theme}>
-                        <Tooltip title={Data.slack.token} placement="left">
+                        <Tooltip title={Data.slack.appToken} placement="left">
+                          <InfoIcon />
+                        </Tooltip>
+                      </MuiThemeProvider>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <CssTextField
+                id="token-outlined-full-width"
+                error={!!(errors.bot_token)}
+                value={values.bot_token}
+                label="Bot Token"
+                type="text"
+                style={{ margin: 8 }}
+                name="bot_token"
+                placeholder={Data.slack.botTokenPlaceholder}
+                helperText={errors.bot_token ? errors.bot_token : ''}
+                onChange={handleChange}
+                fullWidth
+                margin="normal"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                variant="outlined"
+                autoComplete="off"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <MuiThemeProvider theme={theme}>
+                        <Tooltip title={Data.slack.botToken} placement="left">
                           <InfoIcon />
                         </Tooltip>
                       </MuiThemeProvider>
@@ -107,14 +139,14 @@ const SlackForm = ({
             <Grid item xs={12}>
               <CssTextField
                 id="slack-chat-name-outlined-full-width"
-                error={!!(errors.chat_name)}
-                value={values.chat_name}
-                label="Chat Name"
+                error={!!(errors.bot_channel_id)}
+                value={values.bot_channel_id}
+                label="Bot Channel ID"
                 type="text"
                 style={{ margin: 8 }}
-                name="chat_name"
-                placeholder={Data.slack.chatNamePlaceholder}
-                helperText={errors.chat_name ? errors.chat_name : ''}
+                name="bot_channel_id"
+                placeholder={Data.slack.botChannelIdPlaceholder}
+                helperText={errors.bot_channel_id ? errors.bot_channel_id : ''}
                 onChange={handleChange}
                 fullWidth
                 margin="normal"
@@ -127,7 +159,7 @@ const SlackForm = ({
                   endAdornment: (
                     <InputAdornment position="end">
                       <MuiThemeProvider theme={theme}>
-                        <Tooltip title={Data.slack.chatName} placement="left">
+                        <Tooltip title={Data.slack.botChannelId} placement="left">
                           <InfoIcon />
                         </Tooltip>
                       </MuiThemeProvider>
@@ -264,8 +296,8 @@ const SlackForm = ({
               <Grid container direction="row" justify="flex-end" alignItems="center">
                 <SendTestSlackButton
                   disabled={Object.keys(errors).length !== 0}
-                  chatName={values.chat_name}
-                  token={values.token}
+                  botToken={values.bot_token}
+                  botChannelId={values.bot_channel_id}
                 />
                 <Button
                   color="primary"
@@ -287,14 +319,16 @@ const SlackForm = ({
 SlackForm.propTypes = {
   errors: PropTypes.shape({
     channel_name: PropTypes.string,
-    chat_name: PropTypes.string,
-    token: PropTypes.string,
+    bot_token: PropTypes.string,
+    app_token: PropTypes.string,
+    bot_channel_id: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     channel_name: PropTypes.string.isRequired,
-    chat_name: PropTypes.string.isRequired,
-    token: PropTypes.string.isRequired,
+    bot_token: PropTypes.string.isRequired,
+    app_token: PropTypes.string.isRequired,
+    bot_channel_id: PropTypes.string.isRequired,
     info: PropTypes.bool.isRequired,
     warning: PropTypes.bool.isRequired,
     critical: PropTypes.bool.isRequired,

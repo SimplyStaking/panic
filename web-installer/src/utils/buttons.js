@@ -144,37 +144,25 @@ function SendTestPagerDutyButton({ disabled, apiToken, integrationKey }) {
   );
 }
 
-function SendTestSlackButton({ disabled, token, chatName }) {
+function SendTestSlackButton({ disabled, botToken, botChannelId }) {
   const onClick = async () => {
     try {
       ToastsStore.info(
-        'Sending test alert. Make sure to check the slack channel corresponding'
-          + ` with chat name: ${chatName}`,
-        5000,
+        'Sending test alert. Make sure to check the ID of the slack channel is'
+        + ` ${botChannelId}`, 5000,
       );
 
       // WebClient instantiates a client that can call API methods
       // When using Bolt, you can use either `app.client` or the `client`
       // passed to listeners.
-      const client = new WebClient(token, {
+      const client = new WebClient(botToken, {
         // LogLevel can be imported and used to make debugging simpler
         logLevel: LogLevel.DEBUG,
       });
 
-      // Return the conversation ID of the channel name
-      // Call the conversations.list method using the built-in WebClient
-      let result = await client.conversations.list({ token });
-      let conversationId;
-      Object.values(result.channels).forEach((value) => {
-        if (value.name === chatName) {
-          conversationId = value.id;
-        }
-      });
-
       // Call the chat.postMessage method using the built-in WebClient
-      result = await client.chat.postMessage({
-        token,
-        channel: conversationId,
+      await client.chat.postMessage({
+        channel: botChannelId,
         text: '*Test Alert*',
       });
 
@@ -202,7 +190,7 @@ function SendTestTelegramButton({ disabled, botChatID, botToken }) {
     try {
       ToastsStore.info(
         'Sending test alert. Make sure to check the chat corresponding with '
-          + `chat id ${botChatID}`,
+        + `chat id ${botChatID}`,
         5000,
       );
       await fetchData(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -569,8 +557,8 @@ SendTestTelegramButton.propTypes = forbidExtraProps({
 
 SendTestSlackButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
-  token: PropTypes.string.isRequired,
-  chatName: PropTypes.string.isRequired,
+  botToken: PropTypes.string.isRequired,
+  botChannelId: PropTypes.string.isRequired,
 });
 
 SaveConfigButton.propTypes = forbidExtraProps({

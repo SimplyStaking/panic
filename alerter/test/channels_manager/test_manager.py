@@ -14,6 +14,7 @@ from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
 from src.channels_manager.handlers.starters import (
     start_telegram_alerts_handler, start_telegram_commands_handler,
+    start_slack_alerts_handler,
     start_twilio_alerts_handler, start_email_alerts_handler,
     start_pagerduty_alerts_handler, start_opsgenie_alerts_handler,
     start_console_alerts_handler, start_log_alerts_handler)
@@ -22,6 +23,7 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
                                        TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
+                                       SLACK_ALERTS_HANDLER_NAME_TEMPLATE,
                                        TWILIO_ALERTS_HANDLER_NAME_TEMPLATE,
                                        EMAIL_ALERTS_HANDLER_NAME_TEMPLATE,
                                        PAGERDUTY_ALERTS_HANDLER_NAME_TEMPLATE,
@@ -71,8 +73,14 @@ class TestChannelsManager(unittest.TestCase):
         self.test_exception = PANICException('test_exception', 1)
         self.telegram_channel_name = 'test_telegram_channel'
         self.telegram_channel_id = 'test_telegram_id12345'
-        self.bot_token = '1234567891:ABC-67ABCrfZFdddqRT5Gh837T2rtUFHgTY'
-        self.bot_chat_id = 'test_bot_chat_id'
+        self.telegram_bot_token = \
+            '1234567891:ABC-67ABCrfZFdddqRT5Gh837T2rtUFHgTY'
+        self.telegram_bot_chat_id = 'test_bot_chat_id'
+        self.slack_channel_name = 'test_slack_channel'
+        self.slack_channel_id = 'test_slack_id12345'
+        self.slack_bot_token = 'xoxb-XXXXXXXXXXXX-TTTTTTTTTTTTTT'
+        self.slack_app_token = 'xapp-Y-XXXXXXXXXXXX-TTTTTTTTTTTTT-LLLLLLLLLLLLL'
+        self.slack_bot_channel_id = 'test_bot_channel_id'
         self.test_chain_1 = 'Kusama'
         self.test_chain_2 = 'Cosmos'
         self.test_chain_3 = 'Test_Chain'
@@ -119,8 +127,8 @@ class TestChannelsManager(unittest.TestCase):
                         TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE.format(
                             self.telegram_channel_name),
                     'process': self.dummy_process1,
-                    'bot_token': self.bot_token,
-                    'bot_chat_id': self.bot_chat_id,
+                    'bot_token': self.telegram_bot_token,
+                    'bot_chat_id': self.telegram_bot_chat_id,
                     'channel_id': self.telegram_channel_id,
                     'channel_name': self.telegram_channel_name,
                     'channel_type': ChannelTypes.TELEGRAM.value,
@@ -130,8 +138,8 @@ class TestChannelsManager(unittest.TestCase):
                         TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE.format(
                             self.telegram_channel_name),
                     'process': self.dummy_process1,
-                    'bot_token': self.bot_token,
-                    'bot_chat_id': self.bot_chat_id,
+                    'bot_token': self.telegram_bot_token,
+                    'bot_chat_id': self.telegram_bot_chat_id,
                     'channel_id': self.telegram_channel_id,
                     'channel_name': self.telegram_channel_name,
                     'channel_type': ChannelTypes.TELEGRAM.value,
@@ -218,7 +226,21 @@ class TestChannelsManager(unittest.TestCase):
                     'channel_name': self.log_channel_name,
                     'channel_type': ChannelTypes.LOG.value,
                 },
-            }
+            },
+            self.slack_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        SLACK_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.slack_channel_name),
+                    'process': self.dummy_process1,
+                    'bot_token': self.slack_bot_token,
+                    'app_token': self.slack_app_token,
+                    'bot_channel_id': self.slack_bot_channel_id,
+                    'channel_id': self.slack_channel_id,
+                    'channel_name': self.slack_channel_name,
+                    'channel_type': ChannelTypes.SLACK.value,
+                },
+            },
         }
         self.test_channel_process_dict_copy = {
             self.telegram_channel_id: {
@@ -227,8 +249,8 @@ class TestChannelsManager(unittest.TestCase):
                         TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE.format(
                             self.telegram_channel_name),
                     'process': self.dummy_process1,
-                    'bot_token': self.bot_token,
-                    'bot_chat_id': self.bot_chat_id,
+                    'bot_token': self.telegram_bot_token,
+                    'bot_chat_id': self.telegram_bot_chat_id,
                     'channel_id': self.telegram_channel_id,
                     'channel_name': self.telegram_channel_name,
                     'channel_type': ChannelTypes.TELEGRAM.value,
@@ -238,8 +260,8 @@ class TestChannelsManager(unittest.TestCase):
                         TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE.format(
                             self.telegram_channel_name),
                     'process': self.dummy_process1,
-                    'bot_token': self.bot_token,
-                    'bot_chat_id': self.bot_chat_id,
+                    'bot_token': self.telegram_bot_token,
+                    'bot_chat_id': self.telegram_bot_chat_id,
                     'channel_id': self.telegram_channel_id,
                     'channel_name': self.telegram_channel_name,
                     'channel_type': ChannelTypes.TELEGRAM.value,
@@ -326,6 +348,20 @@ class TestChannelsManager(unittest.TestCase):
                     'channel_name': self.log_channel_name,
                     'channel_type': ChannelTypes.LOG.value,
                 },
+            },
+            self.slack_channel_id: {
+                ChannelHandlerTypes.ALERTS.value: {
+                    'component_name':
+                        SLACK_ALERTS_HANDLER_NAME_TEMPLATE.format(
+                            self.slack_channel_name),
+                    'process': self.dummy_process1,
+                    'bot_token': self.slack_bot_token,
+                    'app_token': self.slack_app_token,
+                    'bot_channel_id': self.slack_bot_channel_id,
+                    'channel_id': self.slack_channel_id,
+                    'channel_name': self.slack_channel_name,
+                    'channel_type': ChannelTypes.SLACK.value,
+                },
             }
         }
         self.test_channel_configs = {
@@ -333,8 +369,8 @@ class TestChannelsManager(unittest.TestCase):
                 self.telegram_channel_id: {
                     'id': self.telegram_channel_id,
                     'channel_name': self.telegram_channel_name,
-                    'bot_token': self.bot_token,
-                    'chat_id': self.bot_chat_id,
+                    'bot_token': self.telegram_bot_token,
+                    'chat_id': self.telegram_bot_chat_id,
                     'info': 'True',
                     'warning': 'True',
                     'critical': 'True',
@@ -424,12 +460,34 @@ class TestChannelsManager(unittest.TestCase):
                                                       self.test_chain_3),
                 }
             },
+            ChannelTypes.SLACK.value: {
+                self.slack_channel_id: {
+                    'id': self.slack_channel_id,
+                    'channel_name': self.slack_channel_name,
+                    'bot_token': self.slack_bot_token,
+                    'app_token': self.slack_app_token,
+                    'bot_channel_id': self.slack_bot_channel_id,
+                    'info': 'True',
+                    'warning': 'True',
+                    'critical': 'True',
+                    'error': 'True',
+                    'alerts': 'True',
+                    'commands': 'True',
+                    'parent_ids': "{},{},{}".format(self.test_chain1_id,
+                                                    self.test_chain2_id,
+                                                    self.test_chain3_id),
+                    'parent_names': "{},{},{}".format(self.test_chain_1,
+                                                      self.test_chain_2,
+                                                      self.test_chain_3),
+                }
+            }
         }
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         connect_to_rabbit(self.test_manager.rabbitmq)
-        delete_queue_if_exists(self.test_manager.rabbitmq, self.test_queue_name)
+        delete_queue_if_exists(
+            self.test_manager.rabbitmq, self.test_queue_name)
         delete_queue_if_exists(self.test_manager.rabbitmq,
                                CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME)
         delete_queue_if_exists(self.test_manager.rabbitmq,
@@ -458,7 +516,8 @@ class TestChannelsManager(unittest.TestCase):
 
     def test_channel_process_dict_returns_channel_process_dict(self) -> None:
         self.test_manager._channel_process_dict = self.test_dict
-        self.assertEqual(self.test_dict, self.test_manager.channel_process_dict)
+        self.assertEqual(
+            self.test_dict, self.test_manager.channel_process_dict)
 
     def test_initialise_rabbitmq_initializes_everything_as_expected(
             self) -> None:
@@ -573,7 +632,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_process_dict = copy.deepcopy(self.test_dict)
 
         self.test_manager._create_and_start_telegram_alerts_handler(
-            self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+            self.telegram_bot_token, self.telegram_bot_chat_id,
+            self.telegram_channel_id,
             self.telegram_channel_name)
 
         process_details = self.test_manager.channel_process_dict[
@@ -581,8 +641,9 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE.format(
             self.telegram_channel_name), process_details['component_name'])
         self.assertEqual(self.dummy_process1, process_details['process'])
-        self.assertEqual(self.bot_token, process_details['bot_token'])
-        self.assertEqual(self.bot_chat_id, process_details['bot_chat_id'])
+        self.assertEqual(self.telegram_bot_token, process_details['bot_token'])
+        self.assertEqual(self.telegram_bot_chat_id,
+                         process_details['bot_chat_id'])
         self.assertEqual(self.telegram_channel_id,
                          process_details['channel_id'])
         self.assertEqual(self.telegram_channel_name,
@@ -605,14 +666,15 @@ class TestChannelsManager(unittest.TestCase):
         handler_type = ChannelHandlerTypes.ALERTS.value
 
         self.test_manager._create_and_start_telegram_alerts_handler(
-            self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+            self.telegram_bot_token, self.telegram_bot_chat_id,
+            self.telegram_channel_id,
             self.telegram_channel_name)
 
         process = self.test_manager.channel_process_dict[
             self.telegram_channel_id][handler_type]['process']
         self.assertTrue(process.daemon)
         self.assertEqual(4, len(process._args))
-        self.assertEqual((self.bot_token, self.bot_chat_id,
+        self.assertEqual((self.telegram_bot_token, self.telegram_bot_chat_id,
                           self.telegram_channel_id, self.telegram_channel_name),
                          process._args)
         self.assertEqual(start_telegram_alerts_handler, process._target)
@@ -628,7 +690,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_process_dict = copy.deepcopy(self.test_dict)
 
         self.test_manager._create_and_start_telegram_cmds_handler(
-            self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+            self.telegram_bot_token, self.telegram_bot_chat_id,
+            self.telegram_channel_id,
             self.telegram_channel_name, self.test_associated_chains)
 
         process_details = self.test_manager.channel_process_dict[
@@ -636,8 +699,9 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE.format(
             self.telegram_channel_name), process_details['component_name'])
         self.assertEqual(self.dummy_process1, process_details['process'])
-        self.assertEqual(self.bot_token, process_details['bot_token'])
-        self.assertEqual(self.bot_chat_id, process_details['bot_chat_id'])
+        self.assertEqual(self.telegram_bot_token, process_details['bot_token'])
+        self.assertEqual(self.telegram_bot_chat_id,
+                         process_details['bot_chat_id'])
         self.assertEqual(self.telegram_channel_id,
                          process_details['channel_id'])
         self.assertEqual(self.telegram_channel_name,
@@ -662,17 +726,77 @@ class TestChannelsManager(unittest.TestCase):
         handler_type = ChannelHandlerTypes.COMMANDS.value
 
         self.test_manager._create_and_start_telegram_cmds_handler(
-            self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+            self.telegram_bot_token, self.telegram_bot_chat_id,
+            self.telegram_channel_id,
             self.telegram_channel_name, self.test_associated_chains)
 
         process = self.test_manager.channel_process_dict[
             self.telegram_channel_id][handler_type]['process']
         self.assertTrue(process.daemon)
         self.assertEqual(5, len(process._args))
-        self.assertEqual((self.bot_token, self.bot_chat_id,
+        self.assertEqual((self.telegram_bot_token, self.telegram_bot_chat_id,
                           self.telegram_channel_id, self.telegram_channel_name,
                           self.test_associated_chains), process._args)
         self.assertEqual(start_telegram_commands_handler, process._target)
+        mock_start.assert_called_once_with()
+
+    @mock.patch.object(multiprocessing, "Process")
+    @mock.patch.object(multiprocessing.Process, "start")
+    def test_create_and_start_slack_alerts_handler_stores_process_correctly(
+            self, mock_start, mock_process_init) -> None:
+        mock_start.return_value = None
+        mock_process_init.return_value = self.dummy_process1
+        handler_type = ChannelHandlerTypes.ALERTS.value
+        self.test_manager._channel_process_dict = copy.deepcopy(self.test_dict)
+
+        self.test_manager._create_and_start_slack_alerts_handler(
+            self.slack_bot_token, self.slack_app_token,
+            self.slack_bot_channel_id, self.slack_channel_id,
+            self.slack_channel_name)
+
+        process_details = self.test_manager.channel_process_dict[
+            self.slack_channel_id][handler_type]
+        self.assertEqual(SLACK_ALERTS_HANDLER_NAME_TEMPLATE.format(
+            self.slack_channel_name), process_details['component_name'])
+        self.assertEqual(self.dummy_process1, process_details['process'])
+        self.assertEqual(self.slack_bot_token, process_details['bot_token'])
+        self.assertEqual(self.slack_app_token, process_details['app_token'])
+        self.assertEqual(self.slack_bot_channel_id,
+                         process_details['bot_channel_id'])
+        self.assertEqual(self.slack_channel_id,
+                         process_details['channel_id'])
+        self.assertEqual(self.slack_channel_name,
+                         process_details['channel_name'])
+        self.assertEqual(ChannelTypes.SLACK.value,
+                         process_details['channel_type'])
+        expected_channel_process_dict = self.test_dict
+        expected_channel_process_dict[self.slack_channel_id] = {}
+        expected_channel_process_dict[self.slack_channel_id][
+            ChannelHandlerTypes.ALERTS.value] = \
+            self.test_channel_process_dict[self.slack_channel_id][
+                ChannelHandlerTypes.ALERTS.value]
+        self.assertEqual(expected_channel_process_dict,
+                         self.test_manager.channel_process_dict)
+
+    @mock.patch.object(multiprocessing.Process, "start")
+    def test_create_and_start_slack_alerts_handler_creates_correct_and_start(
+            self, mock_start) -> None:
+        mock_start.return_value = None
+        handler_type = ChannelHandlerTypes.ALERTS.value
+
+        self.test_manager._create_and_start_slack_alerts_handler(
+            self.slack_bot_token, self.slack_app_token,
+            self.slack_bot_channel_id, self.slack_channel_id,
+            self.slack_channel_name)
+
+        process = self.test_manager.channel_process_dict[
+            self.slack_channel_id][handler_type]['process']
+        self.assertTrue(process.daemon)
+        self.assertEqual(5, len(process._args))
+        self.assertEqual((self.slack_bot_token, self.slack_app_token,
+                          self.slack_bot_channel_id, self.slack_channel_id,
+                          self.slack_channel_name), process._args)
+        self.assertEqual(start_slack_alerts_handler, process._target)
         mock_start.assert_called_once_with()
 
     @mock.patch.object(multiprocessing, "Process")
@@ -908,7 +1032,8 @@ class TestChannelsManager(unittest.TestCase):
         self.assertEqual(CONSOLE_ALERTS_HANDLER_NAME_TEMPLATE.format(
             self.console_channel_name), process_details['component_name'])
         self.assertEqual(self.dummy_process1, process_details['process'])
-        self.assertEqual(self.console_channel_id, process_details['channel_id'])
+        self.assertEqual(self.console_channel_id,
+                         process_details['channel_id'])
         self.assertEqual(self.console_channel_name,
                          process_details['channel_name'])
         self.assertEqual(ChannelTypes.CONSOLE.value,
@@ -955,7 +1080,8 @@ class TestChannelsManager(unittest.TestCase):
             self.log_channel_name), process_details['component_name'])
         self.assertEqual(self.dummy_process1, process_details['process'])
         self.assertEqual(self.log_channel_id, process_details['channel_id'])
-        self.assertEqual(self.log_channel_name, process_details['channel_name'])
+        self.assertEqual(self.log_channel_name,
+                         process_details['channel_name'])
         self.assertEqual(ChannelTypes.LOG.value,
                          process_details['channel_type'])
         expected_channel_process_dict = self.test_dict
@@ -1028,7 +1154,8 @@ class TestChannelsManager(unittest.TestCase):
         mock_start_cah.return_value = None
         mock_start_lah.return_value = None
         self.test_manager._start_persistent_channels()
-        mock_start_lah.assert_called_once_with(LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
+        mock_start_lah.assert_called_once_with(
+            LOG_CHANNEL_ID, LOG_CHANNEL_NAME)
 
     @mock.patch.object(multiprocessing.Process, 'is_alive')
     @mock.patch.object(ChannelsManager, "_create_and_start_log_alerts_handler")
@@ -1112,9 +1239,11 @@ class TestChannelsManager(unittest.TestCase):
 
         # Check that the calls to start the processes were done correctly.
         expected_calls = [
-            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+            call(self.telegram_bot_token, self.telegram_bot_chat_id,
+                 self.telegram_channel_id,
                  self.telegram_channel_name),
-            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+            call(self.telegram_bot_token, self.telegram_bot_chat_id,
+                 self.telegram_channel_id,
                  self.telegram_channel_name),
         ]
         actual_calls = mock_start_tah.call_args_list
@@ -1175,9 +1304,11 @@ class TestChannelsManager(unittest.TestCase):
 
         # Check that the calls to start the processes were done correctly.
         expected_calls = [
-            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+            call(self.telegram_bot_token, self.telegram_bot_chat_id,
+                 self.telegram_channel_id,
                  self.telegram_channel_name, self.test_associated_chains),
-            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+            call(self.telegram_bot_token, self.telegram_bot_chat_id,
+                 self.telegram_channel_id,
                  self.telegram_channel_name, self.test_associated_chains),
         ]
         actual_calls = mock_start_tch.call_args_list
@@ -1264,7 +1395,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_configs = current_configs
         self.test_manager._channel_process_dict = self.test_channel_process_dict
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         expected_confs = copy.deepcopy(
             current_configs[ChannelTypes.TELEGRAM.value])
@@ -1294,7 +1426,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_process_dict = \
             self.test_channel_process_dict_copy
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         expected_confs = copy.deepcopy(
             self.test_channel_configs[ChannelTypes.TELEGRAM.value])
@@ -1310,9 +1443,11 @@ class TestChannelsManager(unittest.TestCase):
                                 self.telegram_channel_id])
 
         expected_calls = [
-            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+            call(self.telegram_bot_token, self.telegram_bot_chat_id,
+                 self.telegram_channel_id,
                  new_channel_name),
-            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
+            call(self.telegram_bot_token, self.telegram_bot_chat_id,
+                 self.telegram_channel_id,
                  new_channel_name),
         ]
         actual_calls = mock_start_tah.call_args_list
@@ -1348,7 +1483,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_configs = current_configs
         self.test_manager._channel_process_dict = self.test_channel_process_dict
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         expected_confs = copy.deepcopy(
             current_configs[ChannelTypes.TELEGRAM.value])
@@ -1378,7 +1514,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_process_dict = \
             self.test_channel_process_dict_copy
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         expected_confs = copy.deepcopy(
             self.test_channel_configs[ChannelTypes.TELEGRAM.value])
@@ -1394,10 +1531,12 @@ class TestChannelsManager(unittest.TestCase):
                                 self.telegram_channel_id])
 
         expected_calls = [
-            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
-                 new_channel_name, self.test_associated_chains),
-            call(self.bot_token, self.bot_chat_id, self.telegram_channel_id,
-                 new_channel_name, self.test_associated_chains),
+            call(self.telegram_bot_token, self.telegram_bot_chat_id,
+                 self.telegram_channel_id, new_channel_name,
+                 self.test_associated_chains),
+            call(self.telegram_bot_token, self.telegram_bot_chat_id,
+                 self.telegram_channel_id, new_channel_name,
+                 self.test_associated_chains),
         ]
         actual_calls = mock_start_tch.call_args_list
         self.assertEqual(expected_calls, actual_calls)
@@ -1432,7 +1571,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_configs = current_configs
         self.test_manager._channel_process_dict = self.test_channel_process_dict
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         self.assertEqual({}, actual_confs)
         self.assertEqual(2, len(mock_terminate.call_args_list))
@@ -1460,7 +1600,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_process_dict = \
             self.test_channel_process_dict_copy
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         self.assertEqual({}, actual_confs)
         self.assertEqual(2, len(mock_terminate.call_args_list))
@@ -1511,7 +1652,8 @@ class TestChannelsManager(unittest.TestCase):
         self.test_manager._channel_configs = current_configs
         self.test_manager._channel_process_dict = self.test_channel_process_dict
 
-        actual_confs = self.test_manager._process_telegram_configs(sent_configs)
+        actual_confs = self.test_manager._process_telegram_configs(
+            sent_configs)
 
         expected_confs = {'Another_Telegram_Config': self.test_dict}
         self.assertEqual(expected_confs, actual_confs)
@@ -1527,6 +1669,124 @@ class TestChannelsManager(unittest.TestCase):
         mock_tch.assert_not_called()
 
     @mock.patch.object(ChannelsManager,
+                       "_create_and_start_slack_alerts_handler")
+    def test_process_slack_configs_if_new_configs(self,
+                                                  mock_start_sah) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected. Note that we
+        # test this for both when the slack channel state is empty and when
+        # it is not.
+        mock_start_sah.return_value = None
+
+        # Test with no slack configs in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        sent_configs = copy.deepcopy(current_configs[ChannelTypes.SLACK.value])
+        del current_configs[ChannelTypes.SLACK.value]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_slack_configs(sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.SLACK.value])
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Test with slack configs already in the state
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.SLACK.value][
+            'Another_Slack_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(current_configs[ChannelTypes.SLACK.value])
+        del current_configs[ChannelTypes.SLACK.value][self.slack_channel_id]
+        self.test_manager._channel_configs = current_configs
+
+        actual_configs = self.test_manager._process_slack_configs(sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.SLACK.value])
+        expected_configs['Another_Slack_Config'] = self.test_dict
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that the calls to start the processes were done correctly.
+        expected_calls = [
+            call(self.slack_bot_token, self.slack_app_token,
+                 self.slack_bot_channel_id, self.slack_channel_id,
+                 self.slack_channel_name),
+            call(self.slack_bot_token, self.slack_app_token,
+                 self.slack_bot_channel_id, self.slack_channel_id,
+                 self.slack_channel_name),
+        ]
+        actual_calls = mock_start_sah.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_slack_alerts_handler")
+    def test_process_slack_configs_if_modified_configs(
+            self, mock_start_tah, mock_join, mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected.
+        mock_start_tah.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        new_channel_name = "new_name"
+
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.SLACK.value][
+            'Another_Slack_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(current_configs[ChannelTypes.SLACK.value])
+        sent_configs[self.slack_channel_id]['channel_name'] = new_channel_name
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_configs = self.test_manager._process_slack_configs(sent_configs)
+
+        expected_configs = copy.deepcopy(
+            self.test_channel_configs[ChannelTypes.SLACK.value])
+        expected_configs[self.slack_channel_id][
+            'channel_name'] = new_channel_name
+        expected_configs['Another_Slack_Config'] = self.test_dict
+        self.assertEqual(expected_configs, actual_configs)
+
+        # Check that the calls to restart the process was done correctly.
+        mock_terminate.assert_called_once()
+        mock_join.assert_called_once()
+        expected_calls = [
+            call(self.slack_bot_token, self.slack_app_token,
+                 self.slack_bot_channel_id, self.slack_channel_id,
+                 new_channel_name),
+        ]
+        actual_calls = mock_start_tah.call_args_list
+        self.assertEqual(expected_calls, actual_calls)
+
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_slack_alerts_handler")
+    def test_process_slack_configs_if_removed_configs(
+            self, mock_tah, mock_join, mock_terminate) -> None:
+        # In this test we will check that the configs are correctly returned and
+        # that the respective process calls were done as expected.
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        mock_tah.return_value = None
+
+        current_configs = copy.deepcopy(self.test_channel_configs)
+        current_configs[ChannelTypes.SLACK.value][
+            'Another_Slack_Config'] = self.test_dict
+        sent_configs = copy.deepcopy(current_configs[ChannelTypes.SLACK.value])
+        del sent_configs[self.slack_channel_id]
+        self.test_manager._channel_configs = current_configs
+        self.test_manager._channel_process_dict = self.test_channel_process_dict
+
+        actual_configs = self.test_manager._process_slack_configs(sent_configs)
+
+        expected_configs = {'Another_Slack_Config': self.test_dict}
+        self.assertEqual(expected_configs, actual_configs)
+        mock_terminate.assert_called_once()
+        mock_join.assert_called_once()
+        mock_tah.assert_not_called()
+
+    @mock.patch.object(ChannelsManager,
                        "_create_and_start_twilio_alerts_handler")
     def test_process_twilio_configs_if_new_configs(self,
                                                    mock_start_tah) -> None:
@@ -1538,11 +1798,13 @@ class TestChannelsManager(unittest.TestCase):
 
         # Test with no twilio configs in the state
         current_configs = copy.deepcopy(self.test_channel_configs)
-        sent_configs = copy.deepcopy(current_configs[ChannelTypes.TWILIO.value])
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TWILIO.value])
         del current_configs[ChannelTypes.TWILIO.value]
         self.test_manager._channel_configs = current_configs
 
-        actual_configs = self.test_manager._process_twilio_configs(sent_configs)
+        actual_configs = self.test_manager._process_twilio_configs(
+            sent_configs)
 
         expected_configs = copy.deepcopy(
             self.test_channel_configs[ChannelTypes.TWILIO.value])
@@ -1552,11 +1814,13 @@ class TestChannelsManager(unittest.TestCase):
         current_configs = copy.deepcopy(self.test_channel_configs)
         current_configs[ChannelTypes.TWILIO.value][
             'Another_Twilio_Config'] = self.test_dict
-        sent_configs = copy.deepcopy(current_configs[ChannelTypes.TWILIO.value])
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TWILIO.value])
         del current_configs[ChannelTypes.TWILIO.value][self.twilio_channel_id]
         self.test_manager._channel_configs = current_configs
 
-        actual_configs = self.test_manager._process_twilio_configs(sent_configs)
+        actual_configs = self.test_manager._process_twilio_configs(
+            sent_configs)
 
         expected_configs = copy.deepcopy(
             self.test_channel_configs[ChannelTypes.TWILIO.value])
@@ -1591,12 +1855,14 @@ class TestChannelsManager(unittest.TestCase):
         current_configs = copy.deepcopy(self.test_channel_configs)
         current_configs[ChannelTypes.TWILIO.value][
             'Another_Twilio_Config'] = self.test_dict
-        sent_configs = copy.deepcopy(current_configs[ChannelTypes.TWILIO.value])
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TWILIO.value])
         sent_configs[self.twilio_channel_id]['channel_name'] = new_channel_name
         self.test_manager._channel_configs = current_configs
         self.test_manager._channel_process_dict = self.test_channel_process_dict
 
-        actual_configs = self.test_manager._process_twilio_configs(sent_configs)
+        actual_configs = self.test_manager._process_twilio_configs(
+            sent_configs)
 
         expected_configs = copy.deepcopy(
             self.test_channel_configs[ChannelTypes.TWILIO.value])
@@ -1631,12 +1897,14 @@ class TestChannelsManager(unittest.TestCase):
         current_configs = copy.deepcopy(self.test_channel_configs)
         current_configs[ChannelTypes.TWILIO.value][
             'Another_Twilio_Config'] = self.test_dict
-        sent_configs = copy.deepcopy(current_configs[ChannelTypes.TWILIO.value])
+        sent_configs = copy.deepcopy(
+            current_configs[ChannelTypes.TWILIO.value])
         del sent_configs[self.twilio_channel_id]
         self.test_manager._channel_configs = current_configs
         self.test_manager._channel_process_dict = self.test_channel_process_dict
 
-        actual_configs = self.test_manager._process_twilio_configs(sent_configs)
+        actual_configs = self.test_manager._process_twilio_configs(
+            sent_configs)
 
         expected_configs = {'Another_Twilio_Config': self.test_dict}
         self.assertEqual(expected_configs, actual_configs)
@@ -2012,17 +2280,19 @@ class TestChannelsManager(unittest.TestCase):
 
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(ChannelsManager, "_process_telegram_configs")
+    @mock.patch.object(ChannelsManager, "_process_slack_configs")
     @mock.patch.object(ChannelsManager, "_process_twilio_configs")
     @mock.patch.object(ChannelsManager, "_process_email_configs")
     @mock.patch.object(ChannelsManager, "_process_pagerduty_configs")
     @mock.patch.object(ChannelsManager, "_process_opsgenie_configs")
     def test_process_configs_does_not_process_if_bad_routing_key(
             self, mock_opsgenie, mock_pagerduty, mock_email, mock_twilio,
-            mock_telegram, mock_ack) -> None:
+            mock_slack, mock_telegram, mock_ack) -> None:
         mock_ack.return_value = None
         mock_pagerduty.return_value = None
         mock_opsgenie.return_value = None
         mock_telegram.return_value = None
+        mock_slack.return_value = None
         mock_twilio.return_value = None
         mock_email.return_value = None
         try:
@@ -2040,6 +2310,7 @@ class TestChannelsManager(unittest.TestCase):
             mock_pagerduty.assert_not_called()
             mock_email.assert_not_called()
             mock_twilio.assert_not_called()
+            mock_slack.assert_not_called()
             mock_telegram.assert_not_called()
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -2048,6 +2319,7 @@ class TestChannelsManager(unittest.TestCase):
 
     @parameterized.expand([
         ('channels.telegram_config',),
+        ('channels.slack_config',),
         ('channels.twilio_config',),
         ('channels.email_config',),
         ('channels.opsgenie_config',),
@@ -2055,13 +2327,14 @@ class TestChannelsManager(unittest.TestCase):
     ])
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(ChannelsManager, "_process_telegram_configs")
+    @mock.patch.object(ChannelsManager, "_process_slack_configs")
     @mock.patch.object(ChannelsManager, "_process_twilio_configs")
     @mock.patch.object(ChannelsManager, "_process_email_configs")
     @mock.patch.object(ChannelsManager, "_process_pagerduty_configs")
     @mock.patch.object(ChannelsManager, "_process_opsgenie_configs")
     def test_process_configs_stores_configs_in_state_correctly(
             self, routing_key, mock_opsgenie, mock_pagerduty, mock_email,
-            mock_twilio, mock_telegram, mock_ack) -> None:
+            mock_twilio, mock_slack, mock_telegram, mock_ack) -> None:
         mock_ack.return_value = None
         mock_pagerduty.return_value = self.test_dict \
             if routing_key == 'channels.pagerduty_config' else None
@@ -2069,6 +2342,8 @@ class TestChannelsManager(unittest.TestCase):
             if routing_key == 'channels.opsgenie_config' else None
         mock_telegram.return_value = self.test_dict \
             if routing_key == 'channels.telegram_config' else None
+        mock_slack.return_value = self.test_dict \
+            if routing_key == 'channels.slack_config' else None
         mock_twilio.return_value = self.test_dict \
             if routing_key == 'channels.twilio_config' else None
         mock_email.return_value = self.test_dict \
@@ -2090,6 +2365,16 @@ class TestChannelsManager(unittest.TestCase):
                 expected_configs[ChannelTypes.TELEGRAM.value] = self.test_dict
                 self.assertEqual(expected_configs,
                                  self.test_manager.channel_configs)
+                mock_slack.assert_not_called()
+                mock_opsgenie.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_email.assert_not_called()
+                mock_twilio.assert_not_called()
+            elif routing_key == 'channels.slack_config':
+                expected_configs[ChannelTypes.SLACK.value] = self.test_dict
+                self.assertEqual(expected_configs,
+                                 self.test_manager.channel_configs)
+                mock_telegram.assert_not_called()
                 mock_opsgenie.assert_not_called()
                 mock_pagerduty.assert_not_called()
                 mock_email.assert_not_called()
@@ -2102,6 +2387,7 @@ class TestChannelsManager(unittest.TestCase):
                 mock_pagerduty.assert_not_called()
                 mock_email.assert_not_called()
                 mock_telegram.assert_not_called()
+                mock_slack.assert_not_called()
             elif routing_key == 'channels.email_config':
                 expected_configs[ChannelTypes.EMAIL.value] = self.test_dict
                 self.assertEqual(expected_configs,
@@ -2109,6 +2395,7 @@ class TestChannelsManager(unittest.TestCase):
                 mock_opsgenie.assert_not_called()
                 mock_pagerduty.assert_not_called()
                 mock_telegram.assert_not_called()
+                mock_slack.assert_not_called()
                 mock_twilio.assert_not_called()
             elif routing_key == 'channels.pagerduty_config':
                 expected_configs[ChannelTypes.PAGERDUTY.value] = self.test_dict
@@ -2116,6 +2403,7 @@ class TestChannelsManager(unittest.TestCase):
                                  self.test_manager.channel_configs)
                 mock_opsgenie.assert_not_called()
                 mock_telegram.assert_not_called()
+                mock_slack.assert_not_called()
                 mock_email.assert_not_called()
                 mock_twilio.assert_not_called()
             elif routing_key == 'channels.opsgenie_config':
@@ -2123,6 +2411,7 @@ class TestChannelsManager(unittest.TestCase):
                 self.assertEqual(expected_configs,
                                  self.test_manager.channel_configs)
                 mock_telegram.assert_not_called()
+                mock_slack.assert_not_called()
                 mock_pagerduty.assert_not_called()
                 mock_email.assert_not_called()
                 mock_twilio.assert_not_called()
@@ -2174,6 +2463,8 @@ class TestChannelsManager(unittest.TestCase):
     @mock.patch.object(ChannelsManager,
                        "_create_and_start_telegram_cmds_handler")
     @mock.patch.object(ChannelsManager,
+                       "_create_and_start_slack_alerts_handler")
+    @mock.patch.object(ChannelsManager,
                        "_create_and_start_twilio_alerts_handler")
     @mock.patch.object(ChannelsManager,
                        "_create_and_start_email_alerts_handler")
@@ -2191,7 +2482,8 @@ class TestChannelsManager(unittest.TestCase):
     def test_process_ping_sends_a_valid_hb_if_all_handler_processes_are_dead(
             self, mock_send_hb, mock_is_alive, mock_join, mock_log,
             mock_console, mock_opsgenie, mock_pagerduty, mock_email,
-            mock_twilio, mock_telegram_cmds, mock_telegram_alerts) -> None:
+            mock_twilio, mock_slack_alerts, mock_telegram_cmds,
+            mock_telegram_alerts) -> None:
         # We will perform this test by checking that send_hb is called with the
         # correct heartbeat. The actual sending was already tested above.
         mock_send_hb.return_value = None
@@ -2203,6 +2495,7 @@ class TestChannelsManager(unittest.TestCase):
         mock_pagerduty.return_value = None
         mock_email.return_value = None
         mock_twilio.return_value = None
+        mock_slack_alerts.return_value = None
         mock_telegram_cmds.return_value = None
         mock_telegram_alerts.return_value = None
         self.test_manager._channel_process_dict = self.test_channel_process_dict
@@ -2234,28 +2527,32 @@ class TestChannelsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @parameterized.expand([
-        ([False, True, True, True, True, True, True, True],
+        ([False, True, True, True, True, True, True, True, True],
          'Telegram Alerts Handler (test_telegram_channel)'),
-        ([True, False, True, True, True, True, True, True],
+        ([True, False, True, True, True, True, True, True, True],
          'Telegram Commands Handler (test_telegram_channel)'),
-        ([True, True, False, True, True, True, True, True],
+        ([True, True, False, True, True, True, True, True, True],
          'Twilio Alerts Handler (test_twilio_channel)'),
-        ([True, True, True, False, True, True, True, True],
+        ([True, True, True, False, True, True, True, True, True],
          'Email Alerts Handler (test_email_channel)'),
-        ([True, True, True, True, False, True, True, True],
+        ([True, True, True, True, False, True, True, True, True],
          'PagerDuty Alerts Handler (test_pagerduty_channel)'),
-        ([True, True, True, True, True, False, True, True],
+        ([True, True, True, True, True, False, True, True, True],
          'Opsgenie Alerts Handler (test_opsgenie_channel)'),
-        ([True, True, True, True, True, True, False, True],
+        ([True, True, True, True, True, True, False, True, True],
          'Console Alerts Handler (CONSOLE)'),
-        ([True, True, True, True, True, True, True, False],
+        ([True, True, True, True, True, True, True, False, True],
          'Log Alerts Handler (LOG)'),
+        ([True, True, True, True, True, True, True, True, False],
+         'Slack Alerts Handler (test_slack_channel)'),
     ])
     @freeze_time("2012-01-01")
     @mock.patch.object(ChannelsManager,
                        "_create_and_start_telegram_alerts_handler")
     @mock.patch.object(ChannelsManager,
                        "_create_and_start_telegram_cmds_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_slack_alerts_handler")
     @mock.patch.object(ChannelsManager,
                        "_create_and_start_twilio_alerts_handler")
     @mock.patch.object(ChannelsManager,
@@ -2274,8 +2571,8 @@ class TestChannelsManager(unittest.TestCase):
     def test_process_ping_sends_a_valid_hb_if_an_alerts_handler_is_dead(
             self, is_alive_side_effect, dead_process, mock_send_hb,
             mock_is_alive, mock_join, mock_log, mock_console, mock_opsgenie,
-            mock_pagerduty, mock_email, mock_twilio, mock_telegram_cmds,
-            mock_telegram_alerts) -> None:
+            mock_pagerduty, mock_email, mock_twilio, mock_slack_alerts,
+            mock_telegram_cmds, mock_telegram_alerts) -> None:
         # We will perform this test by checking that send_hb is called with the
         # correct heartbeat. The actual sending was already tested above.
         mock_send_hb.return_value = None
@@ -2287,6 +2584,7 @@ class TestChannelsManager(unittest.TestCase):
         mock_pagerduty.return_value = None
         mock_email.return_value = None
         mock_twilio.return_value = None
+        mock_slack_alerts.return_value = None
         mock_telegram_cmds.return_value = None
         mock_telegram_alerts.return_value = None
         self.test_manager._channel_process_dict = self.test_channel_process_dict
@@ -2319,21 +2617,31 @@ class TestChannelsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @parameterized.expand([
-        ([False, True, True, True, True, True, True, True],
+        ([False, True, True, True, True, True, True, True, True],
          'mock_telegram_alerts',),
-        ([True, False, True, True, True, True, True, True],
+        ([True, False, True, True, True, True, True, True, True],
          'mock_telegram_cmds',),
-        ([True, True, False, True, True, True, True, True], 'mock_twilio',),
-        ([True, True, True, False, True, True, True, True], 'mock_email',),
-        ([True, True, True, True, False, True, True, True], 'mock_pagerduty',),
-        ([True, True, True, True, True, False, True, True], 'mock_opsgenie',),
-        ([True, True, True, True, True, True, False, True], 'mock_console',),
-        ([True, True, True, True, True, True, True, False], 'mock_log',),
+        ([True, True, False, True, True, True, True, True, True],
+         'mock_twilio',),
+        (
+                [True, True, True, False, True, True, True, True, True],
+                'mock_email',),
+        ([True, True, True, True, False, True, True, True, True],
+         'mock_pagerduty',),
+        ([True, True, True, True, True, False, True, True, True],
+         'mock_opsgenie',),
+        ([True, True, True, True, True, True, False, True, True],
+         'mock_console',),
+        ([True, True, True, True, True, True, True, False, True], 'mock_log',),
+        ([True, True, True, True, True, True, True, True, False],
+         'mock_slack_alerts',),
     ])
     @mock.patch.object(ChannelsManager,
                        "_create_and_start_telegram_alerts_handler")
     @mock.patch.object(ChannelsManager,
                        "_create_and_start_telegram_cmds_handler")
+    @mock.patch.object(ChannelsManager,
+                       "_create_and_start_slack_alerts_handler")
     @mock.patch.object(ChannelsManager,
                        "_create_and_start_twilio_alerts_handler")
     @mock.patch.object(ChannelsManager,
@@ -2352,8 +2660,8 @@ class TestChannelsManager(unittest.TestCase):
     def test_process_ping_restarts_a_dead_handler(
             self, is_alive_side_effect, dead_handler_start_mock, mock_send_hb,
             mock_is_alive, mock_join, mock_log, mock_console, mock_opsgenie,
-            mock_pagerduty, mock_email, mock_twilio, mock_telegram_cmds,
-            mock_telegram_alerts) -> None:
+            mock_pagerduty, mock_email, mock_twilio, mock_slack_alerts,
+            mock_telegram_cmds, mock_telegram_alerts) -> None:
         # We will perform this test by checking that the dead handler's create
         # function was called correctly, and the other handler's create
         # functions were not called
@@ -2366,6 +2674,7 @@ class TestChannelsManager(unittest.TestCase):
         mock_pagerduty.return_value = None
         mock_email.return_value = None
         mock_twilio.return_value = None
+        mock_slack_alerts.return_value = None
         mock_telegram_cmds.return_value = None
         mock_telegram_alerts.return_value = None
         self.test_manager._channel_process_dict = self.test_channel_process_dict
@@ -2413,6 +2722,23 @@ class TestChannelsManager(unittest.TestCase):
                 mock_opsgenie.assert_not_called()
                 mock_console.assert_not_called()
                 mock_log.assert_not_called()
+            elif dead_handler_start_mock == 'mock_slack_alerts':
+                process_details = self.test_channel_process_dict[
+                    self.slack_channel_id][ChannelHandlerTypes.ALERTS.value]
+                mock_slack_alerts.assert_called_once_with(
+                    process_details['bot_token'],
+                    process_details['app_token'],
+                    process_details['bot_channel_id'],
+                    process_details['channel_id'],
+                    process_details['channel_name'])
+                mock_telegram_alerts.assert_not_called()
+                mock_telegram_cmds.assert_not_called()
+                mock_twilio.assert_not_called()
+                mock_email.assert_not_called()
+                mock_pagerduty.assert_not_called()
+                mock_opsgenie.assert_not_called()
+                mock_console.assert_not_called()
+                mock_log.assert_not_called()
             elif dead_handler_start_mock == 'mock_twilio':
                 process_details = self.test_channel_process_dict[
                     self.twilio_channel_id][ChannelHandlerTypes.ALERTS.value]
@@ -2430,6 +2756,7 @@ class TestChannelsManager(unittest.TestCase):
                 mock_opsgenie.assert_not_called()
                 mock_console.assert_not_called()
                 mock_log.assert_not_called()
+
             elif dead_handler_start_mock == 'mock_email':
                 process_details = self.test_channel_process_dict[
                     self.email_channel_id][ChannelHandlerTypes.ALERTS.value]
@@ -2446,6 +2773,7 @@ class TestChannelsManager(unittest.TestCase):
                 mock_opsgenie.assert_not_called()
                 mock_console.assert_not_called()
                 mock_log.assert_not_called()
+
             elif dead_handler_start_mock == 'mock_pagerduty':
                 process_details = self.test_channel_process_dict[
                     self.pagerduty_channel_id][ChannelHandlerTypes.ALERTS.value]
