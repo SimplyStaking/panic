@@ -1,7 +1,8 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { ChainsAPI, filterActiveChains } from '../../utils/chains';
-import { getPieChartJSX, getSubChainsByBaseChain } from '../../utils/dashboard-overview';
+import { ChainsAPI, getActiveChainNames, updateActiveChains } from '../../utils/chains';
+import { getDataTableJSX, getPieChartJSX, getChainFilterOptionsFromBaseChain, getSeverityFilterOptions } from '../../utils/dashboard-overview';
+import { arrayEquals } from '../../utils/helpers';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
 
 @Component({
@@ -28,14 +29,61 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
     }
   }
 
+  async componentDidLoad() {
+    // Add text title to chain filter and severity filter.
+    for (const baseChain of this.baseChains) {
+      // Chain Filter text-placeholder (Chains).
+      const chainFilterShadow = document.querySelector(`#${baseChain.name}_chain-filter ion-select`).shadowRoot;
+      const chainFilterSelectText = chainFilterShadow.querySelector('.select-text');
+      const chainFilterSelectIcon = chainFilterShadow.querySelector('.select-icon');
+      const selectTextTitle = chainFilterSelectText.cloneNode() as Element;
+      selectTextTitle.classList.remove('select-text');
+      selectTextTitle.classList.add('select-text-title');
+      selectTextTitle.setAttribute('part', 'text-title');
+      selectTextTitle.textContent = 'Chains';
+      chainFilterShadow.insertBefore(selectTextTitle, chainFilterSelectIcon);
+
+      // Severity Filter text-placeholder (Severity).
+      const severityFilterShadow = document.querySelector(`#${baseChain.name}_severity-filter ion-select`).shadowRoot;
+      const severityFilterSelectIcon = severityFilterShadow.querySelector('.select-icon');
+      const selectTextTitle2 = selectTextTitle.cloneNode() as Element;
+      selectTextTitle2.textContent = 'Severity';
+      severityFilterShadow.insertBefore(selectTextTitle2, severityFilterSelectIcon);
+    }
+  }
+
   @Listen('filter-changed')
-  filterChanged(event: CustomEvent) {
+  async filterChanged(event: CustomEvent) {
     try {
-      const baseChainName = event.detail['base-chain-name'];
-      const chainName = event.detail['chain-name'];
+      const baseChainName: string = event.detail['base-chain-name'];
+      const selectedChains: string[] = event.detail['chain-name'].split(',');
 
-      this.baseChains = this.baseChains.filter(filterActiveChains, { baseChainName, chainName });
+      // Remove empty string element from array if no chains are selected.
+      if (selectedChains.length > 0 && selectedChains[0] === '') {
+        selectedChains.pop();
+      }
 
+      // Get base chain which contains the altered filters.
+      const baseChain: BaseChain = this.baseChains.find(baseChain => baseChain.name === baseChainName);
+
+      // Update active chain if chain filter was changed.
+      if (!arrayEquals(baseChain.activeChains, selectedChains)) {
+        this.baseChains = updateActiveChains(this.baseChains, baseChainName, selectedChains);
+      } else {
+        const selectedAlerts = event.detail['alerts-severity'].split(',');
+
+        // Remove empty string element from array if no alerts are selected.
+        if (selectedAlerts.length > 0 && selectedAlerts[0] === '') {
+          selectedAlerts.pop();
+        }
+
+        // Update severities shown if severity filter was changed.
+        if (!arrayEquals(baseChain.activeSeverities, selectedAlerts)) {
+          baseChain.activeSeverities = selectedAlerts;
+          // This is done to re-render since the above does not.
+          this.baseChains = [...this.baseChains];
+        }
+      }
     } catch (error: any) {
       console.error(error);
     }
@@ -50,21 +98,55 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
       <Host>
         <panic-header />
         <svc-content-container>
+          <h1 class='panic-dashboard-overview__title'>DASHBOARD OVERVIEW</h1>
           {this.baseChains.map((baseChain) =>
             <svc-surface label={baseChain.name}>
-              {baseChain.chains.map((chain) => {
-                return chain.active &&
-                  <svc-filter event-name="filter-changed" debounce={100}>
-                    <svc-card class="panic-dashboard-overview__chain-card">
-                      <input name='base-chain-name' value={baseChain.name} hidden />
-                      <svc-select name="chain-name" id={baseChain.name} class="panic-dashboard-overview__chain-filter" slot="header" value="all" header="Choose Chain" options={getSubChainsByBaseChain(baseChain)}></svc-select>
+              <svc-filter event-name="filter-changed" debounce={100}>
+                <svc-card class="panic-dashboard-overview__chain-card">
+                  <div slot='content' id='expanded'>
+                    <input name='base-chain-name' value={baseChain.name} hidden />
 
+                    <div class="panic-dashboard-overview__chain-filter-container">
+                      {/* Chain filter */}
+                      <svc-select
+                        name="chain-name"
+                        id={baseChain.name + '_chain-filter'}
+                        multiple={true}
+                        value={getActiveChainNames(baseChain.chains)}
+                        header="Select chains"
+                        placeholder="Select chains"
+                        options={getChainFilterOptionsFromBaseChain(baseChain)}>
+                      </svc-select>
+                    </div>
+
+                    <div class='panic-dashboard-overview__slots'>
                       {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
                       A green pie chart is shown with no text and without a tooltip */}
-                      {getPieChartJSX(chain.name, chain.criticalAlerts, chain.warningAlerts, chain.errorAlerts, chain.totalAlerts)}
-                    </svc-card>
-                  </svc-filter>
-              })}
+                      <div class="panic-dashboard-overview__pie-chart">
+                        {getPieChartJSX(baseChain)}
+                      </div>
+
+                      <div class="panic-dashboard-overview__data-table-container">
+                        <div>
+                          {/* Severity filter */}
+                          <svc-select
+                            name="alerts-severity"
+                            id={baseChain.name + '_severity-filter'}
+                            multiple={true}
+                            value={baseChain.activeSeverities}
+                            header="Select severities"
+                            placeholder="Select severities"
+                            options={getSeverityFilterOptions()}>
+                          </svc-select>
+
+                          {/* Data table */}
+                          {getDataTableJSX(baseChain)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </svc-card>
+              </svc-filter>
               <svc-label color="dark" position="start" class="panic-dashboard-overview__info-message">This section displays only warning, critical and error alerts. For a full report, check <svc-anchor label={"Alerts Overview."} url={"#alerts-overview"} /> </svc-label>
 
             </svc-surface>

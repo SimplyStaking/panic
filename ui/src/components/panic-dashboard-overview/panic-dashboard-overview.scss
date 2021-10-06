@@ -1,4 +1,10 @@
 .panic-dashboard-overview {
+    &__title {
+        text-align: center;
+        font-size: 25px;
+        margin: 10px 0px 20px;
+    }
+
     &__chain-card {
         margin-bottom: 10px;
     }
@@ -6,11 +12,48 @@
     &__chain-name {
         margin-top: 10px;
         margin-left: 10px;
-     }
+    }
 
-     &__info-message {
+    &__info-message {
         margin-left: 10px;
-     }
+    }
+
+    &__chain-filter {
+        margin-right: 9px;
+    }
+
+    &__data-table-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        margin: 7px 7px 7px 5px;
+        padding: 2px;
+    }
+
+    &__pie-chart {
+        display: flex;
+        justify-content: center;
+        width: fit-content;
+        margin: 7px 0 7px 7px;
+        padding: 2px;
+    }
+
+    &__slots {
+        display: flex;
+    }
+}
+
+#expanded {
+    flex-direction: column;
+
+    & > div > div.panic-dashboard-overview__data-table-container > div {
+        & > svc-data-table{
+            border-radius: var(--svc-card-border-radius);
+        }
+
+        border: 1px #a8a8a8 solid;
+        border-radius: var(--svc-card-border-radius);
+    }
 }
 
 panic-dashboard-overview {
@@ -23,16 +66,50 @@ panic-dashboard-overview {
     svc-select {
         ion-select{
             border-bottom: 1px #a8a8a8 solid;
+            padding-right: 10px;
 
             &::part(text){
                 text-transform: capitalize;
             }
+
+            &::part(text-title){
+                font-weight: bold;
+            }
         }
+    }
+
+    svc-data-table {
+        display: flex;
+        max-height: 258px;
+
+        & svc-buttons-container {
+            display: inline-flex;
+        }
+
+        & svc-button {
+            & ion-button {
+                width: 27px !important;
+                height: 27px !important;
+
+                &::part(native) {
+                    cursor: unset;
+                }
+
+                & ion-icon {
+                    width: 27px;
+                    height: 27px;
+                }
+            }
+        }
+    }
+
+    svc-card {
+        border: 1px #a8a8a8 solid;
     }
 }
 
 ion-alert {
-    div > div.alert-radio-label.sc-ion-alert-md {
+    div > div.alert-checkbox-label.sc-ion-alert-md {
         text-transform: capitalize;
     }
 }

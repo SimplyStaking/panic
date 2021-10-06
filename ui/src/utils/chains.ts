@@ -1,5 +1,5 @@
-import { BaseChain, Chain } from "../interfaces/chains";
-import { allChain, apiURL, baseChainsNames } from "./constants";
+import { Alert, BaseChain, Chain } from "../interfaces/chains";
+import { apiURL, baseChainsNames, Severity } from "./constants";
 
 export const ChainsAPI = {
     updateBaseChains: updateBaseChains,
@@ -91,11 +91,8 @@ async function getBaseChains(): Promise<BaseChain[]> {
                     id: data.result[baseChain][currentChain].parent_id,
                     repos: currentRepos,
                     systems: currentSystems,
-                    criticalAlerts: 0,
-                    warningAlerts: 0,
-                    errorAlerts: 0,
-                    totalAlerts: 0,
-                    active: false
+                    alerts: [],
+                    active: true
                 });
             }
 
@@ -104,12 +101,11 @@ async function getBaseChains(): Promise<BaseChain[]> {
                 continue;
             }
 
-            currentChains.unshift({ ...allChain })
-
             baseChains.push({
                 name: baseChain,
                 chains: currentChains,
-                allFilter: true
+                activeChains: getActiveChainNames(currentChains),
+                activeSeverities: getAllSeverityValues()
             });
         }
     }
@@ -170,26 +166,11 @@ async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
     // Populate each active chain within each base chain.
     // If all filter is selected, each chain is populated.
     for (const updatedBaseChain of updatedBaseChains) {
-        let totalCriticalAlerts: number = 0;
-        let totalWarningAlerts: number = 0;
-        let totalErrorAlerts: number = 0;
         for (let chain of updatedBaseChain.chains) {
-            if (chain.id !== 'all') {
-                if ((chain.active || updatedBaseChain.allFilter)) {
-                    chain = await getChainAlerts(chain);
-                }
-                totalCriticalAlerts += chain.criticalAlerts;
-                totalWarningAlerts += chain.warningAlerts;
-                totalErrorAlerts += chain.errorAlerts;
+            if (chain.active) {
+                chain = await getChainAlerts(chain);
             }
         }
-
-        // Update 'all' chain with new values.
-        const allChain: Chain = updatedBaseChain.chains.find(chain => chain.id === 'all');
-        allChain.criticalAlerts = totalCriticalAlerts;
-        allChain.warningAlerts = totalWarningAlerts;
-        allChain.errorAlerts = totalErrorAlerts;
-        allChain.totalAlerts = allChain.criticalAlerts + allChain.warningAlerts + allChain.errorAlerts;
     }
 
     return updatedBaseChains;
@@ -208,7 +189,7 @@ function addNewlyAddedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: 
         const updatedBaseChain: BaseChain = updatedBaseChains.find(baseChain => baseChain.name === newBaseChain.name);
         if (updatedBaseChain) {
             // Create base chain.
-            const finalBaseChain: BaseChain = { name: updatedBaseChain.name, chains: [], allFilter: updatedBaseChain.allFilter };
+            const finalBaseChain: BaseChain = { name: updatedBaseChain.name, chains: [], activeChains: updatedBaseChain.activeChains, activeSeverities: updatedBaseChain.activeSeverities };
             // Check for newly added/removed chains within base chain.
             for (const newChain of newBaseChain.chains) {
                 // Add newly added chains (if any).
@@ -223,11 +204,6 @@ function addNewlyAddedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: 
                 if (newBaseChain.chains.find(chain => chain.id === updatedChain.id)) {
                     finalBaseChain.chains.push(updatedChain);
                 }
-            }
-
-            // Check for case if active chain was removed.
-            if (!finalBaseChain.chains.find(chain => chain.active)) {
-                finalBaseChain.chains[0].active = true;
             }
 
             // Add base chain.
@@ -269,24 +245,73 @@ async function getChainAlerts(chain: Chain): Promise<Chain> {
     const data: any = await getAlertsOverview(chain);
 
     if (data.result[chain.id]) {
-        chain.criticalAlerts = data.result[chain.id].critical ? data.result[chain.id].critical : 0;
-        chain.warningAlerts = data.result[chain.id].warning ? data.result[chain.id].warning : 0;
-        chain.errorAlerts = data.result[chain.id].error ? data.result[chain.id].error : 0;
-        chain.totalAlerts = chain.criticalAlerts + chain.warningAlerts + chain.errorAlerts;
+        chain.alerts = parseRedisAlerts(data.result[chain.id].problems);
     }
 
     return chain;
 }
 
-export function filterActiveChains(baseChain: BaseChain): BaseChain {
-    if (baseChain.name === this.baseChainName) {
-        baseChain.allFilter = this.chainName === 'all';
-        baseChain.chains.filter(function (chain: Chain): Chain {
-            chain.active = chain.name === this.chainName;
+/**
+ * Parses the problems JSON object from Redis to a list of alerts.
+ * @param problems JSON object.
+ * @returns list of alerts.
+ */
+function parseRedisAlerts(problems: any): Alert[] {
+    const alerts: Alert[] = []
 
-            return chain;
-        }, this);
+    for (const source in problems) {
+        for (const alert of problems[source]) {
+            if (alert.severity in Severity) {
+                alerts.push({ severity: alert.severity as Severity, message: alert.message, timestamp: alert.timestamp });
+            } else {
+                console.log('Info - Found severity value which is not in Severity enum.');
+            }
+        }
     }
 
-    return baseChain;
+    return alerts;
+}
+
+/**
+ * Updates the new active chain within a respective base chain.
+ * @param baseChains base chains which contains the respective base chain.
+ * @param baseChainName name of base chain to be updated.
+ * @param chainName name of new active chain to be updated.
+ * @returns updated base chains.
+ */
+export function updateActiveChains(baseChains: BaseChain[], baseChainName: string, activeChains: string[]): BaseChain[] {
+    const updatedBaseChains: BaseChain[] = [];
+
+    for (const updatedBaseChain of baseChains) {
+        if (updatedBaseChain.name === baseChainName) {
+            updatedBaseChain.activeChains = activeChains;
+            for (const updatedChain of updatedBaseChain.chains) {
+                updatedChain.active = activeChains.includes(updatedChain.name);
+            }
+        }
+        updatedBaseChains.push(updatedBaseChain);
+    }
+
+    return updatedBaseChains
+}
+
+/**
+ * Returns all severity keys in a list.
+ * @returns list of all severity keys.
+ */
+export function getAllSeverityValues(): Severity[] {
+    return Object.keys(Severity).map(severity => severity as Severity);
+}
+
+/**
+ * Returns the name of all active chains in a list.
+ * @returns list of name of all active chains.
+ */
+export const getActiveChainNames = (chains: Chain[]): string[] => {
+    // Filter non-active chains.
+    const filteredChains = chains.filter(function (chain) {
+        return chain.active;
+    });
+
+    return filteredChains.map(chain => chain.name);
 }

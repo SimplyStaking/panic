@@ -225,6 +225,7 @@ class AlertStore(Store):
             self.logger.debug("Saving alert in REDIS: %s.", alert)
             metric_data = {'severity': alert['severity'],
                            'message': alert['message'],
+                           'timestamp': alert['timestamp'],
                            'expiry': None}
             key = alert['origin_id']
 
