@@ -4,4 +4,23 @@
         font-size: 25px;
         margin: 10px 0px 20px;
     }
+
+    &__data-table-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        margin: 7px 7px 7px 5px;
+        padding: 2px;
+    }
+}
+
+panic-alerts-overview {
+    svc-data-table {
+        display: flex;
+        max-height: 258px;
+    }
+
+    svc-card {
+        border: 1px #a8a8a8 solid;
+    }
 }

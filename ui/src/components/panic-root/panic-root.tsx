@@ -13,11 +13,14 @@ export class PanicRoot {
         <svc-app>
           <Router.Switch>
             <Route path={"/"}>
-              <panic-dashboard-overview />
-            </Route>
-
-            <Route path={"/2"}>
-              <panic-alerts-overview />
+              <div>
+                <panic-header />
+                <svc-content-container>
+                  <panic-dashboard-overview />
+                  <panic-alerts-overview />
+                </svc-content-container>
+                <panic-footer />
+              </div>
             </Route>
 
             <Route path={match('/systems-overview/:chain')} render={(param) => {

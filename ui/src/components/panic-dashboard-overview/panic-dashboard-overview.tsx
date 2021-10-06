@@ -96,63 +96,59 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
   render() {
     return (
       <Host>
-        <panic-header />
-        <svc-content-container>
-          <h1 class='panic-dashboard-overview__title'>DASHBOARD OVERVIEW</h1>
-          {this.baseChains.map((baseChain) =>
-            <svc-surface label={baseChain.name}>
-              <svc-filter event-name="filter-changed" debounce={100}>
-                <svc-card class="panic-dashboard-overview__chain-card">
-                  <div slot='content' id='expanded'>
-                    <input name='base-chain-name' value={baseChain.name} hidden />
+        <h1 class='panic-dashboard-overview__title'>DASHBOARD OVERVIEW</h1>
+        {this.baseChains.map((baseChain) =>
+          <svc-surface label={baseChain.name}>
+            <svc-filter event-name="filter-changed" debounce={100}>
+              <svc-card class="panic-dashboard-overview__chain-card">
+                <div slot='content' id='expanded'>
+                  <input name='base-chain-name' value={baseChain.name} hidden />
 
-                    <div class="panic-dashboard-overview__chain-filter-container">
-                      {/* Chain filter */}
-                      <svc-select
-                        name="chain-name"
-                        id={baseChain.name + '_chain-filter'}
-                        multiple={true}
-                        value={getActiveChainNames(baseChain.chains)}
-                        header="Select chains"
-                        placeholder="Select chains"
-                        options={getChainFilterOptionsFromBaseChain(baseChain)}>
-                      </svc-select>
+                  <div class="panic-dashboard-overview__chain-filter-container">
+                    {/* Chain filter */}
+                    <svc-select
+                      name="chain-name"
+                      id={baseChain.name + '_chain-filter'}
+                      multiple={true}
+                      value={getActiveChainNames(baseChain.chains)}
+                      header="Select chains"
+                      placeholder="Select chains"
+                      options={getChainFilterOptionsFromBaseChain(baseChain)}>
+                    </svc-select>
+                  </div>
+
+                  <div class='panic-dashboard-overview__slots'>
+                    {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
+                      A green pie chart is shown with no text and without a tooltip */}
+                    <div class="panic-dashboard-overview__pie-chart">
+                      {getPieChartJSX(baseChain)}
                     </div>
 
-                    <div class='panic-dashboard-overview__slots'>
-                      {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
-                      A green pie chart is shown with no text and without a tooltip */}
-                      <div class="panic-dashboard-overview__pie-chart">
-                        {getPieChartJSX(baseChain)}
-                      </div>
+                    <div class="panic-dashboard-overview__data-table-container">
+                      <div>
+                        {/* Severity filter */}
+                        <svc-select
+                          name="alerts-severity"
+                          id={baseChain.name + '_severity-filter'}
+                          multiple={true}
+                          value={baseChain.activeSeverities}
+                          header="Select severities"
+                          placeholder="Select severities"
+                          options={getSeverityFilterOptions()}>
+                        </svc-select>
 
-                      <div class="panic-dashboard-overview__data-table-container">
-                        <div>
-                          {/* Severity filter */}
-                          <svc-select
-                            name="alerts-severity"
-                            id={baseChain.name + '_severity-filter'}
-                            multiple={true}
-                            value={baseChain.activeSeverities}
-                            header="Select severities"
-                            placeholder="Select severities"
-                            options={getSeverityFilterOptions()}>
-                          </svc-select>
-
-                          {/* Data table */}
-                          {getDataTableJSX(baseChain)}
-                        </div>
+                        {/* Data table */}
+                        {getDataTableJSX(baseChain)}
                       </div>
                     </div>
                   </div>
-                </svc-card>
-              </svc-filter>
-              <svc-label color="dark" position="start" class="panic-dashboard-overview__info-message">This section displays only warning, critical and error alerts. For a full report, check <svc-anchor label={"Alerts Overview."} url={"#alerts-overview"} /> </svc-label>
+                </div>
+              </svc-card>
+            </svc-filter>
+            <svc-label color="dark" position="start" class="panic-dashboard-overview__info-message">This section displays only warning, critical and error alerts. For a full report, check <svc-anchor label={"Alerts Overview."} url={"#alerts-overview"} /> </svc-label>
 
-            </svc-surface>
-          )}
-        </svc-content-container>
-        <panic-footer />
+          </svc-surface>
+        )}
       </Host >
     );
   }
