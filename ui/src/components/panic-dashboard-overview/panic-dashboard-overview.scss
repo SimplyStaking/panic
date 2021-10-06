@@ -82,12 +82,12 @@ panic-dashboard-overview {
         display: flex;
         max-height: 258px;
 
-        & svc-buttons-container {
+        svc-buttons-container {
             display: inline-flex;
         }
 
-        & svc-button {
-            & ion-button {
+        svc-button {
+            ion-button {
                 width: 27px !important;
                 height: 27px !important;
 
@@ -95,7 +95,7 @@ panic-dashboard-overview {
                     cursor: unset;
                 }
 
-                & ion-icon {
+                ion-icon {
                     width: 27px;
                     height: 27px;
                 }
