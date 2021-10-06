@@ -11,7 +11,7 @@ COPY ./web-installer ./
 ENV GENERATE_SOURCEMAP=false
 
 # RUN npm install
-RUN npm ci --only=production
+RUN npm ci --include=dev
 
 # Build installer
 RUN npm run-script build --only=production
