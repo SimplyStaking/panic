@@ -15,7 +15,11 @@ export class PanicRoot {
             <Route path={"/"}>
               <panic-dashboard-overview />
             </Route>
-            
+
+            <Route path={"/2"}>
+              <panic-alerts-overview />
+            </Route>
+
             <Route path={match('/systems-overview/:chain')} render={(param) => {
               return <panic-systems-overview chainName={param.chain} />
             }}>
