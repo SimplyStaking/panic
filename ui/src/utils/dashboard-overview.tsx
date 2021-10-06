@@ -2,7 +2,7 @@ import { h } from '@stencil/core';
 import { Alert, BaseChain } from '../interfaces/chains';
 import { DataTableRecordType } from '../lib/types/types/datatable';
 import { SelectOptionType } from '../lib/types/types/select';
-import { criticalIcon, errorIcon, infoIcon, Severity, warningIcon } from './constants';
+import { criticalIcon, errorIcon, Severity, warningIcon } from './constants';
 
 /**
  * Formats base chain to SelectOptionType type.
@@ -120,15 +120,17 @@ const getDataTableRecordTypeFromAlerts = (alerts: Alert[], activeSeverities: Sev
  */
 const getSeverityIcon = (severity: Severity): Object => {
     switch (Severity[severity]) {
-        case Severity.CRITICAL:
+        case Severity.CRITICAL: {
             return criticalIcon;
-        case Severity.WARNING:
+        }
+        case Severity.WARNING: {
             return warningIcon;
-        case Severity.ERROR:
+        }
+        case Severity.ERROR: {
             return errorIcon;
-        case Severity.INFO:
-            return infoIcon;
-        default:
+        }
+        default: {
             return {};
+        }
     }
 }
