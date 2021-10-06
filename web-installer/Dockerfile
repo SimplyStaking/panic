@@ -8,10 +8,10 @@ WORKDIR /opt/panic
 WORKDIR ./web-installer
 COPY ./web-installer ./
 
+ENV GENERATE_SOURCEMAP=false
+
 # RUN npm install
 RUN npm ci --only=production
-
-RUN npm i gulp
 
 # Build installer
 RUN npm run-script build --only=production
