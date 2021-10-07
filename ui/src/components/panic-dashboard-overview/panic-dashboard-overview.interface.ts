@@ -3,7 +3,7 @@ import { BaseChain } from "../../interfaces/chains";
 export interface PanicDashboardOverviewInterface {
 
     /**
-     * The list of base chains to be displayed.
+     * The list of base chains available from the API.
      */
     baseChains: BaseChain[],
 

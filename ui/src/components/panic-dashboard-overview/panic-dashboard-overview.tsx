@@ -1,7 +1,8 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { getSeverityFilterOptions } from '../../utils/alerts';
+import { AlertsAPI } from '../../utils/alerts';
 import { ChainsAPI, getActiveChainNames, updateActiveChains } from '../../utils/chains';
+import { pollingFrequency } from '../../utils/constants';
 import { getDataTableJSX, getPieChartJSX, getChainFilterOptionsFromBaseChain } from '../../utils/dashboard-overview';
 import { arrayEquals } from '../../utils/helpers';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
@@ -14,7 +15,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
 
   @State() baseChains: BaseChain[] = [];
   _updater: number;
-  _updateFrequency: number = 5000;
+  _updateFrequency: number = pollingFrequency;
 
   async componentWillLoad() {
     try {
@@ -135,7 +136,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                           value={baseChain.activeSeverities}
                           header="Select severities"
                           placeholder="Select severities"
-                          options={getSeverityFilterOptions(true)}>
+                          options={AlertsAPI.getSeverityFilterOptions(true)}>
                         </svc-select>
 
                         {/* Data table */}

@@ -18,6 +18,26 @@ panic-alerts-overview {
     svc-data-table {
         display: flex;
         max-height: 258px;
+
+        svc-buttons-container {
+            display: inline-flex;
+        }
+
+        svc-button {
+            ion-button {
+                width: 27px !important;
+                height: 27px !important;
+
+                &::part(native) {
+                    cursor: unset;
+                }
+
+                ion-icon {
+                    width: 27px;
+                    height: 27px;
+                }
+            }
+        }
     }
 
     svc-card {

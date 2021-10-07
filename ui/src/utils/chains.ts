@@ -1,11 +1,17 @@
 import { BaseChain, Chain } from "../interfaces/chains";
-import { getAllSeverityValues, parseRedisAlerts } from "./alerts";
+import { AlertsAPI } from "./alerts";
 import { apiURL, baseChainsNames } from "./constants";
 
 export const ChainsAPI = {
+    getBaseChains: getBaseChains,
     updateBaseChains: updateBaseChains,
-    getBaseChains: getBaseChains
+    getBaseChain: getGlobalBaseChain,
+    updateBaseChain: updateGlobalBaseChain
 }
+
+/**
+ * DASHBOARD OVERVIEW
+ */
 
 /**
  * Gets the monitorable information of the base chains from the API.
@@ -55,7 +61,7 @@ async function getAlertsOverview(chain: Chain): Promise<any> {
 
         return await alertsOverview.json();
     } catch (error: any) {
-        console.log(`Error getting Chain Alerts for chain ID: ${chain.id} -`, error);
+        console.log(`Error getting Alerts Overview for chain ID: ${chain.id} -`, error);
         return { result: {} };
     }
 }
@@ -106,11 +112,10 @@ async function getBaseChains(): Promise<BaseChain[]> {
                 name: baseChain,
                 chains: currentChains,
                 activeChains: getActiveChainNames(currentChains),
-                activeSeverities: getAllSeverityValues()
+                activeSeverities: AlertsAPI.getAllSeverityValues()
             });
         }
     }
-
 
     return baseChains;
 }
@@ -151,9 +156,9 @@ function getRepos(monitored: any): string[] {
 }
 
 /**
- * Updates the alerts of all of the chains within each base chain.
+ * Updates base chains and the alerts within.
  * @param baseChains base chains to be updated.
- * @returns updated chains.
+ * @returns updated base chains.
  */
 async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
     const newBaseChains: BaseChain[] = await getBaseChains();
@@ -164,15 +169,8 @@ async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
     // Remove newly removed base chains (if any).
     updatedBaseChains = removeNewlyRemovedBaseChains(updatedBaseChains, newBaseChains);
 
-    // Populate each active chain within each base chain.
-    // If all filter is selected, each chain is populated.
-    for (const updatedBaseChain of updatedBaseChains) {
-        for (let chain of updatedBaseChain.chains) {
-            if (chain.active) {
-                chain = await getChainAlerts(chain);
-            }
-        }
-    }
+    // Update base chains with redis alerts.
+    updatedBaseChains = await updateBaseChainsWithRedisAlerts(updatedBaseChains);
 
     return updatedBaseChains;
 }
@@ -238,15 +236,33 @@ function removeNewlyRemovedBaseChains(updatedBaseChains: BaseChain[], newBaseCha
 }
 
 /**
- * Gets the alerts of a given chain.
+ * Updates the alerts of all of the chains within each base chain.
+ * @param baseChains base chains to be updated.
+ * @returns updated base chains.
+ */
+async function updateBaseChainsWithRedisAlerts(baseChains: BaseChain[]): Promise<BaseChain[]> {
+    // Populate each active chain within each base chain.
+    for (const updatedBaseChain of baseChains) {
+        for (let chain of updatedBaseChain.chains) {
+            if (chain.active) {
+                chain = await getChainAlertsFromRedis(chain);
+            }
+        }
+    }
+
+    return baseChains;
+}
+
+/**
+ * Gets the alerts of a given chain from redis.
  * @param chain chain to be checked.
  * @returns updated chain.
  */
-async function getChainAlerts(chain: Chain): Promise<Chain> {
+async function getChainAlertsFromRedis(chain: Chain): Promise<Chain> {
     const data: any = await getAlertsOverview(chain);
 
     if (data.result[chain.id]) {
-        chain.alerts = parseRedisAlerts(data.result[chain.id].problems);
+        chain.alerts = AlertsAPI.parseRedisAlerts(data.result[chain.id].problems);
     }
 
     return chain;
@@ -287,3 +303,73 @@ export const getActiveChainNames = (chains: Chain[]): string[] => {
 
     return filteredChains.map(chain => chain.name);
 }
+
+/**
+ * ALERTS OVERVIEW
+ */
+
+/**
+ * Gets a base chain which includes all of the chains from the API.
+ * This function wraps all chains within one global base chain.
+ * @returns populated global base chain.
+ */
+async function getGlobalBaseChain(): Promise<BaseChain> {
+    const baseChains: BaseChain[] = await getBaseChains();
+    const globalBaseChain: BaseChain = {
+        name: "",
+        chains: [],
+        activeChains: [],
+        activeSeverities: AlertsAPI.getAllSeverityValues()
+    };
+
+    for (const baseChain of baseChains) {
+        globalBaseChain.chains.push.apply(globalBaseChain.chains, baseChain.chains);
+        globalBaseChain.activeChains.push.apply(globalBaseChain.activeChains, baseChain.activeChains);
+    }
+
+    return globalBaseChain
+}
+
+/**
+ * Updates the global base chain and the alerts within.
+ * @param globalBaseChain global base chain to be updated.
+ * @returns updated global base chain.
+ */
+async function updateGlobalBaseChain(globalBaseChain: BaseChain): Promise<BaseChain> {
+    const newGlobalBaseChain: BaseChain = await getGlobalBaseChain();
+
+    // Add newly added chains and remove newly removed chains (if any).
+    let updatedBaseChain: BaseChain = updateChains(globalBaseChain, newGlobalBaseChain);
+
+    return updatedBaseChain;
+}
+
+/**
+ * Adds newly added chains and removes newly removed chains to/from global base chain.
+ * @param updatedGlobalBaseChain global base chain to be updated.
+ * @param newGlobalBaseChain new global base chain (latest from API).
+ * @returns updated global base chain.
+ */
+function updateChains(updatedGlobalBaseChain: BaseChain, newGlobalBaseChain: BaseChain): BaseChain {
+    // Create base chain.
+    const finalGlobalBaseChain: BaseChain = { name: updatedGlobalBaseChain.name, chains: [], activeChains: updatedGlobalBaseChain.activeChains, activeSeverities: updatedGlobalBaseChain.activeSeverities };
+
+    // Check for newly added/removed chains within base chain.
+    for (const newChain of newGlobalBaseChain.chains) {
+        // Add newly added chains (if any).
+        if (!updatedGlobalBaseChain.chains.find(chain => chain.id === newChain.id)) {
+            newChain.active = false;
+            finalGlobalBaseChain.chains.push(newChain);
+        }
+    }
+
+    // Do not add newly removed chains (if any) / Add common chains only.
+    for (const updatedChain of updatedGlobalBaseChain.chains) {
+        if (newGlobalBaseChain.chains.find(chain => chain.id === updatedChain.id)) {
+            finalGlobalBaseChain.chains.push(updatedChain);
+        }
+    }
+
+    return finalGlobalBaseChain;
+}
+

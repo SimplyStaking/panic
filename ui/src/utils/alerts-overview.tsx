@@ -1,16 +1,14 @@
 import { h } from "@stencil/core";
 import { Alert } from "../interfaces/alerts";
 import { DataTableRecordType } from "../lib/types/types/datatable";
-import { getSeverityIcon } from "./alerts";
+import { AlertsAPI } from "./alerts";
 
 /**
  * Gets the JSX for the data table.
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-export const getDataTableJSX = (): JSX.Element => {
-    let alerts: Alert[] = [];
-
+export const getDataTableJSX = (alerts: Alert[]): JSX.Element => {
     const hasAlerts = alerts.length > 0;
     const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
     const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts) : [];
@@ -32,7 +30,7 @@ export const getDataTableJSX = (): JSX.Element => {
 const getDataTableRecordTypeFromAlerts = (alerts: Alert[]): DataTableRecordType => {
     // Format filtered alerts into DataTableRecordType type.
     return alerts.map(alert => [
-        { label: getSeverityIcon(alert.severity), value: alert.severity },
+        { label: AlertsAPI.getSeverityIcon(alert.severity), value: alert.severity },
         { label: new Date(alert.timestamp * 1000).toLocaleString(), value: new Date(alert.timestamp * 1000) },
         { label: alert.message, value: alert.message }]);
 }

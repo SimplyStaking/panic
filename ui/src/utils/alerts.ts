@@ -1,13 +1,22 @@
 import { Alert, Severity } from "../interfaces/alerts";
+import { BaseChain } from "../interfaces/chains";
 import { SelectOptionType } from "../lib/types/types/select";
-import { criticalIcon, errorIcon, infoIcon, warningIcon } from "./constants";
+import { apiURL, criticalIcon, errorIcon, infoIcon, maxNumberOfAlerts, warningIcon } from "./constants";
+
+export const AlertsAPI = {
+    parseRedisAlerts: parseRedisAlerts,
+    getAllSeverityValues: getAllSeverityValues,
+    getSeverityFilterOptions: getSeverityFilterOptions,
+    getSeverityIcon: getSeverityIcon,
+    getAlertsFromMongoDB: getAlertsFromMongoDB
+}
 
 /**
  * Parses the problems JSON object from Redis to a list of alerts.
  * @param problems JSON object.
  * @returns list of alerts.
  */
-export function parseRedisAlerts(problems: any): Alert[] {
+function parseRedisAlerts(problems: any): Alert[] {
     const alerts: Alert[] = []
 
     for (const source in problems) {
@@ -27,7 +36,7 @@ export function parseRedisAlerts(problems: any): Alert[] {
  * Returns all severity keys in a list.
  * @returns list of all severity keys.
  */
-export function getAllSeverityValues(): Severity[] {
+function getAllSeverityValues(): Severity[] {
     return Object.keys(Severity).map(severity => severity as Severity);
 }
 
@@ -36,7 +45,7 @@ export function getAllSeverityValues(): Severity[] {
  * @param skipInfoSeverity whether to skip info severity (false by default).
  * @returns populated list of required object type.
  */
-export const getSeverityFilterOptions = (skipInfoSeverity: boolean = false): SelectOptionType => {
+function getSeverityFilterOptions(skipInfoSeverity: boolean = false): SelectOptionType {
     return skipInfoSeverity ?
         Object.keys(Severity).reduce(function (filtered, severity) {
             if (severity !== 'INFO') {
@@ -52,7 +61,7 @@ export const getSeverityFilterOptions = (skipInfoSeverity: boolean = false): Sel
  * @param severity the alert severity.
  * @returns icon markup as object which corresponds to the severity.
  */
-export const getSeverityIcon = (severity: Severity): Object => {
+function getSeverityIcon(severity: Severity): Object {
     switch (Severity[severity]) {
         case Severity.CRITICAL: {
             return criticalIcon;
@@ -70,4 +79,80 @@ export const getSeverityIcon = (severity: Severity): Object => {
             return {};
         }
     }
+}
+
+/**
+ * ALERTS OVERVIEW - MongoDB.
+ */
+
+/**
+ * Gets the alerts of global base chain from MongoDB.
+ * @param globalBaseChain base chain to be checked.
+ * @returns alerts extracted from API.
+ */
+async function getAlertsFromMongoDB(globalBaseChain: BaseChain, minTimestamp: number, maxTimestamp: number): Promise<Alert[]> {
+    const data: any = await getAlerts(globalBaseChain, minTimestamp, maxTimestamp);
+    let alerts: Alert[] = [];
+
+    if (data.result['alerts']) {
+        alerts = parseMongoAlerts(data.result['alerts']);
+    }
+
+    return alerts;
+}
+
+/**
+ * Gets the alerts of global base chain.
+ * @param globalBaseChain global base chain to be checked.
+ * @returns alerts data as a JSON object.
+ */
+async function getAlerts(globalBaseChain: BaseChain, minTimestamp: number, maxTimestamp: number): Promise<any> {
+    let mongoAlertsInput = {
+        chains: [], severities: globalBaseChain.activeSeverities, sources: [],
+        minTimestamp: minTimestamp, maxTimestamp: maxTimestamp,
+        noOfAlerts: maxNumberOfAlerts
+    };
+
+    for (const chain of globalBaseChain.chains) {
+        if (chain.active) {
+            mongoAlertsInput.chains.push(chain.id);
+            mongoAlertsInput.sources.push.apply(mongoAlertsInput.sources, chain.systems);
+            mongoAlertsInput.sources.push.apply(mongoAlertsInput.sources, chain.repos);
+        }
+    }
+
+    try {
+        const alerts = await fetch(`${apiURL}mongo/alerts`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(mongoAlertsInput)
+            });
+
+        return await alerts.json();
+    } catch (error: any) {
+        console.log('Error getting Chain Alerts from MongoDB -', error);
+        return { result: {} };
+    }
+}
+
+/**
+ * Parses the alerts JSON object from MongoDB to a list of alerts.
+ * @param alertsList list of JSON objects.
+ * @returns list of alerts.
+ */
+function parseMongoAlerts(alertsList: any): Alert[] {
+    const alerts: Alert[] = []
+
+    for (const alert of alertsList) {
+        if (alert.severity in Severity) {
+            alerts.push({ severity: alert.severity as Severity, message: alert.message, timestamp: alert.timestamp });
+        } else {
+            console.log('Info - Found severity value which is not in Severity enum.');
+        }
+    }
+
+    return alerts;
 }

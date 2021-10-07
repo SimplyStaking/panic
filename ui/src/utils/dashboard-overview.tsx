@@ -3,7 +3,7 @@ import { Alert, Severity } from '../interfaces/alerts';
 import { BaseChain } from '../interfaces/chains';
 import { DataTableRecordType } from '../lib/types/types/datatable';
 import { SelectOptionType } from '../lib/types/types/select';
-import { getSeverityIcon } from './alerts';
+import { AlertsAPI } from './alerts';
 /**
  * Formats base chain to SelectOptionType type.
  * @param baseChain base chain to be converted.
@@ -93,7 +93,7 @@ const getDataTableRecordTypeFromAlerts = (alerts: Alert[], activeSeverities: Sev
 
     // Format filtered alerts into DataTableRecordType type.
     return filteredAlerts.map(alert => [
-        { label: getSeverityIcon(alert.severity), value: alert.severity },
+        { label: AlertsAPI.getSeverityIcon(alert.severity), value: alert.severity },
         { label: new Date(alert.timestamp * 1000).toLocaleString(), value: new Date(alert.timestamp * 1000) },
         { label: alert.message, value: alert.message }]);
 }
