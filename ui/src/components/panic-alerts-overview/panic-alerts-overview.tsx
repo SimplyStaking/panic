@@ -37,13 +37,9 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
       <Host>
         <h1 class='panic-alerts-overview__title'>ALERTS OVERVIEW</h1>
         <svc-card class="panic-alerts-overview__chain-card">
-          <div slot='content' id='expanded'>
-            <div class="panic-alerts-overview__data-table-container">
-              <div>
-                {/* Data table */}
-                {AlertsOverviewAPI.getDataTableJSX(this.alerts)}
-              </div>
-            </div>
+          <div slot='content' id='expanded' class="panic-alerts-overview__data-table-container">
+            {/* Data table */}
+            {AlertsOverviewAPI.getDataTableJSX(this.alerts)}
           </div>
         </svc-card>
       </Host>

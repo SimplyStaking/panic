@@ -11,13 +11,15 @@
         width: 100%;
         margin: 7px 7px 7px 5px;
         padding: 2px;
+        height: 50vh;
     }
 }
 
 panic-alerts-overview {
+
     svc-data-table {
         display: flex;
-        max-height: 258px;
+        max-height: inherit;
 
         svc-buttons-container{
             display: inline-flex;
@@ -47,6 +49,7 @@ panic-alerts-overview {
     }
 
     svc-card {
+        height: auto;
         border: 1px #a8a8a8 solid;
     }
 }
