@@ -4,6 +4,7 @@ import { BaseChain } from '../../interfaces/chains';
 import { AlertsAPI } from '../../utils/alerts';
 import { getDataTableJSX } from '../../utils/alerts-overview';
 import { ChainsAPI } from '../../utils/chains';
+import { pollingFrequency } from '../../utils/constants';
 import { PanicAlertsOverviewInterface } from './panic-alerts-overview.interface';
 
 @Component({
@@ -11,14 +12,21 @@ import { PanicAlertsOverviewInterface } from './panic-alerts-overview.interface'
   styleUrl: 'panic-alerts-overview.scss'
 })
 export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
-  _globalBaseChain: BaseChain;
   @State() alerts: Alert[] = [];
+  _globalBaseChain: BaseChain;
+  _updater: number;
+  _updateFrequency: number = pollingFrequency;
 
   async componentWillLoad() {
     try {
       const globalBaseChain = await ChainsAPI.getBaseChain();
       this._globalBaseChain = await ChainsAPI.updateBaseChain(globalBaseChain);
       this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._globalBaseChain, 0, 2625677273);
+
+      this._updater = window.setInterval(async () => {
+        this._globalBaseChain = await ChainsAPI.updateBaseChain(globalBaseChain);
+        this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._globalBaseChain, 0, 2625677273);
+      }, this._updateFrequency);
     } catch (error: any) {
       console.error(error);
     }
