@@ -4,6 +4,7 @@ import { BaseChain } from '../interfaces/chains';
 import { DataTableRecordType } from '../lib/types/types/datatable';
 import { SelectOptionType } from '../lib/types/types/select';
 import { AlertsAPI } from './alerts';
+
 /**
  * Formats base chain to SelectOptionType type.
  * @param baseChain base chain to be converted.

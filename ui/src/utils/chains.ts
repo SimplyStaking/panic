@@ -11,6 +11,11 @@ export const ChainsAPI = {
 
 /**
  * DASHBOARD OVERVIEW
+ * The functions below are used within the panic-dashboard-overview component.
+ * The logic within this component consists of having an array of base chains
+ * which contain a list of chains. These base chains are then updated with the
+ * data as required. The logic below also takes into account when base chains
+ * and/or chains are removed or added while PANIC UI is running.
  */
 
 /**
@@ -306,6 +311,14 @@ export const getActiveChainNames = (chains: Chain[]): string[] => {
 
 /**
  * ALERTS OVERVIEW
+ * 
+ * The functions below are used within the panic-alerts-overview component.
+ * The logic within this component consists of having a global base chain
+ * which contains all of the chains of all of the base chains. This global
+ * base chain is then updated with the data as required. This logic was
+ * used to use functions used in the logic for panic-dashboard-overview.
+ * The logic below also takes into account when base chains and/or chains
+ * are removed or added while PANIC UI is running.
  */
 
 /**
