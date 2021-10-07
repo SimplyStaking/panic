@@ -1,4 +1,4 @@
-import { Severity } from "../utils/constants";
+import { Alert, Severity } from "../interfaces/alerts"
 
 export interface BaseChain {
     readonly name: string;
@@ -14,10 +14,4 @@ export interface Chain {
     systems: string[];
     alerts: Alert[];
     active: boolean;
-}
-
-export interface Alert {
-    readonly severity: Severity;
-    readonly message: string;
-    readonly timestamp: number;
 }

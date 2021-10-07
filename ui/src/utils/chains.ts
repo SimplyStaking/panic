@@ -1,5 +1,6 @@
-import { Alert, BaseChain, Chain } from "../interfaces/chains";
-import { apiURL, baseChainsNames, Severity } from "./constants";
+import { BaseChain, Chain } from "../interfaces/chains";
+import { getAllSeverityValues, parseRedisAlerts } from "./alerts";
+import { apiURL, baseChainsNames } from "./constants";
 
 export const ChainsAPI = {
     updateBaseChains: updateBaseChains,
@@ -252,27 +253,6 @@ async function getChainAlerts(chain: Chain): Promise<Chain> {
 }
 
 /**
- * Parses the problems JSON object from Redis to a list of alerts.
- * @param problems JSON object.
- * @returns list of alerts.
- */
-function parseRedisAlerts(problems: any): Alert[] {
-    const alerts: Alert[] = []
-
-    for (const source in problems) {
-        for (const alert of problems[source]) {
-            if (alert.severity in Severity) {
-                alerts.push({ severity: alert.severity as Severity, message: alert.message, timestamp: alert.timestamp });
-            } else {
-                console.log('Info - Found severity value which is not in Severity enum.');
-            }
-        }
-    }
-
-    return alerts;
-}
-
-/**
  * Updates the new active chain within a respective base chain.
  * @param baseChains base chains which contains the respective base chain.
  * @param baseChainName name of base chain to be updated.
@@ -293,14 +273,6 @@ export function updateActiveChains(baseChains: BaseChain[], baseChainName: strin
     }
 
     return updatedBaseChains
-}
-
-/**
- * Returns all severity keys in a list.
- * @returns list of all severity keys.
- */
-export function getAllSeverityValues(): Severity[] {
-    return Object.keys(Severity).map(severity => severity as Severity);
 }
 
 /**

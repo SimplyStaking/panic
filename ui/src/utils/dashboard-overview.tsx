@@ -1,9 +1,9 @@
 import { h } from '@stencil/core';
-import { Alert, BaseChain } from '../interfaces/chains';
+import { Alert, Severity } from '../interfaces/alerts';
+import { BaseChain } from '../interfaces/chains';
 import { DataTableRecordType } from '../lib/types/types/datatable';
 import { SelectOptionType } from '../lib/types/types/select';
-import { criticalIcon, errorIcon, Severity, warningIcon } from './constants';
-
+import { getSeverityIcon } from './alerts';
 /**
  * Formats base chain to SelectOptionType type.
  * @param baseChain base chain to be converted.
@@ -11,21 +11,6 @@ import { criticalIcon, errorIcon, Severity, warningIcon } from './constants';
  */
 export const getChainFilterOptionsFromBaseChain = (baseChain: BaseChain): SelectOptionType => {
     return baseChain.chains.map(chain => ({ label: chain.name, value: chain.name }))
-}
-
-/**
- * Formats Severity enum to SelectOptionType type.
- * @returns populated list of required object type.
- */
-export const getSeverityFilterOptions = (): SelectOptionType => {
-    return Object.keys(Severity).reduce(function (filtered, severity) {
-        // Skip INFO severity since this is not required in dashboard overview.
-        if (severity !== 'INFO') {
-            filtered.push({ label: Severity[severity], value: severity });
-        }
-        return filtered;
-    }, []);
-    // return Object.keys(Severity).map(severity => ({ label: Severity[severity], value: severity }));
 }
 
 /**
@@ -111,26 +96,4 @@ const getDataTableRecordTypeFromAlerts = (alerts: Alert[], activeSeverities: Sev
         { label: getSeverityIcon(alert.severity), value: alert.severity },
         { label: new Date(alert.timestamp * 1000).toLocaleString(), value: new Date(alert.timestamp * 1000) },
         { label: alert.message, value: alert.message }]);
-}
-
-/**
- * Returns icon markup as object according to the severity passed.
- * @param severity the alert severity.
- * @returns icon markup as object which corresponds to the severity.
- */
-const getSeverityIcon = (severity: Severity): Object => {
-    switch (Severity[severity]) {
-        case Severity.CRITICAL: {
-            return criticalIcon;
-        }
-        case Severity.WARNING: {
-            return warningIcon;
-        }
-        case Severity.ERROR: {
-            return errorIcon;
-        }
-        default: {
-            return {};
-        }
-    }
 }

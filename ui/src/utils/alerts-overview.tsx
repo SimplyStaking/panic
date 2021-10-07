@@ -1,7 +1,7 @@
 import { h } from "@stencil/core";
-import { Alert } from "../interfaces/chains";
+import { Alert } from "../interfaces/alerts";
 import { DataTableRecordType } from "../lib/types/types/datatable";
-import { criticalIcon, errorIcon, infoIcon, Severity, warningIcon } from "./constants";
+import { getSeverityIcon } from "./alerts";
 
 /**
  * Gets the JSX for the data table.
@@ -35,29 +35,4 @@ const getDataTableRecordTypeFromAlerts = (alerts: Alert[]): DataTableRecordType 
         { label: getSeverityIcon(alert.severity), value: alert.severity },
         { label: new Date(alert.timestamp * 1000).toLocaleString(), value: new Date(alert.timestamp * 1000) },
         { label: alert.message, value: alert.message }]);
-}
-
-/**
- * Returns icon markup as object according to the severity passed.
- * @param severity the alert severity.
- * @returns icon markup as object which corresponds to the severity.
- */
-const getSeverityIcon = (severity: Severity): Object => {
-    switch (Severity[severity]) {
-        case Severity.CRITICAL: {
-            return criticalIcon;
-        }
-        case Severity.WARNING: {
-            return warningIcon;
-        }
-        case Severity.ERROR: {
-            return errorIcon;
-        }
-        case Severity.INFO: {
-            return infoIcon;
-        }
-        default: {
-            return {};
-        }
-    }
 }
