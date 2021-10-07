@@ -108,8 +108,11 @@ async function getAlertsFromMongoDB(globalBaseChain: BaseChain, minTimestamp: nu
  */
 async function getAlerts(globalBaseChain: BaseChain, minTimestamp: number, maxTimestamp: number): Promise<any> {
     let mongoAlertsInput = {
-        chains: [], severities: globalBaseChain.activeSeverities, sources: [],
-        minTimestamp: minTimestamp, maxTimestamp: maxTimestamp,
+        chains: [],
+        severities: globalBaseChain.activeSeverities,
+        sources: [],
+        minTimestamp: minTimestamp,
+        maxTimestamp: maxTimestamp,
         noOfAlerts: maxNumberOfAlerts
     };
 
