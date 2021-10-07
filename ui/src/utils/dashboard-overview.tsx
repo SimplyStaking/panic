@@ -5,12 +5,18 @@ import { DataTableRecordType } from '../lib/types/types/datatable';
 import { SelectOptionType } from '../lib/types/types/select';
 import { AlertsAPI } from './alerts';
 
+export const DashboardOverviewAPI = {
+    getChainFilterOptionsFromBaseChain: getChainFilterOptionsFromBaseChain,
+    getPieChartJSX: getPieChartJSX,
+    getDataTableJSX: getDataTableJSX
+}
+
 /**
  * Formats base chain to SelectOptionType type.
  * @param baseChain base chain to be converted.
  * @returns populated list of required object type.
  */
-export const getChainFilterOptionsFromBaseChain = (baseChain: BaseChain): SelectOptionType => {
+function getChainFilterOptionsFromBaseChain(baseChain: BaseChain): SelectOptionType {
     return baseChain.chains.map(chain => ({ label: chain.name, value: chain.name }))
 }
 
@@ -22,7 +28,7 @@ export const getChainFilterOptionsFromBaseChain = (baseChain: BaseChain): Select
  * @param errorAlerts number of error alerts.
  * @returns populated pie chart JSX.
  */
-export const getPieChartJSX = (baseChain: BaseChain): JSX.Element => {
+function getPieChartJSX(baseChain: BaseChain): JSX.Element {
     let criticalAlerts: number = 0;
     let warningAlerts: number = 0;
     let errorAlerts: number = 0;
@@ -59,7 +65,7 @@ export const getPieChartJSX = (baseChain: BaseChain): JSX.Element => {
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-export const getDataTableJSX = (baseChain: BaseChain): JSX.Element => {
+function getDataTableJSX(baseChain: BaseChain): JSX.Element {
     let alerts: Alert[] = [];
 
     for (const chain of baseChain.chains) {
@@ -86,7 +92,7 @@ export const getDataTableJSX = (baseChain: BaseChain): JSX.Element => {
  * @param activeSeverities list of active severities.
  * @returns populated list of lists of required object type.
  */
-const getDataTableRecordTypeFromAlerts = (alerts: Alert[], activeSeverities: Severity[]): DataTableRecordType => {
+function getDataTableRecordTypeFromAlerts(alerts: Alert[], activeSeverities: Severity[]): DataTableRecordType {
     // Filter alerts.
     const filteredAlerts = alerts.filter(function (alert) {
         return activeSeverities.includes(alert.severity);

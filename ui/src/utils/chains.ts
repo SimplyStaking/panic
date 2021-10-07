@@ -3,8 +3,12 @@ import { AlertsAPI } from "./alerts";
 import { apiURL, baseChainsNames } from "./constants";
 
 export const ChainsAPI = {
+    // panic-dashboard-overview
     getBaseChains: getBaseChains,
     updateBaseChains: updateBaseChains,
+    updateActiveChains: updateActiveChains,
+    getActiveChainNames: getActiveChainNames,
+    // panic-alerts-overview
     getBaseChain: getGlobalBaseChain,
     updateBaseChain: updateGlobalBaseChain
 }
@@ -280,7 +284,7 @@ async function getChainAlertsFromRedis(chain: Chain): Promise<Chain> {
  * @param chainName name of new active chain to be updated.
  * @returns updated base chains.
  */
-export function updateActiveChains(baseChains: BaseChain[], baseChainName: string, activeChains: string[]): BaseChain[] {
+function updateActiveChains(baseChains: BaseChain[], baseChainName: string, activeChains: string[]): BaseChain[] {
     const updatedBaseChains: BaseChain[] = [];
 
     for (const updatedBaseChain of baseChains) {
@@ -300,7 +304,7 @@ export function updateActiveChains(baseChains: BaseChain[], baseChainName: strin
  * Returns the name of all active chains in a list.
  * @returns list of name of all active chains.
  */
-export const getActiveChainNames = (chains: Chain[]): string[] => {
+function getActiveChainNames(chains: Chain[]): string[] {
     // Filter non-active chains.
     const filteredChains = chains.filter(function (chain) {
         return chain.active;

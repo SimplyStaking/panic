@@ -2,7 +2,7 @@ import { Component, Host, h, State } from '@stencil/core';
 import { Alert } from '../../interfaces/alerts';
 import { BaseChain } from '../../interfaces/chains';
 import { AlertsAPI } from '../../utils/alerts';
-import { getDataTableJSX } from '../../utils/alerts-overview';
+import { AlertsOverviewAPI } from '../../utils/alerts-overview';
 import { ChainsAPI } from '../../utils/chains';
 import { pollingFrequency } from '../../utils/constants';
 import { PanicAlertsOverviewInterface } from './panic-alerts-overview.interface';
@@ -41,7 +41,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
             <div class="panic-alerts-overview__data-table-container">
               <div>
                 {/* Data table */}
-                {getDataTableJSX(this.alerts)}
+                {AlertsOverviewAPI.getDataTableJSX(this.alerts)}
               </div>
             </div>
           </div>

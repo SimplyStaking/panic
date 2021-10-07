@@ -3,12 +3,16 @@ import { Alert } from "../interfaces/alerts";
 import { DataTableRecordType } from "../lib/types/types/datatable";
 import { AlertsAPI } from "./alerts";
 
+export const AlertsOverviewAPI = {
+    getDataTableJSX: getDataTableJSX
+}
+
 /**
  * Gets the JSX for the data table.
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-export const getDataTableJSX = (alerts: Alert[]): JSX.Element => {
+function getDataTableJSX(alerts: Alert[]): JSX.Element {
     const hasAlerts = alerts.length > 0;
     const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
     const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts) : [];
@@ -27,7 +31,7 @@ export const getDataTableJSX = (alerts: Alert[]): JSX.Element => {
  * @param activeSeverities list of active severities.
  * @returns populated list of lists of required object type.
  */
-const getDataTableRecordTypeFromAlerts = (alerts: Alert[]): DataTableRecordType => {
+function getDataTableRecordTypeFromAlerts(alerts: Alert[]): DataTableRecordType {
     // Format filtered alerts into DataTableRecordType type.
     return alerts.map(alert => [
         { label: AlertsAPI.getSeverityIcon(alert.severity), value: alert.severity },

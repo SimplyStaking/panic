@@ -1,9 +1,9 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
 import { AlertsAPI } from '../../utils/alerts';
-import { ChainsAPI, getActiveChainNames, updateActiveChains } from '../../utils/chains';
+import { ChainsAPI } from '../../utils/chains';
 import { pollingFrequency } from '../../utils/constants';
-import { getDataTableJSX, getPieChartJSX, getChainFilterOptionsFromBaseChain } from '../../utils/dashboard-overview';
+import { DashboardOverviewAPI } from '../../utils/dashboard-overview';
 import { arrayEquals } from '../../utils/helpers';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
 
@@ -70,7 +70,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
 
       // Update active chain if chain filter was changed.
       if (!arrayEquals(baseChain.activeChains, selectedChains)) {
-        this.baseChains = updateActiveChains(this.baseChains, baseChainName, selectedChains);
+        this.baseChains = ChainsAPI.updateActiveChains(this.baseChains, baseChainName, selectedChains);
       } else {
         const selectedAlerts = event.detail['alerts-severity'].split(',');
 
@@ -112,10 +112,10 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                       name="chain-name"
                       id={baseChain.name + '_chain-filter'}
                       multiple={true}
-                      value={getActiveChainNames(baseChain.chains)}
+                      value={ChainsAPI.getActiveChainNames(baseChain.chains)}
                       header="Select chains"
                       placeholder="Select chains"
-                      options={getChainFilterOptionsFromBaseChain(baseChain)}>
+                      options={DashboardOverviewAPI.getChainFilterOptionsFromBaseChain(baseChain)}>
                     </svc-select>
                   </div>
 
@@ -123,7 +123,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                     {/* A normal pie chart with the data is shown if there are any alerts. Otherwise,
                       A green pie chart is shown with no text and without a tooltip */}
                     <div class="panic-dashboard-overview__pie-chart">
-                      {getPieChartJSX(baseChain)}
+                      {DashboardOverviewAPI.getPieChartJSX(baseChain)}
                     </div>
 
                     <div class="panic-dashboard-overview__data-table-container">
@@ -140,7 +140,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                         </svc-select>
 
                         {/* Data table */}
-                        {getDataTableJSX(baseChain)}
+                        {DashboardOverviewAPI.getDataTableJSX(baseChain)}
                       </div>
                     </div>
                   </div>
