@@ -1,6 +1,6 @@
 import { Alert, Severity } from "../interfaces/alerts";
 import { BaseChain } from "../interfaces/chains";
-import { SelectOptionType } from "../lib/types/types/select";
+import { SelectOptionObjType, SelectOptionType } from "../lib/types/types/select";
 import { apiURL, criticalIcon, errorIcon, infoIcon, maxNumberOfAlerts, warningIcon } from "./constants";
 import { UnknownAlertSeverityError } from "./errors";
 
@@ -44,17 +44,24 @@ function getAllSeverityValues(): Severity[] {
 /**
  * Formats Severity enum to SelectOptionType type.
  * @param skipInfoSeverity whether to skip info severity (false by default).
- * @returns populated list of required object type.
+ * @returns populated SelectOptionType object.
  */
 function getSeverityFilterOptions(skipInfoSeverity: boolean = false): SelectOptionType {
-    return skipInfoSeverity ?
-        Object.keys(Severity).reduce(function (filtered, severity) {
-            if (severity !== 'INFO') {
-                filtered.push({ label: Severity[severity], value: severity });
-            }
-            return filtered;
-        }, []) :
-        Object.keys(Severity).map(severity => ({ label: Severity[severity], value: severity }));
+    let filtered = Object.keys(Severity).filter((severity) => {
+        return severity !== 'INFO' || (!skipInfoSeverity)
+    });
+
+    return filtered.map(severity => parseSeverity(Severity[severity], severity))
+}
+
+/**
+ * Parses label and value strings into SelectOptionObjType.
+ * @param label label to be parsed.
+ * @param value value to be parsed.
+ * @returns populated SelectOptionObjType object.
+ */
+function parseSeverity(label: string, value: string): SelectOptionObjType {
+    return { label: label, value: value }
 }
 
 /**
