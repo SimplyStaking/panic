@@ -2,6 +2,7 @@ import { Alert, Severity } from "../interfaces/alerts";
 import { BaseChain } from "../interfaces/chains";
 import { SelectOptionType } from "../lib/types/types/select";
 import { apiURL, criticalIcon, errorIcon, infoIcon, maxNumberOfAlerts, warningIcon } from "./constants";
+import { UnknownAlertSeverityError } from "./errors";
 
 export const AlertsAPI = {
     parseRedisAlerts: parseRedisAlerts,
@@ -24,7 +25,7 @@ function parseRedisAlerts(problems: any): Alert[] {
             if (alert.severity in Severity) {
                 alerts.push({ severity: alert.severity as Severity, message: alert.message, timestamp: alert.timestamp });
             } else {
-                console.log('Info - Found severity value which is not in Severity enum.');
+                throw new UnknownAlertSeverityError(alert.severity);
             }
         }
     }
@@ -153,7 +154,7 @@ function parseMongoAlerts(alertsList: any): Alert[] {
         if (alert.severity in Severity) {
             alerts.push({ severity: alert.severity as Severity, message: alert.message, timestamp: alert.timestamp });
         } else {
-            console.log('Info - Found severity value which is not in Severity enum.');
+            throw new UnknownAlertSeverityError(alert.severity);
         }
     }
 
