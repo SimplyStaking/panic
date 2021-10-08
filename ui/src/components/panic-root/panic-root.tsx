@@ -3,7 +3,8 @@ import { createRouter, match, Route } from 'stencil-router-v2';
 const Router = createRouter();
 
 @Component({
-  tag: 'panic-root'
+  tag: 'panic-root',
+  styleUrl: 'panic-root.scss'
 })
 export class PanicRoot {
 
