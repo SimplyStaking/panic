@@ -119,6 +119,8 @@ describe('getBaseChains() function', () => {
         expect(baseChains).toEqual([{
             name: 'cosmos', activeChains: ['test chain'],
             activeSeverities: AlertsAPI.getAllSeverityValues(),
+            lastClickedColumnIndex: 1,
+            ordering: 'ascending',
             chains: [{
                 id: "test_chain", name: 'test chain', repos: ['test_repo'],
                 systems: ['test_system'], alerts: [], active: true
