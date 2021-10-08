@@ -5,6 +5,8 @@ export interface BaseChain {
     chains: Chain[];
     activeChains: string[];
     activeSeverities: Severity[];
+    lastClickedColumnIndex: number;
+    ordering: string;
 }
 
 export interface Chain {

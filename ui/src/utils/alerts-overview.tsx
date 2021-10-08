@@ -1,6 +1,8 @@
 import { h } from "@stencil/core";
 import { Alert } from "../interfaces/alerts";
+import { BaseChain } from "../interfaces/chains";
 import { DataTableRecordType } from "../lib/types/types/datatable";
+import { OrderingType } from "../lib/types/types/ordering";
 import { AlertsAPI } from "./alerts";
 
 export const AlertsOverviewAPI = {
@@ -12,7 +14,7 @@ export const AlertsOverviewAPI = {
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-function getDataTableJSX(alerts: Alert[]): JSX.Element {
+function getDataTableJSX(alerts: Alert[], globalBaseChain: BaseChain): JSX.Element {
     const hasAlerts = alerts.length > 0;
     const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
     const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts) : [];
@@ -21,6 +23,8 @@ function getDataTableJSX(alerts: Alert[]): JSX.Element {
         key={hasAlerts ? 'data-table-no-alerts' : 'data-table-alerts'}
         cols={cols}
         rows={rows}
+        ordering={globalBaseChain.ordering as OrderingType}
+        last-clicked-column-index={globalBaseChain.lastClickedColumnIndex}
         no-records-message="There are no alerts to display at this time"
     />
 }

@@ -20,7 +20,6 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
   async componentWillLoad() {
     try {
       const baseChains = await ChainsAPI.getBaseChains();
-
       this.baseChains = await ChainsAPI.updateBaseChains(baseChains);
 
       this._updater = window.setInterval(async () => {
@@ -89,6 +88,20 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
     } catch (error: any) {
       console.error(error);
     }
+  }
+
+  @Listen("svcDataTable__lastClickedColumnIndexEvent")
+  printClickedIndex(e: CustomEvent) {
+    console.log('listened from dashboard-overview, value: ' + e.detail.index +
+      ' ' + e.detail.ordering);
+
+    // Get base chain which contains the altered ordering/sorting.
+    const baseChain: BaseChain = this.baseChains.find(baseChain => baseChain.name === e.target['id']);
+    baseChain.lastClickedColumnIndex = e.detail.index;
+    baseChain.ordering = e.detail.ordering;
+
+    // you can use this to force re-render for testing
+    //this.baseChains = [...this.baseChains]
   }
 
   disconnectedCallback() {

@@ -9,8 +9,8 @@ export const ChainsAPI = {
     updateActiveChains: updateActiveChains,
     getActiveChainNames: getActiveChainNames,
     // panic-alerts-overview
-    getBaseChain: getGlobalBaseChain,
-    updateBaseChain: updateGlobalBaseChain
+    getGlobalBaseChain: getGlobalBaseChain,
+    updateGlobalBaseChain: updateGlobalBaseChain
 }
 
 /**
@@ -121,7 +121,9 @@ async function getBaseChains(): Promise<BaseChain[]> {
                 name: baseChain,
                 chains: currentChains,
                 activeChains: getActiveChainNames(currentChains),
-                activeSeverities: AlertsAPI.getAllSeverityValues()
+                activeSeverities: AlertsAPI.getAllSeverityValues(),
+                lastClickedColumnIndex: 1,
+                ordering: 'ascending'
             });
         }
     }
@@ -197,7 +199,14 @@ function addNewlyAddedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: 
         const updatedBaseChain: BaseChain = updatedBaseChains.find(baseChain => baseChain.name === newBaseChain.name);
         if (updatedBaseChain) {
             // Create base chain.
-            const finalBaseChain: BaseChain = { name: updatedBaseChain.name, chains: [], activeChains: updatedBaseChain.activeChains, activeSeverities: updatedBaseChain.activeSeverities };
+            const finalBaseChain: BaseChain = {
+                name: updatedBaseChain.name,
+                chains: [],
+                activeChains: updatedBaseChain.activeChains,
+                activeSeverities: updatedBaseChain.activeSeverities,
+                lastClickedColumnIndex: updatedBaseChain.lastClickedColumnIndex,
+                ordering: updatedBaseChain.ordering
+            };
             // Check for newly added/removed chains within base chain.
             for (const newChain of newBaseChain.chains) {
                 // Add newly added chains (if any).
@@ -336,7 +345,9 @@ async function getGlobalBaseChain(): Promise<BaseChain> {
         name: "",
         chains: [],
         activeChains: [],
-        activeSeverities: AlertsAPI.getAllSeverityValues()
+        activeSeverities: AlertsAPI.getAllSeverityValues(),
+        lastClickedColumnIndex: 1,
+        ordering: 'ascending'
     };
 
     for (const baseChain of baseChains) {
@@ -369,7 +380,14 @@ async function updateGlobalBaseChain(globalBaseChain: BaseChain): Promise<BaseCh
  */
 function updateChains(updatedGlobalBaseChain: BaseChain, newGlobalBaseChain: BaseChain): BaseChain {
     // Create base chain.
-    const finalGlobalBaseChain: BaseChain = { name: updatedGlobalBaseChain.name, chains: [], activeChains: updatedGlobalBaseChain.activeChains, activeSeverities: updatedGlobalBaseChain.activeSeverities };
+    const finalGlobalBaseChain: BaseChain = {
+        name: updatedGlobalBaseChain.name,
+        chains: [],
+        activeChains: updatedGlobalBaseChain.activeChains,
+        activeSeverities: updatedGlobalBaseChain.activeSeverities,
+        lastClickedColumnIndex: updatedGlobalBaseChain.lastClickedColumnIndex,
+        ordering: updatedGlobalBaseChain.ordering
+    };
 
     // Check for newly added/removed chains within base chain.
     for (const newChain of newGlobalBaseChain.chains) {

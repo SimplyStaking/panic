@@ -2,6 +2,7 @@ import { h } from '@stencil/core';
 import { Alert, Severity } from '../interfaces/alerts';
 import { BaseChain } from '../interfaces/chains';
 import { DataTableRecordType } from '../lib/types/types/datatable';
+import { OrderingType } from '../lib/types/types/ordering';
 import { SelectOptionType } from '../lib/types/types/select';
 import { AlertsAPI } from './alerts';
 
@@ -79,9 +80,12 @@ function getDataTableJSX(baseChain: BaseChain): JSX.Element {
     const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, baseChain.activeSeverities) : [];
 
     return <svc-data-table
+        id={baseChain.name}
         key={hasAlerts ? `${baseChain.name}-data-table-no-alerts` : `${baseChain.name}-data-table-alerts`}
         cols={cols}
         rows={rows}
+        ordering={baseChain.ordering as OrderingType}
+        last-clicked-column-index={baseChain.lastClickedColumnIndex}
         no-records-message="There are no alerts to display at this time"
     />
 }
