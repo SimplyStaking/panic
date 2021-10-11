@@ -94,9 +94,17 @@ app.use((err: any, req: express.Request, res: express.Response,
     next();
 });
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-const localUiHost = `https://localhost:${process.env.UI_DASHBOARD_PORT || "3333"}`;
-const UiHost = process.env.UI_DASHBOARD_IP ? `https://${process.env.UI_DASHBOARD_IP}:${process.env.UI_DASHBOARD_PORT || "3333"}` : null;
-app.use(cors({ origin: UiHost ? [UiHost, localUiHost] : [localUiHost] }))
+// Hosts accepted by CORS. Default host/ip is added.
+const hosts: string[] = ['https://localhost:3333']
+// If UI Dashboard Port is specified, add local host with port to accepted hosts.
+if (process.env.UI_DASHBOARD_PORT) {
+    hosts.push(`https://localhost:${process.env.UI_DASHBOARD_PORT}`);
+}
+// If UI Dashboard IP is specified, add to accepted hosts.
+if (process.env.UI_DASHBOARD_IP) {
+    hosts.push(`https://${process.env.UI_DASHBOARD_IP}:${process.env.UI_DASHBOARD_PORT || "3333"}`);
+}
+app.use(cors({ origin: hosts }));
 
 // Connect with Redis
 const redisHost = process.env.REDIS_IP || "localhost";
