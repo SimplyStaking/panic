@@ -23,7 +23,12 @@ function parseRedisAlerts(problems: any): Alert[] {
     for (const source in problems) {
         for (const alert of problems[source]) {
             if (alert.severity in Severity) {
-                alerts.push({ severity: alert.severity as Severity, message: alert.message, timestamp: alert.timestamp });
+                alerts.push({
+                    severity: alert.severity as Severity,
+                    message: alert.message,
+                    timestamp: alert.timestamp,
+                    origin: null
+                });
             } else {
                 throw new UnknownAlertSeverityError(alert.severity);
             }
@@ -159,7 +164,12 @@ function parseMongoAlerts(alertsList: any): Alert[] {
 
     for (const alert of alertsList) {
         if (alert.severity in Severity) {
-            alerts.push({ severity: alert.severity as Severity, message: alert.message, timestamp: alert.timestamp });
+            alerts.push({
+                severity: alert.severity as Severity,
+                message: alert.message,
+                timestamp: alert.timestamp,
+                origin: alert.origin
+            });
         } else {
             throw new UnknownAlertSeverityError(alert.severity);
         }

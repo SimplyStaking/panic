@@ -2,6 +2,7 @@ export interface Alert {
     readonly severity: Severity;
     readonly message: string;
     readonly timestamp: number;
+    readonly origin: string;
 }
 
 export enum Severity {
