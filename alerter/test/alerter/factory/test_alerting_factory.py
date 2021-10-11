@@ -759,10 +759,12 @@ class TestAlertingFactory(unittest.TestCase):
 
         warning_timer = self.test_factory_instance.alerting_state[
             self.test_parent_id][self.test_node_id]['warning_window_timer'][
-            GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold.value]
+            GroupedChainlinkNodeAlertsMetricCode
+                .MaxUnconfirmedBlocksThreshold.value]
         critical_timer = self.test_factory_instance.alerting_state[
             self.test_parent_id][self.test_node_id]['critical_window_timer'][
-            GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold.value]
+            GroupedChainlinkNodeAlertsMetricCode
+                .MaxUnconfirmedBlocksThreshold.value]
         self.assertEqual([], data_for_alerting)
         self.assertFalse(warning_timer.timer_started)
         self.assertFalse(critical_timer.timer_started)

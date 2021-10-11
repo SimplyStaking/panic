@@ -801,15 +801,18 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
 
     @parameterized.expand([
         ("IncompleteRead('test')",
-         "DataReadingException(self.test_monitor.monitor_name, self.test_monitor.last_prometheus_source_used)",
+         "DataReadingException(self.test_monitor.monitor_name, "
+         "self.test_monitor.last_prometheus_source_used)",
          'self.received_retrieval_info_all_source_types_enabled_err', True,
          'prometheus'),
         ("ChunkedEncodingError('test')",
-         "DataReadingException(self.test_monitor.monitor_name, self.test_monitor.last_prometheus_source_used)",
+         "DataReadingException(self.test_monitor.monitor_name, "
+         "self.test_monitor.last_prometheus_source_used)",
          'self.received_retrieval_info_all_source_types_enabled_err', True,
          'prometheus'),
         ("ProtocolError('test')",
-         "DataReadingException(self.test_monitor.monitor_name, self.test_monitor.last_prometheus_source_used)",
+         "DataReadingException(self.test_monitor.monitor_name, "
+         "self.test_monitor.last_prometheus_source_used)",
          'self.received_retrieval_info_all_source_types_enabled_err', True,
          'prometheus'),
         ("InvalidURL('test')",

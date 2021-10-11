@@ -1143,7 +1143,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         )
 
     @mock.patch(
-        "src.alerter.alerters.node.chainlink.transformed_data_processing_helper")
+        "src.alerter.alerters.node.chainlink"
+        ".transformed_data_processing_helper")
     @mock.patch.object(ChainlinkNodeAlerter, "_process_downtime")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_transformed_data_calls_the_correct_process_fns_correctly(

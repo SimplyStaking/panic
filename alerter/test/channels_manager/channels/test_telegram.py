@@ -65,8 +65,8 @@ class TestTelegramChannel(unittest.TestCase):
 
     @mock.patch.object(TelegramBotApi, "send_message")
     def test_alert_sends_an_alert_correctly(self, mock_send_message) -> None:
-        # In this test we will check that PagerDutyApi.trigger() is called
-        # with the correct parameters.
+        # In this test we will check that TelegramBotApi.send_message() is
+        # called with the correct parameters.
         expected_subject = "PANIC {}".format(self.test_alert.severity.upper())
         expected_message = '*{}*: `{}`'.format(expected_subject,
                                                self.test_alert.message)

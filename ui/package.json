@@ -3,23 +3,25 @@
   "private": true,
   "version": "1.0.0",
   "description": "PANIC UI dashboard app.",
+  "types": "src/lib/custom-elements/index.d.ts",
   "author": "Simply-VC",
   "scripts": {
     "build": "stencil build",
     "start": "stencil build --serve --watch",
     "test": "stencil test --spec --e2e",
+    "test.spec": "stencil test --spec --verbose",
     "test.watch": "stencil test --spec --e2e --watchAll",
     "generate": "stencil generate"
   },
   "devDependencies": {
     "@stencil/core": "^2.0.0",
     "@stencil/router": "^1.0.1",
-    "@types/node": "^15.12.2"
+    "@stencil/sass": "^1.4.1",
+    "@types/swiper": "^5.4.3",
+    "dotenv": "^10.0.0",
+    "jest-fetch-mock": "^3.0.3",
+    "stencil-router-v2": "^0.6.0"
   },
   "license": "MIT",
-  "dependencies": {
-    "cookie-parser": "^1.4.5",
-    "mongodb": "^3.6.9",
-    "redis": "^3.1.2"
-  }
+  "dependencies": {}
 }

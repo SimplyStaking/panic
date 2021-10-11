@@ -31,7 +31,6 @@ import CardBody from 'components/material_ui/Card/CardBody';
 import useStyles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle';
 import Parallax from 'components/material_ui/Parallax/Parallax';
 import DescriptionSection from 'components/channels/descriptionSection';
-import CustomParticles from 'components/material_ui/Particles/ChannelParticles';
 
 function TabPanel(props) {
   const {
@@ -80,7 +79,6 @@ function ChannelsPage() {
   return (
     <div>
       <Parallax>
-        <CustomParticles />
         <div
           style={{
             position: 'absolute',
@@ -139,11 +137,11 @@ function ChannelsPage() {
                         }}
                       >
                         <Tab label="Telegram" {...a11yProps(0)} />
-                        <Tab label="Email" {...a11yProps(1)} />
-                        <Tab label="OpsGenie" {...a11yProps(2)} />
-                        <Tab label="PagerDuty" {...a11yProps(3)} />
-                        <Tab label="Twilio" {...a11yProps(4)} />
-                        <Tab label="Slack" {...a11yProps(5)} />
+                        <Tab label="Slack" {...a11yProps(1)} />
+                        <Tab label="Email" {...a11yProps(2)} />
+                        <Tab label="OpsGenie" {...a11yProps(3)} />
+                        <Tab label="PagerDuty" {...a11yProps(4)} />
+                        <Tab label="Twilio" {...a11yProps(5)} />
                       </Tabs>
                     </AppBar>
                     <TabPanel value={value} index={0}>
@@ -151,24 +149,24 @@ function ChannelsPage() {
                       <TelegramTableContainer />
                     </TabPanel>
                     <TabPanel value={value} index={1}>
+                      <SlackFormContainer />
+                      <SlackTableContainer />
+                    </TabPanel>
+                    <TabPanel value={value} index={2}>
                       <EmailFormContainer />
                       <EmailTableContainer />
                     </TabPanel>
-                    <TabPanel value={value} index={2}>
+                    <TabPanel value={value} index={3}>
                       <OpsGenieFormContainer />
                       <OpsGenieTableContainer />
                     </TabPanel>
-                    <TabPanel value={value} index={3}>
+                    <TabPanel value={value} index={4}>
                       <PagerDutyFormContainer />
                       <PagerDutyTableContainer />
                     </TabPanel>
-                    <TabPanel value={value} index={4}>
+                    <TabPanel value={value} index={5}>
                       <TwilioFormContainer />
                       <TwilioTableContainer />
-                    </TabPanel>
-                    <TabPanel value={value} index={5}>
-                      <SlackFormContainer />
-                      <SlackTableContainer />
                     </TabPanel>
                   </div>
                 </Grid>

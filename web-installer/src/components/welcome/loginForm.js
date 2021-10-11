@@ -9,7 +9,6 @@ import useStyles from 'assets/jss/material-kit-react/views/componentsSections/lo
 
 import { Tooltip } from '@material-ui/core';
 import { theme } from 'components/theme/default';
-// import InfoIcon from '@material-ui/icons/Info';
 import { AccountCircle, LockRounded } from '@material-ui/icons';
 import StartDialog from 'components/welcome/startDialog';
 import PanicLogo from 'assets/img/logos/panicLogo.png';
