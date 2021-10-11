@@ -231,7 +231,7 @@ class ChainlinkContractAlerter(Alerter):
                         self.alerting_factory.classify_thresholded_alert(
                             current_deviation, sub_config,
                             cl_alerts.PriceFeedDeviationInreasedAboveThreshold,
-                            cl_alerts.PriceFeedDeciationDecreasedBelowThreshold,
+                            cl_alerts.PriceFeedDeviationDecreasedBelowThreshold,
                             data_for_alerting,
                             meta_data['node_parent_id'],
                             meta_data['node_id'],

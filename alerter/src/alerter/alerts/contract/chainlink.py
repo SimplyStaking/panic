@@ -55,12 +55,12 @@ class PriceFeedDeviationInreasedAboveThreshold(Alert):
             {'contract_proxy_address': proxy_address})
 
 
-class PriceFeedDeciationDecreasedBelowThreshold(Alert):
+class PriceFeedDeviationDecreasedBelowThreshold(Alert):
     def __init__(self, origin_name: str, deviation: float, severity: str,
                  timestamp: float, threshold_severity: str, parent_id: str,
                  origin_id: str, proxy_address: str) -> None:
         super().__init__(
-            ChainlinkContractAlertCode.PriceFeedDeciationDecreasedBelowThreshold,
+            ChainlinkContractAlertCode.PriceFeedDeviationDecreasedBelowThreshold,
             "The Chainlink {} node's submission has decreased below the "
             "threshold {} to {}% deviation for the price feed {} of the chain "
             "{}.".format(origin_name, threshold_severity, deviation,

@@ -11,7 +11,7 @@ from src.alerter.alerts.contract.chainlink import (
     PriceFeedObservationsDecreasedBelowThreshold,
     PriceFeedObservationsIncreasedAboveThreshold,
     PriceFeedDeviationInreasedAboveThreshold,
-    PriceFeedDeciationDecreasedBelowThreshold,
+    PriceFeedDeviationDecreasedBelowThreshold,
     ConsensusFailure, ErrorRetrievingChainlinkContractData,
     ChainlinkContractDataNowBeingRetrieved)
 from src.alerter.factory.alerting_factory import AlertingFactory

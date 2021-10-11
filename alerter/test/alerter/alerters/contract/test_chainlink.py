@@ -16,7 +16,7 @@ from src.alerter.alerts.contract.chainlink import (
     PriceFeedObservationsDecreasedBelowThreshold,
     PriceFeedObservationsIncreasedAboveThreshold,
     PriceFeedDeviationInreasedAboveThreshold,
-    PriceFeedDeciationDecreasedBelowThreshold,
+    PriceFeedDeviationDecreasedBelowThreshold,
     ConsensusFailure, ErrorRetrievingChainlinkContractData,
     ChainlinkContractDataNowBeingRetrieved)
 from src.alerter.factory.chainlink_contract_alerting_factory import \
@@ -805,7 +805,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         call_1 = call(
             mock_deviation, configs.price_feed_deviation,
             PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeciationDecreasedBelowThreshold, data_for_alerting,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
             self.test_parent_id, meta_data['node_id'], eval(mock_proxy),
             MetricCode.PriceFeedDeviation.value, meta_data['node_name'],
             meta_data['last_monitored']
