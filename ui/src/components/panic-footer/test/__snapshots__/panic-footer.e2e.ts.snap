@@ -7,8 +7,8 @@ exports[`panic-footer renders 1`] = `
       <svc-button href="https://twitter.com/Simply_VC" icon-name="logo-twitter" target="_blank"></svc-button>
       <svc-button href="https://github.com/SimplyVC" icon-name="logo-github" target="_blank"></svc-button>
       <svc-button href="https://medium.com/simply-vc" icon-name="logo-medium" target="_blank"></svc-button>
-      <svc-button href="https://t.me/SimplyVC" icon-src="assets/logos/telegram_logo.svg" target="_blank"></svc-button>
-      <svc-button href="https://simply-vc.com.mt" icon-src="assets/logos/simplyvc_logo.svg" target="_blank"></svc-button>
+      <svc-button href="https://t.me/SimplyVC" icon-src="/build/assets/telegram_logo.svg" target="_blank"></svc-button>
+      <svc-button href="https://simply-vc.com.mt" icon-src="/build/assets/simplyvc_logo.svg" target="_blank"></svc-button>
     </svc-buttons-container>
   </svc-footer>
 </panic-footer>

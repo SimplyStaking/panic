@@ -6,6 +6,6 @@ describe('panic-alerts-overview', () => {
         await page.setContent('<panic-alerts-overview></panic-alerts-overview>');
 
         const element = await page.find('panic-alerts-overview');
-        expect(element).toHaveClass('hydrated');
+        expect(element).toMatchSnapshot();
     });
 });

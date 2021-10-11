@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-alerts-overview renders 1`] = `
+<panic-alerts-overview class="hydrated">
+  <h1 class="panic-alerts-overview__title">
+    ALERTS OVERVIEW
+  </h1>
+  <svc-card class="panic-alerts-overview__chain-card">
+    <div class="panic-alerts-overview__data-table-container" id="expanded" slot="content">
+      <svc-data-table last-clicked-column-index="1" no-records-message="There are no alerts to display at this time" ordering="ascending"></svc-data-table>
+    </div>
+  </svc-card>
+</panic-alerts-overview>
+`;
