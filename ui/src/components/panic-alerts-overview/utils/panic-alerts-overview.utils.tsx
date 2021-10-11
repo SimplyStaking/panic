@@ -1,9 +1,9 @@
 import { h } from "@stencil/core";
-import { Alert } from "../interfaces/alerts";
-import { BaseChain } from "../interfaces/chains";
-import { DataTableRecordType } from "../lib/types/types/datatable";
-import { OrderingType } from "../lib/types/types/ordering";
-import { AlertsAPI } from "./alerts";
+import { Alert } from "../../../interfaces/alerts";
+import { BaseChain } from "../../../interfaces/chains";
+import { DataTableRecordType } from "../../../lib/types/types/datatable";
+import { OrderingType } from "../../../lib/types/types/ordering";
+import { AlertsAPI } from "../../../utils/alerts";
 
 export const AlertsOverviewAPI = {
     getDataTableJSX: getDataTableJSX
