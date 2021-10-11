@@ -27,7 +27,6 @@ import Card from 'components/material_ui/Card/Card';
 import CardBody from 'components/material_ui/Card/CardBody';
 import DescriptionSection from 'components/chains/descriptionSection';
 import SystemIcon from 'assets/icons/system.svg';
-import CustomParticles from 'components/material_ui/Particles/CoverBlockchainParticles.js';
 import ChainAccordion from './chainAccordion';
 
 /*
@@ -40,7 +39,6 @@ function Chains() {
   return (
     <div>
       <Parallax>
-        <CustomParticles />
         <div
           style={{
             position: 'absolute',
