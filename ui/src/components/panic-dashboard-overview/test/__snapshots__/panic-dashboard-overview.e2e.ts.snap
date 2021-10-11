@@ -20,7 +20,7 @@ exports[`panic-dashboard-overview renders 1`] = `
             <div class="panic-dashboard-overview__data-table-container">
               <div>
                 <svc-select header="Select severities" id="chainlink_severity-filter" multiple="" name="alerts-severity" placeholder="Select severities"></svc-select>
-                <svc-data-table id="chainlink" last-clicked-column-index="1" no-records-message="There are no alerts to display at this time" ordering="ascending"></svc-data-table>
+                <svc-data-table id="chainlink" last-clicked-column-index="1" no-records-message="There are no alerts to display at this time" ordering="descending"></svc-data-table>
               </div>
             </div>
           </div>
@@ -47,7 +47,7 @@ exports[`panic-dashboard-overview renders 1`] = `
             <div class="panic-dashboard-overview__data-table-container">
               <div>
                 <svc-select header="Select severities" id="substrate_severity-filter" multiple="" name="alerts-severity" placeholder="Select severities"></svc-select>
-                <svc-data-table id="substrate" last-clicked-column-index="1" no-records-message="There are no alerts to display at this time" ordering="ascending"></svc-data-table>
+                <svc-data-table id="substrate" last-clicked-column-index="1" no-records-message="There are no alerts to display at this time" ordering="descending"></svc-data-table>
               </div>
             </div>
           </div>
