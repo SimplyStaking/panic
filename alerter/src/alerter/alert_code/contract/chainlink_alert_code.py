@@ -3,7 +3,7 @@ from ..alert_code import AlertCode
 
 class ChainlinkContractAlertCode(AlertCode):
     PriceFeedNotObservedIncreaseAboveThreshold = 'cl_contract_alert_1'
-    PriceFeedObserved = 'cl_contract_alert_2'
+    PriceFeedObservedAgain = 'cl_contract_alert_2'
     PriceFeedDeviationInreasedAboveThreshold = 'cl_contract_alert_3'
     PriceFeedDeviationDecreasedBelowThreshold = 'cl_contract_alert_4'
     ConsensusNotReached = 'cl_contract_alert_5'

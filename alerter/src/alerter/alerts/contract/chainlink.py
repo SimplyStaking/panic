@@ -29,7 +29,7 @@ class PriceFeedObservationsDecreasedBelowThreshold(Alert):
                  severity: str, timestamp: float, threshold_severity: str,
                  parent_id: str, origin_id: str, proxy_address: str) -> None:
         super().__init__(
-            ChainlinkContractAlertCode.PriceFeedObserved,
+            ChainlinkContractAlertCode.PriceFeedObservedAgain,
             "The Chainlink {} node's missed observations have decreased below "
             "threshold {} to {} missed observations for the price feed {} of "
             "the chain {}.".format(
