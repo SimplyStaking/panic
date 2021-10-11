@@ -1,0 +1,63 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-dashboard-overview renders 1`] = `
+<panic-dashboard-overview class="hydrated">
+  <h1 class="panic-dashboard-overview__title">
+    DASHBOARD OVERVIEW
+  </h1>
+  <svc-surface label="chainlink">
+    <svc-filter debounce="100" event-name="filter-changed">
+      <svc-card class="panic-dashboard-overview__chain-card">
+        <div id="expanded" slot="content">
+          <input hidden="" name="base-chain-name">
+          <div class="panic-dashboard-overview__chain-filter-container">
+            <svc-select header="Select chains" id="chainlink_chain-filter" multiple="" name="chain-name" placeholder="Select chains"></svc-select>
+          </div>
+          <div class="panic-dashboard-overview__slots">
+            <div class="panic-dashboard-overview__pie-chart">
+              <svc-pie-chart pie-slice-text="none" tooltip-trigger="none"></svc-pie-chart>
+            </div>
+            <div class="panic-dashboard-overview__data-table-container">
+              <div>
+                <svc-select header="Select severities" id="chainlink_severity-filter" multiple="" name="alerts-severity" placeholder="Select severities"></svc-select>
+                <svc-data-table id="chainlink" last-clicked-column-index="1" no-records-message="There are no alerts to display at this time" ordering="descending"></svc-data-table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </svc-card>
+    </svc-filter>
+    <svc-label class="panic-dashboard-overview__info-message" color="dark" position="start">
+      This section displays only warning, critical and error alerts. For a full report, check
+      <svc-anchor label="Alerts Overview." url="#alerts-overview"></svc-anchor>
+    </svc-label>
+  </svc-surface>
+  <svc-surface label="substrate">
+    <svc-filter debounce="100" event-name="filter-changed">
+      <svc-card class="panic-dashboard-overview__chain-card">
+        <div id="expanded" slot="content">
+          <input hidden="" name="base-chain-name">
+          <div class="panic-dashboard-overview__chain-filter-container">
+            <svc-select header="Select chains" id="substrate_chain-filter" multiple="" name="chain-name" placeholder="Select chains"></svc-select>
+          </div>
+          <div class="panic-dashboard-overview__slots">
+            <div class="panic-dashboard-overview__pie-chart">
+              <svc-pie-chart pie-slice-text="percentage" tooltip-trigger="focus"></svc-pie-chart>
+            </div>
+            <div class="panic-dashboard-overview__data-table-container">
+              <div>
+                <svc-select header="Select severities" id="substrate_severity-filter" multiple="" name="alerts-severity" placeholder="Select severities"></svc-select>
+                <svc-data-table id="substrate" last-clicked-column-index="1" no-records-message="There are no alerts to display at this time" ordering="descending"></svc-data-table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </svc-card>
+    </svc-filter>
+    <svc-label class="panic-dashboard-overview__info-message" color="dark" position="start">
+      This section displays only warning, critical and error alerts. For a full report, check
+      <svc-anchor label="Alerts Overview." url="#alerts-overview"></svc-anchor>
+    </svc-label>
+  </svc-surface>
+</panic-dashboard-overview>
+`;

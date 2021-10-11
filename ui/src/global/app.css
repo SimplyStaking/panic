@@ -39,4 +39,6 @@ body {
   --ion-color-tertiary-tint: #6370ff;
 
   --svc-data-table-body-max-height: 300px;
+  --background-color: #F1F5F9;
+  --surface-background: #F8F8F8;
 }

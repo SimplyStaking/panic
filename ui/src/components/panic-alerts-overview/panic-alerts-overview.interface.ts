@@ -1,11 +1,17 @@
+import { Alert } from "../../interfaces/alerts";
 import { BaseChain } from "../../interfaces/chains";
 
-export interface PanicDashboardOverviewInterface {
+export interface PanicAlertsOverviewInterface {
 
     /**
-     * The list of base chains available from the API.
+     * The global base chain object which stores all available chains from the API.
      */
-    baseChains: BaseChain[],
+    _globalBaseChain: BaseChain
+
+    /**
+     * The list of alerts available from the API.
+     */
+    alerts: Alert[]
 
     /**
      * The {@link window.setInterval} ID, necessary to clear the `time interval` once the component is "destroyed" (detached from the DOM).

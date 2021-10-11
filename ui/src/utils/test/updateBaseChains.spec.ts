@@ -1,4 +1,5 @@
-import { ChainsAPI, getAllSeverityValues } from "../chains";
+import { AlertsAPI } from "../alerts";
+import { ChainsAPI } from "../chains";
 import { baseChainsNames, fetchMock } from "../constants";
 
 beforeEach(() => {
@@ -9,7 +10,10 @@ describe('getBaseChains() function', () => {
     it('should not return any base chains when API is down', async () => {
         fetchMock.mockReject(() => Promise.reject("API is down"));
         const baseChains = await ChainsAPI.updateBaseChains([{
-            name: '', activeChains: ['test chain'], activeSeverities: getAllSeverityValues(),
+            name: '', activeChains: ['test chain'],
+            activeSeverities: AlertsAPI.getAllSeverityValues(),
+            lastClickedColumnIndex: 1,
+            ordering: 'descending',
             chains: [
                 {
                     name: 'test chain', id: 'test', repos: [],
@@ -22,7 +26,10 @@ describe('getBaseChains() function', () => {
     });
 
     const mockBaseChainsData = [{
-        name: 'cosmos', activeChains: ['test chain'], activeSeverities: getAllSeverityValues(),
+        name: 'cosmos', activeChains: ['test chain'],
+        activeSeverities: AlertsAPI.getAllSeverityValues(),
+        lastClickedColumnIndex: 1,
+        ordering: 'descending',
         chains: [
             {
                 name: 'test chain', id: 'test_chain', repos: ['test_repo'],

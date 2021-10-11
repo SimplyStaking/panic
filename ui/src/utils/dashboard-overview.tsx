@@ -1,31 +1,24 @@
 import { h } from '@stencil/core';
-import { Alert, BaseChain } from '../interfaces/chains';
+import { Alert, Severity } from '../interfaces/alerts';
+import { BaseChain } from '../interfaces/chains';
 import { DataTableRecordType } from '../lib/types/types/datatable';
+import { OrderingType } from '../lib/types/types/ordering';
 import { SelectOptionType } from '../lib/types/types/select';
-import { criticalIcon, errorIcon, Severity, warningIcon } from './constants';
+import { AlertsAPI } from './alerts';
+
+export const DashboardOverviewAPI = {
+    getChainFilterOptionsFromBaseChain: getChainFilterOptionsFromBaseChain,
+    getPieChartJSX: getPieChartJSX,
+    getDataTableJSX: getDataTableJSX
+}
 
 /**
  * Formats base chain to SelectOptionType type.
  * @param baseChain base chain to be converted.
  * @returns populated list of required object type.
  */
-export const getChainFilterOptionsFromBaseChain = (baseChain: BaseChain): SelectOptionType => {
+function getChainFilterOptionsFromBaseChain(baseChain: BaseChain): SelectOptionType {
     return baseChain.chains.map(chain => ({ label: chain.name, value: chain.name }))
-}
-
-/**
- * Formats Severity enum to SelectOptionType type.
- * @returns populated list of required object type.
- */
-export const getSeverityFilterOptions = (): SelectOptionType => {
-    return Object.keys(Severity).reduce(function (filtered, severity) {
-        // Skip INFO severity since this is not required in dashboard overview.
-        if (severity !== 'INFO') {
-            filtered.push({ label: Severity[severity], value: severity });
-        }
-        return filtered;
-    }, []);
-    // return Object.keys(Severity).map(severity => ({ label: Severity[severity], value: severity }));
 }
 
 /**
@@ -36,7 +29,7 @@ export const getSeverityFilterOptions = (): SelectOptionType => {
  * @param errorAlerts number of error alerts.
  * @returns populated pie chart JSX.
  */
-export const getPieChartJSX = (baseChain: BaseChain): JSX.Element => {
+function getPieChartJSX(baseChain: BaseChain): JSX.Element {
     let criticalAlerts: number = 0;
     let warningAlerts: number = 0;
     let errorAlerts: number = 0;
@@ -73,7 +66,7 @@ export const getPieChartJSX = (baseChain: BaseChain): JSX.Element => {
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-export const getDataTableJSX = (baseChain: BaseChain): JSX.Element => {
+function getDataTableJSX(baseChain: BaseChain): JSX.Element {
     let alerts: Alert[] = [];
 
     for (const chain of baseChain.chains) {
@@ -87,9 +80,12 @@ export const getDataTableJSX = (baseChain: BaseChain): JSX.Element => {
     const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, baseChain.activeSeverities) : [];
 
     return <svc-data-table
+        id={baseChain.name}
         key={hasAlerts ? `${baseChain.name}-data-table-no-alerts` : `${baseChain.name}-data-table-alerts`}
         cols={cols}
         rows={rows}
+        ordering={baseChain.ordering as OrderingType}
+        last-clicked-column-index={baseChain.lastClickedColumnIndex}
         no-records-message="There are no alerts to display at this time"
     />
 }
@@ -100,7 +96,7 @@ export const getDataTableJSX = (baseChain: BaseChain): JSX.Element => {
  * @param activeSeverities list of active severities.
  * @returns populated list of lists of required object type.
  */
-const getDataTableRecordTypeFromAlerts = (alerts: Alert[], activeSeverities: Severity[]): DataTableRecordType => {
+function getDataTableRecordTypeFromAlerts(alerts: Alert[], activeSeverities: Severity[]): DataTableRecordType {
     // Filter alerts.
     const filteredAlerts = alerts.filter(function (alert) {
         return activeSeverities.includes(alert.severity);
@@ -108,29 +104,7 @@ const getDataTableRecordTypeFromAlerts = (alerts: Alert[], activeSeverities: Sev
 
     // Format filtered alerts into DataTableRecordType type.
     return filteredAlerts.map(alert => [
-        { label: getSeverityIcon(alert.severity), value: alert.severity },
+        { label: AlertsAPI.getSeverityIcon(alert.severity), value: alert.severity },
         { label: new Date(alert.timestamp * 1000).toLocaleString(), value: new Date(alert.timestamp * 1000) },
         { label: alert.message, value: alert.message }]);
-}
-
-/**
- * Returns icon markup as object according to the severity passed.
- * @param severity the alert severity.
- * @returns icon markup as object which corresponds to the severity.
- */
-const getSeverityIcon = (severity: Severity): Object => {
-    switch (Severity[severity]) {
-        case Severity.CRITICAL: {
-            return criticalIcon;
-        }
-        case Severity.WARNING: {
-            return warningIcon;
-        }
-        case Severity.ERROR: {
-            return errorIcon;
-        }
-        default: {
-            return {};
-        }
-    }
 }
