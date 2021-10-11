@@ -13,7 +13,7 @@ from parameterized import parameterized
 
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerts.contract.chainlink import (
-    PriceFeedObservationsDecreasedBelowThreshold,
+    PriceFeedObservedAgain,
     PriceFeedObservationsIncreasedAboveThreshold,
     PriceFeedDeviationInreasedAboveThreshold,
     PriceFeedDeviationDecreasedBelowThreshold,
@@ -733,7 +733,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         call_1 = call(
             eval(mock_observed), configs.price_feed_not_observed,
             PriceFeedObservationsIncreasedAboveThreshold,
-            PriceFeedObservationsDecreasedBelowThreshold,
+            PriceFeedObservedAgain,
             data_for_alerting, self.test_parent_id, meta_data['node_id'],
             eval(mock_proxy), MetricCode.PriceFeedNotObserved.value,
             meta_data['node_name'], meta_data['last_monitored'])

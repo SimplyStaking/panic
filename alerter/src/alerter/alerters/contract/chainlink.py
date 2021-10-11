@@ -211,7 +211,7 @@ class ChainlinkContractAlerter(Alerter):
                     self.alerting_factory.classify_thresholded_alert(
                         current_missed_observations, sub_config,
                         cl_alerts.PriceFeedObservationsIncreasedAboveThreshold,
-                        cl_alerts.PriceFeedObservationsDecreasedBelowThreshold,
+                        cl_alerts.PriceFeedObservedAgain,
                         data_for_alerting, meta_data['node_parent_id'],
                         meta_data['node_id'], proxy_address,
                         MetricCode.PriceFeedNotObserved.value,

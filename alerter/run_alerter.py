@@ -47,7 +47,8 @@ from src.utils.constants.rabbitmq import (
     TOPIC, CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME, CL_ALERTS_CONFIGS_ROUTING_KEY,
     CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
-    EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME)
+    EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+    CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME)
 from src.utils.constants.starters import (
     RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD,
 )
@@ -798,6 +799,21 @@ def _initialise_and_declare_config_queues() -> None:
                                  CL_ALERTS_CONFIGS_ROUTING_KEY),
                 dummy_logger)
             rabbitmq.queue_bind(CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                CL_ALERTS_CONFIGS_ROUTING_KEY)
+
+            # Chainlink Contract Alerter queues
+            log_and_print("Creating queue '{}'".format(
+                CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 CL_ALERTS_CONFIGS_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
                                 CONFIG_EXCHANGE,
                                 CL_ALERTS_CONFIGS_ROUTING_KEY)
 

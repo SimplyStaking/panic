@@ -24,7 +24,7 @@ class PriceFeedObservationsIncreasedAboveThreshold(Alert):
             {'contract_proxy_address': proxy_address})
 
 
-class PriceFeedObservationsDecreasedBelowThreshold(Alert):
+class PriceFeedObservedAgain(Alert):
     def __init__(self, origin_name: str, missed_observations: int,
                  severity: str, timestamp: float, threshold_severity: str,
                  parent_id: str, origin_id: str, proxy_address: str) -> None:
