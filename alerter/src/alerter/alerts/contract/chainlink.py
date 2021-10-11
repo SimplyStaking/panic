@@ -13,7 +13,7 @@ class PriceFeedObservationsIncreasedAboveThreshold(Alert):
                  severity: str, timestamp: float, threshold_severity: str,
                  parent_id: str, origin_id: str, proxy_address: str) -> None:
         super().__init__(
-            ChainlinkContractAlertCode.PriceFeedNotObserved,
+            ChainlinkContractAlertCode.PriceFeedNotObservedIncreaseAboveThreshold,
             "The Chainlink {} node's missed observations have increased above "
             "threshold {} to {} missed observations for the price feed {} of "
             "the chain {}.".format(
