@@ -123,7 +123,7 @@ async function getBaseChains(): Promise<BaseChain[]> {
                 activeChains: getActiveChainNames(currentChains),
                 activeSeverities: AlertsAPI.getAllSeverityValues(),
                 lastClickedColumnIndex: 1,
-                ordering: 'ascending'
+                ordering: 'descending'
             });
         }
     }
@@ -347,7 +347,7 @@ async function getGlobalBaseChain(): Promise<BaseChain> {
         activeChains: [],
         activeSeverities: AlertsAPI.getAllSeverityValues(),
         lastClickedColumnIndex: 1,
-        ordering: 'ascending'
+        ordering: 'descending'
     };
 
     for (const baseChain of baseChains) {

@@ -13,7 +13,7 @@ describe('getBaseChains() function', () => {
             name: '', activeChains: ['test chain'],
             activeSeverities: AlertsAPI.getAllSeverityValues(),
             lastClickedColumnIndex: 1,
-            ordering: 'ascending',
+            ordering: 'descending',
             chains: [
                 {
                     name: 'test chain', id: 'test', repos: [],
@@ -29,7 +29,7 @@ describe('getBaseChains() function', () => {
         name: 'cosmos', activeChains: ['test chain'],
         activeSeverities: AlertsAPI.getAllSeverityValues(),
         lastClickedColumnIndex: 1,
-        ordering: 'ascending',
+        ordering: 'descending',
         chains: [
             {
                 name: 'test chain', id: 'test_chain', repos: ['test_repo'],

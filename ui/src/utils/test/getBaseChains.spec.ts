@@ -120,7 +120,7 @@ describe('getBaseChains() function', () => {
             name: 'cosmos', activeChains: ['test chain'],
             activeSeverities: AlertsAPI.getAllSeverityValues(),
             lastClickedColumnIndex: 1,
-            ordering: 'ascending',
+            ordering: 'descending',
             chains: [{
                 id: "test_chain", name: 'test chain', repos: ['test_repo'],
                 systems: ['test_system'], alerts: [], active: true
