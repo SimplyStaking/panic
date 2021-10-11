@@ -32,15 +32,12 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
     }
   }
 
+  // Used to keep track of the last clicked column index and the order of the
+  // sorted column within the data table (and base chain since correlated).
   @Listen("svcDataTable__lastClickedColumnIndexEvent")
-  printClickedIndex(e: CustomEvent) {
-    console.log('listened from alerts-overview, value: ' + e.detail.index +
-      ' ' + e.detail.ordering);
+  setDataTableProperties(e: CustomEvent) {
     this._globalBaseChain.lastClickedColumnIndex = e.detail.index;
     this._globalBaseChain.ordering = e.detail.ordering;
-
-    // you can use this to force re-render for testing
-    // this.alerts = [...this.alerts]
   }
 
   render() {

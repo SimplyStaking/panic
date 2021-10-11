@@ -90,18 +90,14 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
     }
   }
 
+  // Used to keep track of the last clicked column index and the order of the
+  // sorted column within each data table (and base chain since correlated).
   @Listen("svcDataTable__lastClickedColumnIndexEvent")
-  printClickedIndex(e: CustomEvent) {
-    console.log('listened from dashboard-overview, value: ' + e.detail.index +
-      ' ' + e.detail.ordering);
-
+  setDataTableProperties(e: CustomEvent) {
     // Get base chain which contains the altered ordering/sorting.
     const baseChain: BaseChain = this.baseChains.find(baseChain => baseChain.name === e.target['id']);
     baseChain.lastClickedColumnIndex = e.detail.index;
     baseChain.ordering = e.detail.ordering;
-
-    // you can use this to force re-render for testing
-    //this.baseChains = [...this.baseChains]
   }
 
   disconnectedCallback() {
