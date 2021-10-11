@@ -3,7 +3,7 @@ import { BaseChain } from '../../interfaces/chains';
 import { AlertsAPI } from '../../utils/alerts';
 import { ChainsAPI } from '../../utils/chains';
 import { pollingFrequency } from '../../utils/constants';
-import { DashboardOverviewAPI } from '../../utils/dashboard-overview';
+import { DashboardOverviewAPI } from './utils/panic-dashboard-overview.utils';
 import { arrayEquals } from '../../utils/helpers';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
 

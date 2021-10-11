@@ -1,10 +1,10 @@
 import { h } from '@stencil/core';
-import { Alert, Severity } from '../interfaces/alerts';
-import { BaseChain } from '../interfaces/chains';
-import { DataTableRecordType } from '../lib/types/types/datatable';
-import { OrderingType } from '../lib/types/types/ordering';
-import { SelectOptionType } from '../lib/types/types/select';
-import { AlertsAPI } from './alerts';
+import { Alert, Severity } from '../../../interfaces/alerts';
+import { BaseChain } from '../../../interfaces/chains';
+import { DataTableRecordType } from '../../../lib/types/types/datatable';
+import { OrderingType } from '../../../lib/types/types/ordering';
+import { SelectOptionType } from '../../../lib/types/types/select';
+import { AlertsAPI } from '../../../utils/alerts';
 
 export const DashboardOverviewAPI = {
     getChainFilterOptionsFromBaseChain: getChainFilterOptionsFromBaseChain,

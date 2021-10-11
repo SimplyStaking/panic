@@ -2,7 +2,7 @@ import { Component, Host, h, State, Listen } from '@stencil/core';
 import { Alert } from '../../interfaces/alerts';
 import { BaseChain } from '../../interfaces/chains';
 import { AlertsAPI } from '../../utils/alerts';
-import { AlertsOverviewAPI } from '../../utils/alerts-overview';
+import { AlertsOverviewAPI } from './utils/panic-alerts-overview.utils';
 import { ChainsAPI } from '../../utils/chains';
 import { pollingFrequency } from '../../utils/constants';
 import { PanicAlertsOverviewInterface } from './panic-alerts-overview.interface';
