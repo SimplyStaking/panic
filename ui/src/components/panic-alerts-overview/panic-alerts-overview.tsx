@@ -49,8 +49,22 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
         <h1 class='panic-alerts-overview__title'>ALERTS OVERVIEW</h1>
         <svc-card class="panic-alerts-overview__chain-card">
           <div slot='content' id='expanded' class="panic-alerts-overview__data-table-container">
-            {/* Data table */}
-            {AlertsOverviewAPI.getDataTableJSX(this.alerts, this._chains, this._lastClickedColumnIndex, this._ordering)}
+            <svc-filter event-name="filter-changed" debounce={100}>
+              <div class="panic-dashboard-overview__chain-filter-container">
+                {/* Chain filter */}
+                <svc-select
+                  name="selected-chains"
+                  id={'chains-filter'}
+                  multiple={true}
+                  value={ChainsAPI.getActiveChainNames(this._chains)}
+                  header="Select chains"
+                  placeholder="Select chains"
+                  options={AlertsOverviewAPI.getChainFilterOptionsFromChains(this._chains)}>
+                </svc-select>
+              </div>
+              {/* Data table */}
+              {AlertsOverviewAPI.getDataTableJSX(this.alerts, this._chains, this._lastClickedColumnIndex, this._ordering)}
+            </svc-filter>
           </div>
         </svc-card>
       </Host>

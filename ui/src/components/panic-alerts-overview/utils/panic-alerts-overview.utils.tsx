@@ -3,11 +3,22 @@ import { Alert } from "../../../interfaces/alerts";
 import { Chain } from "../../../interfaces/chains";
 import { DataTableRecordType } from "../../../lib/types/types/datatable";
 import { OrderingType } from "../../../lib/types/types/ordering";
+import { SelectOptionType } from "../../../lib/types/types/select";
 import { AlertsAPI } from "../../../utils/alerts";
 import { ChainsAPI } from "../../../utils/chains";
 
 export const AlertsOverviewAPI = {
+    getChainFilterOptionsFromChains: getChainFilterOptionsFromChains,
     getDataTableJSX: getDataTableJSX
+}
+
+/**
+ * Formats chains to SelectOptionType type.
+ * @param chains chains to be converted.
+ * @returns populated list of required object type.
+ */
+function getChainFilterOptionsFromChains(chains: Chain[]): SelectOptionType {
+    return chains.map(chain => ({ label: chain.name, value: chain.name }))
 }
 
 /**
