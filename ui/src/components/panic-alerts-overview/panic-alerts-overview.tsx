@@ -28,12 +28,16 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
       this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._chains, this._activeSeverities, 0, 2625677273);
 
       this._updater = window.setInterval(async () => {
-        this._chains = await ChainsAPI.updateChains(this._chains);
-        this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._chains, this._activeSeverities, 0, 2625677273);
+        await this.reRenderAction();
       }, this._updateFrequency);
     } catch (error: any) {
       console.error(error);
     }
+  }
+
+  async reRenderAction() {
+    this._chains = await ChainsAPI.updateChains(this._chains);
+    this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._chains, this._activeSeverities, 0, 2625677273);
   }
 
   async componentDidLoad() {
@@ -69,8 +73,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
       // Update active chains if chains filter was changed.
       if (!arrayEquals(ChainsAPI.getActiveChainNames(this._chains), selectedChains)) {
         this._chains = ChainsAPI.updateActiveChains(this._chains, selectedChains);
-        // This is done to re-render since the above does not.
-        this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._chains, this._activeSeverities, 0, 2625677273);
+        await this.reRenderAction();
       } else {
         const selectedAlerts = event.detail['alerts-severity'].split(',');
 
@@ -82,8 +85,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
         // Update severities shown if severity filter was changed.
         if (!arrayEquals(this._activeSeverities, selectedAlerts)) {
           this._activeSeverities = selectedAlerts;
-          // This is done to re-render since the above does not.
-          this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._chains, this._activeSeverities, 0, 2625677273);
+          await this.reRenderAction();
         }
       }
     } catch (error: any) {
