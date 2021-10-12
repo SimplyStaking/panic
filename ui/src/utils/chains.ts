@@ -6,11 +6,12 @@ export const ChainsAPI = {
     // panic-dashboard-overview
     getBaseChains: getBaseChains,
     updateBaseChains: updateBaseChains,
-    updateActiveChains: updateActiveChains,
+    updateActiveChainsInBaseChain: updateActiveChainsInBaseChain,
     // panic-alerts-overview
     getChains: getChains,
     updateChains: updateChains,
     activeChainsSources: activeChainsSources,
+    updateActiveChains: updateActiveChains,
     // used in both
     getActiveChainNames: getActiveChainNames
 }
@@ -289,13 +290,13 @@ async function getChainAlertsFromRedis(chain: Chain): Promise<Chain> {
 }
 
 /**
- * Updates the new active chain within a respective base chain.
+ * Updates active chains within a respective base chain.
  * @param baseChains base chains which contains the respective base chain.
  * @param baseChainName name of base chain to be updated.
- * @param chainName name of new active chain to be updated.
+ * @param activeChains list of name of active chains.
  * @returns updated base chains.
  */
-function updateActiveChains(baseChains: BaseChain[], baseChainName: string, activeChains: string[]): BaseChain[] {
+function updateActiveChainsInBaseChain(baseChains: BaseChain[], baseChainName: string, activeChains: string[]): BaseChain[] {
     const updatedBaseChains: BaseChain[] = [];
 
     for (const updatedBaseChain of baseChains) {
@@ -389,6 +390,11 @@ async function updateChains(chains: Chain[]): Promise<Chain[]> {
     return finalChains;
 }
 
+/**
+ * Returns the sources of active chains.
+ * @param chains chains to be checked.
+ * @returns list of name of sources of active chains.
+ */
 function activeChainsSources(chains: Chain[]): string[] {
     const sources: string[] = [];
 
@@ -403,6 +409,23 @@ function activeChainsSources(chains: Chain[]): string[] {
     }
 
     return sources;
+}
+
+/**
+ * Updates active chains.
+ * @param chains chains to be updated.
+ * @param activeChains list of name of active chains.
+ * @returns updated chains.
+ */
+function updateActiveChains(chains: Chain[], activeChains: string[]): Chain[] {
+    const updatedChains: Chain[] = [];
+
+    for (const chain of chains) {
+        chain.active = activeChains.includes(chain.name);
+        updatedChains.push(chain);
+    }
+
+    return updatedChains
 }
 
 /**

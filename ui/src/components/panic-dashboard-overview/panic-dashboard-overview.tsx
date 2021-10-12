@@ -69,7 +69,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
 
       // Update active chain if chain filter was changed.
       if (!arrayEquals(baseChain.activeChains, selectedChains)) {
-        this.baseChains = ChainsAPI.updateActiveChains(this.baseChains, baseChainName, selectedChains);
+        this.baseChains = ChainsAPI.updateActiveChainsInBaseChain(this.baseChains, baseChainName, selectedChains);
       } else {
         const selectedAlerts = event.detail['alerts-severity'].split(',');
 

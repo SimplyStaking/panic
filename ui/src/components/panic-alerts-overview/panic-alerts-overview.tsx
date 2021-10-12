@@ -6,6 +6,7 @@ import { AlertsOverviewAPI } from './utils/panic-alerts-overview.utils';
 import { ChainsAPI } from '../../utils/chains';
 import { pollingFrequency } from '../../utils/constants';
 import { PanicAlertsOverviewInterface } from './panic-alerts-overview.interface';
+import { arrayEquals } from '../../utils/helpers';
 
 @Component({
   tag: 'panic-alerts-overview',
@@ -46,6 +47,26 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
     selectTextTitle.setAttribute('part', 'text-title');
     selectTextTitle.textContent = 'Chains';
     chainFilterShadow.insertBefore(selectTextTitle, chainFilterSelectIcon);
+  }
+
+  @Listen('filter-changed')
+  async filterChanged(event: CustomEvent) {
+    try {
+      const selectedChains: string[] = event.detail['selected-chains'].split(',');
+
+      // Remove empty string element from array if no chains are selected.
+      if (selectedChains.length > 0 && selectedChains[0] === '') {
+        selectedChains.pop();
+      }
+
+      // Update active chains if chains filter was changed.
+      if (!arrayEquals(ChainsAPI.getActiveChainNames(this._chains), selectedChains)) {
+        this._chains = ChainsAPI.updateActiveChains(this._chains, selectedChains);
+        this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._chains, this._activeSeverities, 0, 2625677273);
+      }
+    } catch (error: any) {
+      console.error(error);
+    }
   }
 
   // Used to keep track of the last clicked column index and the order of the
