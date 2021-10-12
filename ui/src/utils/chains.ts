@@ -7,11 +7,12 @@ export const ChainsAPI = {
     getBaseChains: getBaseChains,
     updateBaseChains: updateBaseChains,
     updateActiveChains: updateActiveChains,
-    getActiveChainNames: getActiveChainNames,
     // panic-alerts-overview
     getChains: getChains,
     updateChains: updateChains,
     activeChainsSources: activeChainsSources,
+    // used in both
+    getActiveChainNames: getActiveChainNames
 }
 
 /**
@@ -311,19 +312,6 @@ function updateActiveChains(baseChains: BaseChain[], baseChainName: string, acti
 }
 
 /**
- * Returns the name of all active chains in a list.
- * @returns list of name of all active chains.
- */
-function getActiveChainNames(chains: Chain[]): string[] {
-    // Filter non-active chains.
-    const filteredChains = chains.filter(function (chain) {
-        return chain.active;
-    });
-
-    return filteredChains.map(chain => chain.name);
-}
-
-/**
  * ALERTS OVERVIEW
  * 
  * The functions below are used within the panic-alerts-overview component.
@@ -415,4 +403,24 @@ function activeChainsSources(chains: Chain[]): string[] {
     }
 
     return sources;
+}
+
+/**
+ * BOTH
+ * 
+ * The functions below are used within both the panic-dashboard-overview and the 
+ * panic-alerts-overview components.
+ */
+
+/**
+ * Returns the name of all active chains in a list.
+ * @returns list of name of all active chains.
+ */
+function getActiveChainNames(chains: Chain[]): string[] {
+    // Filter non-active chains.
+    const filteredChains = chains.filter(function (chain) {
+        return chain.active;
+    });
+
+    return filteredChains.map(chain => chain.name);
 }

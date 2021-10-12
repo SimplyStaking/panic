@@ -57,7 +57,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
   async filterChanged(event: CustomEvent) {
     try {
       const baseChainName: string = event.detail['base-chain-name'];
-      const selectedChains: string[] = event.detail['chain-name'].split(',');
+      const selectedChains: string[] = event.detail['selected-chains'].split(',');
 
       // Remove empty string element from array if no chains are selected.
       if (selectedChains.length > 0 && selectedChains[0] === '') {
@@ -118,7 +118,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                   <div class="panic-dashboard-overview__chain-filter-container">
                     {/* Chain filter */}
                     <svc-select
-                      name="chain-name"
+                      name="selected-chains"
                       id={baseChain.name + '_chain-filter'}
                       multiple={true}
                       value={ChainsAPI.getActiveChainNames(baseChain.chains)}
