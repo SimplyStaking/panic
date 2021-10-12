@@ -24,17 +24,17 @@ export interface PanicAlertsOverviewInterface {
     _updateFrequency: number,
 
     /**
-     * 
+     * The list of active (selected) severities.
      */
     _activeSeverities: string[],
 
     /**
-     * 
+     * The index of the last clicked column within the data table.
      */
     _lastClickedColumnIndex: number,
 
     /**
-     * 
+     * The ordering of the selected column data table (ascending or descending).
      */
-    _ordering: string
+    _ordering: 'ascending' | 'descending';
 }

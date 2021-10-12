@@ -19,7 +19,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
   _updateFrequency: number = pollingFrequency;
   _activeSeverities: Severity[] = AlertsAPI.getAllSeverityValues();
   _lastClickedColumnIndex: number = 1;
-  _ordering: string = 'descending';
+  _ordering: 'ascending' | 'descending' = 'descending';
 
   async componentWillLoad() {
     try {
