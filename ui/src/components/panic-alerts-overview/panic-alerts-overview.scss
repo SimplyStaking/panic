@@ -16,11 +16,20 @@
 
     &__slots {
         display: flex;
+        margin-bottom: 10px;
     }
 }
 
 panic-alerts-overview {
     svc-select {
+        &#chains-filter {
+            margin-right: 20px;
+        }
+
+        &#severity-filter {
+            margin-left: 20px;
+        }
+
         ion-select{
             border-bottom: 1px #a8a8a8 solid;
             padding-right: 10px;
