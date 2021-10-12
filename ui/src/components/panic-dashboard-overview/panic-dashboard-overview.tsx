@@ -71,16 +71,16 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
       if (!arrayEquals(baseChain.activeChains, selectedChains)) {
         this.baseChains = ChainsAPI.updateActiveChainsInBaseChain(this.baseChains, baseChainName, selectedChains);
       } else {
-        const selectedAlerts = event.detail['alerts-severity'].split(',');
+        const selectedSeverities = event.detail['alerts-severity'].split(',');
 
         // Remove empty string element from array if no alerts are selected.
-        if (selectedAlerts.length > 0 && selectedAlerts[0] === '') {
-          selectedAlerts.pop();
+        if (selectedSeverities.length > 0 && selectedSeverities[0] === '') {
+          selectedSeverities.pop();
         }
 
         // Update severities shown if severity filter was changed.
-        if (!arrayEquals(baseChain.activeSeverities, selectedAlerts)) {
-          baseChain.activeSeverities = selectedAlerts;
+        if (!arrayEquals(baseChain.activeSeverities, selectedSeverities)) {
+          baseChain.activeSeverities = selectedSeverities;
           // This is done to re-render since the above does not.
           this.baseChains = [...this.baseChains];
         }

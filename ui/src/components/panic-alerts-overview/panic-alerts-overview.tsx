@@ -47,6 +47,13 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
     selectTextTitle.setAttribute('part', 'text-title');
     selectTextTitle.textContent = 'Chains';
     chainFilterShadow.insertBefore(selectTextTitle, chainFilterSelectIcon);
+
+    // Severity Filter text-placeholder (Severity).
+    const severityFilterShadow = document.querySelector(`#severity-filter ion-select`).shadowRoot;
+    const severityFilterSelectIcon = severityFilterShadow.querySelector('.select-icon');
+    const selectTextTitle2 = selectTextTitle.cloneNode() as Element;
+    selectTextTitle2.textContent = 'Severity';
+    severityFilterShadow.insertBefore(selectTextTitle2, severityFilterSelectIcon);
   }
 
   @Listen('filter-changed')
@@ -62,7 +69,22 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
       // Update active chains if chains filter was changed.
       if (!arrayEquals(ChainsAPI.getActiveChainNames(this._chains), selectedChains)) {
         this._chains = ChainsAPI.updateActiveChains(this._chains, selectedChains);
+        // This is done to re-render since the above does not.
         this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._chains, this._activeSeverities, 0, 2625677273);
+      } else {
+        const selectedAlerts = event.detail['alerts-severity'].split(',');
+
+        // Remove empty string element from array if no alerts are selected.
+        if (selectedAlerts.length > 0 && selectedAlerts[0] === '') {
+          selectedAlerts.pop();
+        }
+
+        // Update severities shown if severity filter was changed.
+        if (!arrayEquals(this._activeSeverities, selectedAlerts)) {
+          this._activeSeverities = selectedAlerts;
+          // This is done to re-render since the above does not.
+          this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._chains, this._activeSeverities, 0, 2625677273);
+        }
       }
     } catch (error: any) {
       console.error(error);
@@ -94,6 +116,16 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
                   header="Select chains"
                   placeholder="Select chains"
                   options={AlertsOverviewAPI.getChainFilterOptionsFromChains(this._chains)}>
+                </svc-select>
+                {/* Severity filter */}
+                <svc-select
+                  name="alerts-severity"
+                  id={'severity-filter'}
+                  multiple={true}
+                  value={this._activeSeverities}
+                  header="Select severities"
+                  placeholder="Select severities"
+                  options={AlertsAPI.getSeverityFilterOptions(false)}>
                 </svc-select>
               </div>
               {/* Data table */}
