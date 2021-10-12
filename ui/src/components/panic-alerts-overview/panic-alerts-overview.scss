@@ -13,6 +13,10 @@
         padding: 2px;
         height: 50vh;
     }
+
+    &__slots {
+        display: flex;
+    }
 }
 
 panic-alerts-overview {

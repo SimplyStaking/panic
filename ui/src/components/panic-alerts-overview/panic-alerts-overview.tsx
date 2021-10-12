@@ -108,11 +108,11 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
         <svc-card class="panic-alerts-overview__chain-card">
           <div slot='content' id='expanded' class="panic-alerts-overview__data-table-container">
             <svc-filter event-name="filter-changed" debounce={100}>
-              <div class="panic-alerts-overview__chain-filter-container">
+              <div class="panic-alerts-overview__slots">
                 {/* Chain filter */}
                 <svc-select
                   name="selected-chains"
-                  id={'chains-filter'}
+                  id="chains-filter"
                   multiple={true}
                   value={ChainsAPI.getActiveChainNames(this._chains)}
                   header="Select chains"
@@ -122,7 +122,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
                 {/* Severity filter */}
                 <svc-select
                   name="alerts-severity"
-                  id={'severity-filter'}
+                  id="severity-filter"
                   multiple={true}
                   value={this._activeSeverities}
                   header="Select severities"

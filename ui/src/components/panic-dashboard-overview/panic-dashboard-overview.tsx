@@ -119,7 +119,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                     {/* Chain filter */}
                     <svc-select
                       name="selected-chains"
-                      id={baseChain.name + '_chain-filter'}
+                      id={`${baseChain.name}_chain-filter`}
                       multiple={true}
                       value={ChainsAPI.getActiveChainNames(baseChain.chains)}
                       header="Select chains"
@@ -140,7 +140,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                         {/* Severity filter */}
                         <svc-select
                           name="alerts-severity"
-                          id={baseChain.name + '_severity-filter'}
+                          id={`${baseChain.name}_severity-filter`}
                           multiple={true}
                           value={baseChain.activeSeverities}
                           header="Select severities"
