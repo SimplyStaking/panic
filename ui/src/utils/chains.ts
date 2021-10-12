@@ -9,8 +9,9 @@ export const ChainsAPI = {
     updateActiveChains: updateActiveChains,
     getActiveChainNames: getActiveChainNames,
     // panic-alerts-overview
-    getGlobalBaseChain: getGlobalBaseChain,
-    updateGlobalBaseChain: updateGlobalBaseChain
+    getChains: getChains,
+    updateChains: updateChains,
+    activeChainsSources: activeChainsSources,
 }
 
 /**
@@ -326,85 +327,92 @@ function getActiveChainNames(chains: Chain[]): string[] {
  * ALERTS OVERVIEW
  * 
  * The functions below are used within the panic-alerts-overview component.
- * The logic within this component consists of having a global base chain
- * which contains all of the chains of all of the base chains. This global
- * base chain is then updated with the data as required. This logic was
- * used to use functions used in the logic for panic-dashboard-overview.
- * The logic below also takes into account when base chains and/or chains
- * are removed or added while PANIC UI is running.
+ * The logic within this component consists of having an array of chains. These
+ * chains are then updated with the data as required. The logic below also takes
+ * into account when chains are removed or added while PANIC UI is running.
  */
 
 /**
- * Gets a base chain which includes all of the chains from the API.
- * This function wraps all chains within one global base chain.
- * @returns populated global base chain.
+ * Gets the chains from the API and formats them with the chain information.
+ * @returns list of populated chains.
  */
-async function getGlobalBaseChain(): Promise<BaseChain> {
-    const baseChains: BaseChain[] = await getBaseChains();
-    const globalBaseChain: BaseChain = {
-        name: "",
-        chains: [],
-        activeChains: [],
-        activeSeverities: AlertsAPI.getAllSeverityValues(),
-        lastClickedColumnIndex: 1,
-        ordering: 'descending'
-    };
+async function getChains(): Promise<Chain[]> {
+    const data: any = await getMonitorablesInfo();
+    const chains: Chain[] = [];
 
-    for (const baseChain of baseChains) {
-        globalBaseChain.chains.push.apply(globalBaseChain.chains, baseChain.chains);
-        globalBaseChain.activeChains.push.apply(globalBaseChain.activeChains, baseChain.activeChains);
+    for (const baseChain in data.result) {
+        if (data.result[baseChain]) {
+            for (const currentChain in data.result[baseChain]) {
+                // Skip chain if monitored field does not exist.
+                if (!data.result[baseChain][currentChain].monitored) {
+                    continue;
+                }
+
+                // Get Systems.
+                const currentSystems: string[] = getSystems(data.result[baseChain][currentChain].monitored.systems);
+                // Get Repos.
+                const currentRepos: string[] = getRepos(data.result[baseChain][currentChain].monitored);
+
+                // Skip chain if it does not contain any monitorable sources.
+                if (currentSystems.length + currentRepos.length === 0) {
+                    continue;
+                }
+
+                chains.push({
+                    name: currentChain,
+                    id: data.result[baseChain][currentChain].parent_id,
+                    repos: currentRepos,
+                    systems: currentSystems,
+                    alerts: [],
+                    active: true
+                });
+            }
+        }
     }
 
-    return globalBaseChain
+    return chains;
 }
 
 /**
- * Updates the global base chain and the alerts within.
- * @param globalBaseChain global base chain to be updated.
- * @returns updated global base chain.
+ * Adds newly added chains and removes newly removed chains.
+ * @param chains chains to be updated.
+ * @returns updated chains.
  */
-async function updateGlobalBaseChain(globalBaseChain: BaseChain): Promise<BaseChain> {
-    const newGlobalBaseChain: BaseChain = await getGlobalBaseChain();
+async function updateChains(chains: Chain[]): Promise<Chain[]> {
+    const finalChains: Chain[] = [];
+    const newChains: Chain[] = await getChains();
 
-    // Add newly added chains and remove newly removed chains (if any).
-    let updatedBaseChain: BaseChain = updateChains(globalBaseChain, newGlobalBaseChain);
-
-    return updatedBaseChain;
-}
-
-/**
- * Adds newly added chains and removes newly removed chains to/from global base chain.
- * @param updatedGlobalBaseChain global base chain to be updated.
- * @param newGlobalBaseChain new global base chain (latest from API).
- * @returns updated global base chain.
- */
-function updateChains(updatedGlobalBaseChain: BaseChain, newGlobalBaseChain: BaseChain): BaseChain {
-    // Create base chain.
-    const finalGlobalBaseChain: BaseChain = {
-        name: updatedGlobalBaseChain.name,
-        chains: [],
-        activeChains: updatedGlobalBaseChain.activeChains,
-        activeSeverities: updatedGlobalBaseChain.activeSeverities,
-        lastClickedColumnIndex: updatedGlobalBaseChain.lastClickedColumnIndex,
-        ordering: updatedGlobalBaseChain.ordering
-    };
-
-    // Check for newly added/removed chains within base chain.
-    for (const newChain of newGlobalBaseChain.chains) {
+    // Check for newly added/removed chains.
+    for (const newChain of newChains) {
         // Add newly added chains (if any).
-        if (!updatedGlobalBaseChain.chains.find(chain => chain.id === newChain.id)) {
+        if (!chains.find(chain => chain.id === newChain.id)) {
             newChain.active = false;
-            finalGlobalBaseChain.chains.push(newChain);
+            finalChains.push(newChain);
         }
     }
 
     // Do not add newly removed chains (if any) / Add common chains only.
-    for (const updatedChain of updatedGlobalBaseChain.chains) {
-        if (newGlobalBaseChain.chains.find(chain => chain.id === updatedChain.id)) {
-            finalGlobalBaseChain.chains.push(updatedChain);
+    for (const chain of chains) {
+        if (newChains.find(newChain => newChain.id === chain.id)) {
+            finalChains.push(chain);
         }
     }
 
-    return finalGlobalBaseChain;
+    return finalChains;
 }
 
+function activeChainsSources(chains: Chain[]): string[] {
+    const sources: string[] = [];
+
+    // Filter to active chains only.
+    const activeChains = chains.filter(function (chain) {
+        return chain.active;
+    });
+
+    for (const chain of activeChains) {
+        sources.push.apply(sources, chain.systems);
+        sources.push.apply(sources, chain.repos);
+    }
+
+    return sources;
+}

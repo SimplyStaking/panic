@@ -1,5 +1,5 @@
 import { Alert, Severity } from "../interfaces/alerts";
-import { BaseChain } from "../interfaces/chains";
+import { Chain } from "../interfaces/chains";
 import { SelectOptionObjType, SelectOptionType } from "../lib/types/types/select";
 import { apiURL, criticalIcon, errorIcon, infoIcon, maxNumberOfAlerts, warningIcon } from "./constants";
 import { UnknownAlertSeverityError } from "./errors";
@@ -99,12 +99,15 @@ function getSeverityIcon(severity: Severity): Object {
  */
 
 /**
- * Gets the alerts of global base chain from MongoDB.
- * @param globalBaseChain base chain to be checked.
+ * Gets the alerts of chains from MongoDB.
+ * @param chains chains to be checked.
+ * @param activeSeverities only alerts with these severities are required.
+ * @param minTimestamp only alerts which occurred after this timestamp are required.
+ * @param maxTimestamp only alerts which occurred before this timestamp are required.
  * @returns alerts extracted from API.
  */
-async function getAlertsFromMongoDB(globalBaseChain: BaseChain, minTimestamp: number, maxTimestamp: number): Promise<Alert[]> {
-    const data: any = await getAlerts(globalBaseChain, minTimestamp, maxTimestamp);
+async function getAlertsFromMongoDB(chains: Chain[], activeSeverities: Severity[], minTimestamp: number, maxTimestamp: number): Promise<Alert[]> {
+    const data: any = await getAlerts(chains, activeSeverities, minTimestamp, maxTimestamp);
     let alerts: Alert[] = [];
 
     if (data.result['alerts']) {
@@ -115,21 +118,24 @@ async function getAlertsFromMongoDB(globalBaseChain: BaseChain, minTimestamp: nu
 }
 
 /**
- * Gets the alerts of global base chain.
- * @param globalBaseChain global base chain to be checked.
+ * Gets the alerts of chains.
+ * @param chains chains to be checked.
+ * @param activeSeverities only alerts with these severities are required.
+ * @param minTimestamp only alerts which occurred after this timestamp are required.
+ * @param maxTimestamp only alerts which occurred before this timestamp are required.
  * @returns alerts data as a JSON object.
  */
-async function getAlerts(globalBaseChain: BaseChain, minTimestamp: number, maxTimestamp: number): Promise<any> {
+async function getAlerts(chains: Chain[], activeSeverities: Severity[], minTimestamp: number, maxTimestamp: number): Promise<any> {
     let mongoAlertsInput = {
         chains: [],
-        severities: globalBaseChain.activeSeverities,
+        severities: activeSeverities,
         sources: [],
         minTimestamp: minTimestamp,
         maxTimestamp: maxTimestamp,
         noOfAlerts: maxNumberOfAlerts
     };
 
-    for (const chain of globalBaseChain.chains) {
+    for (const chain of chains) {
         if (chain.active) {
             mongoAlertsInput.chains.push(chain.id);
             mongoAlertsInput.sources.push.apply(mongoAlertsInput.sources, chain.systems);

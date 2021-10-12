@@ -1,9 +1,10 @@
 import { h } from "@stencil/core";
 import { Alert } from "../../../interfaces/alerts";
-import { BaseChain } from "../../../interfaces/chains";
+import { Chain } from "../../../interfaces/chains";
 import { DataTableRecordType } from "../../../lib/types/types/datatable";
 import { OrderingType } from "../../../lib/types/types/ordering";
 import { AlertsAPI } from "../../../utils/alerts";
+import { ChainsAPI } from "../../../utils/chains";
 
 export const AlertsOverviewAPI = {
     getDataTableJSX: getDataTableJSX
@@ -14,17 +15,18 @@ export const AlertsOverviewAPI = {
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-function getDataTableJSX(alerts: Alert[], globalBaseChain: BaseChain): JSX.Element {
-    const hasAlerts = alerts.length > 0;
+function getDataTableJSX(alerts: Alert[], chains: Chain[], lastClickedColumnIndex: number, ordering: string): JSX.Element {
+    let hasAlerts = alerts.length > 0;
     const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
-    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts) : [];
+    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, chains) : [];
+    hasAlerts = rows.length > 0;
 
     return <svc-data-table
         key={hasAlerts ? 'data-table-no-alerts' : 'data-table-alerts'}
         cols={cols}
         rows={rows}
-        ordering={globalBaseChain.ordering as OrderingType}
-        last-clicked-column-index={globalBaseChain.lastClickedColumnIndex}
+        last-clicked-column-index={lastClickedColumnIndex}
+        ordering={ordering as OrderingType}
         no-records-message="There are no alerts to display at this time"
     />
 }
@@ -35,9 +37,16 @@ function getDataTableJSX(alerts: Alert[], globalBaseChain: BaseChain): JSX.Eleme
  * @param activeSeverities list of active severities.
  * @returns populated list of lists of required object type.
  */
-function getDataTableRecordTypeFromAlerts(alerts: Alert[]): DataTableRecordType {
+function getDataTableRecordTypeFromAlerts(alerts: Alert[], chains: Chain[]): DataTableRecordType {
+    const activeChainsSources: string[] = ChainsAPI.activeChainsSources(chains);
+
+    // Filter alerts by source.
+    const filteredAlerts = alerts.filter(function (alert) {
+        return activeChainsSources.includes(alert.origin);
+    });
+
     // Format filtered alerts into DataTableRecordType type.
-    return alerts.map(alert => [
+    return filteredAlerts.map(alert => [
         { label: AlertsAPI.getSeverityIcon(alert.severity), value: alert.severity },
         { label: new Date(alert.timestamp * 1000).toLocaleString(), value: new Date(alert.timestamp * 1000) },
         { label: alert.message, value: alert.message }]);

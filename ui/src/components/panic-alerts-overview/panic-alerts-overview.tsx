@@ -1,6 +1,6 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
-import { Alert } from '../../interfaces/alerts';
-import { BaseChain } from '../../interfaces/chains';
+import { Alert, Severity } from '../../interfaces/alerts';
+import { Chain } from '../../interfaces/chains';
 import { AlertsAPI } from '../../utils/alerts';
 import { AlertsOverviewAPI } from './utils/panic-alerts-overview.utils';
 import { ChainsAPI } from '../../utils/chains';
@@ -13,19 +13,22 @@ import { PanicAlertsOverviewInterface } from './panic-alerts-overview.interface'
 })
 export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
   @State() alerts: Alert[] = [];
-  _globalBaseChain: BaseChain;
+  _chains: Chain[];
   _updater: number;
   _updateFrequency: number = pollingFrequency;
+  _activeSeverities: Severity[] = AlertsAPI.getAllSeverityValues();
+  _lastClickedColumnIndex: number = 1;
+  _ordering: string = 'descending';
 
   async componentWillLoad() {
     try {
-      const globalBaseChain = await ChainsAPI.getGlobalBaseChain();
-      this._globalBaseChain = await ChainsAPI.updateGlobalBaseChain(globalBaseChain);
-      this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._globalBaseChain, 0, 2625677273);
+      const chains = await ChainsAPI.getChains();
+      this._chains = await ChainsAPI.updateChains(chains);
+      this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._chains, this._activeSeverities, 0, 2625677273);
 
       this._updater = window.setInterval(async () => {
-        this._globalBaseChain = await ChainsAPI.updateGlobalBaseChain(this._globalBaseChain);
-        this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._globalBaseChain, 0, 2625677273);
+        this._chains = await ChainsAPI.updateChains(this._chains);
+        this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._chains, this._activeSeverities, 0, 2625677273);
       }, this._updateFrequency);
     } catch (error: any) {
       console.error(error);
@@ -36,8 +39,8 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
   // sorted column within the data table (and base chain since correlated).
   @Listen("svcDataTable__lastClickedColumnIndexEvent")
   setDataTableProperties(e: CustomEvent) {
-    this._globalBaseChain.lastClickedColumnIndex = e.detail.index;
-    this._globalBaseChain.ordering = e.detail.ordering;
+    this._lastClickedColumnIndex = e.detail.index;
+    this._ordering = e.detail.ordering;
   }
 
   render() {
@@ -47,7 +50,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
         <svc-card class="panic-alerts-overview__chain-card">
           <div slot='content' id='expanded' class="panic-alerts-overview__data-table-container">
             {/* Data table */}
-            {AlertsOverviewAPI.getDataTableJSX(this.alerts, this._globalBaseChain)}
+            {AlertsOverviewAPI.getDataTableJSX(this.alerts, this._chains, this._lastClickedColumnIndex, this._ordering)}
           </div>
         </svc-card>
       </Host>
