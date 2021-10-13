@@ -1,6 +1,6 @@
 import { Alert } from "../../interfaces/alerts";
 import { Chain } from "../../interfaces/chains";
-import { FilterState } from "../../interfaces/filtering";
+import { FilterState } from "../../interfaces/filterState";
 
 export interface PanicAlertsOverviewInterface {
 

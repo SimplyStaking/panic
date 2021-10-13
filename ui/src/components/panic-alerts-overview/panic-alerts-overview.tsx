@@ -8,7 +8,7 @@ import { SeverityAPI } from '../../utils/severity';
 import { pollingFrequency } from '../../utils/constants';
 import { PanicAlertsOverviewInterface } from './panic-alerts-overview.interface';
 import { addTitleToSVCSelect, arrayEquals } from '../../utils/helpers';
-import { FilterState } from '../../interfaces/filtering';
+import { FilterState } from '../../interfaces/filterState';
 
 @Component({
   tag: 'panic-alerts-overview',
