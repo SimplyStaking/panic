@@ -3,6 +3,7 @@
         text-align: center;
         font-size: 25px;
         margin: 30px 0px 20px;
+        color: var(--ion-color-primary);
     }
 
     &__data-table-container {
@@ -13,9 +14,44 @@
         padding: 2px;
         height: 50vh;
     }
+
+    &__slots {
+        display: flex;
+        margin-bottom: 10px;
+    }
 }
 
 panic-alerts-overview {
+    svc-select {
+        &#chains-filter {
+            margin-right: 20px;
+        }
+
+        &#severity-filter {
+            margin-left: 20px;
+        }
+
+        ion-select{
+            border-bottom: 1px #a8a8a8 solid;
+            padding-right: 10px;
+
+            &::part(text){
+                text-transform: capitalize;
+                color: var(--ion-color-primary);
+            }
+
+            &::part(text-title){
+                font-weight: bold;
+                color: var(--ion-color-primary);
+                opacity: 1;
+            }
+
+            &::part(placeholder){
+                color: var(--ion-color-primary);
+                opacity: 1;
+            }
+        }
+    }
 
     svc-data-table {
         display: flex;
@@ -51,5 +87,11 @@ panic-alerts-overview {
     svc-card {
         height: auto;
         border: 1px #a8a8a8 solid;
+    }
+}
+
+ion-alert {
+    div > div.alert-checkbox-label.sc-ion-alert-md {
+        text-transform: capitalize;
     }
 }

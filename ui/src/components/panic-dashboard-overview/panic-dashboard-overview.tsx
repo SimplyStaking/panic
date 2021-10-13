@@ -1,11 +1,13 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { AlertsAPI } from '../../utils/alerts';
+import { SeverityAPI } from '../../utils/severity';
 import { ChainsAPI } from '../../utils/chains';
 import { pollingFrequency } from '../../utils/constants';
-import { DashboardOverviewAPI } from '../../utils/dashboard-overview';
-import { arrayEquals } from '../../utils/helpers';
+import { DashboardOverviewAPI } from './utils/panic-dashboard-overview.utils';
+import { addTitleToSVCSelect, arrayEquals } from '../../utils/helpers';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
+import { FilterState } from '../../interfaces/filterState';
+import { FilterStateAPI } from '../../utils/filterState';
 
 @Component({
   tag: 'panic-dashboard-overview',
@@ -14,42 +16,35 @@ import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.inte
 export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
 
   @State() baseChains: BaseChain[] = [];
+  _filterStates: FilterState[] = [];
   _updater: number;
   _updateFrequency: number = pollingFrequency;
 
   async componentWillLoad() {
     try {
-      const baseChains = await ChainsAPI.getBaseChains();
-      this.baseChains = await ChainsAPI.updateBaseChains(baseChains);
+      this.baseChains = await ChainsAPI.getBaseChains();
+      this._filterStates = FilterStateAPI.getFilterStates(this.baseChains);
+      this.reRenderAction();
 
       this._updater = window.setInterval(async () => {
-        this.baseChains = await ChainsAPI.updateBaseChains(this.baseChains);
+        this.reRenderAction();
       }, this._updateFrequency);
     } catch (error: any) {
       console.error(error);
     }
   }
 
+  async reRenderAction() {
+    this.baseChains = await ChainsAPI.updateBaseChainsWithAlerts(this.baseChains);
+  }
+
   async componentDidLoad() {
     // Add text title to chain filter and severity filter.
     for (const baseChain of this.baseChains) {
       // Chain Filter text-placeholder (Chains).
-      const chainFilterShadow = document.querySelector(`#${baseChain.name}_chain-filter ion-select`).shadowRoot;
-      const chainFilterSelectText = chainFilterShadow.querySelector('.select-text');
-      const chainFilterSelectIcon = chainFilterShadow.querySelector('.select-icon');
-      const selectTextTitle = chainFilterSelectText.cloneNode() as Element;
-      selectTextTitle.classList.remove('select-text');
-      selectTextTitle.classList.add('select-text-title');
-      selectTextTitle.setAttribute('part', 'text-title');
-      selectTextTitle.textContent = 'Chains';
-      chainFilterShadow.insertBefore(selectTextTitle, chainFilterSelectIcon);
-
+      addTitleToSVCSelect(`${baseChain.name}_chain-filter`, 'Chains')
       // Severity Filter text-placeholder (Severity).
-      const severityFilterShadow = document.querySelector(`#${baseChain.name}_severity-filter ion-select`).shadowRoot;
-      const severityFilterSelectIcon = severityFilterShadow.querySelector('.select-icon');
-      const selectTextTitle2 = selectTextTitle.cloneNode() as Element;
-      selectTextTitle2.textContent = 'Severity';
-      severityFilterShadow.insertBefore(selectTextTitle2, severityFilterSelectIcon);
+      addTitleToSVCSelect(`${baseChain.name}_severity-filter`, 'Severity')
     }
   }
 
@@ -57,7 +52,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
   async filterChanged(event: CustomEvent) {
     try {
       const baseChainName: string = event.detail['base-chain-name'];
-      const selectedChains: string[] = event.detail['chain-name'].split(',');
+      const selectedChains: string[] = event.detail['selected-chains'].split(',');
 
       // Remove empty string element from array if no chains are selected.
       if (selectedChains.length > 0 && selectedChains[0] === '') {
@@ -68,21 +63,29 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
       const baseChain: BaseChain = this.baseChains.find(baseChain => baseChain.name === baseChainName);
 
       // Update active chain if chain filter was changed.
-      if (!arrayEquals(baseChain.activeChains, selectedChains)) {
-        this.baseChains = ChainsAPI.updateActiveChains(this.baseChains, baseChainName, selectedChains);
+      if (!arrayEquals(ChainsAPI.getChainFilterValue(baseChain.chains), selectedChains)) {
+        this.baseChains = ChainsAPI.updateActiveChainsInBaseChain(this.baseChains, baseChainName, selectedChains);
       } else {
-        const selectedAlerts = event.detail['alerts-severity'].split(',');
+        const selectedSeverities = event.detail['alerts-severity'].split(',');
+
+        // Get filter state which contains the altered filters.
+        const filterState: FilterState = FilterStateAPI.getFilterState(baseChainName, this._filterStates);
 
         // Remove empty string element from array if no alerts are selected.
-        if (selectedAlerts.length > 0 && selectedAlerts[0] === '') {
-          selectedAlerts.pop();
+        if (selectedSeverities.length > 0 && selectedSeverities[0] === '') {
+          selectedSeverities.pop();
         }
 
         // Update severities shown if severity filter was changed.
-        if (!arrayEquals(baseChain.activeSeverities, selectedAlerts)) {
-          baseChain.activeSeverities = selectedAlerts;
+        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(filterState.selectedSeverities, true), selectedSeverities)) {
+          if (selectedSeverities.length > 0) {
+            filterState.selectedSeverities = selectedSeverities;
+          } else {
+            filterState.selectedSeverities = SeverityAPI.getAllSeverityValues(true);
+          }
+
           // This is done to re-render since the above does not.
-          this.baseChains = [...this.baseChains];
+          this.reRenderAction();
         }
       }
     } catch (error: any) {
@@ -96,8 +99,11 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
   setDataTableProperties(e: CustomEvent) {
     // Get base chain which contains the altered ordering/sorting.
     const baseChain: BaseChain = this.baseChains.find(baseChain => baseChain.name === e.target['id']);
-    baseChain.lastClickedColumnIndex = e.detail.index;
-    baseChain.ordering = e.detail.ordering;
+    // Get filter state which contains the altered filters.
+    const filterState: FilterState = FilterStateAPI.getFilterState(baseChain.name, this._filterStates);
+
+    filterState.lastClickedColumnIndex = e.detail.index;
+    filterState.ordering = e.detail.ordering;
   }
 
   disconnectedCallback() {
@@ -118,12 +124,12 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                   <div class="panic-dashboard-overview__chain-filter-container">
                     {/* Chain filter */}
                     <svc-select
-                      name="chain-name"
-                      id={baseChain.name + '_chain-filter'}
+                      name="selected-chains"
+                      id={`${baseChain.name}_chain-filter`}
                       multiple={true}
-                      value={ChainsAPI.getActiveChainNames(baseChain.chains)}
+                      value={ChainsAPI.getChainFilterValue(baseChain.chains)}
                       header="Select chains"
-                      placeholder="Select chains"
+                      placeholder="All"
                       options={DashboardOverviewAPI.getChainFilterOptionsFromBaseChain(baseChain)}>
                     </svc-select>
                   </div>
@@ -140,16 +146,16 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                         {/* Severity filter */}
                         <svc-select
                           name="alerts-severity"
-                          id={baseChain.name + '_severity-filter'}
+                          id={`${baseChain.name}_severity-filter`}
                           multiple={true}
-                          value={baseChain.activeSeverities}
+                          value={SeverityAPI.getSeverityFilterValue(FilterStateAPI.getFilterState(baseChain.name, this._filterStates).selectedSeverities, true)}
                           header="Select severities"
-                          placeholder="Select severities"
-                          options={AlertsAPI.getSeverityFilterOptions(true)}>
+                          placeholder="All"
+                          options={SeverityAPI.getSeverityFilterOptions(true)}>
                         </svc-select>
 
                         {/* Data table */}
-                        {DashboardOverviewAPI.getDataTableJSX(baseChain)}
+                        {DashboardOverviewAPI.getDataTableJSX(baseChain, FilterStateAPI.getFilterState(baseChain.name, this._filterStates))}
                       </div>
                     </div>
                   </div>

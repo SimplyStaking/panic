@@ -3,6 +3,7 @@
         text-align: center;
         font-size: 25px;
         margin: 10px 0px 20px;
+        color: var(--ion-color-primary);
     }
 
     &__chain-card {
@@ -70,10 +71,18 @@ panic-dashboard-overview {
 
             &::part(text){
                 text-transform: capitalize;
+                color: var(--ion-color-primary);
             }
 
             &::part(text-title){
                 font-weight: bold;
+                color: var(--ion-color-primary);
+                opacity: 1;
+            }
+
+            &::part(placeholder){
+                color: var(--ion-color-primary);
+                opacity: 1;
             }
         }
     }

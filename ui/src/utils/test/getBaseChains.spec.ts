@@ -1,4 +1,3 @@
-import { AlertsAPI } from "../alerts";
 import { ChainsAPI } from "../chains";
 import { baseChainsNames, fetchMock } from "../constants";
 
@@ -117,10 +116,7 @@ describe('getBaseChains() function', () => {
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([{
-            name: 'cosmos', activeChains: ['test chain'],
-            activeSeverities: AlertsAPI.getAllSeverityValues(),
-            lastClickedColumnIndex: 1,
-            ordering: 'descending',
+            name: 'cosmos',
             chains: [{
                 id: "test_chain", name: 'test chain', repos: ['test_repo'],
                 systems: ['test_system'], alerts: [], active: true
