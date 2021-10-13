@@ -1,4 +1,4 @@
-import { AlertsAPI } from "../alerts";
+import { SeverityAPI } from "../severity";
 import { ChainsAPI } from "../chains";
 import { baseChainsNames, fetchMock } from "../constants";
 
@@ -11,7 +11,7 @@ describe('getBaseChains() function', () => {
         fetchMock.mockReject(() => Promise.reject("API is down"));
         const baseChains = await ChainsAPI.updateBaseChains([{
             name: '',
-            activeSeverities: AlertsAPI.getAllSeverityValues(true),
+            activeSeverities: SeverityAPI.getAllSeverityValues(true),
             lastClickedColumnIndex: 1,
             ordering: 'descending',
             chains: [
@@ -27,7 +27,7 @@ describe('getBaseChains() function', () => {
 
     const mockBaseChainsData = [{
         name: 'cosmos',
-        activeSeverities: AlertsAPI.getAllSeverityValues(true),
+        activeSeverities: SeverityAPI.getAllSeverityValues(true),
         lastClickedColumnIndex: 1,
         ordering: 'descending',
         chains: [
