@@ -25,16 +25,13 @@ class PriceFeedObservationsIncreasedAboveThreshold(Alert):
 
 
 class PriceFeedObservedAgain(Alert):
-    def __init__(self, origin_name: str, missed_observations: int,
-                 severity: str, timestamp: float, threshold_severity: str,
+    def __init__(self, origin_name: str, severity: str, timestamp: float,
                  parent_id: str, origin_id: str, proxy_address: str) -> None:
         super().__init__(
             ChainlinkContractAlertCode.PriceFeedObservedAgain,
-            "The Chainlink {} node's missed observations have decreased below "
-            "threshold {} to {} missed observations for the price feed {} of "
-            "the chain {}.".format(
-                origin_name, threshold_severity, missed_observations,
-                proxy_address, parent_id),
+            "The Chainlink {} node is no longer missing observations for the "
+            "price feed {} of the chain {}.".format(
+                origin_name, proxy_address, parent_id),
             severity, timestamp, parent_id, origin_id,
             MetricCode.PriceFeedNotObserved,
             {'contract_proxy_address': proxy_address})
@@ -101,3 +98,43 @@ class ChainlinkContractDataNowBeingRetrieved(Alert):
             "{}: {}".format(parent_id, message), severity, timestamp,
             parent_id, origin_id,
             MetricCode.ErrorRetrievingChainlinkContractData)
+
+
+class ErrorContractsNotRetrieved(Alert):
+    def __init__(self, origin_name: str, message: str, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            ChainlinkContractAlertCode.ErrorContractsNotRetrieved,
+            "{}: {}".format(parent_id, message), severity, timestamp,
+            parent_id, origin_id,
+            MetricCode.ErrorContractsNotRetrieved)
+
+
+class ContractsNowRetrieved(Alert):
+    def __init__(self, origin_name: str, message: str, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            ChainlinkContractAlertCode.ContractsNowRetrieved,
+            "{}: {}".format(parent_id, message), severity, timestamp,
+            parent_id, origin_id,
+            MetricCode.ErrorContractsNotRetrieved)
+
+
+class ErrorNoSyncedDataSources(Alert):
+    def __init__(self, origin_name: str, message: str, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            ChainlinkContractAlertCode.ErrorNoSyncedDataSources,
+            "{}: {}".format(parent_id, message), severity, timestamp,
+            parent_id, origin_id,
+            MetricCode.ErrorNoSyncedDataSources)
+
+
+class SyncedDataSourcesFound(Alert):
+    def __init__(self, origin_name: str, message: str, severity: str,
+                 timestamp: float, parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            ChainlinkContractAlertCode.SyncedDataSourcesFound,
+            "{}: {}".format(parent_id, message), severity, timestamp,
+            parent_id, origin_id,
+            MetricCode.ErrorNoSyncedDataSources)

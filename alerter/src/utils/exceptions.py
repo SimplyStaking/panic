@@ -161,11 +161,3 @@ class NoSyncedDataSourceWasAccessibleException(PANICException):
                                                               sources_type)
         code = 5019
         super().__init__(message, code)
-
-
-class ErrorRetrievingChainlinkContractData(PANICException):
-    def __init__(self, component: str, parent_id: str) -> None:
-        message = "{} could not retrieve chainlink contract data for the "
-        "chain {}.".format(component, parent_id)
-        code = 5020
-        super().__init__(message, code)

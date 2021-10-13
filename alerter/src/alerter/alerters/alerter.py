@@ -38,6 +38,10 @@ class Alerter(QueuingPublisherSubscriberComponent):
     def _not_equal_condition_function(current: Any, previous: Any) -> bool:
         return current != previous
 
+    @staticmethod
+    def _equal_condition_function(current: Any, previous: Any) -> bool:
+        return current == previous
+
     def _listen_for_data(self) -> None:
         self.rabbitmq.start_consuming()
 

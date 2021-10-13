@@ -69,8 +69,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
 
         if 'chain_errors' not in self.alerting_state[parent_id]:
             error_sent = {
-                AlertsMetricCode.ErrorRetrievingChainlinkContractData.value:
-                    False,
+                AlertsMetricCode.ErrorContractsNotRetrieved.value: False,
+                AlertsMetricCode.ErrorNoSyncedDataSources.value: False,
             }
 
             self.alerting_state[parent_id]['chain_errors'] = {
@@ -95,8 +95,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
 
         if 'chain_errors' not in self.alerting_state[parent_id]:
             error_sent = {
-                AlertsMetricCode.ErrorRetrievingChainlinkContractData.value:
-                    False,
+                AlertsMetricCode.ErrorContractsNotRetrieved.value: False,
+                AlertsMetricCode.ErrorNoSyncedDataSources.value: False,
             }
             self.alerting_state[parent_id]['chain_errors'] = {
                 'error_sent': error_sent
@@ -148,6 +148,113 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
         if parent_id in self.alerting_state:
             del self.alerting_state[parent_id]
 
+    def classify_thresholded_and_conditional_alert(
+            self, current: Any, config: Dict,
+            increased_above_threshold_alert: Type[IncreasedAboveThresholdAlert],
+            condition_true_alert: Type[ConditionalAlert],
+            condition_function: Callable, condition_fn_args: List[Any],
+            data_for_alerting: List, parent_id: str, monitorable_id: str,
+            contract_proxy_address: str, metric_name: str,
+            monitorable_name: str, monitoring_timestamp: float
+    ) -> None:
+        """
+        This function raises a critical/warning increase above threshold alert
+        if the current value is bigger than the respective thresholds. If the
+        critical repeat time is constantly elapsed, the increase alert is
+        re-raised with a critical severity each time. Also, an increase above
+        threshold info alert is raised whenever the current value is greater
+        than a threshold. Note, a warning increase is re-raised if
+        warning_threshold <= current < critical_threshold <= previous. This is
+        done so that in the UI the respective metric is shown in warning state
+        and not in info state.
+        This function also classifies a conditional alert which should send
+        an info alert to notify that we are no longer in warning or critical
+        state.
+        :param current: Current metric value
+        :param config: The metric's configuration to obtain the thresholds
+        :param increased_above_threshold_alert: The alert to be raised if the
+        current value is no longer smaller than a threshold
+        :param decreased_below_threshold_alert: The alert to be raised if the
+        current value is smaller than a threshold
+        :param data_for_alerting: The list to be appended with alerts
+        :param parent_id: The id of the base chain
+        :param monitorable_id: The id of the monitorable
+        :param metric_name: The name of the metric
+        :param monitorable_name: The name of the monitorable
+        :param monitoring_timestamp: The data timestamp
+        :return: None
+        """
+        # Parse warning thresholds and limiters
+        warning_enabled = str_to_bool(config['warning_enabled'])
+        warning_threshold = convert_to_float(config['warning_threshold'], None)
+        warning_sent = self.alerting_state[parent_id][monitorable_id][
+            contract_proxy_address]['warning_sent']
+
+        # Parse critical thresholds and limiters
+        critical_enabled = str_to_bool(config['critical_enabled'])
+        critical_threshold = convert_to_float(config['critical_threshold'],
+                                              None)
+        critical_repeat_enabled = str_to_bool(
+            config['critical_repeat_enabled'])
+        critical_repeat_limiter = self.alerting_state[parent_id][
+            monitorable_id][contract_proxy_address][
+            'critical_repeat_timer'][metric_name]
+        critical_sent = self.alerting_state[parent_id][monitorable_id][
+            contract_proxy_address]['critical_sent']
+
+        monitoring_datetime = datetime.fromtimestamp(monitoring_timestamp)
+
+        if (critical_sent[metric_name] or warning_sent[metric_name] and
+                condition_function(*condition_fn_args)):
+            alert = condition_true_alert(
+                monitorable_name, Severity.INFO.value,
+                parent_id, monitorable_id, contract_proxy_address)
+            data_for_alerting.append(alert.alert_data)
+            self.component_logger.debug("Successfully classified alert %s",
+                                        alert.alert_data)
+            self.alerting_state[parent_id][monitorable_id][
+                contract_proxy_address]['critical_sent'][metric_name] = False
+            self.alerting_state[parent_id][monitorable_id][
+                contract_proxy_address]['warning_sent'][metric_name] = False
+            critical_repeat_limiter.reset()
+        else:
+            if (critical_enabled and not critical_sent[metric_name] and
+                    current >= critical_threshold):
+                alert = increased_above_threshold_alert(
+                    monitorable_name, current, Severity.CRITICAL.value,
+                    monitoring_timestamp, Severity.CRITICAL.value, parent_id,
+                    monitorable_id, contract_proxy_address)
+                data_for_alerting.append(alert.alert_data)
+                self.component_logger.debug("Successfully classified alert %s",
+                                            alert.alert_data)
+                self.alerting_state[parent_id][monitorable_id][
+                    contract_proxy_address]['critical_sent'][metric_name] = True
+                critical_repeat_limiter.set_last_time_that_did_task(
+                    monitoring_datetime)
+            elif (critical_enabled and critical_sent[metric_name] and
+                  critical_repeat_limiter.can_do_task(monitoring_datetime)):
+                alert = increased_above_threshold_alert(
+                    monitorable_name, current, Severity.CRITICAL.value,
+                    monitoring_timestamp, Severity.CRITICAL.value, parent_id,
+                    monitorable_id, contract_proxy_address)
+                data_for_alerting.append(alert.alert_data)
+                self.component_logger.debug("Successfully classified alert %s",
+                                            alert.alert_data)
+                critical_repeat_limiter.set_last_time_that_did_task(
+                    monitoring_datetime)
+            elif (warning_enabled and not critical_sent[metric_name] and
+                  not warning_sent[metric_name] and
+                  current >= warning_threshold):
+                alert = increased_above_threshold_alert(
+                    monitorable_name, current, Severity.WARNING.value,
+                    monitoring_timestamp, Severity.WARNING.value, parent_id,
+                    monitorable_id, contract_proxy_address)
+                data_for_alerting.append(alert.alert_data)
+                self.component_logger.debug("Successfully classified alert %s",
+                                            alert.alert_data)
+                self.alerting_state[parent_id][monitorable_id][
+                    contract_proxy_address]['warning_sent'][metric_name] = True
+
     def classify_thresholded_alert(
             self, current: Any, config: Dict,
             increased_above_threshold_alert: Type[IncreasedAboveThresholdAlert],
@@ -192,10 +299,11 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
         critical_enabled = str_to_bool(config['critical_enabled'])
         critical_threshold = convert_to_float(config['critical_threshold'],
                                               None)
-        critical_repeat_enabled = str_to_bool(config['critical_repeat_enabled'])
+        critical_repeat_enabled = str_to_bool(
+            config['critical_repeat_enabled'])
         critical_repeat_limiter = self.alerting_state[parent_id][
             monitorable_id][contract_proxy_address][
-              'critical_repeat_timer'][metric_name]
+            'critical_repeat_timer'][metric_name]
         critical_sent = self.alerting_state[parent_id][monitorable_id][
             contract_proxy_address]['critical_sent']
 

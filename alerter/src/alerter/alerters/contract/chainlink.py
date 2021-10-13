@@ -142,27 +142,36 @@ class ChainlinkContractAlerter(Alerter):
             configs = self.alerts_configs_factory.configs[chain_name]
 
             # Create an alert state for each node/contract pair
-            for proxy_address, value in data.items():
+            for proxy_address, contract_data in data.items():
                 self.alerting_factory.create_alerting_state(
                     meta_data['node_parent_id'], meta_data['node_id'],
                     proxy_address, configs)
 
                 # Check if some errors have been resolved
                 self.alerting_factory.classify_error_alert(
-                    5020,
-                    cl_alerts.ErrorRetrievingChainlinkContractData,
-                    cl_alerts.ChainlinkContractDataNowBeingRetrieved,
+                    5019,
+                    cl_alerts.ErrorContractsNotRetrieved,
+                    cl_alerts.ContractsNowRetrieved,
                     data_for_alerting, meta_data['node_parent_id'],
-                    meta_data['node_id'], meta_data['node_name'],
-                    meta_data['last_monitored'],
-                    MetricCode.ErrorRetrievingChainlinkContractData.value,
-                    "", "Chainlink contract data is now being retrieved!", None
+                    "", "", meta_data['last_monitored'],
+                    MetricCode.ErrorContractsNotRetrieved.value,
+                    "", "Chainlink contracts are now being retrieved!", None
                 )
 
-                current_historical_rounds = data[proxy_address][
-                    'historicalRounds']['current']
-                previous_historical_rounds = data[proxy_address][
-                    'historicalRounds']['previous']
+                self.alerting_factory.classify_error_alert(
+                    5018,
+                    cl_alerts.ErrorNoSyncedDataSources,
+                    cl_alerts.SyncedDataSourcesFound,
+                    data_for_alerting, meta_data['node_parent_id'],
+                    "", "", meta_data['last_monitored'],
+                    MetricCode.ErrorNoSyncedDataSources.value,
+                    "", "Synced EVM data sources found!", None
+                )
+
+                current_historical_rounds = contract_data['historicalRounds'][
+                    'current']
+                previous_historical_rounds = contract_data['historicalRounds'][
+                    'previous']
 
                 if (None not in [current_historical_rounds,
                                  previous_historical_rounds]):
@@ -188,12 +197,10 @@ class ChainlinkContractAlerter(Alerter):
                 else:
                     sorted_historical_rounds = None
 
-                curr_latest_round = data[proxy_address]['latestRound'][
-                    'current']
-                prev_latest_round = data[proxy_address]['latestRound'][
-                    'previous']
+                curr_latest_round = contract_data['latestRound']['current']
+                prev_latest_round = contract_data['latestRound']['previous']
 
-                last_round_observed = data[proxy_address]['lastRoundObserved'][
+                last_round_observed = contract_data['lastRoundObserved'][
                     'current']
                 # This data is re-used in other alerts so it needs to be
                 # calculated beforehand
@@ -208,17 +215,22 @@ class ChainlinkContractAlerter(Alerter):
                 if (str_to_bool(configs.price_feed_not_observed['enabled'])
                         and current_missed_observations is not None):
                     sub_config = configs.price_feed_not_observed
-                    self.alerting_factory.classify_thresholded_alert(
+                    self.alerting_factory.classify_thresholded_and_conditional_alert(
                         current_missed_observations, sub_config,
                         cl_alerts.PriceFeedObservationsIncreasedAboveThreshold,
                         cl_alerts.PriceFeedObservedAgain,
+                        self._equal_condition_function, [
+                            current_missed_observations, 0],
                         data_for_alerting, meta_data['node_parent_id'],
                         meta_data['node_id'], proxy_address,
                         MetricCode.PriceFeedNotObserved.value,
                         meta_data['node_name'], meta_data['last_monitored']
                     )
 
-                # Check if the alert rules are satisfied for the metrics
+                """
+                We only alert on missed price feed deviations if we have
+                historical rounds and we are currently submitting observations.
+                """
                 if (str_to_bool(configs.price_feed_deviation['enabled']) and
                     None not in [current_missed_observations,
                                  sorted_historical_rounds] and
@@ -241,11 +253,13 @@ class ChainlinkContractAlerter(Alerter):
                             meta_data['last_monitored']
                         )
 
-                # Check if consensus failure alert is enabled and that the data
-                # needed to alert on this is available. We only check the
-                # historical rounds for consensus failures as, if we check the
-                # current round as well we risk alerting double on the same
-                # consensus failure.
+                """
+                Check if consensus failure alert is enabled and that the data
+                needed to alert on this is available. We only check the
+                historical rounds for consensus failures as, if we check the
+                current round as well we risk alerting double on the same
+                consensus failure.
+                """
                 if (str_to_bool(configs.consensus_failure['enabled']) and
                     None not in [curr_latest_round,
                                  prev_latest_round,
@@ -257,13 +271,12 @@ class ChainlinkContractAlerter(Alerter):
                         item for item in all_historical_rounds if item[
                             'roundId'] == round_to_find), None)
                     sub_config = configs.consensus_failure
-                    if (previous_round is not None and
-                        previous_round['answeredInRound'] !=
-                            previous_round['latestRound']):
+                    if (previous_round is not None):
                         self.alerting_factory.classify_conditional_alert(
                             cl_alerts.ConsensusFailure,
                             self._not_equal_condition_function, [
-                                True, False],
+                                previous_round['answeredInRound'],
+                                previous_round['roundId']],
                             [
                                 meta_data['node_name'],
                                 sub_config['severity'],
@@ -289,15 +302,24 @@ class ChainlinkContractAlerter(Alerter):
             # Detect whether some errors need to be raised, or have been
             # resolved.
             self.alerting_factory.classify_error_alert(
-                5020,
-                cl_alerts.ErrorRetrievingChainlinkContractData,
-                cl_alerts.ChainlinkContractDataNowBeingRetrieved,
+                5019,
+                cl_alerts.ErrorContractsNotRetrieved,
+                cl_alerts.ContractsNowRetrieved,
                 data_for_alerting, meta_data['node_parent_id'],
-                "", "", meta_data['time'],
-                MetricCode.ErrorRetrievingChainlinkContractData.value,
-                data['message'],
-                "Chainlink contract data is now being retrieved!",
+                "", "", meta_data['last_monitored'],
+                MetricCode.ErrorContractsNotRetrieved.value,
+                "", "Chainlink contracts are now being retrieved!",
                 data['code']
+            )
+
+            self.alerting_factory.classify_error_alert(
+                5018,
+                cl_alerts.ErrorNoSyncedDataSources,
+                cl_alerts.SyncedDataSourcesFound,
+                data_for_alerting, meta_data['node_parent_id'],
+                "", "", meta_data['last_monitored'],
+                MetricCode.ErrorNoSyncedDataSources.value,
+                data['message'], "Synced EVM data sources found!", data['code']
             )
 
     def _process_transformed_data(

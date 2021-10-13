@@ -134,8 +134,6 @@ class ChainlinkContractAlertsConfigsFactory(ChainlinkAlertsConfigsFactory):
             price_feed_not_observed=filtered['price_feed_not_observed'],
             price_feed_deviation=filtered['price_feed_deviation'],
             consensus_failure=filtered['consensus_failure'],
-            error_retrieving_chainlink_contract_data=filtered[
-                'error_retrieving_chainlink_contract_data']
         )
 
         self._configs[chain_name] = cl_contracts_alerts_config
