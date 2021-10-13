@@ -77,11 +77,11 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
         }
 
         // Update severities shown if severity filter was changed.
-        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(filterState.activeSeverities, true), selectedSeverities)) {
+        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(filterState.selectedSeverities, true), selectedSeverities)) {
           if (selectedSeverities.length > 0) {
-            filterState.activeSeverities = selectedSeverities;
+            filterState.selectedSeverities = selectedSeverities;
           } else {
-            filterState.activeSeverities = SeverityAPI.getAllSeverityValues(true);
+            filterState.selectedSeverities = SeverityAPI.getAllSeverityValues(true);
           }
 
           // This is done to re-render since the above does not.
@@ -148,7 +148,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                           name="alerts-severity"
                           id={`${baseChain.name}_severity-filter`}
                           multiple={true}
-                          value={SeverityAPI.getSeverityFilterValue(FilterStateAPI.getFilterState(baseChain.name, this._filterStates).activeSeverities, true)}
+                          value={SeverityAPI.getSeverityFilterValue(FilterStateAPI.getFilterState(baseChain.name, this._filterStates).selectedSeverities, true)}
                           header="Select severities"
                           placeholder="All"
                           options={SeverityAPI.getSeverityFilterOptions(true)}>

@@ -3,7 +3,7 @@ import { Severity } from "./severity";
 
 export interface FilterState {
     readonly chainName: string;
-    activeSeverities: Severity[];
+    selectedSeverities: Severity[];
     lastClickedColumnIndex: number;
     ordering: OrderingType;
 }

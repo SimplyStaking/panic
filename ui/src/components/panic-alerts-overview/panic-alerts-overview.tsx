@@ -19,7 +19,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
   _chains: Chain[];
   _filterState: FilterState = {
     chainName: '',
-    activeSeverities: SeverityAPI.getAllSeverityValues(),
+    selectedSeverities: SeverityAPI.getAllSeverityValues(),
     lastClickedColumnIndex: 1,
     ordering: 'descending'
   }
@@ -30,7 +30,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
     try {
       const chains = await ChainsAPI.getChains();
       this._chains = await ChainsAPI.updateChains(chains);
-      this.alerts = await AlertsAPI.getAlerts(this._chains, this._filterState.activeSeverities, 0, 2625677273);
+      this.alerts = await AlertsAPI.getAlerts(this._chains, this._filterState.selectedSeverities, 0, 2625677273);
 
       this._updater = window.setInterval(async () => {
         await this.reRenderAction();
@@ -42,7 +42,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
 
   async reRenderAction() {
     this._chains = await ChainsAPI.updateChains(this._chains);
-    this.alerts = await AlertsAPI.getAlerts(this._chains, this._filterState.activeSeverities, 0, 2625677273);
+    this.alerts = await AlertsAPI.getAlerts(this._chains, this._filterState.selectedSeverities, 0, 2625677273);
   }
 
   async componentDidLoad() {
@@ -75,11 +75,11 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
         }
 
         // Update severities shown if severity filter was changed.
-        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(this._filterState.activeSeverities), selectedSeverities)) {
+        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(this._filterState.selectedSeverities), selectedSeverities)) {
           if (selectedSeverities.length > 0) {
-            this._filterState.activeSeverities = selectedSeverities;
+            this._filterState.selectedSeverities = selectedSeverities;
           } else {
-            this._filterState.activeSeverities = SeverityAPI.getAllSeverityValues();
+            this._filterState.selectedSeverities = SeverityAPI.getAllSeverityValues();
           }
           await this.reRenderAction();
         }
@@ -120,7 +120,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
                   name="alerts-severity"
                   id="severity-filter"
                   multiple={true}
-                  value={SeverityAPI.getSeverityFilterValue(this._filterState.activeSeverities)}
+                  value={SeverityAPI.getSeverityFilterValue(this._filterState.selectedSeverities)}
                   header="Select severities"
                   placeholder="All"
                   options={SeverityAPI.getSeverityFilterOptions()}>

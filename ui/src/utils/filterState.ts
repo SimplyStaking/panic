@@ -10,7 +10,7 @@ export const FilterStateAPI = {
 function getFilterStates(baseChains: BaseChain[]): FilterState[] {
     return baseChains.map(baseChain => ({
         chainName: baseChain.name,
-        activeSeverities: SeverityAPI.getAllSeverityValues(true),
+        selectedSeverities: SeverityAPI.getAllSeverityValues(true),
         lastClickedColumnIndex: 1,
         ordering: 'descending'
     }));

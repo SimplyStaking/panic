@@ -78,7 +78,7 @@ function getDataTableJSX(baseChain: BaseChain, filterState: FilterState): JSX.El
 
     const hasAlerts = alerts.length > 0;
     const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
-    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, filterState.activeSeverities) : [];
+    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, filterState.selectedSeverities) : [];
 
     return <svc-data-table
         id={baseChain.name}
