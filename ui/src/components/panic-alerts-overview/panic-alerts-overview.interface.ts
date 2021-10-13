@@ -15,6 +15,11 @@ export interface PanicAlertsOverviewInterface {
     _chains: Chain[],
 
     /**
+     * Filter state object which contains the active severities, last clicked column index, and ordering.
+     */
+    _filterState: FilterState,
+
+    /**
      * The {@link window.setInterval} ID, necessary to clear the `time interval` once the component is "destroyed" (detached from the DOM).
      */
     _updater: number,
@@ -23,9 +28,4 @@ export interface PanicAlertsOverviewInterface {
      * How frequent (in milliseconds) the alerts data must be fetched.
      */
     _updateFrequency: number,
-
-    /**
-     * 
-     */
-    _filterState: FilterState,
 }

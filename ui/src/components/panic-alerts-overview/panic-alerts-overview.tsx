@@ -17,14 +17,14 @@ import { FilterState } from '../../interfaces/filtering';
 export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
   @State() alerts: Alert[] = [];
   _chains: Chain[];
-  _updater: number;
-  _updateFrequency: number = pollingFrequency;
   _filterState: FilterState = {
     chainName: '',
     activeSeverities: SeverityAPI.getAllSeverityValues(),
     lastClickedColumnIndex: 1,
     ordering: 'descending'
   }
+  _updater: number;
+  _updateFrequency: number = pollingFrequency;
 
   async componentWillLoad() {
     try {
