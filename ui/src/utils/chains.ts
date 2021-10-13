@@ -242,16 +242,16 @@ async function updateBaseChainsWithRedisAlerts(baseChains: BaseChain[]): Promise
  * Updates active chains within a respective base chain.
  * @param baseChains base chains which contains the respective base chain.
  * @param baseChainName name of base chain to be updated.
- * @param activeChains list of name of active chains.
+ * @param selectedChains list of name of selected chains.
  * @returns updated base chains.
  */
-function updateActiveChainsInBaseChain(baseChains: BaseChain[], baseChainName: string, activeChains: string[]): BaseChain[] {
+function updateActiveChainsInBaseChain(baseChains: BaseChain[], baseChainName: string, selectedChains: string[]): BaseChain[] {
     const updatedBaseChains: BaseChain[] = [];
 
     for (const updatedBaseChain of baseChains) {
         if (updatedBaseChain.name === baseChainName) {
             for (const updatedChain of updatedBaseChain.chains) {
-                updatedChain.active = activeChains.includes(updatedChain.name);
+                updatedChain.active = selectedChains.length === 0 || selectedChains.includes(updatedChain.name);
             }
         }
         updatedBaseChains.push(updatedBaseChain);
@@ -369,7 +369,7 @@ function updateActiveChains(chains: Chain[], activeChains: string[]): Chain[] {
     const updatedChains: Chain[] = [];
 
     for (const chain of chains) {
-        chain.active = activeChains.includes(chain.name);
+        chain.active = activeChains.length === 0 || activeChains.includes(chain.name);
         updatedChains.push(chain);
     }
 
