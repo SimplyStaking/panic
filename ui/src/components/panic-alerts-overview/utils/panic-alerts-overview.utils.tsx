@@ -2,10 +2,10 @@ import { h } from "@stencil/core";
 import { Alert } from "../../../interfaces/alerts";
 import { Chain } from "../../../interfaces/chains";
 import { DataTableRecordType } from "../../../lib/types/types/datatable";
-import { OrderingType } from "../../../lib/types/types/ordering";
 import { SelectOptionType } from "../../../lib/types/types/select";
 import { SeverityAPI } from "../../../utils/severity";
 import { ChainsAPI } from "../../../utils/chains";
+import { FilterState } from "../../../interfaces/filterState";
 
 export const AlertsOverviewAPI = {
     getChainFilterOptionsFromChains: getChainFilterOptionsFromChains,
@@ -26,7 +26,7 @@ function getChainFilterOptionsFromChains(chains: Chain[]): SelectOptionType {
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-function getDataTableJSX(alerts: Alert[], chains: Chain[], lastClickedColumnIndex: number, ordering: OrderingType): JSX.Element {
+function getDataTableJSX(alerts: Alert[], chains: Chain[], filterState: FilterState): JSX.Element {
     let hasAlerts = alerts.length > 0;
     const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
     const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, chains) : [];
@@ -36,8 +36,8 @@ function getDataTableJSX(alerts: Alert[], chains: Chain[], lastClickedColumnInde
         key={hasAlerts ? 'data-table-no-alerts' : 'data-table-alerts'}
         cols={cols}
         rows={rows}
-        last-clicked-column-index={lastClickedColumnIndex}
-        ordering={ordering}
+        last-clicked-column-index={filterState.lastClickedColumnIndex}
+        ordering={filterState.ordering}
         no-records-message="There are no alerts to display at this time"
     />
 }

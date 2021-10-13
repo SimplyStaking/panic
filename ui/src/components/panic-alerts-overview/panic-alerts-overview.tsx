@@ -67,16 +67,20 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
         this._chains = ChainsAPI.updateActiveChains(this._chains, selectedChains);
         await this.reRenderAction();
       } else {
-        const selectedAlerts = event.detail['alerts-severity'].split(',');
+        const selectedSeverities = event.detail['alerts-severity'].split(',');
 
         // Remove empty string element from array if no alerts are selected.
-        if (selectedAlerts.length > 0 && selectedAlerts[0] === '') {
-          selectedAlerts.pop();
+        if (selectedSeverities.length > 0 && selectedSeverities[0] === '') {
+          selectedSeverities.pop();
         }
 
         // Update severities shown if severity filter was changed.
-        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(this._filterState.activeSeverities), selectedAlerts)) {
-          this._filterState.activeSeverities = selectedAlerts;
+        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(this._filterState.activeSeverities), selectedSeverities)) {
+          if (selectedSeverities.length > 0) {
+            this._filterState.activeSeverities = selectedSeverities;
+          } else {
+            this._filterState.activeSeverities = SeverityAPI.getAllSeverityValues();
+          }
           await this.reRenderAction();
         }
       }
@@ -123,7 +127,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
                 </svc-select>
               </div>
               {/* Data table */}
-              {AlertsOverviewAPI.getDataTableJSX(this.alerts, this._chains, this._filterState.lastClickedColumnIndex, this._filterState.ordering)}
+              {AlertsOverviewAPI.getDataTableJSX(this.alerts, this._chains, this._filterState)}
             </svc-filter>
           </div>
         </svc-card>
