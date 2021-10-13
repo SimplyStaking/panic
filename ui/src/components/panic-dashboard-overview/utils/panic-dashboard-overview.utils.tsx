@@ -5,7 +5,7 @@ import { Severity } from '../../../interfaces/severity';
 import { DataTableRecordType } from '../../../lib/types/types/datatable';
 import { OrderingType } from '../../../lib/types/types/ordering';
 import { SelectOptionType } from '../../../lib/types/types/select';
-import { AlertsAPI } from '../../../utils/alerts';
+import { SeverityAPI } from '../../../utils/severity';
 
 export const DashboardOverviewAPI = {
     getChainFilterOptionsFromBaseChain: getChainFilterOptionsFromBaseChain,
@@ -105,7 +105,7 @@ function getDataTableRecordTypeFromAlerts(alerts: Alert[], activeSeverities: Sev
 
     // Format filtered alerts into DataTableRecordType type.
     return filteredAlerts.map(alert => [
-        { label: AlertsAPI.getSeverityIcon(alert.severity), value: alert.severity },
+        { label: SeverityAPI.getSeverityIcon(alert.severity), value: alert.severity },
         { label: new Date(alert.timestamp * 1000).toLocaleString(), value: new Date(alert.timestamp * 1000) },
         { label: alert.message, value: alert.message }]);
 }

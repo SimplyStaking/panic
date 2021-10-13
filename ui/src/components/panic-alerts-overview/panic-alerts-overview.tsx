@@ -4,6 +4,7 @@ import { Chain } from '../../interfaces/chains';
 import { AlertsAPI } from '../../utils/alerts';
 import { AlertsOverviewAPI } from './utils/panic-alerts-overview.utils';
 import { ChainsAPI } from '../../utils/chains';
+import { SeverityAPI } from '../../utils/severity';
 import { pollingFrequency } from '../../utils/constants';
 import { PanicAlertsOverviewInterface } from './panic-alerts-overview.interface';
 import { addTitleToSVCSelect, arrayEquals } from '../../utils/helpers';
@@ -18,7 +19,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
   _chains: Chain[];
   _updater: number;
   _updateFrequency: number = pollingFrequency;
-  _activeSeverities: Severity[] = AlertsAPI.getAllSeverityValues();
+  _activeSeverities: Severity[] = SeverityAPI.getAllSeverityValues();
   _lastClickedColumnIndex: number = 1;
   _ordering: 'ascending' | 'descending' = 'descending';
 
@@ -71,7 +72,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
         }
 
         // Update severities shown if severity filter was changed.
-        if (!arrayEquals(AlertsAPI.getSeverityFilterValue(this._activeSeverities), selectedAlerts)) {
+        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(this._activeSeverities), selectedAlerts)) {
           this._activeSeverities = selectedAlerts;
           await this.reRenderAction();
         }
@@ -112,10 +113,10 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
                   name="alerts-severity"
                   id="severity-filter"
                   multiple={true}
-                  value={AlertsAPI.getSeverityFilterValue(this._activeSeverities)}
+                  value={SeverityAPI.getSeverityFilterValue(this._activeSeverities)}
                   header="Select severities"
                   placeholder="All"
-                  options={AlertsAPI.getSeverityFilterOptions()}>
+                  options={SeverityAPI.getSeverityFilterOptions()}>
                 </svc-select>
               </div>
               {/* Data table */}

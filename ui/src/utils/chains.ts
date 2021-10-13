@@ -1,5 +1,6 @@
 import { BaseChain, Chain } from "../interfaces/chains";
 import { AlertsAPI } from "./alerts";
+import { SeverityAPI } from "./severity";
 import { apiURL, baseChainsNames } from "./constants";
 
 export const ChainsAPI = {
@@ -123,7 +124,7 @@ async function getBaseChains(): Promise<BaseChain[]> {
             baseChains.push({
                 name: baseChain,
                 chains: currentChains,
-                activeSeverities: AlertsAPI.getAllSeverityValues(true),
+                activeSeverities: SeverityAPI.getAllSeverityValues(true),
                 lastClickedColumnIndex: 1,
                 ordering: 'descending'
             });

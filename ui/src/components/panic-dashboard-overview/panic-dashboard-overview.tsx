@@ -1,6 +1,6 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
 import { BaseChain } from '../../interfaces/chains';
-import { AlertsAPI } from '../../utils/alerts';
+import { SeverityAPI } from '../../utils/severity';
 import { ChainsAPI } from '../../utils/chains';
 import { pollingFrequency } from '../../utils/constants';
 import { DashboardOverviewAPI } from './utils/panic-dashboard-overview.utils';
@@ -66,7 +66,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
         }
 
         // Update severities shown if severity filter was changed.
-        if (!arrayEquals(AlertsAPI.getSeverityFilterValue(baseChain.activeSeverities, true), selectedSeverities)) {
+        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(baseChain.activeSeverities, true), selectedSeverities)) {
           baseChain.activeSeverities = selectedSeverities;
           // This is done to re-render since the above does not.
           this.baseChains = [...this.baseChains];
@@ -129,10 +129,10 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                           name="alerts-severity"
                           id={`${baseChain.name}_severity-filter`}
                           multiple={true}
-                          value={AlertsAPI.getSeverityFilterValue(baseChain.activeSeverities, true)}
+                          value={SeverityAPI.getSeverityFilterValue(baseChain.activeSeverities, true)}
                           header="Select severities"
                           placeholder="All"
-                          options={AlertsAPI.getSeverityFilterOptions(true)}>
+                          options={SeverityAPI.getSeverityFilterOptions(true)}>
                         </svc-select>
 
                         {/* Data table */}
