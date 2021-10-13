@@ -35,7 +35,7 @@ function getPieChartJSX(baseChain: BaseChain): JSX.Element {
     let errorAlerts: number = 0;
 
     for (const chain of baseChain.chains) {
-        if (baseChain.activeChains.includes(chain.name)) {
+        if (chain.active) {
             criticalAlerts += chain.alerts.filter(alert => Severity[alert.severity] === Severity.CRITICAL).length;
             warningAlerts += chain.alerts.filter(alert => Severity[alert.severity] === Severity.WARNING).length;
             errorAlerts += chain.alerts.filter(alert => Severity[alert.severity] === Severity.ERROR).length;
@@ -70,7 +70,7 @@ function getDataTableJSX(baseChain: BaseChain): JSX.Element {
     let alerts: Alert[] = [];
 
     for (const chain of baseChain.chains) {
-        if (baseChain.activeChains.includes(chain.name)) {
+        if (chain.active) {
             alerts.push.apply(alerts, chain.alerts);
         }
     }

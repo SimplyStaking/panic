@@ -58,7 +58,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
       }
 
       // Update active chains if chains filter was changed.
-      if (!arrayEquals(ChainsAPI.getActiveChainNames(this._chains), selectedChains)) {
+      if (!arrayEquals(ChainsAPI.getChainFilterValue(this._chains), selectedChains)) {
         this._chains = ChainsAPI.updateActiveChains(this._chains, selectedChains);
         await this.reRenderAction();
       } else {
@@ -70,7 +70,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
         }
 
         // Update severities shown if severity filter was changed.
-        if (!arrayEquals(this._activeSeverities, selectedAlerts)) {
+        if (!arrayEquals(AlertsAPI.getSeverityFilterValue(this._activeSeverities), selectedAlerts)) {
           this._activeSeverities = selectedAlerts;
           await this.reRenderAction();
         }
@@ -101,9 +101,9 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
                   name="selected-chains"
                   id="chains-filter"
                   multiple={true}
-                  value={ChainsAPI.getActiveChainNames(this._chains)}
+                  value={ChainsAPI.getChainFilterValue(this._chains)}
                   header="Select chains"
-                  placeholder="Select chains"
+                  placeholder="All"
                   options={AlertsOverviewAPI.getChainFilterOptionsFromChains(this._chains)}>
                 </svc-select>
                 {/* Severity filter */}
@@ -111,10 +111,10 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
                   name="alerts-severity"
                   id="severity-filter"
                   multiple={true}
-                  value={this._activeSeverities}
+                  value={AlertsAPI.getSeverityFilterValue(this._activeSeverities)}
                   header="Select severities"
-                  placeholder="Select severities"
-                  options={AlertsAPI.getSeverityFilterOptions(false)}>
+                  placeholder="All"
+                  options={AlertsAPI.getSeverityFilterOptions()}>
                 </svc-select>
               </div>
               {/* Data table */}

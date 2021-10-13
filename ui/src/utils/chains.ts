@@ -13,7 +13,7 @@ export const ChainsAPI = {
     activeChainsSources: activeChainsSources,
     updateActiveChains: updateActiveChains,
     // used in both
-    getActiveChainNames: getActiveChainNames
+    getChainFilterValue: getChainFilterValue
 }
 
 /**
@@ -123,8 +123,7 @@ async function getBaseChains(): Promise<BaseChain[]> {
             baseChains.push({
                 name: baseChain,
                 chains: currentChains,
-                activeChains: getActiveChainNames(currentChains),
-                activeSeverities: AlertsAPI.getAllSeverityValues(),
+                activeSeverities: AlertsAPI.getAllSeverityValues(true),
                 lastClickedColumnIndex: 1,
                 ordering: 'descending'
             });
@@ -205,7 +204,6 @@ function addNewlyAddedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: 
             const finalBaseChain: BaseChain = {
                 name: updatedBaseChain.name,
                 chains: [],
-                activeChains: updatedBaseChain.activeChains,
                 activeSeverities: updatedBaseChain.activeSeverities,
                 lastClickedColumnIndex: updatedBaseChain.lastClickedColumnIndex,
                 ordering: updatedBaseChain.ordering
@@ -301,7 +299,6 @@ function updateActiveChainsInBaseChain(baseChains: BaseChain[], baseChainName: s
 
     for (const updatedBaseChain of baseChains) {
         if (updatedBaseChain.name === baseChainName) {
-            updatedBaseChain.activeChains = activeChains;
             for (const updatedChain of updatedBaseChain.chains) {
                 updatedChain.active = activeChains.includes(updatedChain.name);
             }
@@ -436,14 +433,23 @@ function updateActiveChains(chains: Chain[], activeChains: string[]): Chain[] {
  */
 
 /**
- * Returns the name of all active chains in a list.
- * @returns list of name of all active chains.
+ * Returns the value for the chain filter. If not all chains are active, it
+ * returns the name of the active chains while if all chains are active, it
+ * returns an empty list. This is the case since no chain should be selected
+ * if all chains are active.
+ * @returns list of name of all selected chains.
  */
-function getActiveChainNames(chains: Chain[]): string[] {
+function getChainFilterValue(chains: Chain[]): string[] {
     // Filter non-active chains.
-    const filteredChains = chains.filter(function (chain) {
+    const activeChains = chains.filter(function (chain) {
         return chain.active;
     });
 
-    return filteredChains.map(chain => chain.name);
+    // If all chains are active, set filter to empty.
+    if (activeChains.length === chains.length) {
+        return [];
+    }
+
+    // Else return name of active chains.
+    return activeChains.map(chain => chain.name);
 }

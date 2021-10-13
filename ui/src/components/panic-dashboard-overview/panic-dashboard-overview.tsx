@@ -55,7 +55,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
       const baseChain: BaseChain = this.baseChains.find(baseChain => baseChain.name === baseChainName);
 
       // Update active chain if chain filter was changed.
-      if (!arrayEquals(baseChain.activeChains, selectedChains)) {
+      if (!arrayEquals(ChainsAPI.getChainFilterValue(baseChain.chains), selectedChains)) {
         this.baseChains = ChainsAPI.updateActiveChainsInBaseChain(this.baseChains, baseChainName, selectedChains);
       } else {
         const selectedSeverities = event.detail['alerts-severity'].split(',');
@@ -66,7 +66,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
         }
 
         // Update severities shown if severity filter was changed.
-        if (!arrayEquals(baseChain.activeSeverities, selectedSeverities)) {
+        if (!arrayEquals(AlertsAPI.getSeverityFilterValue(baseChain.activeSeverities, true), selectedSeverities)) {
           baseChain.activeSeverities = selectedSeverities;
           // This is done to re-render since the above does not.
           this.baseChains = [...this.baseChains];
@@ -108,9 +108,9 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                       name="selected-chains"
                       id={`${baseChain.name}_chain-filter`}
                       multiple={true}
-                      value={ChainsAPI.getActiveChainNames(baseChain.chains)}
+                      value={ChainsAPI.getChainFilterValue(baseChain.chains)}
                       header="Select chains"
-                      placeholder="Select chains"
+                      placeholder="All"
                       options={DashboardOverviewAPI.getChainFilterOptionsFromBaseChain(baseChain)}>
                     </svc-select>
                   </div>
@@ -129,9 +129,9 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                           name="alerts-severity"
                           id={`${baseChain.name}_severity-filter`}
                           multiple={true}
-                          value={baseChain.activeSeverities}
+                          value={AlertsAPI.getSeverityFilterValue(baseChain.activeSeverities, true)}
                           header="Select severities"
-                          placeholder="Select severities"
+                          placeholder="All"
                           options={AlertsAPI.getSeverityFilterOptions(true)}>
                         </svc-select>
 

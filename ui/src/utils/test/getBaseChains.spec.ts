@@ -117,8 +117,8 @@ describe('getBaseChains() function', () => {
         const baseChains = await ChainsAPI.getBaseChains();
 
         expect(baseChains).toEqual([{
-            name: 'cosmos', activeChains: ['test chain'],
-            activeSeverities: AlertsAPI.getAllSeverityValues(),
+            name: 'cosmos',
+            activeSeverities: AlertsAPI.getAllSeverityValues(true),
             lastClickedColumnIndex: 1,
             ordering: 'descending',
             chains: [{

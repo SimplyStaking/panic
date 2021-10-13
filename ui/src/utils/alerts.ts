@@ -8,6 +8,7 @@ export const AlertsAPI = {
     parseRedisAlerts: parseRedisAlerts,
     getAllSeverityValues: getAllSeverityValues,
     getSeverityFilterOptions: getSeverityFilterOptions,
+    getSeverityFilterValue: getSeverityFilterValue,
     getSeverityIcon: getSeverityIcon,
     getAlertsFromMongoDB: getAlertsFromMongoDB
 }
@@ -40,10 +41,15 @@ function parseRedisAlerts(problems: any): Alert[] {
 
 /**
  * Returns all severity keys in a list.
+ * @param skipInfoSeverity whether to skip info severity (false by default).
  * @returns list of all severity keys.
  */
-function getAllSeverityValues(): Severity[] {
-    return Object.keys(Severity).map(severity => severity as Severity);
+function getAllSeverityValues(skipInfoSeverity: boolean = false): Severity[] {
+    let filtered: string[] = Object.keys(Severity).filter((severity) => {
+        return severity !== 'INFO' || (!skipInfoSeverity)
+    });
+
+    return filtered.map(severity => severity as Severity);
 }
 
 /**
@@ -52,11 +58,32 @@ function getAllSeverityValues(): Severity[] {
  * @returns populated SelectOptionType object.
  */
 function getSeverityFilterOptions(skipInfoSeverity: boolean = false): SelectOptionType {
-    let filtered = Object.keys(Severity).filter((severity) => {
+    let filtered: string[] = Object.keys(Severity).filter((severity) => {
         return severity !== 'INFO' || (!skipInfoSeverity)
     });
 
     return filtered.map(severity => parseSeverity(Severity[severity], severity))
+}
+
+/**
+ * Returns the value for the severity filter. If not all severities are chosen, it
+ * returns the name of the chosen severities while if all severities are chosen, it
+ * returns an empty list. This is the case since no severity should be
+ * selected if all severities are active.
+ * @returns list of name of all selected severities.
+ */
+function getSeverityFilterValue(severities: Severity[], skipInfoSeverity: boolean = false): string[] {
+    let filtered: string[] = Object.keys(Severity).filter((severity) => {
+        return severity !== 'INFO' || (!skipInfoSeverity)
+    });
+
+    // If all severities are chosen, set filter to empty.
+    if (filtered.length === severities.length) {
+        return [];
+    }
+
+    // Else return name of chosen severities.
+    return severities;
 }
 
 /**
