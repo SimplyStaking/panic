@@ -21,14 +21,14 @@ from src.alerter.alerts.node.evm import (
     BlockHeightDifferenceIncreasedAboveThresholdAlert,
     BlockHeightDifferenceDecreasedBelowThresholdAlert
 )
-from src.configs.alerts.node.evm import EVMAlertsConfigsFactory
+from src.configs.alerts.node.evm import EVMNodeAlertsConfig
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
 from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode as EVMAlertsMetricCode
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
-from src.configs.alerts.node.evm import EVMAlertsConfigsFactory
+from src.configs.alerts.node.evm import EVMNodeAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
 from src.utils.exceptions import InvalidUrlException, MetricNotFoundException
 from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
@@ -190,7 +190,7 @@ class EVMAlertingFactoryInstance(AlertingFactory):
 
     def create_alerting_state(
             self, parent_id: str, node_id: str,
-            evm_node_alerts_config: EVMAlertsConfigsFactory) -> None:
+            evm_node_alerts_config: EVMNodeAlertsConfig) -> None:
         """
         This function is a smaller version of the EVMNodeAlertingFactory
         create_alerting_state function
@@ -382,7 +382,7 @@ class TestAlertingFactory(unittest.TestCase):
                 'warning_enabled': 'true'
             }
 
-        self.evm_node_alerts_config = EVMAlertsConfigsFactory(
+        self.evm_node_alerts_config = EVMNodeAlertsConfig(
             parent_id=self.test_parent_id,
             evm_node_is_down=filtered['evm_node_is_down'],
             evm_block_syncing_block_height_difference=filtered[

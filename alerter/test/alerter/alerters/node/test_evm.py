@@ -22,7 +22,7 @@ from src.alerter.factory.evm_node_alerting_factory import (
     EVMNodeAlertingFactory)
 from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode
-from src.configs.alerts.node.evm import EVMAlertsConfigsFactory
+from src.configs.alerts.node.evm import EVMNodeAlertsConfig
 from src.configs.factory.node.evm_alerts import (
     EVMNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi

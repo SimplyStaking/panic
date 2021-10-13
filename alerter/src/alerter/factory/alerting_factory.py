@@ -518,7 +518,7 @@ class AlertingFactory(ABC):
         This function raises a critical/warning increase above threshold alert
         if the current value is bigger than the respective thresholds. If the
         critical repeat time is constantly elapsed, the increase alert is
-        re-raised with a critical severity each time. Also, an increase above
+        re-raised with a critical severity each time. Also, a decrease below
         threshold info alert is raised whenever the current value is greater
         than a threshold. Note, a warning increase is re-raised if
         warning_threshold <= current < critical_threshold <= previous. This is
@@ -642,7 +642,7 @@ class AlertingFactory(ABC):
         if the current value is smaller than the respective thresholds. If the
         critical repeat time is constantly elapsed, the decrease alert is
         re-raised with a critical severity each time. Also, an increase above
-        threshold info alert is raised whenever the current value is greater
+        threshold info alert is raised whenever the current value is less
         than a threshold. Note, a warning decrease is re-raised if
         warning_threshold >= current > critical_threshold >= previous. This is
         done so that in the UI the respective metric is shown in warning state
@@ -712,7 +712,7 @@ class AlertingFactory(ABC):
             self.alerting_state[parent_id][monitorable_id]['warning_sent'][
                 metric_name] = False
 
-        # Now check if the current value is smaller than any of the thresholds.
+        # Now check if the current value is greater than any of the thresholds.
         # First check for critical and do not raise a warning alert if we are
         # immediately in critical state.
 

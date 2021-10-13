@@ -141,13 +141,26 @@ class EVMNodeAlerter(Alerter):
 
             # Check if some errors have been resolved
             self.alerting_factory.classify_error_alert(
-                5009,
-                evm_alerts.InvalidUrlAlert, evm_alerts.ValidUrlAlert,
+                5009, evm_alerts.InvalidUrlAlert, evm_alerts.ValidUrlAlert,
                 data_for_alerting, meta_data['node_parent_id'],
                 meta_data['node_id'], meta_data['node_name'],
                 meta_data['last_monitored'], MetricCode.InvalidUrl.value,
                 "", "EVM URL is now valid!.", None
             )
+
+            # Check if the alert rules are satisfied for the metrics
+            if str_to_bool(configs.evm_node_is_down['enabled']):
+                sub_config = configs.evm_node_is_down
+                self.alerting_factory.classify_downtime_alert(
+                    None, sub_config,
+                    evm_alerts.NodeWentDownAtAlert,
+                    evm_alerts.NodeStillDownAlert,
+                    evm_alerts.NodeBackUpAgainAlert,
+                    data_for_alerting,
+                    meta_data['node_parent_id'], meta_data['node_id'],
+                    MetricCode.NodeIsDown.value,
+                    meta_data['node_name'], meta_data['last_monitored']
+                )
 
             # Check if the alert rules are satisfied for the metrics
             if str_to_bool(
@@ -171,16 +184,19 @@ class EVMNodeAlerter(Alerter):
                 current = data['current_height']['current']
                 sub_config = configs.evm_block_syncing_block_height_difference
                 if current is not None:
-                    self.alerting_factory.nodes_configs[meta_data[
-                        'node_parent_id']][meta_data['node_id']] = current
+                    self.alerting_factory.alerting_state[meta_data[
+                        'node_parent_id']][meta_data['node_id']][
+                            'current_height'] = current
 
                     # The only data we need is the highest node block height,
                     # we then return the difference between the current
                     # node's height and the maximum height found in the list.
                     # The number can never be negative as we are including
                     # our own node.
-                    node_heights = list(self.alerting_factory.nodes_configs[
-                        meta_data['node_parent_id']].values())
+                    node_heights = []
+                    for key, value in self.alerting_factory.alerting_state[
+                            meta_data['node_parent_id']].items():
+                        node_heights.append(value['current_height'])
                     difference = max(node_heights) - current
                     self.alerting_factory. \
                         classify_thresholded_alert(
@@ -209,14 +225,28 @@ class EVMNodeAlerter(Alerter):
             # Detect whether some errors need to be raised, or have been
             # resolved.
             self.alerting_factory.classify_error_alert(
-                5009,
-                evm_alerts.InvalidUrlAlert, evm_alerts.ValidUrlAlert,
+                5009, evm_alerts.InvalidUrlAlert, evm_alerts.ValidUrlAlert,
                 data_for_alerting, meta_data['node_parent_id'],
                 meta_data['node_id'], meta_data['node_name'], meta_data['time'],
                 MetricCode.InvalidUrl.value, data['message'],
                 "EVM URL is now valid!",
                 data['code']
             )
+
+            # Check if the alert rules are satisfied for the metrics
+            if str_to_bool(configs.evm_node_is_down['enabled']):
+                sub_config = configs.evm_node_is_down
+                if data['code'] == 5015:
+                    self.alerting_factory.classify_downtime_alert(
+                        data['went_down_at'], sub_config,
+                        evm_alerts.NodeWentDownAtAlert,
+                        evm_alerts.NodeStillDownAlert,
+                        evm_alerts.NodeBackUpAgainAlert,
+                        data_for_alerting,
+                        meta_data['node_parent_id'], meta_data['node_id'],
+                        MetricCode.NodeIsDown.value,
+                        meta_data['node_name'], meta_data['time']
+                    )
 
     def _process_transformed_data(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,

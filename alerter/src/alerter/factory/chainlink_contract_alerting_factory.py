@@ -118,10 +118,10 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
             }
 
             price_feed_not_observed_thresholds = parse_alert_time_thresholds(
-                ['warning_threshold', 'critical_threshold', 'critical_repeat'],
+                ['critical_repeat'],
                 cl_contract_alerts_config.price_feed_not_observed)
             price_feed_deviation_thresholds = parse_alert_time_thresholds(
-                ['warning_threshold', 'critical_threshold', 'critical_repeat'],
+                ['critical_repeat'],
                 cl_contract_alerts_config.price_feed_deviation)
 
             critical_repeat_timer = {
@@ -309,8 +309,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
 
         monitoring_datetime = datetime.fromtimestamp(monitoring_timestamp)
 
-        # First check for a decrease below critical threshold and then check for
-        # a decrease below warning threshold as
+        # First check for an increase above critical threshold and then check
+        # for an increase above warning threshold as
         # warning_threshold <= critical_threshold
         if critical_sent[metric_name] and current < critical_threshold:
             alert = decreased_below_threshold_alert(
@@ -341,7 +341,7 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
             self.alerting_state[parent_id][monitorable_id][
                 contract_proxy_address]['warning_sent'][metric_name] = False
 
-        # Now check if the current value is smaller than any of the thresholds.
+        # Now check if the current value is greater than any of the thresholds.
         # First check for critical and do not raise a warning alert if we are
         # immediately in critical state.
         if critical_enabled and current >= critical_threshold:
@@ -382,26 +382,6 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
                                         alert.alert_data)
             self.alerting_state[parent_id][monitorable_id][
                 contract_proxy_address]['warning_sent'][metric_name] = True
-
-    def classify_conditional_alert(
-            self, condition_true_alert: Type[ConditionalAlert],
-            condition_function: Callable, condition_fn_args: List[Any],
-            true_alert_args: List[Any], data_for_alerting: List,
-            condition_false_alert: Type[ConditionalAlert] = None,
-            false_alert_args: List[Any] = None
-    ) -> None:
-        if condition_function(*condition_fn_args):
-            alert = condition_true_alert(*true_alert_args)
-            data_for_alerting.append(alert.alert_data)
-            self.component_logger.debug("Successfully classified alert %s",
-                                        alert.alert_data)
-        elif condition_false_alert is not None:
-            if false_alert_args is None:
-                false_alert_args = []
-            alert = condition_false_alert(*false_alert_args)
-            data_for_alerting.append(alert.alert_data)
-            self.component_logger.debug("Successfully classified alert %s",
-                                        alert.alert_data)
 
     def classify_error_alert(
             self, error_code_to_detect: int,

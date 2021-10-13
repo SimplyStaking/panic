@@ -1,7 +1,7 @@
 from typing import Dict, Any
 
 
-class EVMAlertsConfigsFactory:
+class EVMNodeAlertsConfig:
     def __init__(self, parent_id: str, evm_node_is_down: Dict,
                  evm_block_syncing_block_height_difference: Dict,
                  evm_block_syncing_no_change_in_block_height: Dict) -> None:

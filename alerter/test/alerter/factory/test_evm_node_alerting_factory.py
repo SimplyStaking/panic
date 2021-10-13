@@ -7,7 +7,7 @@ from src.alerter.factory.evm_node_alerting_factory import \
     EVMNodeAlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode as MetricCode
-from src.configs.alerts.node.evm import EVMAlertsConfigsFactory
+from src.configs.alerts.node.evm import EVMNodeAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
 from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
                               OccurrencesInTimePeriodTracker)
@@ -45,7 +45,7 @@ class TestEVMNodeAlertingFactory(unittest.TestCase):
                 'warning_enabled': 'true'
             }
 
-        self.evm_node_alerts_config = EVMAlertsConfigsFactory(
+        self.evm_node_alerts_config = EVMNodeAlertsConfig(
             parent_id=self.test_parent_id,
             evm_node_is_down=filtered['evm_node_is_down'],
             evm_block_syncing_block_height_difference=filtered[

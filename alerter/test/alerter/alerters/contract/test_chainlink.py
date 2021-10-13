@@ -877,6 +877,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         self.test_contract_alerter._process_transformed_data(
             blocking_channel, method, properties, body)
         mock_basic_ack.assert_called_once()
+        mock_place_on_queue.assert_called_once()
 
     @mock.patch.object(ChainlinkContractAlerter,
                        "_place_latest_data_on_queue")

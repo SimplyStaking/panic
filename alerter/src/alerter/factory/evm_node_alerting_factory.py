@@ -4,7 +4,7 @@ from typing import Dict
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode as AlertsMetricCode
-from src.configs.alerts.node.evm import EVMAlertsConfigsFactory
+from src.configs.alerts.node.evm import EVMNodeAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
 from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
                               OccurrencesInTimePeriodTracker)
@@ -35,7 +35,8 @@ class EVMNodeAlertingFactory(AlertingFactory):
                 },
                 Optional[critical_repeat_timer]: {
                     GroupedEVMNodeAlertsMetricCode.value: TimedTaskLimiter
-                }
+                },
+                Optional[current_height]: Int
             }
         }
     }
@@ -43,15 +44,10 @@ class EVMNodeAlertingFactory(AlertingFactory):
 
     def __init__(self, component_logger: logging.Logger) -> None:
         super().__init__(component_logger)
-        self._nodes_configs = {}
-
-    @property
-    def nodes_configs(self) -> Dict:
-        return self._nodes_configs
 
     def create_alerting_state(
             self, parent_id: str, node_id: str,
-            evm_node_alerts_config: EVMAlertsConfigsFactory) -> None:
+            evm_node_alerts_config: EVMNodeAlertsConfig) -> None:
         """
         If no state is already stored, this function will create a new alerting
         state for a node based on the passed alerts config.
@@ -64,7 +60,6 @@ class EVMNodeAlertingFactory(AlertingFactory):
 
         if parent_id not in self.alerting_state:
             self.alerting_state[parent_id] = {}
-            self.nodes_configs[parent_id] = {}
 
         if node_id not in self.alerting_state[parent_id]:
             warning_sent = {
@@ -85,7 +80,7 @@ class EVMNodeAlertingFactory(AlertingFactory):
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 evm_node_alerts_config.evm_node_is_down)
             block_height_difference_thresholds = parse_alert_time_thresholds(
-                ['warning_threshold', 'critical_threshold', 'critical_repeat'],
+                ['critical_repeat'],
                 evm_node_alerts_config.
                 evm_block_syncing_block_height_difference)
             no_change_in_block_height_thresholds = parse_alert_time_thresholds(
@@ -127,14 +122,14 @@ class EVMNodeAlertingFactory(AlertingFactory):
                             'critical_repeat']))
             }
 
-            self.nodes_configs[parent_id][node_id] = None
             self.alerting_state[parent_id][node_id] = {
                 'warning_sent': warning_sent,
                 'critical_sent': critical_sent,
                 'error_sent': error_sent,
                 'warning_window_timer': warning_window_timer,
                 'critical_window_timer': critical_window_timer,
-                'critical_repeat_timer': critical_repeat_timer
+                'critical_repeat_timer': critical_repeat_timer,
+                'current_height': None,
             }
 
     def remove_chain_alerting_state(self, parent_id: str) -> None:
@@ -145,4 +140,3 @@ class EVMNodeAlertingFactory(AlertingFactory):
         """
         if parent_id in self.alerting_state:
             del self.alerting_state[parent_id]
-            del self.nodes_configs[parent_id]

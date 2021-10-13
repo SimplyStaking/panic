@@ -98,7 +98,7 @@ class MissingKeyInConfigException(PANICException):
     def __init__(self, key: str, config_file: str):
         message = "Expected {} field in the {} config".format(key, config_file)
         code = 5011
-        super().__init__(message, 5011)
+        super().__init__(message, code)
 
 
 class JSONDecodeException(PANICException):
