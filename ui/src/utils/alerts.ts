@@ -1,5 +1,6 @@
-import { Alert, Severity } from "../interfaces/alerts";
+import { Alert } from "../interfaces/alerts";
 import { Chain } from "../interfaces/chains";
+import { Severity } from "../interfaces/severity";
 import { SelectOptionObjType, SelectOptionType } from "../lib/types/types/select";
 import { apiURL, criticalIcon, errorIcon, infoIcon, maxNumberOfAlerts, warningIcon } from "./constants";
 import { UnknownAlertSeverityError } from "./errors";

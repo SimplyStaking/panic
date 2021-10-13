@@ -1,6 +1,7 @@
 import { h } from '@stencil/core';
-import { Alert, Severity } from '../../../interfaces/alerts';
+import { Alert } from '../../../interfaces/alerts';
 import { BaseChain } from '../../../interfaces/chains';
+import { Severity } from '../../../interfaces/severity';
 import { DataTableRecordType } from '../../../lib/types/types/datatable';
 import { OrderingType } from '../../../lib/types/types/ordering';
 import { SelectOptionType } from '../../../lib/types/types/select';

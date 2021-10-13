@@ -1,5 +1,5 @@
 import { Component, Host, h, State, Listen } from '@stencil/core';
-import { Alert, Severity } from '../../interfaces/alerts';
+import { Alert } from '../../interfaces/alerts';
 import { Chain } from '../../interfaces/chains';
 import { AlertsAPI } from '../../utils/alerts';
 import { AlertsOverviewAPI } from './utils/panic-alerts-overview.utils';
@@ -7,6 +7,7 @@ import { ChainsAPI } from '../../utils/chains';
 import { pollingFrequency } from '../../utils/constants';
 import { PanicAlertsOverviewInterface } from './panic-alerts-overview.interface';
 import { addTitleToSVCSelect, arrayEquals } from '../../utils/helpers';
+import { Severity } from '../../interfaces/severity';
 
 @Component({
   tag: 'panic-alerts-overview',

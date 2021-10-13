@@ -1,4 +1,5 @@
-import { Alert, Severity } from "../interfaces/alerts"
+import { Alert } from "../interfaces/alerts"
+import { Severity } from "./severity";
 
 export interface BaseChain {
     readonly name: string;
