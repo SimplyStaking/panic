@@ -26,7 +26,7 @@ function getChainFilterOptionsFromChains(chains: Chain[]): SelectOptionType {
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-function getDataTableJSX(alerts: Alert[], chains: Chain[], lastClickedColumnIndex: number, ordering: string): JSX.Element {
+function getDataTableJSX(alerts: Alert[], chains: Chain[], lastClickedColumnIndex: number, ordering: OrderingType): JSX.Element {
     let hasAlerts = alerts.length > 0;
     const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
     const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, chains) : [];
@@ -37,7 +37,7 @@ function getDataTableJSX(alerts: Alert[], chains: Chain[], lastClickedColumnInde
         cols={cols}
         rows={rows}
         last-clicked-column-index={lastClickedColumnIndex}
-        ordering={ordering as OrderingType}
+        ordering={ordering}
         no-records-message="There are no alerts to display at this time"
     />
 }
