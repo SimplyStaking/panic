@@ -1,4 +1,3 @@
-import { SeverityAPI } from "../severity";
 import { ChainsAPI } from "../chains";
 import { baseChainsNames, fetchMock } from "../constants";
 
@@ -118,9 +117,6 @@ describe('getBaseChains() function', () => {
 
         expect(baseChains).toEqual([{
             name: 'cosmos',
-            activeSeverities: SeverityAPI.getAllSeverityValues(true),
-            lastClickedColumnIndex: 1,
-            ordering: 'descending',
             chains: [{
                 id: "test_chain", name: 'test chain', repos: ['test_repo'],
                 systems: ['test_system'], alerts: [], active: true

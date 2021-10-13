@@ -6,6 +6,8 @@ import { pollingFrequency } from '../../utils/constants';
 import { DashboardOverviewAPI } from './utils/panic-dashboard-overview.utils';
 import { addTitleToSVCSelect, arrayEquals } from '../../utils/helpers';
 import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.interface';
+import { FilterState } from '../../interfaces/filterState';
+import { FilterStateAPI } from '../../utils/filterState';
 
 @Component({
   tag: 'panic-dashboard-overview',
@@ -14,20 +16,26 @@ import { PanicDashboardOverviewInterface } from './panic-dashboard-overview.inte
 export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
 
   @State() baseChains: BaseChain[] = [];
+  _filterStates: FilterState[] = [];
   _updater: number;
   _updateFrequency: number = pollingFrequency;
 
   async componentWillLoad() {
     try {
       const baseChains = await ChainsAPI.getBaseChains();
+      this._filterStates = FilterStateAPI.getFilterStates(baseChains);
       this.baseChains = await ChainsAPI.updateBaseChains(baseChains);
 
       this._updater = window.setInterval(async () => {
-        this.baseChains = await ChainsAPI.updateBaseChains(this.baseChains);
+        this.reRenderAction();
       }, this._updateFrequency);
     } catch (error: any) {
       console.error(error);
     }
+  }
+
+  async reRenderAction() {
+    this.baseChains = await ChainsAPI.updateBaseChains(this.baseChains);
   }
 
   async componentDidLoad() {
@@ -60,16 +68,24 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
       } else {
         const selectedSeverities = event.detail['alerts-severity'].split(',');
 
+        // Get filter state which contains the altered filters.
+        const filterState: FilterState = FilterStateAPI.getFilterState(baseChainName, this._filterStates);
+
         // Remove empty string element from array if no alerts are selected.
         if (selectedSeverities.length > 0 && selectedSeverities[0] === '') {
           selectedSeverities.pop();
         }
 
         // Update severities shown if severity filter was changed.
-        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(baseChain.activeSeverities, true), selectedSeverities)) {
-          baseChain.activeSeverities = selectedSeverities;
+        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(filterState.activeSeverities, true), selectedSeverities)) {
+          if (selectedSeverities.length > 0) {
+            filterState.activeSeverities = selectedSeverities;
+          } else {
+            filterState.activeSeverities = SeverityAPI.getAllSeverityValues(true);
+          }
+
           // This is done to re-render since the above does not.
-          this.baseChains = [...this.baseChains];
+          this.reRenderAction();
         }
       }
     } catch (error: any) {
@@ -83,8 +99,11 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
   setDataTableProperties(e: CustomEvent) {
     // Get base chain which contains the altered ordering/sorting.
     const baseChain: BaseChain = this.baseChains.find(baseChain => baseChain.name === e.target['id']);
-    baseChain.lastClickedColumnIndex = e.detail.index;
-    baseChain.ordering = e.detail.ordering;
+    // Get filter state which contains the altered filters.
+    const filterState: FilterState = FilterStateAPI.getFilterState(baseChain.name, this._filterStates);
+
+    filterState.lastClickedColumnIndex = e.detail.index;
+    filterState.ordering = e.detail.ordering;
   }
 
   disconnectedCallback() {
@@ -129,14 +148,14 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                           name="alerts-severity"
                           id={`${baseChain.name}_severity-filter`}
                           multiple={true}
-                          value={SeverityAPI.getSeverityFilterValue(baseChain.activeSeverities, true)}
+                          value={SeverityAPI.getSeverityFilterValue(FilterStateAPI.getFilterState(baseChain.name, this._filterStates).activeSeverities, true)}
                           header="Select severities"
                           placeholder="All"
                           options={SeverityAPI.getSeverityFilterOptions(true)}>
                         </svc-select>
 
                         {/* Data table */}
-                        {DashboardOverviewAPI.getDataTableJSX(baseChain)}
+                        {DashboardOverviewAPI.getDataTableJSX(baseChain, FilterStateAPI.getFilterState(baseChain.name, this._filterStates))}
                       </div>
                     </div>
                   </div>

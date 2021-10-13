@@ -1,9 +1,9 @@
 import { h } from '@stencil/core';
 import { Alert } from '../../../interfaces/alerts';
 import { BaseChain } from '../../../interfaces/chains';
+import { FilterState } from '../../../interfaces/filterState';
 import { Severity } from '../../../interfaces/severity';
 import { DataTableRecordType } from '../../../lib/types/types/datatable';
-import { OrderingType } from '../../../lib/types/types/ordering';
 import { SelectOptionType } from '../../../lib/types/types/select';
 import { SeverityAPI } from '../../../utils/severity';
 
@@ -67,7 +67,7 @@ function getPieChartJSX(baseChain: BaseChain): JSX.Element {
  * @param alerts list of alerts to be displayed.
  * @returns populated data table JSX.
  */
-function getDataTableJSX(baseChain: BaseChain): JSX.Element {
+function getDataTableJSX(baseChain: BaseChain, filterState: FilterState): JSX.Element {
     let alerts: Alert[] = [];
 
     for (const chain of baseChain.chains) {
@@ -78,15 +78,15 @@ function getDataTableJSX(baseChain: BaseChain): JSX.Element {
 
     const hasAlerts = alerts.length > 0;
     const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
-    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, baseChain.activeSeverities) : [];
+    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, filterState.activeSeverities) : [];
 
     return <svc-data-table
         id={baseChain.name}
         key={hasAlerts ? `${baseChain.name}-data-table-no-alerts` : `${baseChain.name}-data-table-alerts`}
         cols={cols}
         rows={rows}
-        ordering={baseChain.ordering as OrderingType}
-        last-clicked-column-index={baseChain.lastClickedColumnIndex}
+        ordering={filterState.ordering}
+        last-clicked-column-index={filterState.lastClickedColumnIndex}
         no-records-message="There are no alerts to display at this time"
     />
 }

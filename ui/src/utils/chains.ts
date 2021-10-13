@@ -1,5 +1,4 @@
 import { BaseChain, Chain } from "../interfaces/chains";
-import { SeverityAPI } from "./severity";
 import { apiURL, baseChainsNames } from "./constants";
 import { AlertsOverviewAPI } from "./alertsOverview";
 
@@ -95,10 +94,7 @@ async function getBaseChains(): Promise<BaseChain[]> {
 
             baseChains.push({
                 name: baseChain,
-                chains: currentChains,
-                activeSeverities: SeverityAPI.getAllSeverityValues(true),
-                lastClickedColumnIndex: 1,
-                ordering: 'descending'
+                chains: currentChains
             });
         }
     }
@@ -176,10 +172,7 @@ function addNewlyAddedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: 
             // Create base chain.
             const finalBaseChain: BaseChain = {
                 name: updatedBaseChain.name,
-                chains: [],
-                activeSeverities: updatedBaseChain.activeSeverities,
-                lastClickedColumnIndex: updatedBaseChain.lastClickedColumnIndex,
-                ordering: updatedBaseChain.ordering
+                chains: []
             };
             // Check for newly added/removed chains within base chain.
             for (const newChain of newBaseChain.chains) {

@@ -1,5 +1,6 @@
 import { BaseChain } from "../interfaces/chains";
 import { FilterState } from "../interfaces/filterState";
+import { SeverityAPI } from "./severity";
 
 export const FilterStateAPI = {
     getFilterStates: getFilterStates,
@@ -9,9 +10,9 @@ export const FilterStateAPI = {
 function getFilterStates(baseChains: BaseChain[]): FilterState[] {
     return baseChains.map(baseChain => ({
         chainName: baseChain.name,
-        activeSeverities: [],
+        activeSeverities: SeverityAPI.getAllSeverityValues(true),
         lastClickedColumnIndex: 1,
-        ordering: 'ascending'
+        ordering: 'descending'
     }));
 }
 
