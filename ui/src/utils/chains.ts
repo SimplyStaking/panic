@@ -152,7 +152,7 @@ async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
     updatedBaseChains = removeNewlyRemovedBaseChains(updatedBaseChains, newBaseChains);
 
     // Update base chains with redis alerts.
-    updatedBaseChains = await updateBaseChainsWithRedisAlerts(updatedBaseChains);
+    updatedBaseChains = await updateBaseChainsWithAlerts(updatedBaseChains);
 
     return updatedBaseChains;
 }
@@ -225,7 +225,7 @@ function removeNewlyRemovedBaseChains(updatedBaseChains: BaseChain[], newBaseCha
  * @param baseChains base chains to be updated.
  * @returns updated base chains.
  */
-async function updateBaseChainsWithRedisAlerts(baseChains: BaseChain[]): Promise<BaseChain[]> {
+async function updateBaseChainsWithAlerts(baseChains: BaseChain[]): Promise<BaseChain[]> {
     // Populate each active chain within each base chain.
     for (const updatedBaseChain of baseChains) {
         for (let chain of updatedBaseChain.chains) {

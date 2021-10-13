@@ -36,7 +36,7 @@ async function getAlerts(chains: Chain[], activeSeverities: Severity[], minTimes
  * @returns alerts data as a JSON object.
  */
 async function getChainAlerts(chains: Chain[], activeSeverities: Severity[], minTimestamp: number, maxTimestamp: number): Promise<any> {
-    let mongoAlertsInput = {
+    let alertsBody = {
         chains: [],
         severities: activeSeverities,
         sources: [],
@@ -47,9 +47,9 @@ async function getChainAlerts(chains: Chain[], activeSeverities: Severity[], min
 
     for (const chain of chains) {
         if (chain.active) {
-            mongoAlertsInput.chains.push(chain.id);
-            mongoAlertsInput.sources.push.apply(mongoAlertsInput.sources, chain.systems);
-            mongoAlertsInput.sources.push.apply(mongoAlertsInput.sources, chain.repos);
+            alertsBody.chains.push(chain.id);
+            alertsBody.sources.push.apply(alertsBody.sources, chain.systems);
+            alertsBody.sources.push.apply(alertsBody.sources, chain.repos);
         }
     }
 
@@ -60,7 +60,7 @@ async function getChainAlerts(chains: Chain[], activeSeverities: Severity[], min
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(mongoAlertsInput)
+                body: JSON.stringify(alertsBody)
             });
 
         return await alerts.json();
