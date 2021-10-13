@@ -8,7 +8,7 @@ beforeEach(() => {
 describe('getBaseChains() function', () => {
     it('should not return any base chains when API is down', async () => {
         fetchMock.mockReject(() => Promise.reject("API is down"));
-        const baseChains = await ChainsAPI.updateBaseChains([{
+        const baseChains = await ChainsAPI.updateBaseChainsWithAlerts([{
             name: '',
             chains: [
                 {
@@ -48,7 +48,7 @@ describe('getBaseChains() function', () => {
         fetchMock.mockResponseOnce(JSON.stringify(monitorablesInfoMockData))
             .mockReject(() => Promise.reject("API is down"));
 
-        const baseChains = await ChainsAPI.updateBaseChains(mockBaseChainsData);
+        const baseChains = await ChainsAPI.updateBaseChainsWithAlerts(mockBaseChainsData);
 
         expect(baseChains).toEqual(mockBaseChainsData);
         expect(fetch).toHaveBeenCalledTimes(2);
@@ -62,7 +62,7 @@ describe('getBaseChains() function', () => {
         fetchMock.mockResponses([JSON.stringify(monitorablesInfoMockData)],
             [JSON.stringify(alertsOverviewMockData)]);
 
-        const baseChains = await ChainsAPI.updateBaseChains(mockBaseChainsData);
+        const baseChains = await ChainsAPI.updateBaseChainsWithAlerts(mockBaseChainsData);
 
         expect(baseChains).toEqual(mockBaseChainsData);
         expect(fetch).toHaveBeenCalledTimes(2);
@@ -95,7 +95,7 @@ describe('getBaseChains() function', () => {
         fetchMock.mockResponses([JSON.stringify(monitorablesInfoMockData)],
             [JSON.stringify(alertsOverviewMockData2)]);
 
-        const baseChains = await ChainsAPI.updateBaseChains(mockBaseChainsData);
+        const baseChains = await ChainsAPI.updateBaseChainsWithAlerts(mockBaseChainsData);
 
         expect(baseChains).toEqual(mockBaseChainsData2);
         expect(fetch).toHaveBeenCalledTimes(2);

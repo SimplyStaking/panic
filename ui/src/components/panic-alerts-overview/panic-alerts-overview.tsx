@@ -28,9 +28,8 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
 
   async componentWillLoad() {
     try {
-      const chains = await ChainsAPI.getChains();
-      this._chains = await ChainsAPI.updateChains(chains);
-      this.alerts = await AlertsAPI.getAlerts(this._chains, this._filterState.selectedSeverities, 0, 2625677273);
+      this._chains = await ChainsAPI.getChains();
+      await this.reRenderAction();
 
       this._updater = window.setInterval(async () => {
         await this.reRenderAction();
@@ -41,7 +40,6 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
   }
 
   async reRenderAction() {
-    this._chains = await ChainsAPI.updateChains(this._chains);
     this.alerts = await AlertsAPI.getAlerts(this._chains, this._filterState.selectedSeverities, 0, 2625677273);
   }
 

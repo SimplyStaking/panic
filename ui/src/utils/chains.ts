@@ -5,11 +5,10 @@ import { AlertsOverviewAPI } from "./alertsOverview";
 export const ChainsAPI = {
     // panic-dashboard-overview
     getBaseChains: getBaseChains,
-    updateBaseChains: updateBaseChains,
+    updateBaseChainsWithAlerts: updateBaseChainsWithAlerts,
     updateActiveChainsInBaseChain: updateActiveChainsInBaseChain,
     // panic-alerts-overview
     getChains: getChains,
-    updateChains: updateChains,
     activeChainsSources: activeChainsSources,
     updateActiveChains: updateActiveChains,
     // used in both
@@ -138,104 +137,24 @@ function getRepos(monitored: any): string[] {
 }
 
 /**
- * Updates base chains and the alerts within.
- * @param baseChains base chains to be updated.
- * @returns updated base chains.
- */
-async function updateBaseChains(baseChains: BaseChain[]): Promise<BaseChain[]> {
-    const newBaseChains: BaseChain[] = await getBaseChains();
-
-    // Add newly added base chains (if any).
-    let updatedBaseChains: BaseChain[] = addNewlyAddedBaseChains(baseChains, newBaseChains);
-
-    // Remove newly removed base chains (if any).
-    updatedBaseChains = removeNewlyRemovedBaseChains(updatedBaseChains, newBaseChains);
-
-    // Update base chains with redis alerts.
-    updatedBaseChains = await updateBaseChainsWithAlerts(updatedBaseChains);
-
-    return updatedBaseChains;
-}
-
-/**
- * Adds newly added base chains while also checking newly added/removed chains within.
- * @param updatedBaseChains base chains to be updated.
- * @param newBaseChains new base chains (latest from API).
- * @returns updated base chains.
- */
-function addNewlyAddedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: BaseChain[]): BaseChain[] {
-    const finalBaseChains: BaseChain[] = [];
-
-    for (let newBaseChain of newBaseChains) {
-        const updatedBaseChain: BaseChain = updatedBaseChains.find(baseChain => baseChain.name === newBaseChain.name);
-        if (updatedBaseChain) {
-            // Create base chain.
-            const finalBaseChain: BaseChain = {
-                name: updatedBaseChain.name,
-                chains: []
-            };
-            // Check for newly added/removed chains within base chain.
-            for (const newChain of newBaseChain.chains) {
-                // Add newly added chains (if any).
-                if (!updatedBaseChain.chains.find(chain => chain.id === newChain.id)) {
-                    newChain.active = false;
-                    finalBaseChain.chains.push(newChain);
-                }
-            }
-
-            // Do not add newly removed chains (if any) / Add common chains only.
-            for (const updatedChain of updatedBaseChain.chains) {
-                if (newBaseChain.chains.find(chain => chain.id === updatedChain.id)) {
-                    finalBaseChain.chains.push(updatedChain);
-                }
-            }
-
-            // Add base chain.
-            finalBaseChains.push(finalBaseChain);
-        } else {
-            // Add newly added base chain.
-            finalBaseChains.push(newBaseChain);
-        }
-    }
-
-    return finalBaseChains;
-}
-
-/**
- * Removes newly removed base chains.
- * @param updatedBaseChains base chains to be updated.
- * @param newBaseChains new base chains (latest from API).
- * @returns updated base chains.
- */
-function removeNewlyRemovedBaseChains(updatedBaseChains: BaseChain[], newBaseChains: BaseChain[]): BaseChain[] {
-    const finalBaseChains: BaseChain[] = [];
-
-    // Do not add newly removed base chains (if any) / Add common base chains only.
-    for (const updatedBaseChain of updatedBaseChains) {
-        if (newBaseChains.find(baseChain => baseChain.name === updatedBaseChain.name)) {
-            finalBaseChains.push(updatedBaseChain);
-        }
-    }
-
-    return finalBaseChains;
-}
-
-/**
  * Updates the alerts of all of the chains within each base chain.
  * @param baseChains base chains to be updated.
  * @returns updated base chains.
  */
 async function updateBaseChainsWithAlerts(baseChains: BaseChain[]): Promise<BaseChain[]> {
+    const finalBaseChains: BaseChain[] = [];
+
     // Populate each active chain within each base chain.
-    for (const updatedBaseChain of baseChains) {
-        for (let chain of updatedBaseChain.chains) {
+    for (const baseChain of baseChains) {
+        for (let chain of baseChain.chains) {
             if (chain.active) {
                 chain = await AlertsOverviewAPI.updateAlerts(chain);
             }
         }
+        finalBaseChains.push(baseChain);
     }
 
-    return baseChains;
+    return finalBaseChains;
 }
 
 /**
@@ -308,34 +227,6 @@ async function getChains(): Promise<Chain[]> {
     }
 
     return chains;
-}
-
-/**
- * Adds newly added chains and removes newly removed chains.
- * @param chains chains to be updated.
- * @returns updated chains.
- */
-async function updateChains(chains: Chain[]): Promise<Chain[]> {
-    const finalChains: Chain[] = [];
-    const newChains: Chain[] = await getChains();
-
-    // Check for newly added/removed chains.
-    for (const newChain of newChains) {
-        // Add newly added chains (if any).
-        if (!chains.find(chain => chain.id === newChain.id)) {
-            newChain.active = false;
-            finalChains.push(newChain);
-        }
-    }
-
-    // Do not add newly removed chains (if any) / Add common chains only.
-    for (const chain of chains) {
-        if (newChains.find(newChain => newChain.id === chain.id)) {
-            finalChains.push(chain);
-        }
-    }
-
-    return finalChains;
 }
 
 /**
