@@ -1,5 +1,6 @@
 import { Alert } from "../../interfaces/alerts";
 import { Chain } from "../../interfaces/chains";
+import { FilterState } from "../../interfaces/filtering";
 
 export interface PanicAlertsOverviewInterface {
 
@@ -24,17 +25,7 @@ export interface PanicAlertsOverviewInterface {
     _updateFrequency: number,
 
     /**
-     * The list of active (selected) severities.
+     * 
      */
-    _activeSeverities: string[],
-
-    /**
-     * The index of the last clicked column within the data table.
-     */
-    _lastClickedColumnIndex: number,
-
-    /**
-     * The ordering of the selected column data table (ascending or descending).
-     */
-    _ordering: 'ascending' | 'descending';
+    _filterState: FilterState,
 }

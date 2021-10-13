@@ -1,4 +1,3 @@
-
 export enum Severity {
     CRITICAL = 'Critical',
     WARNING = 'Warning',

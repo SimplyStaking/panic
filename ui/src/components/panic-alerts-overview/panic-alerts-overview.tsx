@@ -8,7 +8,7 @@ import { SeverityAPI } from '../../utils/severity';
 import { pollingFrequency } from '../../utils/constants';
 import { PanicAlertsOverviewInterface } from './panic-alerts-overview.interface';
 import { addTitleToSVCSelect, arrayEquals } from '../../utils/helpers';
-import { Severity } from '../../interfaces/severity';
+import { FilterState } from '../../interfaces/filtering';
 
 @Component({
   tag: 'panic-alerts-overview',
@@ -19,15 +19,18 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
   _chains: Chain[];
   _updater: number;
   _updateFrequency: number = pollingFrequency;
-  _activeSeverities: Severity[] = SeverityAPI.getAllSeverityValues();
-  _lastClickedColumnIndex: number = 1;
-  _ordering: 'ascending' | 'descending' = 'descending';
+  _filterState: FilterState = {
+    chainName: '',
+    activeSeverities: SeverityAPI.getAllSeverityValues(),
+    lastClickedColumnIndex: 1,
+    ordering: 'descending'
+  }
 
   async componentWillLoad() {
     try {
       const chains = await ChainsAPI.getChains();
       this._chains = await ChainsAPI.updateChains(chains);
-      this.alerts = await AlertsAPI.getAlerts(this._chains, this._activeSeverities, 0, 2625677273);
+      this.alerts = await AlertsAPI.getAlerts(this._chains, this._filterState.activeSeverities, 0, 2625677273);
 
       this._updater = window.setInterval(async () => {
         await this.reRenderAction();
@@ -39,7 +42,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
 
   async reRenderAction() {
     this._chains = await ChainsAPI.updateChains(this._chains);
-    this.alerts = await AlertsAPI.getAlerts(this._chains, this._activeSeverities, 0, 2625677273);
+    this.alerts = await AlertsAPI.getAlerts(this._chains, this._filterState.activeSeverities, 0, 2625677273);
   }
 
   async componentDidLoad() {
@@ -72,8 +75,8 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
         }
 
         // Update severities shown if severity filter was changed.
-        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(this._activeSeverities), selectedAlerts)) {
-          this._activeSeverities = selectedAlerts;
+        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(this._filterState.activeSeverities), selectedAlerts)) {
+          this._filterState.activeSeverities = selectedAlerts;
           await this.reRenderAction();
         }
       }
@@ -86,8 +89,8 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
   // sorted column within the data table (and base chain since correlated).
   @Listen("svcDataTable__lastClickedColumnIndexEvent")
   setDataTableProperties(e: CustomEvent) {
-    this._lastClickedColumnIndex = e.detail.index;
-    this._ordering = e.detail.ordering;
+    this._filterState.lastClickedColumnIndex = e.detail.index;
+    this._filterState.ordering = e.detail.ordering;
   }
 
   render() {
@@ -113,14 +116,14 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
                   name="alerts-severity"
                   id="severity-filter"
                   multiple={true}
-                  value={SeverityAPI.getSeverityFilterValue(this._activeSeverities)}
+                  value={SeverityAPI.getSeverityFilterValue(this._filterState.activeSeverities)}
                   header="Select severities"
                   placeholder="All"
                   options={SeverityAPI.getSeverityFilterOptions()}>
                 </svc-select>
               </div>
               {/* Data table */}
-              {AlertsOverviewAPI.getDataTableJSX(this.alerts, this._chains, this._lastClickedColumnIndex, this._ordering)}
+              {AlertsOverviewAPI.getDataTableJSX(this.alerts, this._chains, this._filterState.lastClickedColumnIndex, this._filterState.ordering)}
             </svc-filter>
           </div>
         </svc-card>
