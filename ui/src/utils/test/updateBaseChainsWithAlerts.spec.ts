@@ -5,22 +5,7 @@ beforeEach(() => {
     fetchMock.resetMocks();
 });
 
-describe('getBaseChains() function', () => {
-    it('should not return any base chains when API is down', async () => {
-        fetchMock.mockReject(() => Promise.reject("API is down"));
-        const baseChains = await ChainsAPI.updateBaseChainsWithAlerts([{
-            name: '',
-            chains: [
-                {
-                    name: 'test chain', id: 'test', repos: [],
-                    systems: [], alerts: [], active: true
-                }]
-        }]);
-
-        expect(baseChains).toEqual([]);
-        expect(fetch).toHaveBeenCalledTimes(1);
-    });
-
+describe('updateBaseChainsWithAlerts() function', () => {
     const mockBaseChainsData = [{
         name: 'cosmos',
         chains: [
@@ -29,6 +14,14 @@ describe('getBaseChains() function', () => {
                 systems: ['test_system'], alerts: [], active: true
             }]
     }];
+
+    it('should not add any alerts when API is down', async () => {
+        fetchMock.mockReject(() => Promise.reject("API is down"));
+        const baseChains = await ChainsAPI.updateBaseChainsWithAlerts(mockBaseChainsData);
+
+        expect(baseChains).toEqual(mockBaseChainsData);
+        expect(fetch).toHaveBeenCalledTimes(1);
+    });
 
     const monitorablesInfoMockData: any = { result: {} };
     for (const baseChainName of baseChainsNames) {
@@ -44,16 +37,6 @@ describe('getBaseChains() function', () => {
         }
     };
 
-    it('should not update chain when getAlertsOverview fails', async () => {
-        fetchMock.mockResponseOnce(JSON.stringify(monitorablesInfoMockData))
-            .mockReject(() => Promise.reject("API is down"));
-
-        const baseChains = await ChainsAPI.updateBaseChainsWithAlerts(mockBaseChainsData);
-
-        expect(baseChains).toEqual(mockBaseChainsData);
-        expect(fetch).toHaveBeenCalledTimes(2);
-    });
-
     it('should not change base chains if alerts did not change', async () => {
         const alertsOverviewMockData = {
             result: { test_chain: { critical: 0, warning: 0, error: 0 } }
@@ -65,7 +48,7 @@ describe('getBaseChains() function', () => {
         const baseChains = await ChainsAPI.updateBaseChainsWithAlerts(mockBaseChainsData);
 
         expect(baseChains).toEqual(mockBaseChainsData);
-        expect(fetch).toHaveBeenCalledTimes(2);
+        expect(fetch).toHaveBeenCalledTimes(1);
     });
 
     it('should update base chains if alerts changed', async () => {
@@ -84,8 +67,8 @@ describe('getBaseChains() function', () => {
             }
         };
 
-        const mockBaseChainsData2 = [...mockBaseChainsData];
-        mockBaseChainsData2[0].chains[0].alerts.push(
+        const mockBaseChainsData3 = [...mockBaseChainsData];
+        mockBaseChainsData3[0].chains[0].alerts.push(
             { severity: 'WARNING', message: 'test alert 1', timestamp: 12345 },
             { severity: 'WARNING', message: 'test alert 2', timestamp: 12345 },
             { severity: 'WARNING', message: 'test alert 3', timestamp: 12345 },
@@ -97,7 +80,7 @@ describe('getBaseChains() function', () => {
 
         const baseChains = await ChainsAPI.updateBaseChainsWithAlerts(mockBaseChainsData);
 
-        expect(baseChains).toEqual(mockBaseChainsData2);
-        expect(fetch).toHaveBeenCalledTimes(2);
+        expect(baseChains).toEqual(mockBaseChainsData3);
+        expect(fetch).toHaveBeenCalledTimes(1);
     });
 });
