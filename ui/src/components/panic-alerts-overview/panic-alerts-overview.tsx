@@ -6,7 +6,7 @@ import { AlertsOverviewAPI } from './utils/panic-alerts-overview.utils';
 import { ChainsAPI } from '../../utils/chains';
 import { pollingFrequency } from '../../utils/constants';
 import { PanicAlertsOverviewInterface } from './panic-alerts-overview.interface';
-import { arrayEquals } from '../../utils/helpers';
+import { addTitleToSVCSelect, arrayEquals } from '../../utils/helpers';
 
 @Component({
   tag: 'panic-alerts-overview',
@@ -42,22 +42,9 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
 
   async componentDidLoad() {
     // Chain Filter text-placeholder (Chains).
-    const chainFilterShadow = document.querySelector('#chains-filter ion-select').shadowRoot;
-    const chainFilterSelectText = chainFilterShadow.querySelector('.select-text');
-    const chainFilterSelectIcon = chainFilterShadow.querySelector('.select-icon');
-    const selectTextTitle = chainFilterSelectText.cloneNode() as Element;
-    selectTextTitle.classList.remove('select-text');
-    selectTextTitle.classList.add('select-text-title');
-    selectTextTitle.setAttribute('part', 'text-title');
-    selectTextTitle.textContent = 'Chains';
-    chainFilterShadow.insertBefore(selectTextTitle, chainFilterSelectIcon);
-
+    addTitleToSVCSelect('chains-filter', 'Chains');
     // Severity Filter text-placeholder (Severity).
-    const severityFilterShadow = document.querySelector(`#severity-filter ion-select`).shadowRoot;
-    const severityFilterSelectIcon = severityFilterShadow.querySelector('.select-icon');
-    const selectTextTitle2 = selectTextTitle.cloneNode() as Element;
-    selectTextTitle2.textContent = 'Severity';
-    severityFilterShadow.insertBefore(selectTextTitle2, severityFilterSelectIcon);
+    addTitleToSVCSelect('severity-filter', 'Severity');
   }
 
   @Listen('filter-changed')
