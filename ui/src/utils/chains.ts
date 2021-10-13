@@ -1,7 +1,7 @@
 import { BaseChain, Chain } from "../interfaces/chains";
-import { AlertsAPI } from "./alerts";
 import { SeverityAPI } from "./severity";
 import { apiURL, baseChainsNames } from "./constants";
+import { AlertsOverviewAPI } from "./alertsOverview";
 
 export const ChainsAPI = {
     // panic-dashboard-overview
@@ -48,34 +48,6 @@ async function getMonitorablesInfo(): Promise<any> {
     } catch (error: any) {
         console.log('Error getting monitorables info -', error);
         return { result: {} }
-    }
-}
-
-/**
- * Gets the alerts overview of a given chain.
- * @param chain chain to be checked.
- * @returns chain data as a JSON object.
- */
-async function getAlertsOverview(chain: Chain): Promise<any> {
-    let chainSources = { parentIds: {} };
-    chainSources.parentIds[chain.id] = { systems: [], repos: [] };
-    chainSources.parentIds[chain.id].systems = chain.systems;
-    chainSources.parentIds[chain.id].repos = chain.repos;
-
-    try {
-        const alertsOverview = await fetch(`${apiURL}redis/alertsOverview`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(chainSources)
-            });
-
-        return await alertsOverview.json();
-    } catch (error: any) {
-        console.log(`Error getting Alerts Overview for chain ID: ${chain.id} -`, error);
-        return { result: {} };
     }
 }
 
@@ -265,27 +237,12 @@ async function updateBaseChainsWithRedisAlerts(baseChains: BaseChain[]): Promise
     for (const updatedBaseChain of baseChains) {
         for (let chain of updatedBaseChain.chains) {
             if (chain.active) {
-                chain = await getChainAlertsFromRedis(chain);
+                chain = await AlertsOverviewAPI.updateAlerts(chain);
             }
         }
     }
 
     return baseChains;
-}
-
-/**
- * Gets the alerts of a given chain from redis.
- * @param chain chain to be checked.
- * @returns updated chain.
- */
-async function getChainAlertsFromRedis(chain: Chain): Promise<Chain> {
-    const data: any = await getAlertsOverview(chain);
-
-    if (data.result[chain.id]) {
-        chain.alerts = AlertsAPI.parseRedisAlerts(data.result[chain.id].problems);
-    }
-
-    return chain;
 }
 
 /**
