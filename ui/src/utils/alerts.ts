@@ -10,7 +10,7 @@ export const AlertsAPI = {
     getSeverityFilterOptions: getSeverityFilterOptions,
     getSeverityFilterValue: getSeverityFilterValue,
     getSeverityIcon: getSeverityIcon,
-    getAlertsFromMongoDB: getAlertsFromMongoDB
+    getAlertsFromMongo: getAlertsFromMongo
 }
 
 /**
@@ -122,18 +122,18 @@ function getSeverityIcon(severity: Severity): Object {
 }
 
 /**
- * ALERTS OVERVIEW - MongoDB.
+ * ALERTS OVERVIEW - Mongo.
  */
 
 /**
- * Gets the alerts of chains from MongoDB.
+ * Gets the alerts of chains from Mongo.
  * @param chains chains to be checked.
  * @param activeSeverities only alerts with these severities are required.
  * @param minTimestamp only alerts which occurred after this timestamp are required.
  * @param maxTimestamp only alerts which occurred before this timestamp are required.
  * @returns alerts extracted from API.
  */
-async function getAlertsFromMongoDB(chains: Chain[], activeSeverities: Severity[], minTimestamp: number, maxTimestamp: number): Promise<Alert[]> {
+async function getAlertsFromMongo(chains: Chain[], activeSeverities: Severity[], minTimestamp: number, maxTimestamp: number): Promise<Alert[]> {
     const data: any = await getAlerts(chains, activeSeverities, minTimestamp, maxTimestamp);
     let alerts: Alert[] = [];
 
@@ -182,13 +182,13 @@ async function getAlerts(chains: Chain[], activeSeverities: Severity[], minTimes
 
         return await alerts.json();
     } catch (error: any) {
-        console.log('Error getting Chain Alerts from MongoDB -', error);
+        console.log('Error getting Chain Alerts from Mongo -', error);
         return { result: {} };
     }
 }
 
 /**
- * Parses the alerts JSON object from MongoDB to a list of alerts.
+ * Parses the alerts JSON object from Mongo to a list of alerts.
  * @param alertsList list of JSON objects.
  * @returns list of alerts.
  */

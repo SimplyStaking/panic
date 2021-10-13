@@ -25,7 +25,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
     try {
       const chains = await ChainsAPI.getChains();
       this._chains = await ChainsAPI.updateChains(chains);
-      this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._chains, this._activeSeverities, 0, 2625677273);
+      this.alerts = await AlertsAPI.getAlertsFromMongo(this._chains, this._activeSeverities, 0, 2625677273);
 
       this._updater = window.setInterval(async () => {
         await this.reRenderAction();
@@ -37,7 +37,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
 
   async reRenderAction() {
     this._chains = await ChainsAPI.updateChains(this._chains);
-    this.alerts = await AlertsAPI.getAlertsFromMongoDB(this._chains, this._activeSeverities, 0, 2625677273);
+    this.alerts = await AlertsAPI.getAlertsFromMongo(this._chains, this._activeSeverities, 0, 2625677273);
   }
 
   async componentDidLoad() {
