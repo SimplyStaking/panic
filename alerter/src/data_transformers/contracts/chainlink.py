@@ -200,10 +200,6 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                             cl_contract.set_last_round_observed(
                                 int(round_data['roundId']))
 
-                if cl_contract.last_round_observed is None:
-                    cl_contract.set_last_round_observed(
-                        int(contract_data['latestRound']))
-
                 if cl_contract.version == 3:
                     cl_contract.set_withdrawable_payment(
                         contract_data['withdrawablePayment'])
@@ -282,9 +278,8 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                         if round_data:
                             last_round_observed = int(round_data['roundId'])
 
-                if (cl_contract.last_round_observed is None and
-                        last_round_observed is None):
-                    last_round_observed = int(contract_data['latestRound'])
+                if last_round_observed is None:
+                    last_round_observed = cl_contract.last_round_observed
 
                 # Add the key to the dictionary
                 processed_data_metrics[proxy_address]['lastRoundObserved'] = {}
