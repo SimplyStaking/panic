@@ -238,7 +238,7 @@ class EVMNodeAlerter(Alerter):
                 sub_config = configs.evm_node_is_down
                 if data['code'] == 5015:
                     self.alerting_factory.classify_downtime_alert(
-                        data['went_down_at'], sub_config,
+                        data['data']['went_down_at'], sub_config,
                         evm_alerts.NodeWentDownAtAlert,
                         evm_alerts.NodeStillDownAlert,
                         evm_alerts.NodeBackUpAgainAlert,

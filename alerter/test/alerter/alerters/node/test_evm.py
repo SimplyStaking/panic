@@ -60,8 +60,8 @@ class TestEVMNodeAlerter(unittest.TestCase):
         self.test_went_down_at = None
         self.test_current_height = 1000
         self.test_last_monitored = datetime.datetime(2012, 1, 1).timestamp()
-        self.test_exception = PANICException('test_exception', 1)
-
+        self.test_evm_node_is_down_exception = NodeIsDownException(
+            self.test_node_name)
         # Construct received configurations
         self.received_configurations = {
             'DEFAULT': 'testing_if_will_be_deleted'
@@ -115,8 +115,9 @@ class TestEVMNodeAlerter(unittest.TestCase):
                 'node_parent_id': self.test_parent_id,
                 'time': self.test_last_monitored
             },
-            'message': self.test_exception.message,
-            'code': self.test_exception.code,
+            'message': self.test_evm_node_is_down_exception.message,
+            'code': self.test_evm_node_is_down_exception.code,
+            'data': {'went_down_at': self.test_last_monitored + 60}
         }
 
         self.transformed_data_example_result = {
@@ -166,8 +167,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
         self.test_configs_factory = None
         self.alerting_factory = None
         self.test_node_alerter = None
-        self.test_exception = None
-        self.test_node_is_down_exception = None
+        self.test_evm_node_is_down_exception = None
 
     def test_alerts_configs_factory_returns_alerts_configs_factory(
             self) -> None:
@@ -437,6 +437,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
             self.assertEqual(expected_data,
                              self.test_node_alerter.publishing_queue.get())
 
+    @mock.patch.object(EVMNodeAlertingFactory, "classify_downtime_alert")
     @mock.patch.object(EVMNodeAlertingFactory, "classify_error_alert")
     @mock.patch.object(EVMNodeAlertingFactory, "classify_no_change_in_alert")
     @mock.patch.object(EVMNodeAlertingFactory,
@@ -450,7 +451,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
     def test_process_result_does_nothing_if_config_not_received(
             self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
             mock_thresh_win_alert, mock_no_change_alert,
-            mock_error_alert) -> None:
+            mock_error_alert, mock_downtime_alert) -> None:
         """
         In this test we will check that no classification function is called
         if data has been received for a node who's associated alerts
@@ -466,7 +467,9 @@ class TestEVMNodeAlerter(unittest.TestCase):
         mock_thresh_win_alert.assert_not_called()
         mock_no_change_alert.assert_not_called()
         mock_error_alert.assert_not_called()
+        mock_downtime_alert.assert_not_called()
 
+    @mock.patch.object(EVMNodeAlertingFactory, "classify_downtime_alert")
     @mock.patch.object(EVMNodeAlertingFactory, "classify_error_alert")
     @mock.patch.object(EVMNodeAlertingFactory, "classify_no_change_in_alert")
     @mock.patch.object(EVMNodeAlertingFactory,
@@ -480,7 +483,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
     def test_process_result_does_not_classify_if_metrics_disabled(
             self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
             mock_thresh_win_alert, mock_no_change_alert,
-            mock_error_alert) -> None:
+            mock_error_alert, mock_downtime_alert) -> None:
         """
         In this test we will check that if a metric is disabled from the config,
         there will be no alert classification for the associated alerts. Note
@@ -507,6 +510,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
         mock_thresh_per_alert.assert_not_called()
         mock_thresh_win_alert.assert_not_called()
         mock_no_change_alert.assert_not_called()
+        mock_downtime_alert.assert_not_called()
 
         calls = mock_error_alert.call_args_list
         self.assertEqual(1, mock_error_alert.call_count)
@@ -520,6 +524,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
             "EVM URL is now valid!.", None)
         self.assertTrue(call_1 in calls)
 
+    @mock.patch.object(EVMNodeAlertingFactory, "classify_downtime_alert")
     @mock.patch.object(EVMNodeAlertingFactory, "classify_error_alert")
     @mock.patch.object(EVMNodeAlertingFactory, "classify_no_change_in_alert")
     @mock.patch.object(EVMNodeAlertingFactory,
@@ -533,7 +538,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
     def test_process_result_classifies_correctly_if_data_valid(
             self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
             mock_thresh_alert, mock_no_change_alert,
-            mock_error_alert) -> None:
+            mock_error_alert, mock_downtime_alert) -> None:
         """
         In this test we will check that the correct classification functions are
         called correctly by the process_result function. Note that
@@ -587,13 +592,25 @@ class TestEVMNodeAlerter(unittest.TestCase):
             GroupedEVMNodeAlertsMetricCode.BlockHeightDifference.value,
             self.test_node_name, self.test_last_monitored)
         self.assertTrue(call_1 in calls)
+
+        calls = mock_downtime_alert.call_args_list
+        self.assertEqual(1, mock_downtime_alert.call_count)
+        call_1 = call(
+            None, configs.evm_node_is_down, NodeWentDownAtAlert,
+            NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedEVMNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, self.test_last_monitored)
+        self.assertTrue(call_1 in calls)
+
         mock_cond_alert.assert_not_called()
         mock_reverse.assert_not_called()
         mock_thresh_per_alert.assert_not_called()
 
+    @mock.patch.object(EVMNodeAlertingFactory, "classify_downtime_alert")
     @mock.patch.object(EVMNodeAlertingFactory, "classify_error_alert")
     def test_process_error_classifies_correctly_if_data_valid(
-            self, mock_error_alert) -> None:
+            self, mock_error_alert, mock_downtime_alert) -> None:
         """
         In this test we will check that if we received an InvalidURL
         Exception then we should generate an alert for it.
@@ -615,8 +632,18 @@ class TestEVMNodeAlerter(unittest.TestCase):
             self.test_parent_id, self.test_node_id, self.test_node_name,
             self.test_last_monitored,
             GroupedEVMNodeAlertsMetricCode.InvalidUrl.value,
-            self.test_exception.message, "EVM URL is now valid!",
-            self.test_exception.code
+            self.test_evm_node_is_down_exception.message,
+            "EVM URL is now valid!",
+            self.test_evm_node_is_down_exception.code
+        )
+        meta_data = self.test_node_down_error['meta_data']
+        mock_downtime_alert.assert_called_once_with(
+            self.test_node_down_error['data']['went_down_at'],
+            configs.evm_node_is_down, NodeWentDownAtAlert,
+            NodeStillDownAlert, NodeBackUpAgainAlert, data_for_alerting,
+            meta_data['node_parent_id'], meta_data['node_id'],
+            GroupedEVMNodeAlertsMetricCode.NodeIsDown.value,
+            meta_data['node_name'], meta_data['time']
         )
 
     @mock.patch.object(EVMNodeAlerter, "_place_latest_data_on_queue")
@@ -684,7 +711,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
         In this test we will generate an exception from one of the processing
         functions to see if an exception is raised.
         """
-        mock_process_result.side_effect = self.test_exception
+        mock_process_result.side_effect = self.test_evm_node_is_down_exception
 
         # Declare some fields for the process_transformed_data function
         self.test_node_alerter._initialise_rabbitmq()
@@ -731,7 +758,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
         # Now do the test for when there are processing errors
         mock_basic_ack.reset_mock()
         mock_send_data.reset_mock()
-        mock_process_result.side_effect = self.test_exception
+        mock_process_result.side_effect = self.test_evm_node_is_down_exception
 
         # Declare some fields for the process_transformed_data function
         self.test_node_alerter._process_transformed_data(
@@ -786,7 +813,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
         mock_send_data.return_value = None
 
         # Generate error in processing
-        mock_process_result.side_effect = self.test_exception
+        mock_process_result.side_effect = self.test_evm_node_is_down_exception
 
         self.test_node_alerter._initialise_rabbitmq()
         blocking_channel = self.test_node_alerter.rabbitmq.channel

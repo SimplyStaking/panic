@@ -155,6 +155,7 @@ class TestEVMNodeAlertingFactory(unittest.TestCase):
                     'warning_window_timer': warning_window_timer,
                     'critical_window_timer': critical_window_timer,
                     'critical_repeat_timer': critical_repeat_timer,
+                    'current_height': None,
                 },
                 self.test_dummy_node_id1: self.test_dummy_state
             },
