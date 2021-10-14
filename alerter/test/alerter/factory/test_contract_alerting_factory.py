@@ -12,8 +12,8 @@ from src.alerter.alerts.contract.chainlink import (
     PriceFeedObservationsIncreasedAboveThreshold,
     PriceFeedDeviationInreasedAboveThreshold,
     PriceFeedDeviationDecreasedBelowThreshold,
-    ConsensusFailure, ErrorRetrievingChainlinkContractData,
-    ChainlinkContractDataNowBeingRetrieved)
+    ConsensusFailure, )
+import src.alerter.alerts.contract.chainlink as cl_alerts
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.factory.chainlink_contract_alerting_factory import \
     ChainlinkContractAlertingFactory
@@ -24,7 +24,8 @@ from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
 from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
                               OccurrencesInTimePeriodTracker)
-from src.utils.exceptions import ErrorRetrievingChainlinkContractData as ERCCD
+from src.utils.exceptions import (CouldNotRetrieveContractsException,
+                                  NoSyncedDataSourceWasAccessibleException)
 
 """
 We will use some chainlink contract alerts and configurations for the tests
@@ -52,7 +53,8 @@ class TestAlertingFactory(unittest.TestCase):
         self.proxy_1 = '0x567cC5F1A7c2B3240cb76E2aA1BF0F1bE7035897'
         self.proxy_2 = '0x3FcbE808D1f1A46764AB839B722Beb16c48A80cB'
         self.error_sent = {
-            MetricCode.ErrorRetrievingChainlinkContractData.value: False,
+            MetricCode.ErrorContractsNotRetrieved.value: False,
+            MetricCode.ErrorNoSyncedDataSources.value: False,
         }
         # Construct the configs
         severity_metrics = [
@@ -61,7 +63,6 @@ class TestAlertingFactory(unittest.TestCase):
         metrics_without_time_window = [
             'price_feed_not_observed',
             'price_feed_deviation',
-            'error_retrieving_chainlink_contract_data'
         ]
 
         filtered = {}
@@ -90,8 +91,6 @@ class TestAlertingFactory(unittest.TestCase):
             price_feed_not_observed=filtered['price_feed_not_observed'],
             price_feed_deviation=filtered['price_feed_deviation'],
             consensus_failure=filtered['consensus_failure'],
-            error_retrieving_chainlink_contract_data=filtered[
-                'error_retrieving_chainlink_contract_data'],
         )
 
         self.test_factory_instance = ChainlinkContractAlertingFactory(
@@ -207,7 +206,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         data_for_alerting = []
         current = float(self.test_alerts_config.price_feed_not_observed[
-            'critical_threshold']) - 1
+            'critical_threshold']) + 1
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config.price_feed_not_observed,
             PriceFeedObservationsIncreasedAboveThreshold,
@@ -364,7 +363,7 @@ class TestAlertingFactory(unittest.TestCase):
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
     @freeze_time("2012-01-01")
-    def test_classify_threshold_only_1_critical_if_below_and_no_repeat(
+    def test_classify_threshold_only_1_critical_if_above_and_no_repeat(
             self) -> None:
         """
         In this test we will check that if critical_repeat is disabled, a
@@ -416,7 +415,7 @@ class TestAlertingFactory(unittest.TestCase):
         ('warning_threshold', 'WARNING',)
     ])
     @freeze_time("2012-01-01")
-    def test_classify_thresh_info_alert_if_above_thresh_and_alert_sent(
+    def test_classify_thresh_info_alert_if_below_thresh_and_alert_sent(
             self, threshold_var, threshold_severity) -> None:
         """
         In this test we will check that once the current value is lower than a
@@ -427,38 +426,33 @@ class TestAlertingFactory(unittest.TestCase):
 
         # First below threshold alert
         current = float(
-            self.test_alerts_config
-            .price_feed_not_observed[threshold_var]) + 1
+            self.test_alerts_config.price_feed_deviation[threshold_var]) + 1
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
+            self.proxy_1, MetricCode.PriceFeedDeviation.value,
             self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
 
-        # Check that an above threshold INFO alert is raised. Current is set to
-        # warning + 1 to not trigger a warning alert as it is expected that
-        # critical <= warning.
+        # Check that a below threshold INFO alert is raised. Current is set to
+        # warning - 1 to not trigger an INFO alert
         current = float(self.test_alerts_config
-                        .price_feed_not_observed[
+                        .price_feed_deviation[
                             'warning_threshold']) - 1
         alert_timestamp = datetime.now().timestamp()
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
+            self.proxy_1, MetricCode.PriceFeedDeviation.value,
             self.test_node_name, alert_timestamp
         )
-        expected_alert = PriceFeedObservedAgain(
+        expected_alert = PriceFeedDeviationDecreasedBelowThreshold(
             self.test_node_name, current, 'INFO', alert_timestamp,
             threshold_severity, self.test_parent_id, self.test_node_id,
             self.proxy_1)
@@ -466,7 +460,7 @@ class TestAlertingFactory(unittest.TestCase):
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
     @freeze_time("2012-01-01")
-    def test_classify_thresh_warn_alert_if_above_critical_below_warn(
+    def test_classify_thresh_warn_alert_if_below_critical_above_warn(
             self) -> None:
         """
         In this test we will check that whenever
@@ -480,56 +474,49 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Send warning increases above threshold alert
         current = (float(self.test_alerts_config
-                         .price_feed_not_observed[
-                             'warning_threshold']) + 1)
+                         .price_feed_deviation['warning_threshold']) + 1)
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
+            self.proxy_1, MetricCode.PriceFeedDeviation.value,
             self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual(1, len(data_for_alerting))
 
-        # Send critical decrease below threshold alert
+        # Send critical increase above threshold alert
         current = float(self.test_alerts_config
-                        .price_feed_not_observed[
-                            'critical_threshold']) + 1
+                        .price_feed_deviation['critical_threshold']) + 1
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting,
             self.test_parent_id, self.test_node_id, self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
+            MetricCode.PriceFeedDeviation.value,
             self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual(2, len(data_for_alerting))
         data_for_alerting.clear()
 
         # Check that 2 alerts are raised, below critical and above warning
-        current = float(self.test_alerts_config.price_feed_not_observed[
+        current = float(self.test_alerts_config.price_feed_deviation[
             'critical_threshold']) - 1
         alert_timestamp = datetime.now().timestamp() + 10
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
-            data_for_alerting,
-            self.test_parent_id, self.test_node_id,  self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            self.proxy_1, MetricCode.PriceFeedDeviation.value,
             self.test_node_name, alert_timestamp
         )
 
-        expected_alert_1 = PriceFeedObservedAgain(
+        expected_alert_1 = PriceFeedDeviationDecreasedBelowThreshold(
             self.test_node_name, current, 'INFO', alert_timestamp,
             'CRITICAL', self.test_parent_id, self.test_node_id,  self.proxy_1)
-        expected_alert_2 = PriceFeedObservationsIncreasedAboveThreshold(
+        expected_alert_2 = PriceFeedDeviationInreasedAboveThreshold(
             self.test_node_name, current, 'WARNING', alert_timestamp,
             'WARNING', self.test_parent_id, self.test_node_id,  self.proxy_1)
         self.assertEqual(2, len(data_for_alerting))
@@ -539,36 +526,63 @@ class TestAlertingFactory(unittest.TestCase):
     @freeze_time("2012-01-01")
     def test_classify_error_alert_raises_error_alert_if_matched_error_codes(
             self) -> None:
-        test_err = ERCCD(self.test_node_id, self.test_parent_id)
+        test_err_1 = CouldNotRetrieveContractsException(self.test_node_id,
+                                                        self.test_parent_id)
+        test_err_2 = NoSyncedDataSourceWasAccessibleException(
+            self.test_node_id, self.test_parent_id)
+
         data_for_alerting = []
 
         self.test_factory_instance.classify_error_alert(
-            test_err.code, ErrorRetrievingChainlinkContractData,
-            ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
+            test_err_1.code, cl_alerts.ErrorContractsNotRetrieved,
+            cl_alerts.ContractsNowRetrieved, data_for_alerting,
             self.test_parent_id, self.test_node_id, self.test_node_name,
             datetime.now().timestamp(),
-            MetricCode.ErrorRetrievingChainlinkContractData.value, "error msg",
-            "resolved msg", test_err.code
+            MetricCode.ErrorContractsNotRetrieved.value, "error msg",
+            "resolved msg", test_err_1.code
         )
-
-        expected_alert = ErrorRetrievingChainlinkContractData(
+        self.test_factory_instance.classify_error_alert(
+            test_err_2.code, cl_alerts.ErrorNoSyncedDataSources,
+            cl_alerts.SyncedDataSourcesFound, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_node_name,
+            datetime.now().timestamp(),
+            MetricCode.ErrorNoSyncedDataSources.value, "error msg",
+            "resolved msg", test_err_2.code
+        )
+        expected_alert_1 = cl_alerts.ErrorContractsNotRetrieved(
             self.test_node_name, 'error msg', 'ERROR',
             datetime.now().timestamp(), self.test_parent_id, self.test_node_id)
-        self.assertEqual(1, len(data_for_alerting))
-        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+        expected_alert_2 = cl_alerts.ErrorNoSyncedDataSources(
+            self.test_node_name, 'error msg', 'ERROR',
+            datetime.now().timestamp(), self.test_parent_id, self.test_node_id)
+        self.assertEqual(2, len(data_for_alerting))
+        self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
+        self.assertEqual(expected_alert_2.alert_data, data_for_alerting[1])
 
     @freeze_time("2012-01-01")
     def test_classify_error_alert_does_nothing_if_no_err_received_and_no_raised(
             self) -> None:
-        test_err = ERCCD(self.test_node_id, self.test_parent_id)
+        test_err_1 = CouldNotRetrieveContractsException(self.test_node_id,
+                                                        self.test_parent_id)
+        test_err_2 = NoSyncedDataSourceWasAccessibleException(
+            self.test_node_id, self.test_parent_id)
         data_for_alerting = []
 
         self.test_factory_instance.classify_error_alert(
-            test_err.code, ErrorRetrievingChainlinkContractData,
-            ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
+            test_err_1.code,  cl_alerts.ErrorContractsNotRetrieved,
+            cl_alerts.ContractsNowRetrieved, data_for_alerting,
             self.test_parent_id, self.test_node_id, self.test_node_name,
             datetime.now().timestamp(),
-            MetricCode.ErrorRetrievingChainlinkContractData.value, "error msg",
+            MetricCode.ErrorContractsNotRetrieved.value, "error msg",
+            "resolved msg", None
+        )
+
+        self.test_factory_instance.classify_error_alert(
+            test_err_2.code,  cl_alerts.ErrorNoSyncedDataSources,
+            cl_alerts.SyncedDataSourcesFound, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_node_name,
+            datetime.now().timestamp(),
+            MetricCode.ErrorNoSyncedDataSources.value, "error msg",
             "resolved msg", None
         )
 
@@ -585,17 +599,18 @@ class TestAlertingFactory(unittest.TestCase):
         no error is detected or a new error is detected after reporting a
         different error
         """
-        test_err = ERCCD('test-node', 'test-parent')
+        test_err_1 = CouldNotRetrieveContractsException(self.test_node_id,
+                                                        self.test_parent_id)
         data_for_alerting = []
 
         # Generate first error alert
         self.test_factory_instance.classify_error_alert(
-            test_err.code, ErrorRetrievingChainlinkContractData,
-            ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
+            test_err_1.code, cl_alerts.ErrorContractsNotRetrieved,
+            cl_alerts.ContractsNowRetrieved, data_for_alerting,
             self.test_parent_id, self.test_node_id, self.test_node_name,
             datetime.now().timestamp(),
-            MetricCode.ErrorRetrievingChainlinkContractData.value, "error msg",
-            "resolved msg", test_err.code
+            MetricCode.ErrorContractsNotRetrieved.value, "error msg",
+            "resolved msg", test_err_1.code
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -603,15 +618,15 @@ class TestAlertingFactory(unittest.TestCase):
         # Generate solved alert
         alerted_timestamp = datetime.now().timestamp() + 10
         self.test_factory_instance.classify_error_alert(
-            test_err.code, ErrorRetrievingChainlinkContractData,
-            ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
+            test_err_1.code, cl_alerts.ErrorContractsNotRetrieved,
+            cl_alerts.ContractsNowRetrieved, data_for_alerting,
             self.test_parent_id, self.test_node_id, self.test_node_name,
             alerted_timestamp,
-            MetricCode.ErrorRetrievingChainlinkContractData.value, "error msg",
+            MetricCode.ErrorContractsNotRetrieved.value, "error msg",
             "resolved msg", code
         )
 
-        expected_alert = ChainlinkContractDataNowBeingRetrieved(
+        expected_alert = cl_alerts.ContractsNowRetrieved(
             self.test_node_name, 'resolved msg', 'INFO', alerted_timestamp,
             self.test_parent_id, self.test_node_id)
         self.assertEqual(1, len(data_for_alerting))

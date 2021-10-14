@@ -182,11 +182,6 @@ class ChainlinkAlertingFactoryInstance(AlertingFactory):
 class EVMAlertingFactoryInstance(AlertingFactory):
     def __init__(self, component_logger: logging.Logger) -> None:
         super().__init__(component_logger)
-        self._nodes_configs = {}
-
-    @property
-    def nodes_configs(self) -> Dict:
-        return self._nodes_configs
 
     def create_alerting_state(
             self, parent_id: str, node_id: str,
@@ -197,7 +192,6 @@ class EVMAlertingFactoryInstance(AlertingFactory):
         """
         if parent_id not in self.alerting_state:
             self.alerting_state[parent_id] = {}
-            self.nodes_configs[parent_id] = {}
 
         if node_id not in self.alerting_state[parent_id]:
             warning_sent = {
@@ -218,7 +212,7 @@ class EVMAlertingFactoryInstance(AlertingFactory):
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 evm_node_alerts_config.evm_node_is_down)
             block_height_difference_thresholds = parse_alert_time_thresholds(
-                ['warning_threshold', 'critical_threshold', 'critical_repeat'],
+                ['critical_repeat'],
                 evm_node_alerts_config.
                 evm_block_syncing_block_height_difference)
             no_change_in_block_height_thresholds = parse_alert_time_thresholds(
@@ -261,14 +255,14 @@ class EVMAlertingFactoryInstance(AlertingFactory):
                             'critical_repeat']))
             }
 
-            self.nodes_configs[parent_id][node_id] = None
             self.alerting_state[parent_id][node_id] = {
                 'warning_sent': warning_sent,
                 'critical_sent': critical_sent,
                 'error_sent': error_sent,
                 'warning_window_timer': warning_window_timer,
                 'critical_window_timer': critical_window_timer,
-                'critical_repeat_timer': critical_repeat_timer
+                'critical_repeat_timer': critical_repeat_timer,
+                'current_height': None,
             }
 
 
@@ -399,7 +393,6 @@ class TestAlertingFactory(unittest.TestCase):
         self.dummy_logger = None
         self.test_alerts_config = None
         self.test_factory_instance = None
-        self.test_evm_factory_instance = None
         self.test_evm_factory_instance = None
 
     def test_alerting_state_returns_alerting_state(self) -> None:
@@ -2109,7 +2102,7 @@ class TestAlertingFactory(unittest.TestCase):
         ('warning_threshold', 'WARNING',)
     ])
     @freeze_time("2012-01-01")
-    def test_classify_thresh_info_alert_if_above_thresh_and_alert_sent(
+    def test_classify_thresh_info_alert_if_below_thresh_and_alert_sent(
             self, threshold_var, threshold_severity) -> None:
         """
         In this test we will check that once the current value is lower than a
@@ -2157,7 +2150,7 @@ class TestAlertingFactory(unittest.TestCase):
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
     @freeze_time("2012-01-01")
-    def test_classify_thresh_warn_alert_if_above_critical_below_warn(
+    def test_classify_thresh_warn_alert_if_below_critical_above_warn(
             self) -> None:
         """
         In this test we will check that whenever

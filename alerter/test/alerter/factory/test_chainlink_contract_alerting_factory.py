@@ -26,7 +26,8 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.proxy_1 = '0x567cC5F1A7c2B3240cb76E2aA1BF0F1bE7035897'
         self.proxy_2 = '0x3FcbE808D1f1A46764AB839B722Beb16c48A80cB'
         self.error_sent = {
-            MetricCode.ErrorRetrievingChainlinkContractData.value: False,
+            MetricCode.ErrorContractsNotRetrieved.value: False,
+            MetricCode.ErrorNoSyncedDataSources.value: False,
         }
         # Construct the configs
         severity_metrics = [
@@ -35,7 +36,6 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         metrics_without_time_window = [
             'price_feed_not_observed',
             'price_feed_deviation',
-            'error_retrieving_chainlink_contract_data'
         ]
 
         filtered = {}
@@ -64,8 +64,6 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             price_feed_not_observed=filtered['price_feed_not_observed'],
             price_feed_deviation=filtered['price_feed_deviation'],
             consensus_failure=filtered['consensus_failure'],
-            error_retrieving_chainlink_contract_data=filtered[
-                'error_retrieving_chainlink_contract_data'],
         )
 
         # Test object
@@ -107,10 +105,10 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         critical_sent = copy.deepcopy(warning_critical_sent_dict)
 
         price_feed_not_observed_thresholds = parse_alert_time_thresholds(
-            ['warning_threshold', 'critical_threshold', 'critical_repeat'],
+            ['critical_repeat'],
             self.cl_contract_alerts_config.price_feed_not_observed)
         price_feed_deviation_thresholds = parse_alert_time_thresholds(
-            ['warning_threshold', 'critical_threshold', 'critical_repeat'],
+            ['critical_repeat'],
             self.cl_contract_alerts_config.price_feed_deviation)
 
         critical_repeat_timer = {
@@ -171,7 +169,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
                     self.proxy_1: self.test_dummy_state,
                 },
                 'chain_errors': {
-                  'error_sent': self.error_sent,
+                    'error_sent': self.error_sent,
                 }
             },
             self.test_dummy_parent_id1: {
