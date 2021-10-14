@@ -607,7 +607,6 @@ class TestChainlinkAlertersManager(unittest.TestCase):
                 price_feed_not_observed=self.config_1['11'],
                 price_feed_deviation=self.config_1['12'],
                 consensus_failure=self.config_1['13'],
-                error_retrieving_chainlink_contract_data=self.config_1['14']
             )
         }
         expected_alert_1 = ComponentResetAlert(
@@ -679,7 +678,6 @@ class TestChainlinkAlertersManager(unittest.TestCase):
                 price_feed_not_observed=self.config_1['11'],
                 price_feed_deviation=self.config_1['12'],
                 consensus_failure=self.config_1['13'],
-                error_retrieving_chainlink_contract_data=self.config_1['14']
             )
         }
         self.assertEqual(expected_node_configs,

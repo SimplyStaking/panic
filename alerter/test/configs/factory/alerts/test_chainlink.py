@@ -40,7 +40,7 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
         ]
         chainlink_contracts_config_metrics = [
             'price_feed_not_observed', 'price_feed_deviation',
-            'consensus_failure', 'error_retrieving_chainlink_contract_data'
+            'consensus_failure',
         ]
 
         self.received_config_example_1_cl_node = {}
@@ -134,9 +134,7 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
             price_feed_not_observed=filtered_1_cl_contract[
                 'price_feed_not_observed'],
             price_feed_deviation=filtered_1_cl_contract['price_feed_deviation'],
-            consensus_failure=filtered_1_cl_contract['consensus_failure'],
-            error_retrieving_chainlink_contract_data=filtered_1_cl_contract[
-                'error_retrieving_chainlink_contract_data']
+            consensus_failure=filtered_1_cl_contract['consensus_failure']
         )
         self.alerts_config_2_cl_contract = ChainlinkContractAlertsConfig(
             parent_id=self.test_parent_id_2,
@@ -144,8 +142,6 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
                 'price_feed_not_observed'],
             price_feed_deviation=filtered_2_cl_contract['price_feed_deviation'],
             consensus_failure=filtered_2_cl_contract['consensus_failure'],
-            error_retrieving_chainlink_contract_data=filtered_2_cl_contract[
-                'error_retrieving_chainlink_contract_data']
         )
 
         self.cl_node_configs_factory = ChainlinkNodeAlertsConfigsFactory()

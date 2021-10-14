@@ -149,16 +149,6 @@ class ChainlinkContractAlerter(Alerter):
 
                 # Check if some errors have been resolved
                 self.alerting_factory.classify_error_alert(
-                    5019,
-                    cl_alerts.ErrorContractsNotRetrieved,
-                    cl_alerts.ContractsNowRetrieved,
-                    data_for_alerting, meta_data['node_parent_id'],
-                    "", "", meta_data['last_monitored'],
-                    MetricCode.ErrorContractsNotRetrieved.value,
-                    "", "Chainlink contracts are now being retrieved!", None
-                )
-
-                self.alerting_factory.classify_error_alert(
                     5018,
                     cl_alerts.ErrorNoSyncedDataSources,
                     cl_alerts.SyncedDataSourcesFound,
@@ -166,6 +156,16 @@ class ChainlinkContractAlerter(Alerter):
                     "", "", meta_data['last_monitored'],
                     MetricCode.ErrorNoSyncedDataSources.value,
                     "", "Synced EVM data sources found!", None
+                )
+
+                self.alerting_factory.classify_error_alert(
+                    5019,
+                    cl_alerts.ErrorContractsNotRetrieved,
+                    cl_alerts.ContractsNowRetrieved,
+                    data_for_alerting, meta_data['node_parent_id'],
+                    "", "", meta_data['last_monitored'],
+                    MetricCode.ErrorContractsNotRetrieved.value,
+                    "", "Chainlink contracts are now being retrieved!", None
                 )
 
                 current_historical_rounds = contract_data['historicalRounds'][
