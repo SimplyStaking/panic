@@ -14,6 +14,7 @@ const mongoClient = require('mongodb').MongoClient;
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const Web3 = require('web3');
 const parsePrometheusTextFormat = require('parse-prometheus-text-format');
 const utils = require('./server/utils');
 const errors = require('./server/errors');
@@ -896,6 +897,39 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
       res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     }
   });
+});
+
+// ---------------------------------------- Ethereum
+app.post('/server/ethereum/rpc', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { httpUrl } = req.body;
+
+  // Check if missingParamsList is missing.
+  const missingParamsList = utils.missingValues({ httpUrl });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  if (blackList.find((a) => httpUrl.includes(a))) {
+    const error = new errors.BlackListError(httpUrl);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
+  try {
+    const web3 = new Web3(new Web3.providers.HttpProvider(httpUrl));
+    await web3.eth.isSyncing();
+    const msg = new msgs.MessagePong();
+    res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+  } catch (e) {
+    const msg = new msgs.ConnectionError();
+    res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+  }
 });
 
 // ---------------------------------------- Common

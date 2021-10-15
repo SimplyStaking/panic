@@ -117,6 +117,21 @@ const generalThresholdAlerts = {
   allIds: ['1', '2', '3', '4', '5'],
 };
 
+const generalRepeatAlerts = {
+  byId: {},
+  allIds: [],
+};
+
+const generalTimeWindowAlerts = {
+  byId: {},
+  allIds: [],
+};
+
+const generalSeverityAlerts = {
+  byId: {},
+  allIds: [],
+};
+
 // Initial periodic state
 const periodicState = {
   time: 0,
@@ -134,6 +149,9 @@ const generalState = {
       systems: [],
       periodic: periodicState,
       thresholdAlerts: generalThresholdAlerts,
+      repeatAlerts: generalRepeatAlerts,
+      timeWindowAlerts: generalTimeWindowAlerts,
+      severityAlerts: generalSeverityAlerts,
     },
   },
   allIds: [GENERAL],
