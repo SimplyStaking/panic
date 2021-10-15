@@ -261,9 +261,7 @@ class ChainlinkContractAlerter(Alerter):
                 consensus failure.
                 """
                 if (str_to_bool(configs.consensus_failure['enabled']) and
-                    None not in [curr_latest_round,
-                                 prev_latest_round,
-                                 all_historical_rounds]):
+                        all_historical_rounds is not None):
 
                     # Attempt to get the previous historical round
                     round_to_find = curr_latest_round - 1
@@ -271,7 +269,7 @@ class ChainlinkContractAlerter(Alerter):
                         item for item in all_historical_rounds if item[
                             'roundId'] == round_to_find), None)
                     sub_config = configs.consensus_failure
-                    if (previous_round is not None):
+                    if previous_round is not None:
                         self.alerting_factory.classify_conditional_alert(
                             cl_alerts.ConsensusFailure,
                             self._not_equal_condition_function, [
@@ -306,10 +304,10 @@ class ChainlinkContractAlerter(Alerter):
                 cl_alerts.ErrorContractsNotRetrieved,
                 cl_alerts.ContractsNowRetrieved,
                 data_for_alerting, meta_data['node_parent_id'],
-                "", "", meta_data['last_monitored'],
+                "", "", meta_data['time'],
                 MetricCode.ErrorContractsNotRetrieved.value,
-                "", "Chainlink contracts are now being retrieved!",
-                data['code']
+                data['message'],
+                "Chainlink contracts are now being retrieved!", data['code']
             )
 
             self.alerting_factory.classify_error_alert(
@@ -317,7 +315,7 @@ class ChainlinkContractAlerter(Alerter):
                 cl_alerts.ErrorNoSyncedDataSources,
                 cl_alerts.SyncedDataSourcesFound,
                 data_for_alerting, meta_data['node_parent_id'],
-                "", "", meta_data['last_monitored'],
+                "", "", meta_data['time'],
                 MetricCode.ErrorNoSyncedDataSources.value,
                 data['message'], "Synced EVM data sources found!", data['code']
             )

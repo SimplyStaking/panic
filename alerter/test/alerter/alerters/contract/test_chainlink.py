@@ -72,7 +72,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
             'DEFAULT': 'testing_if_will_be_deleted'
         }
         severity_metrics = [
-          'consensus_failure'
+            'consensus_failure'
         ]
         metrics_without_time_window = [
             'price_feed_not_observed',
@@ -123,25 +123,25 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         # Historical rounds data
         self.test_historical_rounds_1 = [
             {
-                'roundId': 48,
+                'roundId': 38,
                 'roundAnswer': 10,
                 'roundTimestamp': self.test_last_monitored + 10,
-                'answeredInRound': 48,
+                'answeredInRound': 38,
                 'deviation': 50.0,
                 'nodeSubmission': 5
             },
             {
-                'roundId': 49,
+                'roundId': 39,
                 'roundAnswer': 5,
                 'roundTimestamp': self.test_last_monitored + 20,
-                'answeredInRound': 49,
+                'answeredInRound': 39,
                 'deviation': 100.0,
                 'nodeSubmission': 10
             }
         ]
         self.test_historical_rounds_2 = [
             {
-                'roundId': 28,
+                'roundId': 48,
                 'roundAnswer': 10,
                 'roundTimestamp': self.test_last_monitored + 10,
                 'answeredInRound': 48,
@@ -151,7 +151,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
                 'noOfTransmitters': 14,
             },
             {
-                'roundId': 29,
+                'roundId': 49,
                 'roundAnswer': 5,
                 'roundTimestamp': self.test_last_monitored + 20,
                 'answeredInRound': 49,
@@ -651,119 +651,133 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
             5019, ErrorContractsNotRetrieved, ContractsNowRetrieved,
-            data_for_alerting, self.test_parent_id, self.test_node_id_2,
-            self.test_node_name_2, self.test_latest_timestamp_2,
+            data_for_alerting, self.test_parent_id, '', '',
+            self.test_latest_timestamp_2,
             MetricCode.ErrorContractsNotRetrieved.value, "",
             "Chainlink contracts are now being retrieved!", None)
         call_2 = call(
             5018, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
-            data_for_alerting, self.test_parent_id, self.test_node_id_2,
-            self.test_node_name_2, self.test_latest_timestamp_2,
+            data_for_alerting, self.test_parent_id, '', '',
+            self.test_latest_timestamp_2,
             MetricCode.ErrorNoSyncedDataSources.value, "",
             "Synced EVM data sources found!", None)
         self.assertTrue(call_1 in calls)
         self.assertTrue(call_2 in calls)
 
-    # @parameterized.expand([
-    #     ("self.test_data_for_alerting_result_v3",
-    #      "self.test_missed_observations_2",
-    #      "self.test_contract_proxy_address_2"),
-    #     ("self.test_data_for_alerting_result_v4",
-    #      "self.test_missed_observations_1",
-    #      "self.test_contract_proxy_address_1"),
-    # ])
-    # @mock.patch.object(ChainlinkContractAlertingFactory,
-    #                    "classify_error_alert")
-    # @mock.patch.object(ChainlinkContractAlertingFactory,
-    #                    "classify_no_change_in_alert")
-    # @mock.patch.object(ChainlinkContractAlertingFactory,
-    #                    "classify_thresholded_alert")
-    # @mock.patch.object(ChainlinkContractAlertingFactory,
-    #                    "classify_thresholded_in_time_period_alert")
-    # @mock.patch.object(ChainlinkContractAlertingFactory,
-    #                    "classify_conditional_alert")
-    # @mock.patch.object(ChainlinkContractAlertingFactory,
-    #                    "classify_thresholded_alert_reverse")
-    # def test_process_result_classifies_correctly_if_data_valid(
-    #         self, mock_result_data, mock_observed, mock_proxy, mock_reverse,
-    #         mock_cond_alert, mock_thresh_per_alert, mock_thresh_alert,
-    #         mock_no_change_alert, mock_error_alert) -> None:
-    #     """
-    #     In this test we will check that the correct classification functions are
-    #     called correctly by the process_result function. Note that
-    #     the actual logic for these classification functions was tested in the
-    #     alert factory class.
-    #     """
-    #     # Add configs for the test data
-    #     parsed_routing_key = self.test_configs_routing_key.split('.')
-    #     chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-    #     del self.received_configurations['DEFAULT']
-    #     self.test_configs_factory.add_new_config(chain,
-    #                                              self.received_configurations)
-    #     configs = self.test_configs_factory.configs[chain]
+    @parameterized.expand([
+        ("self.test_data_for_alerting_result_v3",
+         "self.test_missed_observations_2",
+         "self.test_contract_proxy_address_2", 49),
+        ("self.test_data_for_alerting_result_v4",
+         "self.test_missed_observations_1",
+         "self.test_contract_proxy_address_1", 39),
+    ])
+    @mock.patch.object(ChainlinkContractAlertingFactory,
+                       "classify_thresholded_and_conditional_alert")
+    @mock.patch.object(ChainlinkContractAlertingFactory,
+                       "classify_error_alert")
+    @mock.patch.object(ChainlinkContractAlertingFactory,
+                       "classify_no_change_in_alert")
+    @mock.patch.object(ChainlinkContractAlertingFactory,
+                       "classify_thresholded_alert")
+    @mock.patch.object(ChainlinkContractAlertingFactory,
+                       "classify_thresholded_in_time_period_alert")
+    @mock.patch.object(ChainlinkContractAlertingFactory,
+                       "classify_conditional_alert")
+    @mock.patch.object(ChainlinkContractAlertingFactory,
+                       "classify_thresholded_alert_reverse")
+    def test_process_result_classifies_correctly_if_data_valid(
+            self, mock_result_data, mock_observed, mock_proxy, mock_cons,
+            mock_reverse, mock_cond_alert, mock_thresh_per_alert,
+            mock_thresh_alert, mock_no_change_alert, mock_error_alert,
+            mock_thresh_cond_alert) -> None:
+        """
+        In this test we will check that the correct classification functions are
+        called correctly by the process_result function. Note that
+        the actual logic for these classification functions was tested in the
+        alert factory class.
+        """
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+        configs = self.test_configs_factory.configs[chain]
 
-    #     result_data = eval(mock_result_data)
-    #     meta_data = result_data['result']['meta_data']
-    #     data_for_alerting = []
-    #     self.test_contract_alerter._process_result(
-    #         result_data['result'], data_for_alerting)
+        result_data = eval(mock_result_data)
+        meta_data = result_data['result']['meta_data']
+        data_for_alerting = []
+        self.test_contract_alerter._process_result(
+            result_data['result'], data_for_alerting)
 
-    #     calls = mock_error_alert.call_args_list
-    #     self.assertEqual(1, mock_error_alert.call_count)
-    #     call_1 = call(
-    #         5020,
-    #         ErrorRetrievingChainlinkContractData,
-    #         ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
-    #         self.test_parent_id, meta_data['node_id'],
-    #         meta_data['node_name'], meta_data['last_monitored'],
-    #         MetricCode.ErrorRetrievingChainlinkContractData.value, "",
-    #         "Chainlink contract data is now being retrieved!", None)
-    #     self.assertTrue(call_1 in calls)
+        calls = mock_error_alert.call_args_list
+        self.assertEqual(2, mock_error_alert.call_count)
+        call_1 = call(
+            5018, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
+            data_for_alerting, self.test_parent_id, "",
+            "", meta_data['last_monitored'],
+            MetricCode.ErrorNoSyncedDataSources.value, "",
+            "Synced EVM data sources found!", None)
+        call_2 = call(
+            5019, ErrorContractsNotRetrieved, ContractsNowRetrieved,
+            data_for_alerting, self.test_parent_id, "", "",
+            meta_data['last_monitored'],
+            MetricCode.ErrorContractsNotRetrieved.value, "",
+            "Chainlink contracts are now being retrieved!", None)
+        self.assertTrue(call_1 in calls)
+        self.assertTrue(call_2 in calls)
 
-    #     calls = mock_cond_alert.call_args_list
-    #     # self.assertEqual(3, mock_cond_alert.call_count)
-    #     call_1 = call(
-    #         ConsensusFailure,
-    #         self.test_contract_alerter._not_equal_condition_function,
-    #         [True, False], [
-    #             meta_data['node_name'],
-    #             configs.consensus_failure['severity'],
-    #             meta_data['last_monitored'],
-    #             meta_data['node_parent_id'],
-    #             meta_data['node_id']],
-    #         data_for_alerting)
+        calls = mock_cond_alert.call_args_list
+        self.assertEqual(1, mock_cond_alert.call_count)
+        call_1 = call(
+            ConsensusFailure,
+            self.test_contract_alerter._not_equal_condition_function,
+            [mock_cons, mock_cons], [
+                meta_data['node_name'],
+                configs.consensus_failure['severity'],
+                meta_data['last_monitored'],
+                meta_data['node_parent_id'],
+                meta_data['node_id'],
+                eval(mock_proxy)],
+            data_for_alerting)
+        self.assertTrue(call_1 in calls)
 
-    #     calls = mock_thresh_alert.call_args_list
-    #     self.assertEqual(1, mock_thresh_alert.call_count)
-    #     call_1 = call(
-    #         eval(mock_observed), configs.price_feed_not_observed,
-    #         PriceFeedObservationsIncreasedAboveThreshold,
-    #         PriceFeedObservedAgain,
-    #         data_for_alerting, self.test_parent_id, meta_data['node_id'],
-    #         eval(mock_proxy), MetricCode.PriceFeedNotObserved.value,
-    #         meta_data['node_name'], meta_data['last_monitored'])
-    #     self.assertTrue(call_1 in calls)
-    #     mock_reverse.assert_not_called()
-    #     mock_thresh_per_alert.assert_not_called()
-    #     mock_no_change_alert.assert_not_called()
+        calls = mock_thresh_cond_alert.call_args_list
+        self.assertEqual(1, mock_thresh_cond_alert.call_count)
+        call_1 = call(
+            eval(mock_observed), configs.price_feed_not_observed,
+            PriceFeedObservationsIncreasedAboveThreshold,
+            PriceFeedObservedAgain,
+            self.test_contract_alerter._equal_condition_function, [
+                eval(mock_observed), 0],
+            data_for_alerting, self.test_parent_id, meta_data['node_id'],
+            eval(mock_proxy), MetricCode.PriceFeedNotObserved.value,
+            meta_data['node_name'], meta_data['last_monitored'])
+        self.assertTrue(call_1 in calls)
+
+        mock_thresh_alert.assert_not_called()
+        mock_reverse.assert_not_called()
+        mock_thresh_per_alert.assert_not_called()
+        mock_no_change_alert.assert_not_called()
 
     @parameterized.expand([
-      ("self.test_data_for_alerting_result_v3", "None", "None", 1,
-          "self.test_contract_proxy_address_2", 75.0),
-      ("self.test_data_for_alerting_result_v3",
-          "self.test_historical_rounds_2", "None", 2,
-          "self.test_contract_proxy_address_2", 75.0),
-      ("self.test_data_for_alerting_result_v3", "None",
-          "self.test_historical_rounds_2", 2,
-          "self.test_contract_proxy_address_2", 75.0),
-      ("self.test_data_for_alerting_result_v4", "None", "None", 1,
-          "self.test_contract_proxy_address_1", 100.0),
-      ("self.test_data_for_alerting_result_v4",
-          "self.test_historical_rounds_1", "None", 2,
-          "self.test_contract_proxy_address_1", 100.0),
-      ("self.test_data_for_alerting_result_v4", "None",
-          "self.test_historical_rounds_1", 2,
-          "self.test_contract_proxy_address_1", 100.0),
+        ("self.test_data_for_alerting_result_v3", "None", "None", 0,
+         "self.test_contract_proxy_address_2", 75.0),
+        ("self.test_data_for_alerting_result_v3",
+         "self.test_historical_rounds_2", "None", 1,
+         "self.test_contract_proxy_address_2", 75.0),
+        ("self.test_data_for_alerting_result_v3", "None",
+         "self.test_historical_rounds_2", 1,
+         "self.test_contract_proxy_address_2", 75.0),
+        ("self.test_data_for_alerting_result_v4", "None", "None", 0,
+         "self.test_contract_proxy_address_1", 100.0),
+        ("self.test_data_for_alerting_result_v4",
+         "self.test_historical_rounds_1", "None", 1,
+         "self.test_contract_proxy_address_1", 100.0),
+        ("self.test_data_for_alerting_result_v4", "None",
+         "self.test_historical_rounds_1", 1,
+         "self.test_contract_proxy_address_1", 100.0),
     ])
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_thresholded_alert")
@@ -793,11 +807,13 @@ class TestChainlinkContractAlerter(unittest.TestCase):
 
         result_data = eval(mock_result_data)
         meta_data = result_data['result']['meta_data']
+
         # Convert data here for alert triggers
         result_data['result']['data'][eval(mock_proxy)]['historicalRounds'][
             'current'] = eval(mock_curr_hist)
         result_data['result']['data'][eval(mock_proxy)]['historicalRounds'][
             'previous'] = eval(mock_prev_hist)
+
         # Ensure that current_missed_observations is 0
         result_data['result']['data'][eval(mock_proxy)]['lastRoundObserved'][
             'current'] = result_data['result']['data'][eval(mock_proxy)][
@@ -818,39 +834,48 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         self.assertEqual(call_count, mock_thresh_alert.call_count)
 
         # Check if call_1 in calls only if we expect that alert to exist
-        if call_count != 1:
+        if call_count != 0:
             self.assertTrue(call_1 in calls)
 
-    # @mock.patch.object(ChainlinkContractAlertingFactory, "classify_error_alert")
-    # def test_process_error_classifies_correctly_if_data_valid(
-    #         self, mock_error_alert) -> None:
-    #     """
-    #     In this test we will check that if we received an
-    #     ErrorRetrievingChainlinkContractData Exception then we should generate
-    #     an alert for it.
-    #     """
-    #     parsed_routing_key = self.test_configs_routing_key.split('.')
-    #     chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-    #     del self.received_configurations['DEFAULT']
-    #     self.test_configs_factory.add_new_config(chain,
-    #                                              self.received_configurations)
-    #     configs = self.test_configs_factory.configs[chain]
+    @mock.patch.object(ChainlinkContractAlertingFactory, "classify_error_alert")
+    def test_process_error_classifies_correctly_if_data_valid(
+            self, mock_error_alert) -> None:
+        """
+        In this test we will check that if we received an
+        ErrorRetrievingChainlinkContractData Exception then we should generate
+        an alert for it.
+        """
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+        configs = self.test_configs_factory.configs[chain]
 
-    #     data_for_alerting = []
-    #     self.test_contract_alerter._process_error(
-    #         self.test_node_down_error, data_for_alerting)
+        data_for_alerting = []
+        self.test_contract_alerter._process_error(
+            self.test_node_down_error, data_for_alerting)
 
-    #     mock_error_alert.assert_called_once_with(
-    #         5020,
-    #         ErrorRetrievingChainlinkContractData,
-    #         ChainlinkContractDataNowBeingRetrieved, data_for_alerting,
-    #         self.test_parent_id, "", "", self.test_latest_timestamp_1,
-    #         MetricCode.ErrorRetrievingChainlinkContractData.value,
-    #         self.test_exception.message,
-    #         "Chainlink contract data is now being retrieved!",
-    #         self.test_exception.code
-    #     )
-    #     self.assertEqual(1, mock_error_alert.call_count)
+        calls = mock_error_alert.call_args_list
+        self.assertEqual(2, mock_error_alert.call_count)
+        call_1 = call(
+            5019, ErrorContractsNotRetrieved, ContractsNowRetrieved,
+            data_for_alerting, self.test_parent_id, '', '',
+            self.test_last_monitored,
+            MetricCode.ErrorContractsNotRetrieved.value,
+            self.test_exception.message,
+            "Chainlink contracts are now being retrieved!",
+            self.test_exception.code)
+        call_2 = call(
+            5018, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
+            data_for_alerting, self.test_parent_id, '', '',
+            self.test_last_monitored,
+            MetricCode.ErrorNoSyncedDataSources.value,
+            self.test_exception.message,
+            "Synced EVM data sources found!",
+            self.test_exception.code)
+        self.assertTrue(call_1 in calls)
+        self.assertTrue(call_2 in calls)
 
     @mock.patch.object(ChainlinkContractAlerter, "_place_latest_data_on_queue")
     @mock.patch.object(RabbitMQApi, "basic_ack")
