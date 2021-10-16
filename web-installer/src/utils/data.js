@@ -18,6 +18,11 @@ function pingPrometheus(prometheusUrl, metric) {
     { prometheusUrl, metric });
 }
 
+function pingEthRPC(httpUrl) {
+  return sendData('/server/ethereum/rpc', {},
+    { httpUrl });
+}
+
 function deleteConfigs() {
   return sendData('/server/config/delete', {}, {});
 }
@@ -98,5 +103,5 @@ export {
   fetchData, testCall, sendData, sendTestEmail, pingTendermint, pingRepo,
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
   sendConfig, saveAccount, deleteAccount, getConfigPaths, getConfig,
-  loadAccounts, deleteConfigs, pingDockerHub, pingPrometheus,
+  loadAccounts, deleteConfigs, pingDockerHub, pingPrometheus, pingEthRPC,
 };

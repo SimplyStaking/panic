@@ -1,9 +1,11 @@
 from typing import Dict, Any
 
 
-class ChainlinkContractsAlertsConfig:
-    def __init__(self, parent_id: str, price_feed_not_observed: Dict,
-                 price_feed_deviation: Dict, consensus_failure: Dict) -> None:
+class ChainlinkContractAlertsConfig:
+    def __init__(self, parent_id: str,
+                 price_feed_not_observed: Dict,
+                 price_feed_deviation: Dict,
+                 consensus_failure: Dict) -> None:
         self._parent_id = parent_id
         self._price_feed_not_observed = price_feed_not_observed
         self._price_feed_deviation = price_feed_deviation

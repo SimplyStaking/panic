@@ -362,7 +362,7 @@ class ChainlinkContractsMonitor(Monitor):
                 # In v3 contracts we may encounter a scenario where a node
                 # submitted their answer but consensus is not reached yet on
                 # the price. If this happens, the last block height processed is
-                # set to 1 - the block no of this event. This is done so that in
+                # set to the block no of this event - 1. This is done so that in
                 # the next monitoring round we re-check the round again to see
                 # if a consensus was reached. Note, if a consensus is not
                 # reached, the node software establishes the round price to the

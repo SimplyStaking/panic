@@ -132,7 +132,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         self.test_historical_rounds_2_transformed[1]['deviation'] = 100.0
         self.test_historical_rounds_3 = [
             {
-                'roundId': 48,
+                'roundId': 28,
                 'roundAnswer': 10,
                 'roundTimestamp': self.test_last_monitored + 10,
                 'answeredInRound': 48,
@@ -141,7 +141,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                 'noOfTransmitters': 14,
             },
             {
-                'roundId': 49,
+                'roundId': 29,
                 'roundAnswer': 5,
                 'roundTimestamp': self.test_last_monitored + 20,
                 'answeredInRound': 49,
@@ -386,6 +386,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self.test_historical_rounds_1_transformed)
         self.test_cl_contract_1_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
+        self.test_cl_contract_1_new_metrics.set_last_round_observed(39)
 
         self.test_cl_contract_2_new_metrics.set_latest_round(
             self.test_latest_round_2)
@@ -401,6 +402,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self.test_historical_rounds_2_transformed)
         self.test_cl_contract_2_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
+        self.test_cl_contract_2_new_metrics.set_last_round_observed(49)
 
         self.test_cl_contract_3_new_metrics.set_latest_round(
             self.test_latest_round_1)
@@ -416,6 +418,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self.test_historical_rounds_3_transformed)
         self.test_cl_contract_3_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
+        self.test_cl_contract_3_new_metrics.set_last_round_observed(29)
 
         self.test_cl_contract_4_new_metrics.set_latest_round(
             self.test_latest_round_2)
@@ -431,6 +434,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self.test_historical_rounds_4_transformed)
         self.test_cl_contract_4_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
+        self.test_cl_contract_4_new_metrics.set_last_round_observed(39)
 
         # Test state after receiving new metrics
         self.test_state_v3_updated = {
@@ -478,6 +482,10 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                                 self.test_historical_rounds_1_transformed,
                             'previous': [],
                         },
+                        'lastRoundObserved': {
+                            'current': 39,
+                            'previous': None
+                        },
                         'contractVersion': 3,
                         'aggregatorAddress': self.test_aggregator_address_1,
                     },
@@ -506,6 +514,10 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                             'current':
                                 self.test_historical_rounds_2_transformed,
                             'previous': [],
+                        },
+                        'lastRoundObserved': {
+                            'current': 49,
+                            'previous': None
                         },
                         'contractVersion': 3,
                         'aggregatorAddress': self.test_aggregator_address_2,
@@ -545,6 +557,10 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                                 self.test_historical_rounds_3_transformed,
                             'previous': [],
                         },
+                        'lastRoundObserved': {
+                            'current': 29,
+                            'previous': None
+                        },
                         'contractVersion': 4,
                         'aggregatorAddress': self.test_aggregator_address_1,
                     },
@@ -573,6 +589,10 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                             'current':
                                 self.test_historical_rounds_4_transformed,
                             'previous': [],
+                        },
+                        'lastRoundObserved': {
+                            'current': 39,
+                            'previous': None
                         },
                         'contractVersion': 4,
                         'aggregatorAddress': self.test_aggregator_address_2,
@@ -614,7 +634,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         self.test_cl_contract_4_new_metrics = None
 
     def test_str_returns_transformer_name(self) -> None:
-        self.assertEqual(self.transformer_name, str(self.test_data_transformer))
+        self.assertEqual(self.transformer_name,
+                         str(self.test_data_transformer))
 
     def test_transformer_name_returns_transformer_name(self) -> None:
         self.assertEqual(self.transformer_name,
@@ -1080,7 +1101,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             'mandatory': True
         }
 
-        self.assertEqual(2, self.test_data_transformer.publishing_queue.qsize())
+        self.assertEqual(
+            2, self.test_data_transformer.publishing_queue.qsize())
         self.assertDictEqual(
             expected_data_for_alerting,
             self.test_data_transformer.publishing_queue.queue[0])
@@ -1216,7 +1238,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         self.test_data_transformer._process_raw_data(blocking_channel,
                                                      method, properties,
                                                      body_result)
-        mock_trans_data.assert_called_once_with(self.raw_data_example_result_v3)
+        mock_trans_data.assert_called_once_with(
+            self.raw_data_example_result_v3)
         mock_trans_data.reset_mock()
 
         # To reset the state as if the node was not already added
@@ -1297,7 +1320,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         # given data.
         self.assertEqual(2, len(self.test_data_transformer._state.keys()))
         self.assertEqual(2, len(self.test_data_transformer._state[
-                                    self.test_node_id_1].keys()))
+            self.test_node_id_1].keys()))
         contract_1_expected_data = copy.deepcopy(
             self.test_cl_contract_1_new_metrics)
         contract_2_expected_data = copy.deepcopy(
@@ -1361,7 +1384,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         expected_data_contract_2 = copy.deepcopy(new_contract_2)
         self.assertEqual(1, len(self.test_data_transformer._state.keys()))
         self.assertEqual(2, len(self.test_data_transformer._state[
-                                    self.test_node_id_1].keys()))
+            self.test_node_id_1].keys()))
         self.assertEqual(
             expected_data_contract_1,
             self.test_data_transformer._state[self.test_node_id_1][
@@ -1584,7 +1607,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self, mock_ack, mock_send_hb, mock_send_data) -> None:
         mock_ack.return_value = None
         mock_send_hb.return_value = None
-        mock_send_data.side_effect = MessageWasNotDeliveredException('test err')
+        mock_send_data.side_effect = MessageWasNotDeliveredException(
+            'test err')
 
         # Load the state to avoid loading data from redis.
         self.test_data_transformer._state = copy.deepcopy(self.test_state_v3)
@@ -1699,7 +1723,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
     def test_process_raw_data_no_msg_not_del_exception_if_raised_by_send_data(
             self, mock_ack, mock_send_data) -> None:
         mock_ack.return_value = None
-        mock_send_data.side_effect = MessageWasNotDeliveredException('test err')
+        mock_send_data.side_effect = MessageWasNotDeliveredException(
+            'test err')
 
         # Load the state to avoid having to load data from redis.
         self.test_data_transformer._state = copy.deepcopy(self.test_state_v3)

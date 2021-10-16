@@ -155,7 +155,10 @@ class ChainlinkContractStore(Store):
                     json.dumps(contract_data['historicalRounds']),
                 Keys.get_cl_contract_last_monitored(
                     node_id, proxy_address):
-                    str(meta_data['last_monitored'])
+                    str(meta_data['last_monitored']),
+                Keys.get_cl_contract_last_round_observed(
+                    node_id, proxy_address):
+                    str(contract_data['lastRoundObserved']),
             })
 
     def _process_mongo_store(self, data: Dict) -> None:
@@ -194,8 +197,8 @@ class ChainlinkContractStore(Store):
 
         for proxy_address, contract_data in metrics.items():
             version = int(contract_data['contractVersion'])
-            payment_key = 'withdrawablePayment' if version == 3 \
-                else 'owedPayment'
+            payment_key = ('withdrawablePayment' if version == 3
+                           else 'owedPayment')
 
             self.mongo.update_one(
                 parent_id,
@@ -206,21 +209,23 @@ class ChainlinkContractStore(Store):
                             'node_id': str(node_id),
                             'node_name': str(node_name),
                             'contractVersion': str(contract_data[
-                                                       'contractVersion']),
+                                'contractVersion']),
                             'aggregatorAddress': str(contract_data[
-                                                         'aggregatorAddress']),
+                                'aggregatorAddress']),
                             'latestRound': str(contract_data[
-                                                   'latestRound']),
+                                'latestRound']),
                             'latestAnswer': str(contract_data[
-                                                    'latestAnswer']),
+                                'latestAnswer']),
                             'latestTimestamp': str(contract_data[
-                                                       'latestTimestamp']),
+                                'latestTimestamp']),
                             'answeredInRound': str(contract_data[
-                                                       'answeredInRound']),
+                                'answeredInRound']),
                             payment_key: str(contract_data[
-                                                 payment_key]),
+                                payment_key]),
                             'historicalRounds': json.dumps(
                                 contract_data['historicalRounds']),
+                            'lastRoundObserved': str(
+                                contract_data['lastRoundObserved']),
                             'timestamp': meta_data['last_monitored'],
                         }
                     },

@@ -2,8 +2,8 @@ import copy
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
 
-from src.configs.alerts.contracts.chainlink import (
-    ChainlinkContractsAlertsConfig)
+from src.configs.alerts.contract.chainlink import (
+    ChainlinkContractAlertsConfig)
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.configs.factory.configs_factory import ConfigsFactory
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
@@ -112,7 +112,7 @@ class ChainlinkNodeAlertsConfigsFactory(ChainlinkAlertsConfigsFactory):
         self._configs[chain_name] = cl_node_alerts_config
 
 
-class ChainlinkContractsAlertsConfigsFactory(ChainlinkAlertsConfigsFactory):
+class ChainlinkContractAlertsConfigsFactory(ChainlinkAlertsConfigsFactory):
     def __init__(self) -> None:
         super().__init__()
 
@@ -129,11 +129,11 @@ class ChainlinkContractsAlertsConfigsFactory(ChainlinkAlertsConfigsFactory):
         for _, config in sent_configs.items():
             filtered[config['name']] = copy.deepcopy(config)
 
-        cl_contracts_alerts_config = ChainlinkContractsAlertsConfig(
+        cl_contracts_alerts_config = ChainlinkContractAlertsConfig(
             parent_id=parent_id,
             price_feed_not_observed=filtered['price_feed_not_observed'],
             price_feed_deviation=filtered['price_feed_deviation'],
-            consensus_failure=filtered['consensus_failure']
+            consensus_failure=filtered['consensus_failure'],
         )
 
         self._configs[chain_name] = cl_contracts_alerts_config

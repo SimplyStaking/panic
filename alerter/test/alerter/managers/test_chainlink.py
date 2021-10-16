@@ -20,11 +20,11 @@ from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.chainlink import ChainlinkAlertersManager
-from src.configs.alerts.contracts.chainlink import (
-    ChainlinkContractsAlertsConfig)
+from src.configs.alerts.contract.chainlink import (
+    ChainlinkContractAlertsConfig)
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
-from src.configs.factory.alerts.chainlink import (
-    ChainlinkContractsAlertsConfigsFactory, ChainlinkNodeAlertsConfigsFactory)
+from src.configs.factory.node.chainlink_alerts import (
+    ChainlinkContractAlertsConfigsFactory, ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (CHAINLINK_NODE_ALERTER_NAME,
@@ -125,6 +125,10 @@ class TestChainlinkAlertersManager(unittest.TestCase):
                 "name": "consensus_failure",
                 "parent_id": self.parent_id_1,
             },
+            "14": {
+                "name": "error_retrieving_chainlink_contract_data",
+                "parent_id": self.parent_id_1,
+            },
         }
 
         self.test_manager = ChainlinkAlertersManager(
@@ -135,7 +139,7 @@ class TestChainlinkAlertersManager(unittest.TestCase):
         }
         self.node_alerts_config_factory = ChainlinkNodeAlertsConfigsFactory()
         self.contract_alerts_config_factory = \
-            ChainlinkContractsAlertsConfigsFactory()
+            ChainlinkContractAlertsConfigsFactory()
         self.configs_processor_helper_example = {
             CHAINLINK_NODE_ALERTER_NAME: {
                 'alerterClass': ChainlinkNodeAlerter,
@@ -146,7 +150,7 @@ class TestChainlinkAlertersManager(unittest.TestCase):
             },
             CHAINLINK_CONTRACT_ALERTER_NAME: {
                 'alerterClass': ChainlinkContractAlerter,
-                'configsClass': ChainlinkContractsAlertsConfig,
+                'configsClass': ChainlinkContractAlertsConfig,
                 'factory': self.contract_alerts_config_factory,
                 'routing_key': CL_CONTRACT_ALERT_ROUTING_KEY,
                 'starter': start_chainlink_contract_alerter,
@@ -157,7 +161,8 @@ class TestChainlinkAlertersManager(unittest.TestCase):
         # Delete any queues and exchanges which are common across many tests
         connect_to_rabbit(self.test_manager.rabbitmq)
 
-        delete_queue_if_exists(self.test_manager.rabbitmq, self.test_queue_name)
+        delete_queue_if_exists(
+            self.test_manager.rabbitmq, self.test_queue_name)
         delete_queue_if_exists(self.test_manager.rabbitmq,
                                CL_ALERTERS_MAN_HB_QUEUE_NAME)
         delete_queue_if_exists(self.test_manager.rabbitmq,
@@ -597,11 +602,11 @@ class TestChainlinkAlertersManager(unittest.TestCase):
             )
         }
         expected_contract_configs = {
-            chain_name: ChainlinkContractsAlertsConfig(
+            chain_name: ChainlinkContractAlertsConfig(
                 parent_id=self.parent_id_1,
                 price_feed_not_observed=self.config_1['11'],
                 price_feed_deviation=self.config_1['12'],
-                consensus_failure=self.config_1['13']
+                consensus_failure=self.config_1['13'],
             )
         }
         expected_alert_1 = ComponentResetAlert(
@@ -668,11 +673,11 @@ class TestChainlinkAlertersManager(unittest.TestCase):
             )
         }
         expected_contract_configs = {
-            chain_name: ChainlinkContractsAlertsConfig(
+            chain_name: ChainlinkContractAlertsConfig(
                 parent_id=self.parent_id_1,
                 price_feed_not_observed=self.config_1['11'],
                 price_feed_deviation=self.config_1['12'],
-                consensus_failure=self.config_1['13']
+                consensus_failure=self.config_1['13'],
             )
         }
         self.assertEqual(expected_node_configs,

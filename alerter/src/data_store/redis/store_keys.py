@@ -53,6 +53,7 @@ _key_cl_contract_historical_rounds = 'ChainlinkContract7'
 _key_cl_contract_withdrawable_payment = 'ChainlinkContract8'
 _key_cl_contract_owed_payment = 'ChainlinkContract9'
 _key_cl_contract_last_monitored = 'ChainlinkContract10'
+_key_cl_contract_last_round_observed = 'ChainlinkContract11'
 
 # ghX_<repo_id>
 _key_github_no_of_releases = 'gh1'
@@ -323,6 +324,12 @@ class Keys:
     def get_cl_contract_last_monitored(cl_node_id: str,
                                        contract_proxy_address: str) -> str:
         return Keys._as_prefix(_key_cl_contract_last_monitored) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_last_round_observed(
+            cl_node_id: str, contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_last_round_observed) + \
             Keys._as_prefix(cl_node_id) + contract_proxy_address
 
     @staticmethod

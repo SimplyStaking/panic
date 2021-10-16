@@ -4,11 +4,11 @@ import unittest
 from parameterized import parameterized
 
 from src.configs.alerts.node.evm import EVMNodeAlertsConfig
-from src.configs.factory.alerts.evm import EVMAlertsConfigsFactory
+from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
 
-class TestEVMAlertsConfigsFactory(unittest.TestCase):
+class TestEVMNodeAlertsConfig(unittest.TestCase):
     """
     Although currently there is only one type of EVM alerts config, the tests
     were conducted using parameterize.expand, just in case in the future we
@@ -72,7 +72,7 @@ class TestEVMAlertsConfigsFactory(unittest.TestCase):
                 'evm_block_syncing_no_change_in_block_height']
         )
 
-        self.evm_configs_factory = EVMAlertsConfigsFactory()
+        self.evm_configs_factory = EVMNodeAlertsConfigsFactory()
 
     def tearDown(self) -> None:
         self.received_config_example_1_evm = None

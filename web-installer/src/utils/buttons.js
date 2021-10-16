@@ -1,5 +1,4 @@
 import React from 'react';
-import Web3 from 'web3';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
 import Button from 'components/material_ui/CustomButtons/Button';
@@ -18,6 +17,7 @@ import {
   saveAccount,
   deleteAccount,
   pingDockerHub,
+  pingEthRPC,
 } from './data';
 import sleep from './time';
 
@@ -435,8 +435,7 @@ function PingRPC({ disabled, httpUrl }) {
   const onClick = async () => {
     try {
       ToastsStore.info(`Connecting with Node Http URL ${httpUrl}`, 5000);
-      const web3 = new Web3(new Web3.providers.HttpProvider(httpUrl));
-      await web3.eth.isSyncing();
+      await pingEthRPC(httpUrl);
       ToastsStore.success('Successfully connected', 5000);
     } catch (e) {
       if (e.response) {

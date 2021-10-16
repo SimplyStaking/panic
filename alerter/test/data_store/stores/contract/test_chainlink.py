@@ -218,6 +218,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                         "answeredInRound": self.test_answered_in_round_3,
                         "withdrawablePayment":
                             self.test_withdrawable_payment_3,
+                        "lastRoundObserved": self.test_latest_round_3,
                         "historicalRounds": self.test_historical_rounds_3,
                     },
                     self.test_proxy_address_3_1: {
@@ -229,6 +230,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                         "answeredInRound": self.test_answered_in_round_3_1,
                         "withdrawablePayment":
                             self.test_withdrawable_payment_3_1,
+                        "lastRoundObserved": self.test_latest_round_3_1,
                         "historicalRounds": self.test_historical_rounds_3_1,
                     }
                 }
@@ -251,6 +253,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                         "latestTimestamp": self.test_latest_timestamp_4,
                         "answeredInRound": self.test_answered_in_round_4,
                         "owedPayment": self.test_owed_payment_4,
+                        "lastRoundObserved": self.test_latest_round_4,
                         "historicalRounds": self.test_historical_rounds_4,
                     },
                     self.test_proxy_address_4_1: {
@@ -261,6 +264,7 @@ class TestChainlinkContractStore(unittest.TestCase):
                         "latestTimestamp": self.test_latest_timestamp_4_1,
                         "answeredInRound": self.test_answered_in_round_4_1,
                         "owedPayment": self.test_owed_payment_4_1,
+                        "lastRoundObserved": self.test_latest_round_4_1,
                         "historicalRounds": self.test_historical_rounds_4_1,
                     }
                 }
@@ -565,6 +569,13 @@ class TestChainlinkContractStore(unittest.TestCase):
                 contract_data['latestRound'],
                 convert_to_int(self.redis.hget(
                     redis_hash, Keys.get_cl_contract_latest_round(
+                        self.node_id, proxy_address)).decode("utf-8"),
+                               'bad_val'))
+
+            self.assertEqual(
+                contract_data['lastRoundObserved'],
+                convert_to_int(self.redis.hget(
+                    redis_hash, Keys.get_cl_contract_last_round_observed(
                         self.node_id, proxy_address)).decode("utf-8"),
                                'bad_val'))
 

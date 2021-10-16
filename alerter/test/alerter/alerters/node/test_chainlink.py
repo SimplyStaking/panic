@@ -32,7 +32,7 @@ from src.alerter.factory.chainlink_node_alerting_factory import (
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
-from src.configs.factory.alerts.chainlink import (
+from src.configs.factory.node.chainlink_alerts import (
     ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
@@ -384,7 +384,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
     @parameterized.expand([
         (CL_NODE_TRANSFORMED_DATA_ROUTING_KEY, 'mock_proc_trans',),
         ('chains.chainlink.bsc.alerts_config', 'mock_proc_confs',),
-        ('uncrecognized_routing_key', 'mock_basic_ack',),
+        ('unrecognized_routing_key', 'mock_basic_ack',),
     ])
     @mock.patch.object(ChainlinkNodeAlerter, "_process_transformed_data")
     @mock.patch.object(ChainlinkNodeAlerter, "_process_configs")
@@ -415,7 +415,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
 
     """
     In the majority of the tests below we will perform mocking. The tests for
-    config processing and alerting were performed in seperate test files which
+    config processing and alerting were performed in separate test files which
     targeted the factory classes.
     """
 
@@ -674,7 +674,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
-            5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            5009, InvalidUrlAlert,
+            ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new,
@@ -682,7 +683,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             "Prometheus url is now valid!. Last source used {}.".format(
                 self.test_last_prometheus_source_used_new), None)
         call_2 = call(
-            5003, MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
+            5003,
+            MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new,
@@ -728,7 +730,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
-            5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            5009, InvalidUrlAlert,
+            ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new,
@@ -736,7 +739,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             "Prometheus url is now valid!. Last source used {}.".format(
                 self.test_last_prometheus_source_used_new), None)
         call_2 = call(
-            5003, MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
+            5003,
+            MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new,
@@ -927,7 +931,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         error_msg = self.test_prom_non_down_error['message']
         error_code = self.test_prom_non_down_error['code']
         call_1 = call(
-            5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            5009, InvalidUrlAlert,
+            ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new,
@@ -935,7 +940,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             "Prometheus url is now valid!. Last source used {}.".format(
                 self.test_last_prometheus_source_used_new), error_code)
         call_2 = call(
-            5003, MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
+            5003,
+            MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new,
