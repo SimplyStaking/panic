@@ -396,7 +396,8 @@ class ChainlinkContractAlerter(Alerter):
                 # changed. A node's state will be recreated in the next
                 # monitoring round automatically. Note we are sure that a
                 # parent_id is to be returned, as we have just added the config
-                parent_id = self.alerts_configs_factory.get_parent_id(chain)
+                parent_id = self.alerts_configs_factory.get_parent_id(
+                    chain, ChainlinkContractAlertsConfig)
                 self.alerting_factory.remove_chain_alerting_state(parent_id)
             else:
                 # We must reset the state since a configuration is to be
@@ -404,7 +405,8 @@ class ChainlinkContractAlerter(Alerter):
                 # the parent_id is obtained from the configs to be removed from
                 # the factory. If the parent_id cannot be found, it means that
                 # no storing took place, therefore in that case do nothing.
-                parent_id = self.alerts_configs_factory.get_parent_id(chain)
+                parent_id = self.alerts_configs_factory.get_parent_id(
+                    chain, ChainlinkContractAlertsConfig)
                 if parent_id:
                     self.alerting_factory.remove_chain_alerting_state(
                         parent_id)

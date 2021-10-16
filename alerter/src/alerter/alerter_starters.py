@@ -182,32 +182,32 @@ def _initialise_evm_node_alerter(
 ) -> EVMNodeAlerter:
     alerter_display_name = EVM_NODE_ALERTER_NAME
 
-    chainlink_alerter_logger = _initialise_alerter_logger(
+    evm_node_alerter_logger = _initialise_alerter_logger(
         alerter_display_name, EVMNodeAlerter.__name__)
 
     # Try initialising an alerter until successful
     while True:
         try:
             rabbitmq = RabbitMQApi(
-                logger=chainlink_alerter_logger.getChild(RabbitMQApi.__name__),
+                logger=evm_node_alerter_logger.getChild(RabbitMQApi.__name__),
                 host=RABBIT_IP)
-            chainlink_alerter = EVMNodeAlerter(
+            evm_node_alerter = EVMNodeAlerter(
                 alerter_display_name,
-                chainlink_alerter_logger,
-                rabbitmq,
+                evm_node_alerter_logger,
                 evm_alerts_configs_factory,
+                rabbitmq,
                 ALERTER_PUBLISHING_QUEUE_SIZE
             )
             log_and_print("Successfully initialised {}".format(
-                alerter_display_name), chainlink_alerter_logger)
+                alerter_display_name), evm_node_alerter_logger)
             break
         except Exception as e:
             msg = get_initialisation_error_message(alerter_display_name, e)
-            log_and_print(msg, chainlink_alerter_logger)
+            log_and_print(msg, evm_node_alerter_logger)
             # sleep before trying again
             time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
-    return chainlink_alerter
+    return evm_node_alerter
 
 
 def start_github_alerter() -> None:
