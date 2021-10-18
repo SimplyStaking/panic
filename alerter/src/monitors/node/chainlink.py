@@ -67,8 +67,7 @@ class ChainlinkNodeMonitor(Monitor):
 
         return (
             "head_tracker_current_head={}, "
-            "head_tracker_heads_received_total={}, "
-            "max_unconfirmed_blocks={}, "
+            "head_tracker_heads_received_total={}, max_unconfirmed_blocks={}, "
             "process_start_time_seconds={}, tx_manager_num_gas_bumps_total={}, "
             "tx_manager_gas_bump_exceeds_limit_total={}, "
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, "
