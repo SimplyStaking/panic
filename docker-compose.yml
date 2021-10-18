@@ -159,57 +159,57 @@ services:
       - alerter
       - rabbitmq
 
-  api:
-    environment:
-      - 'API_PORT=${API_PORT}'
-      - 'REDIS_IP=${REDIS_IP}'
-      - 'REDIS_PORT=${REDIS_PORT}'
-      - 'REDIS_DB=${REDIS_DB}'
-      - 'UNIQUE_ALERTER_IDENTIFIER=${UNIQUE_ALERTER_IDENTIFIER}'
-      - 'DB_IP=${DB_IP}'
-      - 'DB_PORT=${DB_PORT}'
-      - 'DB_NAME=${DB_NAME}'
-      - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}'
-      - 'UI_DASHBOARD_IP=${UI_DASHBOARD_IP}'
-      - 'UI_DASHBOARD_PORT=${UI_DASHBOARD_PORT}'
-    build:
-      context: './'
-      dockerfile: './api/Dockerfile'
-    image: 'simplyvc/panic_api:1.0.0'
-    volumes:
-      - './config:/opt/panic/config'
-      - './certificates:/opt/panic/certificates'
-    ports:
-      - '${API_PORT}:9000'
-    restart: always
-    networks:
-      panic_net:
-        ipv4_address: '${API_IP}'
-    depends_on:
-      - redis
-      - mongo
+  # api:
+  #   environment:
+  #     - 'API_PORT=${API_PORT}'
+  #     - 'REDIS_IP=${REDIS_IP}'
+  #     - 'REDIS_PORT=${REDIS_PORT}'
+  #     - 'REDIS_DB=${REDIS_DB}'
+  #     - 'UNIQUE_ALERTER_IDENTIFIER=${UNIQUE_ALERTER_IDENTIFIER}'
+  #     - 'DB_IP=${DB_IP}'
+  #     - 'DB_PORT=${DB_PORT}'
+  #     - 'DB_NAME=${DB_NAME}'
+  #     - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}'
+  #     - 'UI_DASHBOARD_IP=${UI_DASHBOARD_IP}'
+  #     - 'UI_DASHBOARD_PORT=${UI_DASHBOARD_PORT}'
+  #   build:
+  #     context: './'
+  #     dockerfile: './api/Dockerfile'
+  #   image: 'simplyvc/panic_api:1.0.0'
+  #   volumes:
+  #     - './config:/opt/panic/config'
+  #     - './certificates:/opt/panic/certificates'
+  #   ports:
+  #     - '${API_PORT}:9000'
+  #   restart: always
+  #   networks:
+  #     panic_net:
+  #       ipv4_address: '${API_IP}'
+  #   depends_on:
+  #     - redis
+  #     - mongo
 
-  ui:
-    environment:
-      - 'UI_DASHBOARD_PORT=${UI_DASHBOARD_PORT}'
-      - 'API_IP=${API_IP}'
-      - 'API_PORT=${API_PORT}'
-    build:
-      context: './'
-      dockerfile: './ui/Dockerfile'
-    image: 'simplyvc/panic_ui:1.0.0'
-    volumes:
-      - './config:/opt/panic/config'
-      - './certificates:/opt/panic/certificates'
-      - './ui:/opt/panic/ui'
-    ports:
-      - '${UI_DASHBOARD_PORT}:3333'
-    restart: always
-    networks:
-      panic_net:
-        ipv4_address: '${UI_DASHBOARD_IP}'
-    depends_on:
-      - api
+  # ui:
+  #   environment:
+  #     - 'UI_DASHBOARD_PORT=${UI_DASHBOARD_PORT}'
+  #     - 'API_IP=${API_IP}'
+  #     - 'API_PORT=${API_PORT}'
+  #   build:
+  #     context: './'
+  #     dockerfile: './ui/Dockerfile'
+  #   image: 'simplyvc/panic_ui:1.0.0'
+  #   volumes:
+  #     - './config:/opt/panic/config'
+  #     - './certificates:/opt/panic/certificates'
+  #     - './ui:/opt/panic/ui'
+  #   ports:
+  #     - '${UI_DASHBOARD_PORT}:3333'
+  #   restart: always
+  #   networks:
+  #     panic_net:
+  #       ipv4_address: '${UI_DASHBOARD_IP}'
+  #   depends_on:
+  #     - api
 
 networks:
   panic_net:
