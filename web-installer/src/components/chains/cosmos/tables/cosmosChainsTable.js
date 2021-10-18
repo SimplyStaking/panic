@@ -10,6 +10,7 @@ import Paper from '@material-ui/core/Paper';
 import { COSMOS_SETUP_PAGE } from 'constants/constants';
 import StyledTableRow from 'assets/jss/custom-jss/StyledTableRow';
 import StyledTableCell from 'assets/jss/custom-jss/StyledTableCell';
+import { clearDataSources, clearChannelData } from 'utils/helpers';
 
 /*
  * Displays all the names of the configured chains, in the chain accordion.
@@ -48,121 +49,20 @@ const CosmosChainsTable = ({
     // Assign buffer variable for easier readability
     const currentConfig = config.byId[chainID];
     const payload = { parent_id: chainID, id: '' };
-    let telegramPayload = {};
-    let twilioPayload = {};
-    let emailPayload = {};
-    let opsGeniePayload = {};
-    let pagerDutyPayload = {};
-    let slackPayload = {};
-    let index = 0;
 
-    for (let i = 0; i < telegrams.allIds.length; i += 1) {
-      telegramPayload = JSON.parse(JSON.stringify(telegrams.byId[telegrams.allIds[i]]));
-      if (telegramPayload.parent_ids.includes(chainID)) {
-        index = telegramPayload.parent_ids.indexOf(chainID);
-        if (index > -1) {
-          telegramPayload.parent_ids.splice(index, 1);
-        }
-        index = telegramPayload.parent_names.indexOf(currentConfig.chain_name);
-        if (index > -1) {
-          telegramPayload.parent_names.splice(index, 1);
-        }
-        removeTelegramDetails(telegramPayload);
-      }
-    }
+    // Remove all channels
+    clearChannelData(currentConfig, telegrams, chainID, removeTelegramDetails);
+    clearChannelData(currentConfig, slacks, chainID, removeSlackDetails);
+    clearChannelData(currentConfig, twilios, chainID, removeTwilioDetails);
+    clearChannelData(currentConfig, emails, chainID, removeEmailDetails);
+    clearChannelData(currentConfig, opsgenies, chainID, removeOpsGenieDetails);
+    clearChannelData(currentConfig, pagerduties, chainID, removePagerDutyDetails);
 
-    for (let i = 0; i < twilios.allIds.length; i += 1) {
-      twilioPayload = JSON.parse(JSON.stringify(twilios.byId[twilios.allIds[i]]));
-      if (twilioPayload.parent_ids.includes(chainID)) {
-        index = twilioPayload.parent_ids.indexOf(chainID);
-        if (index > -1) {
-          twilioPayload.parent_ids.splice(index, 1);
-        }
-        index = twilioPayload.parent_names.indexOf(currentConfig.chain_name);
-        if (index > -1) {
-          twilioPayload.parent_names.splice(index, 1);
-        }
-        removeTwilioDetails(twilioPayload);
-      }
-    }
+    // Remove all data source data
+    clearDataSources(currentConfig, 'nodes', removeNodeDetails, payload);
+    clearDataSources(currentConfig, 'githubRepositories', removeRepositoryDetails, payload);
+    clearDataSources(currentConfig, 'dockerHubs', removeDockerHubDetails, payload);
 
-    for (let i = 0; i < emails.allIds.length; i += 1) {
-      emailPayload = JSON.parse(JSON.stringify(emails.byId[emails.allIds[i]]));
-      if (emailPayload.parent_ids.includes(chainID)) {
-        index = emailPayload.parent_ids.indexOf(chainID);
-        if (index > -1) {
-          emailPayload.parent_ids.splice(index, 1);
-        }
-        index = emailPayload.parent_names.indexOf(currentConfig.chain_name);
-        if (index > -1) {
-          emailPayload.parent_names.splice(index, 1);
-        }
-        removeEmailDetails(emailPayload);
-      }
-    }
-
-    for (let i = 0; i < opsgenies.allIds.length; i += 1) {
-      opsGeniePayload = JSON.parse(JSON.stringify(opsgenies.byId[opsgenies.allIds[i]]));
-      if (opsGeniePayload.parent_ids.includes(chainID)) {
-        index = opsGeniePayload.parent_ids.indexOf(chainID);
-        if (index > -1) {
-          opsGeniePayload.parent_ids.splice(index, 1);
-        }
-        index = opsGeniePayload.parent_names.indexOf(currentConfig.chain_name);
-        if (index > -1) {
-          opsGeniePayload.parent_names.splice(index, 1);
-        }
-        removeOpsGenieDetails(opsGeniePayload);
-      }
-    }
-
-    for (let i = 0; i < pagerduties.allIds.length; i += 1) {
-      pagerDutyPayload = JSON.parse(JSON.stringify(pagerduties.byId[pagerduties.allIds[i]]));
-      if (pagerDutyPayload.parent_ids.includes(chainID)) {
-        index = pagerDutyPayload.parent_ids.indexOf(chainID);
-        if (index > -1) {
-          pagerDutyPayload.parent_ids.splice(index, 1);
-        }
-        index = pagerDutyPayload.parent_names.indexOf(currentConfig.chain_name);
-        if (index > -1) {
-          pagerDutyPayload.parent_names.splice(index, 1);
-        }
-        removePagerDutyDetails(pagerDutyPayload);
-      }
-    }
-
-    for (let i = 0; i < slacks.allIds.length; i += 1) {
-      slackPayload = JSON.parse(JSON.stringify(slacks.byId[slacks.allIds[i]]));
-      if (slackPayload.parent_ids.includes(chainID)) {
-        index = slackPayload.parent_ids.indexOf(chainID);
-        if (index > -1) {
-          slackPayload.parent_ids.splice(index, 1);
-        }
-        index = slackPayload.parent_names.indexOf(currentConfig.chain_name);
-        if (index > -1) {
-          slackPayload.parent_names.splice(index, 1);
-        }
-        removeSlackDetails(slackPayload);
-      }
-    }
-
-    // Clear all the configured dockerHubs from state
-    for (let i = 0; i < currentConfig.dockerHubs.length; i += 1) {
-      payload.id = currentConfig.dockerHubs[i];
-      removeDockerHubDetails(payload);
-    }
-
-    // Clear all the configured nodes from state
-    for (let i = 0; i < currentConfig.nodes.length; i += 1) {
-      payload.id = currentConfig.nodes[i];
-      removeNodeDetails(payload);
-    }
-
-    // Clear all the configured githubRepositories from state
-    for (let i = 0; i < currentConfig.githubRepositories.length; i += 1) {
-      payload.id = currentConfig.githubRepositories[i];
-      removeRepositoryDetails(payload);
-    }
     // Finally clear the chain from the configuration
     payload.id = chainID;
     removeChainDetails(payload);

@@ -11,12 +11,13 @@ from pika.adapters.blocking_connection import BlockingChannel
 import src.alerter.alerts.node.chainlink as cl_alerts
 from src.alerter.alert_severities import Severity
 from src.alerter.alerters.alerter import Alerter
-from src.alerter.factory.chainlink_node_alerting_factory import \
-    ChainlinkNodeAlertingFactory
+from src.alerter.factory.chainlink_node_alerting_factory import (
+    ChainlinkNodeAlertingFactory)
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode as MetricCode
-from src.configs.factory.chainlink_alerts_configs_factory import (
-    ChainlinkAlertsConfigsFactory)
+from src.configs.factory.node.chainlink_alerts import (
+    ChainlinkAlertsConfigsFactory, ChainlinkNodeAlertsConfigsFactory)
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.data import VALID_CHAINLINK_SOURCES
 from src.utils.constants.rabbitmq import (
@@ -38,7 +39,7 @@ class ChainlinkNodeAlerter(Alerter):
     def __init__(
             self, alerter_name: str, logger: logging.Logger,
             rabbitmq: RabbitMQApi,
-            cl_alerts_configs_factory: ChainlinkAlertsConfigsFactory,
+            cl_alerts_configs_factory: ChainlinkNodeAlertsConfigsFactory,
             max_queue_size: int = 0) -> None:
         super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
 
@@ -46,7 +47,7 @@ class ChainlinkNodeAlerter(Alerter):
         self._alerting_factory = ChainlinkNodeAlertingFactory(logger)
 
     @property
-    def alerts_configs_factory(self) -> ChainlinkAlertsConfigsFactory:
+    def alerts_configs_factory(self) -> ChainlinkNodeAlertsConfigsFactory:
         return self._alerts_configs_factory
 
     @property
@@ -125,17 +126,9 @@ class ChainlinkNodeAlerter(Alerter):
             self.rabbitmq.basic_ack(method.delivery_tag, False)
 
     @staticmethod
-    def _greater_than_condition_function(current: Any, previous: Any) -> bool:
-        return current > previous
-
-    @staticmethod
-    def _not_equal_condition_function(current: Any, previous: Any) -> bool:
-        return current != previous
-
-    @staticmethod
     def _prometheus_is_down_condition_function(index_key: Optional[str],
                                                code: Optional[int]) -> bool:
-        return index_key == 'error' and code == 5015
+        return (index_key == 'error' and code == 5015)
 
     def _process_prometheus_result(self, prom_data: Dict,
                                    data_for_alerting: List) -> None:
@@ -145,7 +138,7 @@ class ChainlinkNodeAlerter(Alerter):
         # We must make sure that the alerts_config has been received for the
         # chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
-            meta_data['node_parent_id'])
+            meta_data['node_parent_id'], ChainlinkNodeAlertsConfig)
         if chain_name is not None:
             configs = self.alerts_configs_factory.configs[chain_name]
             self.alerting_factory.create_alerting_state(
@@ -153,7 +146,8 @@ class ChainlinkNodeAlerter(Alerter):
 
             # Check if some errors have been resolved
             self.alerting_factory.classify_error_alert(
-                5009, cl_alerts.InvalidUrlAlert, cl_alerts.ValidUrlAlert,
+                5009,
+                cl_alerts.InvalidUrlAlert, cl_alerts.ValidUrlAlert,
                 data_for_alerting, meta_data['node_parent_id'],
                 meta_data['node_id'], meta_data['node_name'],
                 meta_data['last_monitored'], MetricCode.InvalidUrl.value,
@@ -161,7 +155,8 @@ class ChainlinkNodeAlerter(Alerter):
                     meta_data['last_source_used']['current']), None
             )
             self.alerting_factory.classify_error_alert(
-                5003, cl_alerts.MetricNotFoundErrorAlert,
+                5003,
+                cl_alerts.MetricNotFoundErrorAlert,
                 cl_alerts.MetricFoundAlert, data_for_alerting,
                 meta_data['node_parent_id'], meta_data['node_id'],
                 meta_data['node_name'], meta_data['last_monitored'],
@@ -204,16 +199,16 @@ class ChainlinkNodeAlerter(Alerter):
                 if current is not None:
                     self.alerting_factory. \
                         classify_thresholded_time_window_alert(
-                        current, sub_config,
-                        cl_alerts.
+                            current, sub_config,
+                            cl_alerts.
                             MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
-                        cl_alerts.
+                            cl_alerts.
                             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
-                        data_for_alerting, meta_data['node_parent_id'],
-                        meta_data['node_id'],
-                        MetricCode.MaxUnconfirmedBlocksThreshold.value,
-                        meta_data['node_name'], meta_data['last_monitored']
-                    )
+                            data_for_alerting, meta_data['node_parent_id'],
+                            meta_data['node_id'],
+                            MetricCode.MaxUnconfirmedBlocksThreshold.value,
+                            meta_data['node_name'], meta_data['last_monitored']
+                        )
             if str_to_bool(configs.process_start_time_seconds['enabled']):
                 current = data['process_start_time_seconds']['current']
                 previous = data['process_start_time_seconds']['previous']
@@ -251,16 +246,16 @@ class ChainlinkNodeAlerter(Alerter):
                 if current is not None:
                     self.alerting_factory. \
                         classify_thresholded_time_window_alert(
-                        current, sub_config,
-                        cl_alerts.
+                            current, sub_config,
+                            cl_alerts.
                             NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
-                        cl_alerts.
+                            cl_alerts.
                             NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
-                        data_for_alerting, meta_data['node_parent_id'],
-                        meta_data['node_id'],
-                        MetricCode.NoOfUnconfirmedTxsThreshold.value,
-                        meta_data['node_name'], meta_data['last_monitored']
-                    )
+                            data_for_alerting, meta_data['node_parent_id'],
+                            meta_data['node_id'],
+                            MetricCode.NoOfUnconfirmedTxsThreshold.value,
+                            meta_data['node_name'], meta_data['last_monitored']
+                        )
             if str_to_bool(configs.run_status_update_total['enabled']):
                 current = data['total_errored_job_runs']['current']
                 previous = data['total_errored_job_runs']['previous']
@@ -268,16 +263,16 @@ class ChainlinkNodeAlerter(Alerter):
                 if current is not None and previous is not None:
                     self.alerting_factory \
                         .classify_thresholded_in_time_period_alert(
-                        current, previous, sub_config,
-                        cl_alerts.
+                            current, previous, sub_config,
+                            cl_alerts.
                             TotalErroredJobRunsIncreasedAboveThresholdAlert,
-                        cl_alerts.
+                            cl_alerts.
                             TotalErroredJobRunsDecreasedBelowThresholdAlert,
-                        data_for_alerting, meta_data['node_parent_id'],
-                        meta_data['node_id'],
-                        MetricCode.TotalErroredJobRunsThreshold.value,
-                        meta_data['node_name'], meta_data['last_monitored']
-                    )
+                            data_for_alerting, meta_data['node_parent_id'],
+                            meta_data['node_id'],
+                            MetricCode.TotalErroredJobRunsThreshold.value,
+                            meta_data['node_name'], meta_data['last_monitored']
+                        )
             if str_to_bool(configs.eth_balance_amount['enabled']):
                 current = data['eth_balance_info']['current']
                 sub_config = configs.eth_balance_amount
@@ -315,7 +310,7 @@ class ChainlinkNodeAlerter(Alerter):
         # We must make sure that the alerts_config has been received for the
         # chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
-            meta_data['node_parent_id'])
+            meta_data['node_parent_id'], ChainlinkNodeAlertsConfig)
         if chain_name is not None:
             configs = self.alerts_configs_factory.configs[chain_name]
             self.alerting_factory.create_alerting_state(
@@ -344,7 +339,8 @@ class ChainlinkNodeAlerter(Alerter):
             # Detect whether some errors need to be raised, or have been
             # resolved.
             self.alerting_factory.classify_error_alert(
-                5009, cl_alerts.InvalidUrlAlert, cl_alerts.ValidUrlAlert,
+                5009,
+                cl_alerts.InvalidUrlAlert, cl_alerts.ValidUrlAlert,
                 data_for_alerting, meta_data['node_parent_id'],
                 meta_data['node_id'], meta_data['node_name'], meta_data['time'],
                 MetricCode.InvalidUrl.value, prom_data['message'],
@@ -353,7 +349,8 @@ class ChainlinkNodeAlerter(Alerter):
                 prom_data['code']
             )
             self.alerting_factory.classify_error_alert(
-                5003, cl_alerts.MetricNotFoundErrorAlert,
+                5003,
+                cl_alerts.MetricNotFoundErrorAlert,
                 cl_alerts.MetricFoundAlert, data_for_alerting,
                 meta_data['node_parent_id'], meta_data['node_id'],
                 meta_data['node_name'], meta_data['time'],
@@ -383,7 +380,8 @@ class ChainlinkNodeAlerter(Alerter):
 
         # We must make sure that the alerts_config has been received for the
         # chain.
-        chain_name = self.alerts_configs_factory.get_chain_name(parent_id)
+        chain_name = self.alerts_configs_factory.get_chain_name(
+            parent_id, ChainlinkNodeAlertsConfig)
         if chain_name is not None:
             configs = self.alerts_configs_factory.configs[chain_name]
             self.alerting_factory.create_alerting_state(parent_id, origin_id,
@@ -399,8 +397,8 @@ class ChainlinkNodeAlerter(Alerter):
                         response_index_key = 'result' if 'result' in trans_data[
                             source] else 'error'
                         data = trans_data[source][response_index_key]
-                        if response_index_key != 'error' \
-                                or data['code'] != 5015:
+                        if (response_index_key != 'error' or data['code'] !=
+                                5015):
                             all_sources_down = False
                             break
 
@@ -419,7 +417,7 @@ class ChainlinkNodeAlerter(Alerter):
                                 else new_went_down
                             monitoring_timestamp = monitoring_timestamp \
                                 if monitoring_timestamp <= \
-                                   new_monitoring_timestamp \
+                                new_monitoring_timestamp \
                                 else new_monitoring_timestamp
 
                     self.alerting_factory.classify_downtime_alert(
@@ -445,7 +443,7 @@ class ChainlinkNodeAlerter(Alerter):
                                 else data['meta_data']['time']
                             monitoring_timestamp = monitoring_timestamp \
                                 if monitoring_timestamp <= \
-                                   new_monitoring_timestamp \
+                                new_monitoring_timestamp \
                                 else new_monitoring_timestamp
 
                     # Classify downtime so that a node back up again alert is
@@ -569,7 +567,8 @@ class ChainlinkNodeAlerter(Alerter):
                 # changed. A node's state will be recreated in the next
                 # monitoring round automatically. Note we are sure that a
                 # parent_id is to be returned, as we have just added the config
-                parent_id = self.alerts_configs_factory.get_parent_id(chain)
+                parent_id = self.alerts_configs_factory.get_parent_id(
+                    chain, ChainlinkNodeAlertsConfig)
                 self.alerting_factory.remove_chain_alerting_state(parent_id)
             else:
                 # We must reset the state since a configuration is to be
@@ -577,7 +576,8 @@ class ChainlinkNodeAlerter(Alerter):
                 # the parent_id is obtained from the configs to be removed from
                 # the factory. If the parent_id cannot be found, it means that
                 # no storing took place, therefore in that case do nothing.
-                parent_id = self.alerts_configs_factory.get_parent_id(chain)
+                parent_id = self.alerts_configs_factory.get_parent_id(
+                    chain, ChainlinkNodeAlertsConfig)
                 if parent_id:
                     self.alerting_factory.remove_chain_alerting_state(
                         parent_id)

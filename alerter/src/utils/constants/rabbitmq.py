@@ -17,13 +17,23 @@ SYS_MON_MAN_HEARTBEAT_QUEUE_NAME = 'system_monitors_manager_heartbeat_queue'
 SYS_MON_MAN_CONFIGS_QUEUE_NAME = 'system_monitors_manager_configs_queue'
 NODE_MON_MAN_CONFIGS_QUEUE_NAME = 'node_monitors_manager_configs_queue'
 NODE_MON_MAN_HEARTBEAT_QUEUE_NAME = 'node_monitors_manager_heartbeat_queue'
+CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME = 'contract_monitors_manager_configs_queue'
+CONTRACT_MON_MAN_HEARTBEAT_QUEUE_NAME = \
+    'contract_monitors_manager_heartbeat_queue'
 GITHUB_DT_INPUT_QUEUE_NAME = 'github_data_transformer_input_queue'
 SYSTEM_DT_INPUT_QUEUE_NAME = 'system_data_transformer_input_queue'
 CL_NODE_DT_INPUT_QUEUE_NAME = 'chainlink_node_data_transformer_input_queue'
+EVM_NODE_DT_INPUT_QUEUE_NAME = 'evm_node_data_transformer_input_queue'
+CL_CONTRACTS_DT_INPUT_QUEUE_NAME = \
+    'chainlink_contracts_data_transformer_input_queue'
 DT_MAN_HEARTBEAT_QUEUE_NAME = 'data_transformers_manager_heartbeat_queue'
 SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE = "system_alerter_input_queue_{}"
 GITHUB_ALERTER_INPUT_QUEUE_NAME = 'github_alerter_input_queue'
+EVM_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME = \
+    'evm_node_alerter_input_configs_queue'
 CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME = 'cl_node_alerter_input_configs_queue'
+CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME = \
+    'cl_contract_alerter_input_configs_queue'
 SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = \
     'system_alerters_manager_heartbeat_queue'
 SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME = \
@@ -37,36 +47,46 @@ CONFIGS_STORE_INPUT_QUEUE_NAME = 'configs_store_input_queue'
 GITHUB_STORE_INPUT_QUEUE_NAME = 'github_store_input_queue'
 SYSTEM_STORE_INPUT_QUEUE_NAME = 'system_store_input_queue'
 CL_NODE_STORE_INPUT_QUEUE_NAME = 'chainlink_node_store_input_queue'
+CL_CONTRACT_STORE_INPUT_QUEUE_NAME = 'chainlink_contract_store_input_queue'
+EVM_NODE_STORE_INPUT_QUEUE_NAME = 'evm_node_store_input_queue'
 DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME = 'data_stores_manager_heartbeat_queue'
 CHAN_ALERTS_HAN_INPUT_QUEUE_NAME_TEMPLATE = '{}_alerts_handler_input_queue'
 CHAN_CMDS_HAN_HB_QUEUE_NAME_TEMPLATE = '{}_commands_handler_heartbeat_queue'
 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME = 'channels_manager_configs_queue'
 CHANNELS_MANAGER_HEARTBEAT_QUEUE_NAME = 'channels_manager_heartbeat_queue'
 HB_HANDLER_HEARTBEAT_QUEUE_NAME = 'heartbeat_handler_heartbeat_queue'
-
-# Chainlink related queue names
-CHAINLINK_ALERTER_MAN_HEARTBEAT_QUEUE_NAME = \
-    'chainlink_alerter_manager_heartbeat_queue'
-CHAINLINK_ALERTER_MAN_CONFIGS_QUEUE_NAME = \
-    'chainlink_alerter_manager_configs_queue'
+CL_ALERTERS_MAN_HB_QUEUE_NAME = 'chainlink_alerters_manager_heartbeat_queue'
+CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME = 'chainlink_alerters_manager_configs_queue'
+EVM_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME = \
+    'evm_node_alerter_manager_heartbeat_queue'
+EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME = \
+    'evm_node_alerter_manager_configs_queue'
 
 # Routing Keys
 SYSTEM_RAW_DATA_ROUTING_KEY = 'system'
 CHAINLINK_NODE_RAW_DATA_ROUTING_KEY = 'node.chainlink'
+EVM_NODE_RAW_DATA_ROUTING_KEY = 'node.evm'
+CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY = 'contracts.chainlink'
 GITHUB_RAW_DATA_ROUTING_KEY = 'github'
 GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.github_repos_config'
 GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.github_repos_config'
 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS = 'chains.*.*.systems_config'
-SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES = 'chains.*.*.nodes_config'
 SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.systems_config'
-NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.nodes_config'
+NODES_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.nodes_config'
+EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.evm_nodes_config'
 GITHUB_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.github'
 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE = 'transformed_data.system.{}'
 CL_NODE_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.node.chainlink'
+EVM_NODE_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.node.evm'
+CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY = \
+    'transformed_data.contract.chainlink'
 SYSTEM_ALERT_ROUTING_KEY = 'alert.system'
 GITHUB_ALERT_ROUTING_KEY = 'alert.github'
 CL_NODE_ALERT_ROUTING_KEY = 'alert.node.chainlink'
+CL_CONTRACT_ALERT_ROUTING_KEY = 'alert.contract.chainlink'
+EVM_NODE_ALERT_ROUTING_KEY = 'alert.node.evm'
 CL_ALERTS_CONFIGS_ROUTING_KEY = 'chains.chainlink.*.alerts_config'
+EVM_ALERTS_CONFIGS_ROUTING_KEY = 'chains.chainlink.*.alerts_config'
 ALERTS_CONFIGS_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
 ALERTS_CONFIGS_ROUTING_KEY_GEN = 'general.alerts_config'
 ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'

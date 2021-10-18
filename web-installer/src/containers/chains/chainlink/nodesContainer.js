@@ -4,7 +4,7 @@ import NodesForm from 'components/chains/chainlink/forms/nodesForm';
 import NodesTable from 'components/chains/chainlink/tables/nodesTable';
 import { addNodeChainlink, removeNodeChainlink } from 'redux/actions/chainlinkActions';
 import ChainlinkData from 'data/chainlink';
-import ChainlinkNodeSchema from './chainlinkNodeSchema';
+import ChainlinkNodeSchema from './schemas/chainlinkNodeSchema';
 
 // This performs chainlink node name validation, by checking if the node name
 // already exists under the same chain being configured.
@@ -45,6 +45,7 @@ const mapStateToProps = (state) => ({
   reposConfig: state.GitHubRepositoryReducer,
   systemConfig: state.SystemsReducer,
   dockerHubConfig: state.DockerHubReducer,
+  evmNodesConfig: state.EvmNodesReducer,
   data: ChainlinkData,
 });
 

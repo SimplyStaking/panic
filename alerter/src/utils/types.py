@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Union, Any
+from typing import Union, Any, Type
 
 from src.alerter.alerts.node.chainlink import (
     NoChangeInHeightAlert, BlockHeightUpdatedAlert,
@@ -26,12 +26,19 @@ from src.alerter.alerts.system_alerts import (
     SystemRAMUsageDecreasedBelowThresholdAlert,
     SystemStorageUsageDecreasedBelowThresholdAlert
 )
+from src.configs.alerts.contract.chainlink import \
+    ChainlinkContractAlertsConfig
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
+from src.monitorables.contracts.chainlink.v3 import V3ChainlinkContract
+from src.monitorables.contracts.chainlink.v4 import V4ChainlinkContract
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
+from src.monitorables.nodes.evm_node import EVMNode
 from src.monitorables.repo import GitHubRepo
 from src.monitorables.system import System
 
 RedisType = Union[bytes, str, int, float]
-Monitorable = Union[System, GitHubRepo, ChainlinkNode]
+Monitorable = Union[System, GitHubRepo, ChainlinkNode, EVMNode,
+                    V4ChainlinkContract, V3ChainlinkContract]
 
 # TODO: The below system alerts must be refactored to the types beneath them
 #     : when the system alerter is refactored.
@@ -91,6 +98,9 @@ ErrorSolvedAlert = Union[ChainlinkNodeErrorSolvedAlert]
 DownAlert = Union[NodeWentDownAtAlert]
 StillDownAlert = Union[NodeStillDownAlert]
 BackUpAlert = Union[NodeBackUpAgainAlert]
+
+ChainlinkAlertsConfigs = Union[Type[ChainlinkNodeAlertsConfig],
+                               Type[ChainlinkContractAlertsConfig]]
 
 
 class OpsgenieSeverities(Enum):

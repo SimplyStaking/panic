@@ -23,6 +23,7 @@ import {
   ChainlinkNodesReducer,
   ChainlinkChainsReducer,
   CurrentChainlinkChain,
+  EvmNodesReducer,
 } from './chainlinkChainsReducer';
 import {
   GitHubRepositoryReducer,
@@ -59,4 +60,5 @@ export default combineReducers({
   ChainlinkNodesReducer,
   ChainlinkChainsReducer,
   CurrentChainlinkChain,
+  EvmNodesReducer,
 });

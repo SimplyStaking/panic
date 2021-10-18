@@ -8,6 +8,10 @@ import {
   REMOVE_NODE_CHAINLINK,
   REMOVE_CHAIN_CHAINLINK,
   UPDATE_CHAIN_NAME_CHAINLINK,
+  ADD_NODE_EVM,
+  REMOVE_NODE_EVM,
+  ADD_WEIWATCHERS,
+  REMOVE_WEIWATCHERS,
   RESET_CHAIN_CHAINLINK,
   ADD_REPOSITORY,
   REMOVE_REPOSITORY,
@@ -211,13 +215,119 @@ const chainlinkThresholdAlerts = {
       },
       enabled: true,
     },
+    10: {
+      name: 'Chainlink Contracts: Node did not respond in the latest round.',
+      identifier: 'price_feed_not_observed',
+      description:
+        'If a round has ended and the node operator did not submit a '
+        + 'price feed observation in that round an alert is raised.',
+      adornment: 'Missed Rounds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 1,
+        enabled: true,
+      },
+      critical: {
+        threshold: 2,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    11: {
+      name: "Chainlink Contracts: Node's answer deviates from the median answer.",
+      identifier: 'price_feed_deviation',
+      description:
+        'If a round has ended and the node operator submitted a '
+        + 'price feed observation that deviates from the median by a certain threshold '
+        + 'an alert is raised.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 4,
+        enabled: true,
+      },
+      critical: {
+        threshold: 5,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    12: {
+      name: 'EVM Node: Node is Down.',
+      identifier: 'evm_node_is_down',
+      description:
+        'If the EVM node is not reachable for a period of time this alert will be '
+        + 'raised.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 300,
+        enabled: true,
+      },
+      critical: {
+        threshold: 300,
+        repeat: 500,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    13: {
+      name: 'EVM Node: block height difference between nodes.',
+      identifier: 'evm_block_syncing_block_height_difference',
+      description:
+        'If the block height difference between monitored EVM nodes is greater '
+        + 'than the specified thresholds this alert will be raised.',
+      adornment: 'Blocks',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 700,
+        enabled: true,
+      },
+      critical: {
+        threshold: 1000,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    14: {
+      name: 'EVM Node: block height not changed after a period of time.',
+      identifier: 'evm_block_syncing_no_change_in_block_height',
+      description:
+        'If the block height has not changed after a period of time this alert '
+        + 'is raised.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 200,
+        enabled: true,
+      },
+      critical: {
+        threshold: 300,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
   },
-  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14'],
 };
 
 const chainlinkTimeWindowAlerts = {
   byId: {
-    10: {
+    15: {
       name: 'Chainlink node: Number of unconfirmed transactions.',
       identifier: 'unconfirmed_transactions',
       description:
@@ -241,7 +351,7 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-    11: {
+    16: {
       name: 'Chainlink node: Run status update total.',
       identifier: 'run_status_update_total',
       description: 'Number of jobs that have had an error over a time period.',
@@ -262,7 +372,7 @@ const chainlinkTimeWindowAlerts = {
       },
       enabled: true,
     },
-    12: {
+    17: {
       name: 'Chainlink node: Max Unconfirmed Blocks.',
       identifier: 'max_unconfirmed_blocks',
       description:
@@ -287,12 +397,12 @@ const chainlinkTimeWindowAlerts = {
       enabled: true,
     },
   },
-  allIds: ['10', '11', '12'],
+  allIds: ['15', '16', '17'],
 };
 
 const chainlinkSeverityAlerts = {
   byId: {
-    13: {
+    18: {
       name: 'Chainlink node: Node Switch',
       identifier: 'process_start_time_seconds',
       description:
@@ -302,29 +412,37 @@ const chainlinkSeverityAlerts = {
       parent_id: '',
       enabled: true,
     },
-    14: {
+    19: {
       name: 'Ethereum Balance Topped Up',
       identifier: 'eth_balance_amount_increase',
-      description:
-        'Whenever the ethereum balance of a node is topped up you will get alerted.',
+      description: 'Whenever the ethereum balance of a node is topped up you will get alerted.',
       severity: INFO,
       parent_id: '',
       enabled: true,
     },
-    15: {
+    20: {
       name: "Chainlink node: Gas price increases over the node's price limit",
       identifier: 'tx_manager_gas_bump_exceeds_limit_total',
       description:
         'If the current gas price is higher than the gas limit of the node an '
         + 'alert should is raised',
-      adornment: 'Seconds',
-      adornment_time: 'Seconds',
       severity: CRITICAL,
       parent_id: '',
       enabled: true,
     },
+    21: {
+      name: 'Chainlink Contracts: Consensus Failure',
+      identifier: 'consensus_failure',
+      description:
+        'If the number of oracles that have submitted their observations, '
+        + 'is less than the minimum requirement. Severity is set as warning as from a node '
+        + 'operator perspective there is nothing one can do.',
+      severity: INFO,
+      parent_id: '',
+      enabled: true,
+    },
   },
-  allIds: ['13', '14', '15'],
+  allIds: ['18', '19', '20', '21'],
 };
 
 // Reducers to add and remove chainlink node configurations from global state
@@ -362,6 +480,48 @@ const ChainlinkNodesReducer = combineReducers({
   allIds: allNodes,
 });
 
+// Reducers to add and remove evm node configurations from global state
+function evmNodesById(state = {}, action) {
+  switch (action.type) {
+    case ADD_NODE_EVM:
+      return {
+        ...state,
+        [action.payload.id]: action.payload,
+      };
+    case REMOVE_NODE_EVM:
+      return _.omit(state, action.payload.id);
+    default:
+      return state;
+  }
+}
+
+// Reducers to add and remove from list of all evm nodes
+function allEvmNodes(state = [], action) {
+  switch (action.type) {
+    case ADD_NODE_EVM:
+      if (state.includes(action.payload.id)) {
+        return state;
+      }
+      return state.concat(action.payload.id);
+    case REMOVE_NODE_EVM:
+      return state.filter((config) => config !== action.payload.id);
+    default:
+      return state;
+  }
+}
+
+const EvmNodesReducer = combineReducers({
+  byId: evmNodesById,
+  allIds: allEvmNodes,
+});
+
+const weiWatchersData = {
+  parent_id: '',
+  weiwatchers_url: '',
+  monitor_contract: false,
+  network_name: '',
+};
+
 function chainlinkChainsById(state = {}, action) {
   switch (action.type) {
     case ADD_CHAIN_CHAINLINK:
@@ -374,6 +534,8 @@ function chainlinkChainsById(state = {}, action) {
           id: action.payload.id,
           chain_name: action.payload.chain_name,
           nodes: [],
+          evmNodes: [],
+          weiWatchers: weiWatchersData,
           githubRepositories: [],
           dockerHubs: [],
           systems: [],
@@ -412,6 +574,43 @@ function chainlinkChainsById(state = {}, action) {
           nodes: state[action.payload.parent_id].nodes.filter(
             (config) => config !== action.payload.id,
           ),
+        },
+      };
+    case ADD_NODE_EVM:
+      if (state[action.payload.parent_id].evmNodes.includes(action.payload.id)) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          evmNodes: state[action.payload.parent_id].evmNodes.concat(action.payload.id),
+        },
+      };
+    case REMOVE_NODE_EVM:
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          evmNodes: state[action.payload.parent_id].evmNodes.filter(
+            (config) => config !== action.payload.id,
+          ),
+        },
+      };
+    case ADD_WEIWATCHERS:
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          weiWatchers: action.payload,
+        },
+      };
+    case REMOVE_WEIWATCHERS:
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          weiWatchers: weiWatchersData,
         },
       };
     case ADD_REPOSITORY:
@@ -656,6 +855,7 @@ function CurrentChainlinkChain(state = '', action) {
 
 export {
   ChainlinkNodesReducer,
+  EvmNodesReducer,
   ChainlinkChainsReducer,
   CurrentChainlinkChain,
   chainlinkRepeatAlerts,

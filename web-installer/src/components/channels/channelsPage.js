@@ -31,7 +31,6 @@ import CardBody from 'components/material_ui/Card/CardBody';
 import useStyles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle';
 import Parallax from 'components/material_ui/Parallax/Parallax';
 import DescriptionSection from 'components/channels/descriptionSection';
-import CustomParticles from 'components/material_ui/Particles/ChannelParticles';
 
 function TabPanel(props) {
   const {
@@ -80,7 +79,6 @@ function ChannelsPage() {
   return (
     <div>
       <Parallax>
-        <CustomParticles />
         <div
           style={{
             position: 'absolute',

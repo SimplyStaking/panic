@@ -59,5 +59,5 @@ class AlertersManager(QueuingPublisherSubscriberComponent):
         pass
 
     @abstractmethod
-    def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
+    def _push_latest_data_to_queue_and_send(self, *args) -> None:
         pass

@@ -24,18 +24,35 @@ _key_system_went_down_at = 's15'
 # clX_<cl_node_id>
 _key_cl_node_current_height = 'cl1'
 _key_cl_node_total_block_headers_received = 'cl2'
-_key_cl_node_no_of_active_jobs = 'cl3'
-_key_cl_node_max_pending_tx_delay = 'cl4'
-_key_cl_node_process_start_time_seconds = 'cl5'
-_key_cl_node_total_gas_bumps = 'cl6'
-_key_cl_node_total_gas_bumps_exceeds_limit = 'cl7'
-_key_cl_node_no_of_unconfirmed_txs = 'cl8'
-_key_cl_node_total_errored_job_runs = 'cl9'
-_key_cl_node_current_gas_price_info = 'cl10'
-_key_cl_node_eth_balance_info = 'cl11'
-_key_cl_node_went_down_at_prometheus = 'cl12'
-_key_cl_node_last_prometheus_source_used = 'cl13'
-_key_cl_node_last_monitored_prometheus = 'cl14'
+_key_cl_node_max_pending_tx_delay = 'cl3'
+_key_cl_node_process_start_time_seconds = 'cl4'
+_key_cl_node_total_gas_bumps = 'cl5'
+_key_cl_node_total_gas_bumps_exceeds_limit = 'cl6'
+_key_cl_node_no_of_unconfirmed_txs = 'cl7'
+_key_cl_node_total_errored_job_runs = 'cl8'
+_key_cl_node_current_gas_price_info = 'cl9'
+_key_cl_node_eth_balance_info = 'cl10'
+_key_cl_node_went_down_at_prometheus = 'cl11'
+_key_cl_node_last_prometheus_source_used = 'cl12'
+_key_cl_node_last_monitored_prometheus = 'cl13'
+
+# evmX_<evm_node_id>
+_key_evm_node_current_height = 'evm1'
+_key_evm_node_went_down_at = 'evm2'
+_key_evm_node_last_monitored = 'evm3'
+
+# ChainlinkContractX_<cl_node_id>_<contract_proxy_address>
+_key_cl_contract_version = 'ChainlinkContract1'
+_key_cl_contract_aggregator_address = 'ChainlinkContract2'
+_key_cl_contract_latest_round = 'ChainlinkContract3'
+_key_cl_contract_latest_answer = 'ChainlinkContract4'
+_key_cl_contract_latest_timestamp = 'ChainlinkContract5'
+_key_cl_contract_answered_in_round = 'ChainlinkContract6'
+_key_cl_contract_historical_rounds = 'ChainlinkContract7'
+_key_cl_contract_withdrawable_payment = 'ChainlinkContract8'
+_key_cl_contract_owed_payment = 'ChainlinkContract9'
+_key_cl_contract_last_monitored = 'ChainlinkContract10'
+_key_cl_contract_last_round_observed = 'ChainlinkContract11'
 
 # ghX_<repo_id>
 _key_github_no_of_releases = 'gh1'
@@ -81,6 +98,17 @@ _key_alert_cl_metric_not_found = 'alert_cl_node11'
 _key_alert_cl_node_is_down = 'alert_cl_node12'
 _key_alert_cl_prometheus_is_down = 'alert_cl_node13'
 
+# alert_cl_contractX_<cl_node_id>_<contract_proxy_address>
+_key_alert_cl_contract_price_feed_not_observed = 'alert_cl_contract1'
+_key_alert_cl_contract_price_feed_deviation = 'alert_cl_contract2'
+_key_alert_cl_contract_consensus_failure = 'alert_cl_contract3'
+
+# alert_evm_nodeX_<evm_node_id>
+_key_alert_evm_node_is_down = 'alert_evm_node1'
+_key_alert_evm_block_syncing_block_height_difference = 'alert_evm_node2'
+_key_alert_evm_block_syncing_no_change_in_block_height = 'alert_evm_node3'
+_key_alert_evm_invalid_url = 'alert_evm_node4'
+
 
 class Keys:
 
@@ -103,7 +131,7 @@ class Keys:
     @staticmethod
     def get_system_process_cpu_seconds_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_process_cpu_seconds_total) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_process_memory_usage(system_id: str) -> str:
@@ -132,33 +160,33 @@ class Keys:
     @staticmethod
     def get_system_network_transmit_bytes_per_second(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_transmit_bytes_per_second) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_network_receive_bytes_per_second(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_receive_bytes_per_second) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_network_receive_bytes_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_receive_bytes_total) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_network_transmit_bytes_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_network_transmit_bytes_total) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_disk_io_time_seconds_total(system_id: str) -> str:
         return Keys._as_prefix(_key_system_disk_io_time_seconds_total) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_disk_io_time_seconds_in_interval(
             system_id: str) -> str:
         return Keys._as_prefix(_key_system_disk_io_time_seconds_in_interval) \
-               + system_id
+            + system_id
 
     @staticmethod
     def get_system_went_down_at(system_id: str) -> str:
@@ -175,11 +203,7 @@ class Keys:
     @staticmethod
     def get_cl_node_total_block_headers_received(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_total_block_headers_received) \
-               + cl_node_id
-
-    @staticmethod
-    def get_cl_node_no_of_active_jobs(cl_node_id: str) -> str:
-        return Keys._as_prefix(_key_cl_node_no_of_active_jobs) + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_cl_node_max_pending_tx_delay(cl_node_id: str) -> str:
@@ -188,7 +212,7 @@ class Keys:
     @staticmethod
     def get_cl_node_process_start_time_seconds(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_process_start_time_seconds) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_cl_node_total_gas_bumps(cl_node_id: str) -> str:
@@ -197,7 +221,7 @@ class Keys:
     @staticmethod
     def get_cl_node_total_gas_bumps_exceeds_limit(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_total_gas_bumps_exceeds_limit) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_cl_node_no_of_unconfirmed_txs(cl_node_id: str) -> str:
@@ -218,17 +242,97 @@ class Keys:
     @staticmethod
     def get_cl_node_went_down_at_prometheus(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_went_down_at_prometheus) + \
-               cl_node_id
+            cl_node_id
 
     @staticmethod
     def get_cl_node_last_prometheus_source_used(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_last_prometheus_source_used) \
-               + cl_node_id
+            + cl_node_id
 
     @staticmethod
     def get_cl_node_last_monitored_prometheus(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_last_monitored_prometheus) \
-               + cl_node_id
+            + cl_node_id
+
+    @staticmethod
+    def get_evm_node_current_height(evm_node_id: str) -> str:
+        return Keys._as_prefix(_key_evm_node_current_height) + evm_node_id
+
+    @staticmethod
+    def get_evm_node_went_down_at(evm_node_id: str) -> str:
+        return Keys._as_prefix(_key_evm_node_went_down_at) + evm_node_id
+
+    @staticmethod
+    def get_evm_node_last_monitored(evm_node_id: str) -> str:
+        return Keys._as_prefix(_key_evm_node_last_monitored) + evm_node_id
+
+    @staticmethod
+    def get_cl_contract_version(cl_node_id: str,
+                                contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_version) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_aggregator_address(cl_node_id: str,
+                                           contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_aggregator_address) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_latest_round(cl_node_id: str,
+                                     contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_latest_round) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_latest_answer(cl_node_id: str,
+                                      contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_latest_answer) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_latest_timestamp(cl_node_id: str,
+                                         contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_latest_timestamp) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_answered_in_round(cl_node_id: str,
+                                          contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_answered_in_round) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_withdrawable_payment(cl_node_id: str,
+                                             contract_proxy_address: str
+                                             ) -> str:
+        return Keys._as_prefix(_key_cl_contract_withdrawable_payment) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_owed_payment(cl_node_id: str,
+                                     contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_owed_payment) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_last_monitored(cl_node_id: str,
+                                       contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_last_monitored) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_last_round_observed(
+            cl_node_id: str, contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_cl_contract_last_round_observed) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_cl_contract_historical_rounds(cl_node_id: str,
+                                          contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_cl_contract_historical_rounds) + Keys._as_prefix(
+            cl_node_id) + contract_proxy_address
 
     @staticmethod
     def get_github_no_of_releases(repo_id: str) -> str:
@@ -346,6 +450,48 @@ class Keys:
     def get_alert_cl_head_tacker_current_head(origin_id: str) -> str:
         return Keys._as_prefix(
             _key_alert_cl_head_tacker_current_head) + origin_id
+
+    @staticmethod
+    def get_alert_cl_contract_price_feed_not_observed(
+            cl_node_id: str, contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cl_contract_price_feed_not_observed) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_alert_cl_contract_price_feed_deviation(
+            cl_node_id: str, contract_proxy_address: str) -> str:
+        return Keys._as_prefix(_key_alert_cl_contract_price_feed_deviation) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_alert_cl_contract_consensus_failure(
+            cl_node_id: str, contract_proxy_address: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cl_contract_consensus_failure) + \
+            Keys._as_prefix(cl_node_id) + contract_proxy_address
+
+    @staticmethod
+    def get_alert_evm_evm_node_is_down(evm_node_id: str) -> str:
+        return Keys._as_prefix(_key_alert_evm_node_is_down) + evm_node_id
+
+    @staticmethod
+    def get_alert_evm_evm_block_syncing_block_height_difference(
+            evm_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_evm_block_syncing_block_height_difference) + evm_node_id
+
+    @staticmethod
+    def get_alert_evm_evm_block_syncing_no_change_in_block_height(
+            evm_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_evm_block_syncing_no_change_in_block_height) + \
+            evm_node_id
+
+    @staticmethod
+    def get_alert_evm_evm_invalid_url(
+            evm_node_id: str) -> str:
+        return Keys._as_prefix(_key_alert_evm_invalid_url) + evm_node_id
 
     @staticmethod
     def get_base_chain_monitorables_info(base_chain: str) -> str:

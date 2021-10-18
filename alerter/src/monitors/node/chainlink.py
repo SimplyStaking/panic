@@ -34,7 +34,6 @@ class ChainlinkNodeMonitor(Monitor):
         self._prometheus_metrics = {
             'head_tracker_current_head': 'strict',
             'head_tracker_heads_received_total': 'strict',
-            'job_subscriber_subscriptions': 'strict',
             'max_unconfirmed_blocks': 'strict',
             'process_start_time_seconds': 'strict',
             'tx_manager_num_gas_bumps_total': 'strict',
@@ -68,8 +67,7 @@ class ChainlinkNodeMonitor(Monitor):
 
         return (
             "head_tracker_current_head={}, "
-            "head_tracker_heads_received_total={}, "
-            "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, "
+            "head_tracker_heads_received_total={}, max_unconfirmed_blocks={}, "
             "process_start_time_seconds={}, tx_manager_num_gas_bumps_total={}, "
             "tx_manager_gas_bump_exceeds_limit_total={}, "
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, "
@@ -77,7 +75,6 @@ class ChainlinkNodeMonitor(Monitor):
             "".format(
                 data_defaultdict['head_tracker_current_head'],
                 data_defaultdict['head_tracker_heads_received_total'],
-                data_defaultdict['job_subscriber_subscriptions'],
                 data_defaultdict['max_unconfirmed_blocks'],
                 data_defaultdict['process_start_time_seconds'],
                 data_defaultdict['tx_manager_num_gas_bumps_total'],

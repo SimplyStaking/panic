@@ -5,7 +5,9 @@ CHANNELS = 'channels'
 COSMOS_NODE_CONFIG = 'cosmos_nodes_config'
 SUBSTRATE_NODE_CONFIG = 'substrate_nodes_config'
 CHAINLINK_NODE_CONFIG = 'chainlink_nodes_config'
+CHAINLINK_EVM_NODES_CONFIG = 'chainlink_evm_nodes_config'
 NODES_CONFIG = 'nodes_config'
+EVM_NODES_CONFIG = 'evm_nodes_config'
 GITHUB_REPOS_CONFIG = 'github_repos_config'
 SYSTEMS_CONFIG = 'systems_config'
 ALERTS_CONFIG = 'alerts_config'
@@ -68,5 +70,12 @@ MONITORABLES_PARSING_HELPER = {
         "master_monitor_key": 'monitor_node',
         "sub_monitor_keys": ['monitor_prometheus'],
         "config_key": 'nodes'
+    }],
+    CHAINLINK_EVM_NODES_CONFIG: [{
+        "id": 'id',
+        "name_key": 'name',
+        "master_monitor_key": 'monitor_node',
+        "sub_monitor_keys": None,
+        "config_key": 'evm_nodes'
     }]
 }

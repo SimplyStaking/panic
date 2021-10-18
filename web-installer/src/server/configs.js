@@ -19,6 +19,8 @@ const CHANNELS_CONFIGS_LOCATION = path.join('../config', 'channels');
 
 // Chain configs and config locations
 const USER_CONFIG_NODES = 'nodes_config.ini';
+const USER_CONFIG_EVM_NODES = 'evm_nodes_config.ini';
+const USER_CONFIG_WEIWATCHERS = 'weiwatchers_config.ini';
 const USER_CONFIG_REPOS = 'github_repos_config.ini';
 const USER_CONFIG_DOCKER = 'dockerhub_repos_config.ini';
 const USER_CONFIG_CHANNELS = 'channels_config.ini';
@@ -33,7 +35,7 @@ const ALL_CHAINS_CONFIG_FILES = [
   USER_CONFIG_NODES, USER_CONFIG_REPOS, USER_CONFIG_CHANNELS,
   USER_CONFIG_ALERTS, USER_CONFIG_REPEAT_ALERTS, USER_CONFIG_THRESHOLD_ALERTS,
   USER_CONFIG_TIMEWINDOW_ALERTS, USER_CONFIG_SEVERTY_ALERTS, USER_CONFIG_DOCKER,
-  USER_CONFIG_SYSTEMS,
+  USER_CONFIG_SYSTEMS, USER_CONFIG_EVM_NODES, USER_CONFIG_WEIWATCHERS,
 ];
 const COSMOS_CHAINS_CONFIGS_LOCATION = path.join('../config', 'chains', 'cosmos');
 const SUBSTRATE_CHAINS_CONFIGS_LOCATION = path.join('../config', 'chains', 'substrate');

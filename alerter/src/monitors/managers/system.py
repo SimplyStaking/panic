@@ -20,7 +20,7 @@ from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, SYS_MON_MAN_CONFIGS_QUEUE_NAME,
     SYS_MON_MAN_HEARTBEAT_QUEUE_NAME, SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
-    SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES, PING_ROUTING_KEY, TOPIC)
+    NODES_CONFIGS_ROUTING_KEY_CHAINS, PING_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -75,11 +75,10 @@ class SystemMonitorsManager(MonitorsManager):
                                  SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", SYS_MON_MAN_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE,
-                         SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES)
+                         CONFIG_EXCHANGE, NODES_CONFIGS_ROUTING_KEY_CHAINS)
         self.rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_NODES)
+                                 NODES_CONFIGS_ROUTING_KEY_CHAINS)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", SYS_MON_MAN_CONFIGS_QUEUE_NAME,
                          CONFIG_EXCHANGE, SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN)

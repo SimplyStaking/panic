@@ -2,6 +2,22 @@ Change the contents of this file to this:
 
 # Change Log
 
+## 0.3.0
+
+- Updated the Web-Installer to cater for GETH RPC Monitoring
+- Added EVM node store, Chainlink contract store and tests for both.
+- Added EVM Node Monitoring along with the monitor tests.
+- Added ChainlinkContractsMonitor along with its tests.
+- Added ContractMonitorsManager along with its tests.
+- Added EVM Node Data Transformer along with its tests.
+- Added ChainlinkContractsDataTransformer along with its tests.
+- Added EVMNodeAlerterManager and its tests.
+- Added the ChainlinkAlertersManager and its tests.
+- Added EVMNodeAlerter and its tests.
+- Added ChainlinkNodeAlerter and its tests.
+- Added ChainlinkContractAlerter and its tests.
+- Removed `no_of_active_jobs` as `job_subscriber_subscriptions` is no longer found
+
 ## Unreleased
 
 - Fixed tests to work with alerter changes. Merged multiple tests into one using parameterization.
@@ -21,6 +37,7 @@ Change the contents of this file to this:
 - Web-Installer bug fixes and removing outdated alerts.
 - Added Chainlink Node Alerter logic and tests.
 - Integrated Slack as an alerting channel and command handler.
+- Added new components heartbeat to Slack.
 
 ## 0.1.2
 

@@ -2,7 +2,7 @@ import logging
 import sys
 from abc import abstractmethod
 from types import FrameType
-from typing import Dict
+from typing import Dict, Any
 
 import pika.exceptions
 
@@ -29,6 +29,18 @@ class Alerter(QueuingPublisherSubscriberComponent):
     @property
     def alerter_name(self) -> str:
         return self._alerter_name
+
+    @staticmethod
+    def _greater_than_condition_function(current: Any, previous: Any) -> bool:
+        return current > previous
+
+    @staticmethod
+    def _not_equal_condition_function(current: Any, previous: Any) -> bool:
+        return current != previous
+
+    @staticmethod
+    def _equal_condition_function(current: Any, previous: Any) -> bool:
+        return current == previous
 
     def _listen_for_data(self) -> None:
         self.rabbitmq.start_consuming()

@@ -9,11 +9,13 @@ import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
+from src.configs.nodes.evm import EVMNodeConfig
 from src.configs.nodes.node import NodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.monitor import Monitor
 from src.monitors.node.chainlink import ChainlinkNodeMonitor
+from src.monitors.node.evm import EVMNodeMonitor
 from src.monitors.starters import start_node_monitor
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
@@ -21,7 +23,8 @@ from src.utils.constants.names import NODE_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, NODE_MON_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
     CONFIG_EXCHANGE, NODE_MON_MAN_CONFIGS_QUEUE_NAME,
-    NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS, TOPIC)
+    NODES_CONFIGS_ROUTING_KEY_CHAINS, EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS,
+    TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -68,11 +71,16 @@ class NodeMonitorsManager(MonitorsManager):
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", NODE_MON_MAN_CONFIGS_QUEUE_NAME,
-                         CONFIG_EXCHANGE,
-                         NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
+                         CONFIG_EXCHANGE, NODES_CONFIGS_ROUTING_KEY_CHAINS)
         self.rabbitmq.queue_bind(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
-                                 NODE_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
+                                 NODES_CONFIGS_ROUTING_KEY_CHAINS)
+        self.logger.info("Binding queue '%s' to exchange '%s' with routing "
+                         "key '%s'", NODE_MON_MAN_CONFIGS_QUEUE_NAME,
+                         CONFIG_EXCHANGE, EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS)
+        self.rabbitmq.queue_bind(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS)
         self.logger.debug("Declaring consuming intentions on '%s'",
                           NODE_MON_MAN_CONFIGS_QUEUE_NAME)
         self.rabbitmq.basic_consume(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
@@ -203,6 +211,101 @@ class NodeMonitorsManager(MonitorsManager):
 
         return correct_nodes_configs
 
+    def _process_evm_node_configs(self, sent_configs: Dict,
+                                  current_configs: Dict) -> Dict:
+        """
+        This function processes the new evm nodes configs for a particular
+        chain. It creates/removes new processes, and it keeps a local copy of
+        all changes being done step by step. This is done in this way so that if
+        a sub-config is malformed or a process errors, we can keep track of what
+        the new self._nodes_config should be.
+        :param sent_configs:
+        The new evm node configurations for a particular chain
+        :param current_configs:
+        The currently stored evm nodes configurations for a particular chain
+        :return:
+        The new evm nodes configuration for a particular chain based on the
+        current configs and the new configs.
+        """
+        correct_nodes_configs = copy.deepcopy(current_configs)
+        try:
+            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            for config_id in new_configs:
+                config = new_configs[config_id]
+                node_id = config['id']
+                parent_id = config['parent_id']
+                node_name = config['name']
+                node_http_url = config['node_http_url']
+                monitor_node = str_to_bool(config['monitor_node'])
+
+                # If `monitor_node` is disabled do not start a monitor and move
+                # to the next config.
+                if not monitor_node:
+                    continue
+
+                node_config = EVMNodeConfig(node_id, parent_id, node_name,
+                                            monitor_node, node_http_url)
+                self._create_and_start_monitor_process(node_config, config_id,
+                                                       EVMNodeMonitor)
+                correct_nodes_configs[config_id] = config
+
+            modified_configs = get_modified_configs(sent_configs,
+                                                    current_configs)
+            for config_id in modified_configs:
+                # Get the latest updates
+                config = sent_configs[config_id]
+                node_id = config['id']
+                parent_id = config['parent_id']
+                node_name = config['name']
+                node_http_url = config['node_http_url']
+                monitor_node = str_to_bool(config['monitor_node'])
+                node_config = EVMNodeConfig(node_id, parent_id, node_name,
+                                            monitor_node, node_http_url)
+                previous_process = self.config_process_dict[config_id][
+                    'process']
+                previous_process.terminate()
+                previous_process.join()
+
+                # If `monitor_node` is disabled do not restart a monitor, but
+                # delete the previous process from the system and move to the
+                # next config.
+                if not monitor_node:
+                    del self.config_process_dict[config_id]
+                    del correct_nodes_configs[config_id]
+                    log_and_print("Killed the monitor of {} ".format(
+                        modified_configs[config_id]['name']), self.logger)
+                    continue
+
+                log_and_print(
+                    "The configuration for {} was modified. A new monitor with "
+                    "the latest configuration will be started.".format(
+                        modified_configs[config_id]['name']), self.logger)
+
+                self._create_and_start_monitor_process(node_config, config_id,
+                                                       EVMNodeMonitor)
+                correct_nodes_configs[config_id] = config
+
+            removed_configs = get_removed_configs(sent_configs, current_configs)
+            for config_id in removed_configs:
+                config = removed_configs[config_id]
+                node_name = config['name']
+                previous_process = self.config_process_dict[config_id][
+                    'process']
+                previous_process.terminate()
+                previous_process.join()
+                del self.config_process_dict[config_id]
+                del correct_nodes_configs[config_id]
+                log_and_print("Killed the monitor of {} ".format(node_name),
+                              self.logger)
+        except Exception as e:
+            # If we encounter an error during processing, this error must be
+            # logged and the message must be acknowledged so that it is removed
+            # from the queue
+            self.logger.error("Error when processing %s", sent_configs)
+            self.logger.exception(e)
+
+        return correct_nodes_configs
+
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
             properties: pika.spec.BasicProperties, body: bytes) -> None:
@@ -215,17 +318,25 @@ class NodeMonitorsManager(MonitorsManager):
 
         parsed_routing_key = method.routing_key.split('.')
         chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
-        if chain in self.nodes_configs:
-            current_configs = self.nodes_configs[chain]
+        config_type = parsed_routing_key[3]
+        if chain in self.nodes_configs \
+                and config_type in self.nodes_configs[chain]:
+            current_configs = self.nodes_configs[chain][config_type]
         else:
             current_configs = {}
 
         updated_configs = {}
-        if parsed_routing_key[1].lower() == 'chainlink':
+        if config_type == 'evm_nodes_config':
+            updated_configs = self._process_evm_node_configs(
+                sent_configs, current_configs)
+        elif parsed_routing_key[1].lower() == 'chainlink':
             updated_configs = self._process_chainlink_node_configs(
                 sent_configs, current_configs)
 
-        self._nodes_configs[chain] = updated_configs
+        if chain not in self._nodes_configs:
+            self._nodes_configs[chain] = {}
+
+        self._nodes_configs[chain][config_type] = updated_configs
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
 

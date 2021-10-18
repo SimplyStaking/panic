@@ -31,14 +31,12 @@ class MessageWasNotDeliveredException(PANICException):
 
 
 class NoMetricsGivenException(PANICException):
-
     def __init__(self, message: str) -> None:
         code = 5002
         super().__init__(message, code)
 
 
 class MetricNotFoundException(PANICException):
-
     def __init__(self, metric, endpoint) -> None:
         message = "Could not find metric {} at endpoint {}" \
             .format(metric, endpoint)
@@ -47,7 +45,6 @@ class MetricNotFoundException(PANICException):
 
 
 class SystemIsDownException(PANICException):
-
     def __init__(self, system_name) -> None:
         message = "System {} is unreachable".format(system_name)
         code = 5004
@@ -55,7 +52,6 @@ class SystemIsDownException(PANICException):
 
 
 class DataReadingException(PANICException):
-
     def __init__(self, monitor_name, source) -> None:
         message = "{} experienced errors when reading data from {}" \
             .format(monitor_name, source)
@@ -64,7 +60,6 @@ class DataReadingException(PANICException):
 
 
 class CannotAccessGitHubPageException(PANICException):
-
     def __init__(self, page) -> None:
         message = "Cannot access GitHub page {}".format(page)
         code = 5006
@@ -72,7 +67,6 @@ class CannotAccessGitHubPageException(PANICException):
 
 
 class GitHubAPICallException(PANICException):
-
     def __init__(self, err) -> None:
         message = "Error in API Call: {}".format(err)
         code = 5007
@@ -80,7 +74,6 @@ class GitHubAPICallException(PANICException):
 
 
 class ReceivedUnexpectedDataException(PANICException):
-
     def __init__(self, receiver) -> None:
         message = "{} received unexpected data".format(receiver)
         code = 5008
@@ -88,7 +81,6 @@ class ReceivedUnexpectedDataException(PANICException):
 
 
 class InvalidUrlException(PANICException):
-
     def __init__(self, url) -> None:
         message = "Invalid URL '{}'".format(url)
         code = 5009
@@ -110,7 +102,6 @@ class MissingKeyInConfigException(PANICException):
 
 
 class JSONDecodeException(PANICException):
-
     def __init__(self, exception: JSONDecodeError) -> None:
         code = 5012
         super().__init__(exception.msg, code)
@@ -118,24 +109,23 @@ class JSONDecodeException(PANICException):
 
 class BlankCredentialException(PANICException):
     def __init__(self, blank_credentials: List[str]) -> None:
-        code = 5013
         message = \
             "Tried to initiate a connection with a blank or NoneType {}".format(
                 ",".join(blank_credentials)
             )
+        code = 5013
         super().__init__(message, code)
 
 
 class EnabledSourceIsEmptyException(PANICException):
     def __init__(self, source: str, monitorable_name: str) -> None:
-        code = 5014
         message = "Enabled source {} is empty for node {}".format(
             source, monitorable_name)
+        code = 5014
         super().__init__(message, code)
 
 
 class NodeIsDownException(PANICException):
-
     def __init__(self, node_name) -> None:
         message = "Node {} is unreachable".format(node_name)
         code = 5015
@@ -143,8 +133,31 @@ class NodeIsDownException(PANICException):
 
 
 class InvalidDictSchemaException(PANICException):
-
     def __init__(self, dict_name: str) -> None:
         message = "{} does not obey the valid schema.".format(dict_name)
         code = 5016
+        super().__init__(message, code)
+
+
+class ComponentNotGivenEnoughDataSourcesException(PANICException):
+    def __init__(self, component: str, field: str) -> None:
+        message = "{} was not given enough data sources. {} is empty.".format(
+            component, field)
+        code = 5017
+        super().__init__(message, code)
+
+
+class CouldNotRetrieveContractsException(PANICException):
+    def __init__(self, component: str, url: str) -> None:
+        message = "{} could not retrieve contracts data from {}.".format(
+            component, url)
+        code = 5018
+        super().__init__(message, code)
+
+
+class NoSyncedDataSourceWasAccessibleException(PANICException):
+    def __init__(self, component: str, sources_type: str) -> None:
+        message = "{} could not access any synced {}.".format(component,
+                                                              sources_type)
+        code = 5019
         super().__init__(message, code)

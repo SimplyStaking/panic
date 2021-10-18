@@ -27,12 +27,13 @@ from src.alerter.alerts.node.chainlink import (
     ChangeInSourceNodeAlert, GasBumpIncreasedOverNodeGasPriceLimitAlert,
     NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
     PrometheusSourceIsDownAlert, PrometheusSourceBackUpAgainAlert)
-from src.alerter.factory.chainlink_node_alerting_factory import \
-    ChainlinkNodeAlertingFactory
+from src.alerter.factory.chainlink_node_alerting_factory import (
+    ChainlinkNodeAlertingFactory)
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
-from src.configs.factory.chainlink_alerts_configs_factory import \
-    ChainlinkAlertsConfigsFactory
+from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
+from src.configs.factory.node.chainlink_alerts import (
+    ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
@@ -65,7 +66,6 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         self.test_went_down_at_prometheus = None
         self.test_current_height = 50000000000
         self.test_total_block_headers_received = 454545040
-        self.test_no_of_active_jobs = 10
         self.test_max_pending_tx_delay = 6
         self.test_process_start_time_seconds = 345474.4
         self.test_total_gas_bumps = 11
@@ -84,7 +84,6 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         self.test_went_down_at_prometheus_new = None
         self.test_current_height_new = 50000000001
         self.test_total_block_headers_received_new = 454545041
-        self.test_no_of_active_jobs_new = 11
         self.test_max_pending_tx_delay_new = 7
         self.test_process_start_time_seconds_new = 345476.4
         self.test_total_gas_bumps_new = 13
@@ -183,10 +182,6 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                 'total_block_headers_received': {
                     'current': self.test_total_block_headers_received_new,
                     'previous': self.test_total_block_headers_received,
-                },
-                'no_of_active_jobs': {
-                    'current': self.test_no_of_active_jobs_new,
-                    'previous': self.test_no_of_active_jobs,
                 },
                 'max_pending_tx_delay': {
                     'current': self.test_max_pending_tx_delay_new,
@@ -292,7 +287,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         }
 
         # Test object
-        self.test_configs_factory = ChainlinkAlertsConfigsFactory()
+        self.test_configs_factory = ChainlinkNodeAlertsConfigsFactory()
         self.test_alerting_factory = ChainlinkNodeAlertingFactory(
             self.dummy_logger)
         self.test_cl_node_alerter = ChainlinkNodeAlerter(
@@ -383,7 +378,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
     @parameterized.expand([
         (CL_NODE_TRANSFORMED_DATA_ROUTING_KEY, 'mock_proc_trans',),
         ('chains.chainlink.bsc.alerts_config', 'mock_proc_confs',),
-        ('uncrecognized_routing_key', 'mock_basic_ack',),
+        ('unrecognized_routing_key', 'mock_basic_ack',),
     ])
     @mock.patch.object(ChainlinkNodeAlerter, "_process_transformed_data")
     @mock.patch.object(ChainlinkNodeAlerter, "_process_configs")
@@ -414,12 +409,12 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
 
     """
     In the majority of the tests below we will perform mocking. The tests for
-    config processing and alerting were performed in seperate test files which
+    config processing and alerting were performed in separate test files which
     targeted the factory classes.
     """
 
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "get_parent_id")
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "add_new_config")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "add_new_config")
     @mock.patch.object(ChainlinkNodeAlertingFactory,
                        "remove_chain_alerting_state")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -447,12 +442,13 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         del self.received_configurations['DEFAULT']
         mock_add_new_conf.assert_called_once_with(chain,
                                                   self.received_configurations)
-        mock_get_parent_id.assert_called_once_with(chain)
+        mock_get_parent_id.assert_called_once_with(chain,
+                                                   ChainlinkNodeAlertsConfig)
         mock_remove_alerting_state.assert_called_once_with(self.test_parent_id)
         mock_ack.assert_called_once()
 
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "get_parent_id")
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "remove_config")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "remove_config")
     @mock.patch.object(ChainlinkNodeAlertingFactory,
                        "remove_chain_alerting_state")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -479,14 +475,15 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         parsed_routing_key = self.test_configs_routing_key.split('.')
         chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
         del self.received_configurations['DEFAULT']
-        mock_get_parent_id.assert_called_once_with(chain)
+        mock_get_parent_id.assert_called_once_with(chain,
+                                                   ChainlinkNodeAlertsConfig)
         mock_remove_alerting_state.assert_called_once_with(self.test_parent_id)
         mock_remove_config.assert_called_once_with(chain)
         mock_ack.assert_called_once()
 
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "add_new_config")
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "get_parent_id")
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "remove_config")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "add_new_config")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "remove_config")
     @mock.patch.object(ChainlinkNodeAlertingFactory,
                        "remove_chain_alerting_state")
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -515,10 +512,11 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         mock_remove_alerting_state.assert_not_called()
         mock_remove_conf.assert_not_called()
         mock_add_new_conf.assert_not_called()
-        mock_get_parent_id.assert_called_once_with(chain)
+        mock_get_parent_id.assert_called_once_with(chain,
+                                                   ChainlinkNodeAlertsConfig)
         mock_ack.assert_called_once()
 
-    @mock.patch.object(ChainlinkAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(ChainlinkNodeAlertsConfigsFactory, "get_parent_id")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_acknowledges_received_data(
             self, mock_ack, mock_get_parent_id) -> None:
@@ -670,7 +668,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
-            5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            5009, InvalidUrlAlert,
+            ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new,
@@ -678,7 +677,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             "Prometheus url is now valid!. Last source used {}.".format(
                 self.test_last_prometheus_source_used_new), None)
         call_2 = call(
-            5003, MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
+            5003,
+            MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new,
@@ -724,7 +724,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
-            5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            5009, InvalidUrlAlert,
+            ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new,
@@ -732,7 +733,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             "Prometheus url is now valid!. Last source used {}.".format(
                 self.test_last_prometheus_source_used_new), None)
         call_2 = call(
-            5003, MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
+            5003,
+            MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new,
@@ -923,7 +925,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         error_msg = self.test_prom_non_down_error['message']
         error_code = self.test_prom_non_down_error['code']
         call_1 = call(
-            5009, InvalidUrlAlert, ValidUrlAlert, data_for_alerting,
+            5009, InvalidUrlAlert,
+            ValidUrlAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new,
@@ -931,7 +934,8 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             "Prometheus url is now valid!. Last source used {}.".format(
                 self.test_last_prometheus_source_used_new), error_code)
         call_2 = call(
-            5003, MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
+            5003,
+            MetricNotFoundErrorAlert, MetricFoundAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new,

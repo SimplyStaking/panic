@@ -2,6 +2,10 @@ import {
   ADD_CHAIN_CHAINLINK,
   ADD_NODE_CHAINLINK,
   REMOVE_NODE_CHAINLINK,
+  ADD_NODE_EVM,
+  REMOVE_NODE_EVM,
+  ADD_WEIWATCHERS,
+  REMOVE_WEIWATCHERS,
   LOAD_CONFIG_CHAINLINK,
   RESET_CHAIN_CHAINLINK,
   UPDATE_CHAIN_NAME_CHAINLINK,
@@ -83,6 +87,53 @@ export function addNodeChainlink(payload) {
 export function removeNodeChainlink(payload) {
   return {
     type: REMOVE_NODE_CHAINLINK,
+    payload,
+  };
+}
+
+// Action to add an EVM node to a configuration, payload is intercepted,
+// and a unique id is generated for it.
+export function addNodeEvm(payload) {
+  let id = `node_${uuidv4()}`;
+  if ('id' in payload) {
+    id = payload.id;
+  }
+  return {
+    type: ADD_NODE_EVM,
+    payload: {
+      id,
+      parent_id: payload.parent_id,
+      name: payload.name,
+      node_http_url: payload.node_http_url,
+      monitor_node: payload.monitor_node,
+    },
+  };
+}
+
+// Action to remove an EVM node from the current configuration
+export function removeNodeEvm(payload) {
+  return {
+    type: REMOVE_NODE_EVM,
+    payload,
+  };
+}
+
+export function addWeiWatchers(payload) {
+  return {
+    type: ADD_WEIWATCHERS,
+    payload: {
+      parent_id: payload.parent_id,
+      name: payload.name,
+      weiwatchers_url: payload.weiwatchers_url,
+      monitor_contracts: payload.monitor_contracts,
+    },
+  };
+}
+
+// Action to remove weiwatchers config from the current configuration
+export function removeWeiWatchers(payload) {
+  return {
+    type: REMOVE_WEIWATCHERS,
     payload,
   };
 }
