@@ -11,16 +11,16 @@ import {
   RepositoriesGeneralFormContainer,
   RepositoriesGeneralTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
-import {
-  DockerHubGeneralFormContainer,
-  DockerHubGeneralTableContainer,
-} from 'containers/chains/common/dockerHubContainer';
+// import {
+// DockerHubGeneralFormContainer,
+// DockerHubGeneralTableContainer,
+// } from 'containers/chains/common/dockerHubContainer';
 import {
   ALERTS_STEP,
   CHANNELS_STEP,
   REPOSITORIES_STEP,
   SYSTEMS_STEP,
-  DOCKER_STEP,
+  // DOCKER_STEP,
 } from 'constants/constants';
 
 const mapStateToProps = (state) => ({
@@ -48,13 +48,13 @@ function getStep(stepName) {
           <RepositoriesGeneralTableContainer />
         </div>
       );
-    case DOCKER_STEP:
-      return (
-        <div>
-          <DockerHubGeneralFormContainer />
-          <DockerHubGeneralTableContainer />
-        </div>
-      );
+    // case DOCKER_STEP:
+    //   return (
+    //     <div>
+    //       <DockerHubGeneralFormContainer />
+    //       <DockerHubGeneralTableContainer />
+    //     </div>
+    //   );
     default:
       return (
         <div>
