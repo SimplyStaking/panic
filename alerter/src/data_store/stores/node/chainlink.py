@@ -124,7 +124,6 @@ class ChainlinkNodeStore(Store):
         self.logger.debug(
             "Saving %s state: _current_height=%s, "
             "_total_block_headers_received=%s, "
-            "_no_of_active_jobs=%s, "
             "_max_pending_tx_delay=%s, _process_start_time_seconds=%s, "
             "_total_gas_bumps=%s, _total_gas_bumps_exceeds_limit=%s, "
             "_no_of_unconfirmed_txs=%s, _total_errored_job_runs=%s, "
@@ -132,7 +131,7 @@ class ChainlinkNodeStore(Store):
             "_last_monitored_prometheus=%s, _last_prometheus_source_used=%s, "
             "_went_down_at_prometheus=%s", node_name, metrics['current_height'],
             metrics['total_block_headers_received'],
-            metrics['no_of_active_jobs'], metrics['max_pending_tx_delay'],
+            metrics['max_pending_tx_delay'],
             metrics['process_start_time_seconds'], metrics['total_gas_bumps'],
             metrics['total_gas_bumps_exceeds_limit'],
             metrics['no_of_unconfirmed_txs'], metrics['total_errored_job_runs'],
@@ -147,8 +146,6 @@ class ChainlinkNodeStore(Store):
                 str(metrics['current_height']),
             Keys.get_cl_node_total_block_headers_received(node_id):
                 str(metrics['total_block_headers_received']),
-            Keys.get_cl_node_no_of_active_jobs(node_id):
-                str(metrics['no_of_active_jobs']),
             Keys.get_cl_node_max_pending_tx_delay(node_id):
                 str(metrics['max_pending_tx_delay']),
             Keys.get_cl_node_process_start_time_seconds(node_id):
@@ -247,7 +244,6 @@ class ChainlinkNodeStore(Store):
                         'current_height': str(metrics['current_height']),
                         'total_block_headers_received': str(
                             metrics['total_block_headers_received']),
-                        'no_of_active_jobs': str(metrics['no_of_active_jobs']),
                         'max_pending_tx_delay': str(
                             metrics['max_pending_tx_delay']),
                         'process_start_time_seconds': str(

@@ -15,7 +15,6 @@ class ChainlinkNode(Node):
         self._went_down_at_prometheus = None
         self._current_height = None
         self._total_block_headers_received = None
-        self._no_of_active_jobs = None
         self._max_pending_tx_delay = None
         self._process_start_time_seconds = None
         self._total_gas_bumps = None
@@ -52,10 +51,6 @@ class ChainlinkNode(Node):
     @property
     def total_block_headers_received(self) -> Optional[int]:
         return self._total_block_headers_received
-
-    @property
-    def no_of_active_jobs(self) -> Optional[int]:
-        return self._no_of_active_jobs
 
     @property
     def max_pending_tx_delay(self) -> Optional[int]:
@@ -106,7 +101,7 @@ class ChainlinkNode(Node):
         return [
             'current_height',
             'total_block_headers_received',
-            'no_of_active_jobs', 'max_pending_tx_delay', 'total_gas_bumps',
+            'max_pending_tx_delay', 'total_gas_bumps',
             'total_gas_bumps_exceeds_limit', 'no_of_unconfirmed_txs',
             'total_errored_job_runs'
         ]
@@ -229,10 +224,6 @@ class ChainlinkNode(Node):
             self, new_total_block_headers_received: Optional[int]) -> None:
         self._total_block_headers_received = new_total_block_headers_received
 
-    def set_no_of_active_jobs(
-            self, new_no_of_active_jobs: Optional[int]) -> None:
-        self._no_of_active_jobs = new_no_of_active_jobs
-
     def set_max_pending_tx_delay(
             self, new_max_pending_tx_delay: Optional[int]) -> None:
         self._max_pending_tx_delay = new_max_pending_tx_delay
@@ -315,7 +306,6 @@ class ChainlinkNode(Node):
         self.set_went_down_at_prometheus(None)
         self.set_current_height(None)
         self.set_total_block_headers_received(None)
-        self.set_no_of_active_jobs(None)
         self.set_max_pending_tx_delay(None)
         self.set_process_start_time_seconds(None)
         self.set_total_gas_bumps(None)

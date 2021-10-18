@@ -183,8 +183,6 @@ def save_chainlink_node_to_redis(redis: RedisApi,
             str(cl_node.current_height),
         Keys.get_cl_node_total_block_headers_received(cl_node_id):
             str(cl_node.total_block_headers_received),
-        Keys.get_cl_node_no_of_active_jobs(cl_node_id):
-            str(cl_node.no_of_active_jobs),
         Keys.get_cl_node_max_pending_tx_delay(cl_node_id):
             str(cl_node.max_pending_tx_delay),
         Keys.get_cl_node_process_start_time_seconds(cl_node_id):

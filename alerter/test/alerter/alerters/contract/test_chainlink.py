@@ -21,6 +21,7 @@ from src.alerter.alerts.contract.chainlink import (
     ContractsNowRetrieved, ErrorNoSyncedDataSources, SyncedDataSourcesFound)
 from src.alerter.factory.chainlink_contract_alerting_factory import \
     ChainlinkContractAlertingFactory
+from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.alerter.grouped_alerts_metric_code.contract.chainlink_contract_metric_code \
     import GroupedChainlinkContractAlertsMetricCode as MetricCode
 from src.configs.factory.node.chainlink_alerts import \
@@ -427,7 +428,8 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         del self.received_configurations['DEFAULT']
         mock_add_new_conf.assert_called_once_with(chain,
                                                   self.received_configurations)
-        mock_get_parent_id.assert_called_once_with(chain)
+        mock_get_parent_id.assert_called_once_with(
+            chain, ChainlinkContractAlertsConfig)
         mock_remove_alerting_state.assert_called_once_with(self.test_parent_id)
         mock_ack.assert_called_once()
 
@@ -459,7 +461,8 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         parsed_routing_key = self.test_configs_routing_key.split('.')
         chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
         del self.received_configurations['DEFAULT']
-        mock_get_parent_id.assert_called_once_with(chain)
+        mock_get_parent_id.assert_called_once_with(
+            chain, ChainlinkContractAlertsConfig)
         mock_remove_alerting_state.assert_called_once_with(self.test_parent_id)
         mock_remove_config.assert_called_once_with(chain)
         mock_ack.assert_called_once()
@@ -495,7 +498,8 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         mock_remove_alerting_state.assert_not_called()
         mock_remove_conf.assert_not_called()
         mock_add_new_conf.assert_not_called()
-        mock_get_parent_id.assert_called_once_with(chain)
+        mock_get_parent_id.assert_called_once_with(
+            chain, ChainlinkContractAlertsConfig)
         mock_ack.assert_called_once()
 
     @mock.patch.object(ChainlinkContractAlertsConfigsFactory, "get_parent_id")

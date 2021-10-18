@@ -24,18 +24,17 @@ _key_system_went_down_at = 's15'
 # clX_<cl_node_id>
 _key_cl_node_current_height = 'cl1'
 _key_cl_node_total_block_headers_received = 'cl2'
-_key_cl_node_no_of_active_jobs = 'cl3'
-_key_cl_node_max_pending_tx_delay = 'cl4'
-_key_cl_node_process_start_time_seconds = 'cl5'
-_key_cl_node_total_gas_bumps = 'cl6'
-_key_cl_node_total_gas_bumps_exceeds_limit = 'cl7'
-_key_cl_node_no_of_unconfirmed_txs = 'cl8'
-_key_cl_node_total_errored_job_runs = 'cl9'
-_key_cl_node_current_gas_price_info = 'cl10'
-_key_cl_node_eth_balance_info = 'cl11'
-_key_cl_node_went_down_at_prometheus = 'cl12'
-_key_cl_node_last_prometheus_source_used = 'cl13'
-_key_cl_node_last_monitored_prometheus = 'cl14'
+_key_cl_node_max_pending_tx_delay = 'cl3'
+_key_cl_node_process_start_time_seconds = 'cl4'
+_key_cl_node_total_gas_bumps = 'cl5'
+_key_cl_node_total_gas_bumps_exceeds_limit = 'cl6'
+_key_cl_node_no_of_unconfirmed_txs = 'cl7'
+_key_cl_node_total_errored_job_runs = 'cl8'
+_key_cl_node_current_gas_price_info = 'cl9'
+_key_cl_node_eth_balance_info = 'cl10'
+_key_cl_node_went_down_at_prometheus = 'cl11'
+_key_cl_node_last_prometheus_source_used = 'cl12'
+_key_cl_node_last_monitored_prometheus = 'cl13'
 
 # evmX_<evm_node_id>
 _key_evm_node_current_height = 'evm1'
@@ -205,10 +204,6 @@ class Keys:
     def get_cl_node_total_block_headers_received(cl_node_id: str) -> str:
         return Keys._as_prefix(_key_cl_node_total_block_headers_received) \
             + cl_node_id
-
-    @staticmethod
-    def get_cl_node_no_of_active_jobs(cl_node_id: str) -> str:
-        return Keys._as_prefix(_key_cl_node_no_of_active_jobs) + cl_node_id
 
     @staticmethod
     def get_cl_node_max_pending_tx_delay(cl_node_id: str) -> str:

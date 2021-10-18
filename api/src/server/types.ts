@@ -42,7 +42,6 @@ export interface SystemKeys {
 export interface ChainlinkNodeKeys {
   current_height: string,
   total_block_headers_received: string,
-  no_of_active_jobs: string,
   max_pending_tx_delay: string,
   process_start_time_seconds: string,
   total_gas_bumps: string,

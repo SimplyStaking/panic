@@ -2,7 +2,6 @@ VALID_CHAINLINK_SOURCES = ['prometheus']
 RAW_TO_TRANSFORMED_CHAINLINK_METRICS = {
     'head_tracker_current_head': 'current_height',
     'head_tracker_heads_received_total': 'total_block_headers_received',
-    'job_subscriber_subscriptions': 'no_of_active_jobs',
     'max_unconfirmed_blocks': 'max_pending_tx_delay',
     'process_start_time_seconds': 'process_start_time_seconds',
     'tx_manager_num_gas_bumps_total': 'total_gas_bumps',
@@ -14,7 +13,6 @@ RAW_TO_TRANSFORMED_CHAINLINK_METRICS = {
 }
 INT_CHAINLINK_METRICS = ['current_height',
                          'total_block_headers_received',
-                         'no_of_active_jobs',
                          'max_pending_tx_delay', 'total_gas_bumps',
                          'total_gas_bumps_exceeds_limit',
                          'no_of_unconfirmed_txs', 'total_errored_job_runs']
