@@ -177,14 +177,13 @@ class ChainlinkNodeDataTransformer(DataTransformer):
         self.logger.debug(
             "Restored %s state: _current_height=%s, "
             "_total_block_headers_received=%s, "
-            "_no_of_active_jobs=%s, "
             "_max_pending_tx_delay=%s, _process_start_time_seconds=%s, "
             "_total_gas_bumps=%s, _total_gas_bumps_exceeds_limit=%s, "
             "_no_of_unconfirmed_txs=%s, _total_errored_job_runs=%s, "
             "_current_gas_price_info=%s, _eth_balance_info=%s, "
             "_last_monitored_prometheus=%s, _last_prometheus_source_used=%s, "
             "_went_down_at_prometheus=%s", cl_node, cl_node.current_height,
-            cl_node.total_block_headers_received, cl_node.no_of_active_jobs,
+            cl_node.total_block_headers_received,
             cl_node.max_pending_tx_delay, cl_node.process_start_time_seconds,
             cl_node.total_gas_bumps, cl_node.total_gas_bumps_exceeds_limit,
             cl_node.no_of_unconfirmed_txs, cl_node.total_errored_job_runs,

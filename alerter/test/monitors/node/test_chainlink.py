@@ -71,7 +71,6 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.prometheus_metrics = {
             'head_tracker_current_head': 'strict',
             'head_tracker_heads_received_total': 'strict',
-            'job_subscriber_subscriptions': 'strict',
             'max_unconfirmed_blocks': 'strict',
             'process_start_time_seconds': 'strict',
             'tx_manager_num_gas_bumps_total': 'strict',
@@ -88,7 +87,6 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             },
             'head_tracker_current_head': 6924314.0,
             'head_tracker_heads_received_total': 26392.0,
-            'job_subscriber_subscriptions': 0.0,
             'max_unconfirmed_blocks': 0.0,
             'process_start_time_seconds': 1619431240.24,
             'run_status_update_total': {
@@ -143,7 +141,6 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.processed_prometheus_data_example = {
             'head_tracker_current_head': 6924314.0,
             'head_tracker_heads_received_total': 26392.0,
-            'job_subscriber_subscriptions': 0.0,
             'max_unconfirmed_blocks': 0.0,
             'process_start_time_seconds': 1619431240.24,
             'tx_manager_gas_bump_exceeds_limit_total': 0.0,
@@ -386,7 +383,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         expected_output = \
             "head_tracker_current_head={}, " \
             "head_tracker_heads_received_total={}, " \
-            "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
+            "max_unconfirmed_blocks={}, " \
             "process_start_time_seconds={}, " \
             "tx_manager_num_gas_bumps_total={}, " \
             "tx_manager_gas_bump_exceeds_limit_total={}, " \
@@ -397,8 +394,6 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                     'head_tracker_current_head'],
                 self.processed_prometheus_data_example[
                     'head_tracker_heads_received_total'],
-                self.processed_prometheus_data_example[
-                    'job_subscriber_subscriptions'],
                 self.processed_prometheus_data_example[
                     'max_unconfirmed_blocks'],
                 self.processed_prometheus_data_example[
@@ -424,7 +419,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         expected_output = \
             "head_tracker_current_head={}, " \
             "head_tracker_heads_received_total={}, " \
-            "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
+            "max_unconfirmed_blocks={}, " \
             "process_start_time_seconds={}, " \
             "tx_manager_num_gas_bumps_total={}, " \
             "tx_manager_gas_bump_exceeds_limit_total={}, " \
@@ -435,8 +430,6 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                     'head_tracker_current_head'],
                 self.processed_prometheus_data_example_optionals_none[
                     'head_tracker_heads_received_total'],
-                self.processed_prometheus_data_example_optionals_none[
-                    'job_subscriber_subscriptions'],
                 self.processed_prometheus_data_example_optionals_none[
                     'max_unconfirmed_blocks'],
                 self.processed_prometheus_data_example_optionals_none[
@@ -467,7 +460,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         expected_output = \
             "head_tracker_current_head={}, " \
             "head_tracker_heads_received_total={}, " \
-            "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
+            "max_unconfirmed_blocks={}, " \
             "process_start_time_seconds={}, " \
             "tx_manager_num_gas_bumps_total={}, " \
             "tx_manager_gas_bump_exceeds_limit_total={}, " \
@@ -477,8 +470,6 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                 "Disabled",
                 self.processed_prometheus_data_example[
                     'head_tracker_heads_received_total'],
-                self.processed_prometheus_data_example[
-                    'job_subscriber_subscriptions'],
                 self.processed_prometheus_data_example[
                     'max_unconfirmed_blocks'],
                 self.processed_prometheus_data_example[
@@ -508,7 +499,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         expected_output = \
             "head_tracker_current_head={}, " \
             "head_tracker_heads_received_total={}, " \
-            "job_subscriber_subscriptions={}, max_unconfirmed_blocks={}, " \
+            "max_unconfirmed_blocks={}, " \
             "process_start_time_seconds={}, " \
             "tx_manager_num_gas_bumps_total={}, " \
             "tx_manager_gas_bump_exceeds_limit_total={}, " \
@@ -518,8 +509,6 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                 "Disabled",
                 self.processed_prometheus_data_example_optionals_none[
                     'head_tracker_heads_received_total'],
-                self.processed_prometheus_data_example_optionals_none[
-                    'job_subscriber_subscriptions'],
                 self.processed_prometheus_data_example_optionals_none[
                     'max_unconfirmed_blocks'],
                 self.processed_prometheus_data_example_optionals_none[

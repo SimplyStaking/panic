@@ -81,7 +81,6 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_went_down_at_prometheus = None
         self.test_current_height = 50000000000
         self.test_total_block_headers_received = 454545040
-        self.test_no_of_active_jobs = 10
         self.test_max_pending_tx_delay = 6
         self.test_process_start_time_seconds = 345474.4
         self.test_total_gas_bumps = 11
@@ -102,8 +101,6 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_chainlink_node.set_current_height(self.test_current_height)
         self.test_chainlink_node.set_total_block_headers_received(
             self.test_total_block_headers_received)
-        self.test_chainlink_node.set_no_of_active_jobs(
-            self.test_no_of_active_jobs)
         self.test_chainlink_node.set_max_pending_tx_delay(
             self.test_max_pending_tx_delay)
         self.test_chainlink_node.set_process_start_time_seconds(
@@ -132,7 +129,6 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_went_down_at_prometheus_new = None
         self.test_current_height_new = 50000000001
         self.test_total_block_headers_received_new = 454545041
-        self.test_no_of_active_jobs_new = 11
         self.test_max_pending_tx_delay_new = 7
         self.test_process_start_time_seconds_new = 345476.4
         self.test_total_gas_bumps_new = 13
@@ -154,8 +150,6 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             self.test_current_height_new)
         self.test_chainlink_node_new.set_total_block_headers_received(
             self.test_total_block_headers_received_new)
-        self.test_chainlink_node_new.set_no_of_active_jobs(
-            self.test_no_of_active_jobs_new)
         self.test_chainlink_node_new.set_max_pending_tx_delay(
             self.test_max_pending_tx_delay_new)
         self.test_chainlink_node_new.set_process_start_time_seconds(
@@ -191,8 +185,6 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             self.test_current_height)
         self.loaded_cl_node_trans_data.set_total_block_headers_received(
             self.test_total_block_headers_received)
-        self.loaded_cl_node_trans_data.set_no_of_active_jobs(
-            self.test_no_of_active_jobs)
         self.loaded_cl_node_trans_data.set_max_pending_tx_delay(
             self.test_max_pending_tx_delay)
         self.loaded_cl_node_trans_data.set_process_start_time_seconds(
@@ -233,8 +225,6 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                             float(self.test_current_height_new),
                         'head_tracker_heads_received_total':
                             float(self.test_total_block_headers_received_new),
-                        'job_subscriber_subscriptions':
-                            float(self.test_no_of_active_jobs_new),
                         'max_unconfirmed_blocks':
                             float(self.test_max_pending_tx_delay_new),
                         'process_start_time_seconds':
@@ -324,7 +314,6 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                         'current_height': self.test_current_height_new,
                         'total_block_headers_received':
                             self.test_total_block_headers_received_new,
-                        'no_of_active_jobs': self.test_no_of_active_jobs_new,
                         'max_pending_tx_delay':
                             self.test_max_pending_tx_delay_new,
                         'process_start_time_seconds':
@@ -414,10 +403,6 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                             'current':
                                 self.test_total_block_headers_received_new,
                             'previous': self.test_total_block_headers_received,
-                        },
-                        'no_of_active_jobs': {
-                            'current': self.test_no_of_active_jobs_new,
-                            'previous': self.test_no_of_active_jobs,
                         },
                         'max_pending_tx_delay': {
                             'current': self.test_max_pending_tx_delay_new,

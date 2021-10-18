@@ -16,6 +16,7 @@ Change the contents of this file to this:
 - Added EVMNodeAlerter and its tests.
 - Added ChainlinkNodeAlerter and its tests.
 - Added ChainlinkContractAlerter and its tests.
+- Removed `no_of_active_jobs` as `job_subscriber_subscriptions` is no longer found
 
 ## Unreleased
 
