@@ -69,6 +69,9 @@ const maxAttempts = 3;
 // Store how long someone has to wait after 5 failed login attempts
 const waitTime = 300000;
 
+const timeout = (prom, time) => Promise.race(
+  [prom, new Promise((_r, rej) => setTimeout(rej, time))],
+);
 // Server configuration
 const app = express();
 app.disable('x-powered-by');
@@ -923,7 +926,7 @@ app.post('/server/ethereum/rpc', verify, async (req, res) => {
 
   try {
     const web3 = new Web3(new Web3.providers.HttpProvider(httpUrl));
-    await web3.eth.isSyncing();
+    await timeout(web3.eth.getBlockNumber(), 1000);
     const msg = new msgs.MessagePong();
     res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
   } catch (e) {
