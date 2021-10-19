@@ -147,7 +147,7 @@ class GitHubMonitor(Monitor):
 
         if not data_retrieval_failed:
             # Only output the gathered metrics if there was no error
-            self.logger.info(self._display_data(
+            self.logger.debug(self._display_data(
                 processed_data['result']['data']))
 
         # Send a heartbeat only if the entire round was successful

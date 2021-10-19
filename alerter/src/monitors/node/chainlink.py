@@ -323,7 +323,7 @@ class ChainlinkNodeMonitor(Monitor):
         # Only output the gathered data if at least one retrieval occurred
         # and there was no error in the entire retrieval process
         if data_retrieval_failed_list and not any(data_retrieval_failed_list):
-            self.logger.info(self._display_data(all_processed_data))
+            self.logger.debug(self._display_data(all_processed_data))
 
         # Send a heartbeat only if the entire round was successful
         heartbeat = {
