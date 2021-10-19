@@ -646,4 +646,5 @@ export {
   BackButton,
   PingDockerHubButton,
   PingRPC,
+  PingMultiplePrometheus,
 };

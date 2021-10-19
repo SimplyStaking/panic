@@ -19,6 +19,7 @@ Change the contents of this file to this:
 - Removed `no_of_active_jobs` as `job_subscriber_subscriptions` is no longer found
 
 ## Unreleased
+## 0.2.0
 
 - Fixed tests to work with alerter changes. Merged multiple tests into one using parameterization.
 - Updated Alerter to fix bugs with regards to metric changes in thresholds.

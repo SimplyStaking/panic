@@ -14,16 +14,17 @@
 
 The PANIC alerter can alert a node operator on the following sources: 
 - The host systems that the Cosmos-SDK/Substrate/Chainlink nodes are running on based on system metrics obtained from the node via [Node Exporter](https://github.com/prometheus/node_exporter)
-- GitHub repository releases using the [GitHub Releases API](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#releases). 
-- Chainlink nodes 
+- GitHub repository releases using the [GitHub Releases API](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#releases).
+- Chainlink nodes will be monitored through their prometheus metrics.
 
-Given the above, system monitoring and GitHub repository monitoring were developed as general as possible to give the node operator the option to monitor any system and/or any GitHub repository (Don't have to be Substrate/Cosmos-sdk based nodes/repositories).
+Given the above, system monitoring and GitHub repository monitoring were developed as general as possible to give the node operator the option to monitor any system and/or any GitHub repository (Don't have to be Substrate/Cosmos-SDK/Chainlink based nodes/repositories).
 
 The diagram below depicts the different components which constitute PANIC and how they interact with each other and the node operator.
 
 ![PANIC Design](./images/IMG_PANIC_DESIGN_10X.png)
 
-For both system monitoring/alerting and GitHub repository monitoring/alerting, PANIC starts by loading the configuration (saved during [installation](../README.md)).
+
+PANIC starts by loading the configurations (saved during [installation](../README.md)).
 
 For system monitoring and alerting, PANIC operates as follows:
 - When the **Monitors** **Manager Process** receives the configurations, it starts as many **System Monitors** as there are systems to be monitored.
@@ -36,6 +37,17 @@ For system monitoring and alerting, PANIC operates as follows:
 - If the user sets-up a **Telegram** or **Slack** Channel with **Commands** enabled, the user would be able to control and query PANIC via Telegram Bot/Slack App Commands. A list of available commands is given [here](#telegram-and-slack-commands).
 
 For GitHub repository monitoring and alerting, PANIC operates similarly to the above but the data flows through GitHub repository dedicated processes.
+
+For Chainlink node monitoring and alerting, PANIC operates as follows:
+- When the **Monitors** **Manager Process** receives the configurations, it starts as many **Chainlink Node Monitors** as there are Chainlink configurations to be monitored. A Chainlink configuration could have multiple prometheus data points setup as a node operator would have multiple Chainlink nodes setup but one running. If one Chainlink node goes down another would start operating to ensure fully functional operations. The node monitor is built to consider this and checks all prometheus data points to find the active one, if none are found an appropriate response is passed on.
+- Each **Chainlink Monitor** extracts the Chainlink data from the node's prometheus endpoint and forwards this data to the **Chainlink Data Transformer** via **RabbitMQ**.
+- The **Chainlink Node Data Transformer** starts by listening for data from the **Chainlink Node Monitors** via **RabbitMQ**. Whenever a Chainlink node's data is received, the **Chainlink Node Data Transformer** combines the received data with the Chainlink node's state obtained from **Redis**, and sends the combined data to the **Data Store** and the **Chainlink Node Alerter** via RabbitMQ.
+- The **Chainlink Node Alerter** starts by listening for data from the **Chainlink Node Data Transformer** via **RabbitMQ**. Whenever a Chainlink node's transformed data is received, the **Chainlink Node Alerter** compares the received data with the alert rules set during installation, and raises an alert if any of these rules are triggered. This alert is then sent to the **Alert Router** via **RabbitMQ** .
+- The **Data Store** also received data from the **Chainlink Node Data Transformer** via **RabbitMQ** and saves this data to both **Redis** and **MongoDB** as required.
+- When the **Alert Router** receives an alert from the **Chainlink Node Alerter** via **RabbitMQ**, it checks the configurations to determine which channels should receive this alert. As a result, this alert is then routed to the appropriate channel and the **Data Store** (so that the alert is stored in a **Mongo** database) via **RabbitMQ**.
+- When a **Channel Handler** receives an alert via **RabbitMQ**, it simply forwards it to the channel it handles and the **Node Operator** would be notified via this channel.
+- If the user sets-up a **Telegram Channel** with **Commands** enabled, the user would be able to control and query PANIC via Telegram Bot Commands. A list of available commands is given [here](#telegram-commands).
+
 
 **Notes**: 
 
@@ -96,7 +108,10 @@ PANIC supports the following commands:
 
 ## List of Alerts
 
-A complete list of alerts will now be presented. These are grouped into [System Alerts](#system-alerts) and [GitHub Repository Alerts](#github-repository-alerts) for easier understanding.
+A complete list of alerts will now be presented. These are grouped into:
++ [System Alerts](#system-alerts)
++ [GitHub Repository Alerts](#github-repository-alerts)
++ [Chainlink Node Alerts](#chainlink-node-alerts)
 
 Each alert has either severity thresholds associated, or is associated a single severity. A severity threshold is a (`value`, `severity`) pair such that when a metric associated with the alert reaches `value`, an alert with `severity` is raised. For example, the `System CPU Usage Critical` severity threshold can be configured to `95%`, meaning that you will get a `CRITICAL` `SystemCPUUsageIncreasedAboveThresholdAlert` alert if the `CPU Usage` of a system reaches `95%`. On the other hand, if an alert is associated a single severity, that alert will always be raised with the same severity whenever the alert rule is obeyed. For example, when a System is back up again after it was down, a `SystemBackUpAgainAlert` with severity `INFO` is raised. In addition to this, not all alerts have their severities or severity thresholds configurable, also some alerts can be even disabled altogether.
 
@@ -121,6 +136,21 @@ In the lists below we will show which alerts have severity thresholds and which 
 | `SystemRAMUsageDecreasedBelowThresholdAlert`      |                       | `INFO`   |      ✗       |        ✗         | This alert is raised if the system's RAM usage percentage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemRAMUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively.                                                                                                 |
 | `SystemStorageUsageIncreasedAboveThresholdAlert`  | `WARNING`, `CRITICAL` |          |      ✓       |        ✓         | A `WARNING`/`CRITICAL` alert is raised if the system's storage usage percentage increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the system's storage usage percentage is still above `critical_threshold`.                   |
 | `SystemStorageUsageDecreasedBelowThresholdAlert`  |                       | `INFO`   |      ✗       |        ✗         | This alert is raised if the system's storage usage percentage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemStorageUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively.                                                                                         |
+| Alert Class | Severity Thresholds | Severity | Configurable | Enabled/Disabled | Description |
+|---|---|---|:-:|:-:|---|
+| `SystemWentDownAtAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if `warning_threshold`/`critical_threshold` seconds pass after a system is down respectively. |
+| `SystemBackUpAgainAlert` | | `INFO` | ✗ | Depends on `SystemWentDownAtAlert` | This alert is raised if the the system was down and is back up again. This alert can only be enabled/disabled if the downtime alert is enabled/disabled respectively. |
+| `SystemStillDownAlert` | `CRITICAL` | | ✓ | ✓ | This alert is raised periodically every `critical_repeat` seconds if a `SystemWentDownAt` alert has already been raised. |
+| `InvalidUrlAlert` | | `ERROR` | ✗ | ✗ | This alert is raised if the System's provided Node Exporter endpoint has an invalid URL schema. |
+| `MetricNotFoundErrorAlert` | | `ERROR` | ✗ | ✗ | This alert is raised if a metric that is being monitored cannot be found at the system's Node Exporter endpoint. |
+| `OpenFileDescriptorsIncreasedAboveThresholdAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if the percentage number of open file descriptors increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the percentage number of open file descriptors is still above `critical_threshold`. |
+| `OpenFileDescriptorsDecreasedBelowThresholdAlert` | | `INFO` | ✗ | Depends on `OpenFileDescriptorsIncreasedAboveThresholdAlert` | This alert is raised if the percentage number of open file descriptors decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `OpenFileDescriptorsIncreasedAboveThresholdAlert` is enabled/disabled respectively. |
+| `SystemCPUUsageIncreasedAboveThresholdAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if the system's CPU usage percentage increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the system's CPU usage percentage is still above `critical_threshold`. |
+| `SystemCPUUsageDecreasedBelowThresholdAlert` | | `INFO` | ✗ | Depends on `SystemCPUUsageIncreasedAboveThresholdAlert` | This alert is raised if the system's CPU usage percentage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemCPUUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively. |
+| `SystemRAMUsageIncreasedAboveThresholdAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if the system's RAM usage percentage increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the system's RAM usage percentage is still above `critical_threshold`. |
+| `SystemRAMUsageDecreasedBelowThresholdAlert` | | `INFO` | ✗ | Depends on `SystemRAMUsageIncreasedAboveThresholdAlert` | This alert is raised if the system's RAM usage percentage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemRAMUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively. |
+| `SystemStorageUsageIncreasedAboveThresholdAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if the system's storage usage percentage increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the system's storage usage percentage is still above `critical_threshold`. |
+| `SystemStorageUsageDecreasedBelowThresholdAlert` | | `INFO` | ✗ | Depends on `SystemStorageUsageIncreasedAboveThresholdAlert` | This alert is raised if the system's storage usage percentage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemStorageUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively. |
 
 **Note:** 
 - `warning_threshold` and `critical_threshold` represent the `WARNING` and `CRITICAL` configurable thresholds respectively. These are set by the user during installation.
@@ -132,6 +162,36 @@ In the lists below we will show which alerts have severity thresholds and which 
 | ----------------------------- | -------- | :----------: | :--------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `NewGitHubReleaseAlert`       | `INFO`   |      ✗       |        ✗         | This alert is raised whenever a new release is published for a GitHub repository. Some release details are also given. Note, this alert cannot be enabled/disabled unless the operator decides to not monitor a repo altogether. |
 | `CannotAccessGitHubPageAlert` | `ERROR`  |      ✗       |        ✗         | This alert is raised when the alerter cannot access the GitHub repository's Releases API Page.                                                                                                                                   |
+
+## Chainlink Node Alerts
+
+| Alert Class | Severity Thresholds | Severity | Configurable | Enabled/Disabled | Description |
+|---|---|---|:-:|:-:|---|
+|`NoChangeInHeightAlert`|`WARNING`,`CRITICAL`|| ✓|✓|Raised after there is no change in height for `warning` and `critical` time thresholds.|
+|`BlockHeightUpdatedAlert`||`INFO`|✗|Depends on `NoChangeInHeightAlert`|Raised when there is a change in height after `warning` or `critical` alerts of type `NoChangeInHeightAlert` have been raised.|
+|`NoChangeInTotalHeadersReceivedAlert`|`WARNING`,`CRITICAL`|| ✓|✓|Raised after there is no change in total headers received for `warning` and `critical` time thresholds.|
+|`ReceivedANewHeaderAlert`||`INFO`|✗|Depends on `NoChangeInTotalHeadersReceivedAlert`|Raised when there is a change in total headers received after `warning` or `critical` alerts of type `NoChangeInTotalHeadersReceivedAlert` have been raised.|
+|`MaxUnconfirmedBlocksIncreasedAboveThresholdAlert`|`WARNING`,`CRITICAL`|| ✓|✓|Raised after the number of max unconfirmed blocks passed `warning` or `critical` block amounts threholds.|
+|`MaxUnconfirmedBlocksDecreasedBelowThresholdAlert`||`INFO`|✗|Depends on `MaxUnconfirmedBlocksDecreasedBelowThresholdAlert`|Raised when the amount of max unconfirmed blocks which were previously above `warning` or `critical` thresholds are now below them.|
+|`ChangeInSourceNodeAlert`||`WARNING`| ✓|✓|Raised when a node goes down and another node takes it's place and begins operating.|
+|`GasBumpIncreasedOverNodeGasPriceLimitAlert`||`CRITICAL`| ✓|✓|This alert happens every time the gas bump increases over the node gas price limit. This alert doesn't repeat and only alerts once per instance of increase.|
+|`NoOfUnconfirmedTxsIncreasedAboveThresholdAlert`|`WARNING`,`CRITICAL`|| ✓|✓|Raised if the number of unconfirmed transactions being sent by the node have surpassed `warning` or `critical` thresholds.|
+|`NoOfUnconfirmedTxsDecreasedBelowThresholdAlert`||`INFO`|✗|Depends on `NoOfUnconfirmedTxsIncreasedAboveThresholdAlert`|Raised when the number of unconfirmed transactions have decreased below `warning` or `critical` thresholds.|
+|`TotalErroredJobRunsIncreasedAboveThresholdAlert`|`WARNING`,`CRITICAL`|| ✓|✓|Raised when the number of total errored job runs increased above `warning` or `critical` thresholds.|
+|`TotalErroredJobRunsDecreasedBelowThresholdAlert`||`INFO`|✗|Depends on `TotalErroredJobRunsIncreasedAboveThresholdAlert`| Raised when the number of total errored jobs run decreases below `warning` or `critical` thresholds.|
+|`EthBalanceIncreasedAboveThresholdAlert`||`INFO`| ✓|Depends on `EthBalanceDecreasedBelowThresholdAlert`| Raised when the Ethereum balance increases above `warning` or `critical` thresholds.|
+|`EthBalanceDecreasedBelowThresholdAlert`|`WARNING`,`CRITICAL`|| ✓|✓|Raised when the Ethereum balance decreases below `warning` or `critical` thresholds`.|
+|`EthBalanceToppedUpAlert`||`INFO`| ✓|✓|Whenever the Ethereum balance is topped up this alert is raised.|
+|`InvalidUrlAlert`||`ERROR`|✗|✗|Raised when the URL is unreachable most likely due to an invalid configuration.|
+|`ValidUrlAlert`||`INFO`|✗|✗|Raised when the monitors manage to connect to a valid URL.|
+|`PrometheusSourceIsDownAlert`||`WARNING`|✗|✗|The URL given for the prometheus endpoint is unreachable.|
+|`PrometheusSourceBackUpAgainAlert`||`INFO`|✗|✗|The URL given for the prometheus endpoint is now reachable after being unreachable.|
+|`NodeWentDownAtAlert`|`WARNING`,`CRITICAL`|| ✓|✓|All endpoints of a node are unreachable, classifying the node as down.|
+|`NodeBackUpAgainAlert`||`INFO`|✗|Depends on `NodeWentDownAtAlert`|Valid endpoints have been found meaning that the node is now reachable.|
+|`NodeStillDownAlert`||`CRITICAL`|✗|Depends on `NodeWentDownAtAlert`|If a node has been classified as down for sometime this alert will keep repeating for a period until it is back up again.|
+|`MetricNotFoundErrorAlert`||`ERROR`|✗|✗|The endpoint had it's prometheus data changed therefore PANIC cannot find the correct metrics to read. Either th wrong endpoint was given or PANIC needs updating.|
+|`MetricFoundAlert`||`INFO`|✗|✗|This is raised when the `MetricNotFoundErrorAlert` was raised for whatever reason and now PANIC has managed to locate the metric at the prometheus endpoint.|
+
 
 ---
 [Back to front page](../README.md)

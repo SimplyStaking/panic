@@ -96,10 +96,10 @@ services:
     build:
       context: './'
       dockerfile: './alerter/Alerter_Dockerfile'
-    image: 'simplyvc/panic_alerter:0.1.2'
+    image: 'simplyvc/panic_alerter:0.2.0'
     volumes:
       - './config:/opt/panic/config'
-      - './alerter/logs:/opt/panic/alerter/logs'
+      - './logs:/opt/panic/logs'
     restart: always
     networks:
       panic_net:
@@ -148,9 +148,9 @@ services:
     build:
       context: './'
       dockerfile: './alerter/Health_Checker_Dockerfile'
-    image: 'simplyvc/alerter_health_checker:0.1.2'
+    image: 'simplyvc/alerter_health_checker:0.2.0'
     volumes:
-      - './alerter/logs:/opt/panic/alerter/logs'
+      - './logs:/opt/panic/logs'
     restart: always
     networks:
       panic_net:
