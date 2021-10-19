@@ -706,7 +706,7 @@ class ChainlinkContractsMonitor(Monitor):
 
                     self._send_data(processed_data)
 
-                    self.logger.debug(self._display_data(processed_data))
+                    self.logger.info(self._display_data(processed_data))
         else:
             # If an error occurred before retrieving any metrics, process the
             # error and send it. Here we are assuming that all nodes have the
