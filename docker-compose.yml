@@ -99,7 +99,7 @@ services:
     image: 'simplyvc/panic_alerter:0.3.0'
     volumes:
       - './config:/opt/panic/config'
-      - './logs:/opt/panic/logs'
+      - './alerter/logs:/opt/panic/alerter/logs'
     restart: always
     networks:
       panic_net:
