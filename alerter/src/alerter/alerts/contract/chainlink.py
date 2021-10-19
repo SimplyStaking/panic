@@ -8,7 +8,7 @@ from src.alerter.grouped_alerts_metric_code.contract.chainlink_contract_metric_c
 from src.utils.datetime import strfdelta
 
 
-class PriceFeedObservationsIncreasedAboveThreshold(Alert):
+class PriceFeedObservationsMissedIncreasedAboveThreshold(Alert):
     def __init__(self, origin_name: str, missed_observations: int,
                  severity: str, timestamp: float, threshold_severity: str,
                  parent_id: str, origin_id: str, proxy_address: str) -> None:

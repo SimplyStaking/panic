@@ -9,7 +9,7 @@ from typing import Dict
 
 from src.alerter.alerts.contract.chainlink import (
     PriceFeedObservedAgain,
-    PriceFeedObservationsIncreasedAboveThreshold,
+    PriceFeedObservationsMissedIncreasedAboveThreshold,
     PriceFeedDeviationInreasedAboveThreshold,
     PriceFeedDeviationDecreasedBelowThreshold,
     ConsensusFailure, )
@@ -209,7 +209,7 @@ class TestAlertingFactory(unittest.TestCase):
             'critical_threshold']) + 1
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config.price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
             PriceFeedObservedAgain,
             data_for_alerting,
             self.test_parent_id, self.test_node_id, self.proxy_1,
@@ -239,14 +239,14 @@ class TestAlertingFactory(unittest.TestCase):
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config
             .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
             PriceFeedObservedAgain,
             data_for_alerting,
             self.test_parent_id, self.test_node_id, self.proxy_1,
             MetricCode.PriceFeedNotObserved.value,
             self.test_node_name, datetime.now().timestamp()
         )
-        expected_alert = PriceFeedObservationsIncreasedAboveThreshold(
+        expected_alert = PriceFeedObservationsMissedIncreasedAboveThreshold(
             self.test_node_name, current, severity, datetime.now().timestamp(),
             severity, self.test_parent_id, self.test_node_id, self.proxy_1)
         self.assertEqual(1, len(data_for_alerting))
@@ -268,7 +268,7 @@ class TestAlertingFactory(unittest.TestCase):
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config
             .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
             PriceFeedObservedAgain,
             data_for_alerting, self.test_parent_id, self.test_node_id,
             self.proxy_1,
@@ -282,7 +282,7 @@ class TestAlertingFactory(unittest.TestCase):
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config
             .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
             PriceFeedObservedAgain,
             data_for_alerting, self.test_parent_id, self.test_node_id,
             self.proxy_1,
@@ -310,7 +310,7 @@ class TestAlertingFactory(unittest.TestCase):
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config
             .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
             PriceFeedObservedAgain,
             data_for_alerting, self.test_parent_id, self.test_node_id,
             self.proxy_1,
@@ -330,7 +330,7 @@ class TestAlertingFactory(unittest.TestCase):
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config
             .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
             PriceFeedObservedAgain,
             data_for_alerting, self.test_parent_id, self.test_node_id,
             self.proxy_1,
@@ -349,14 +349,14 @@ class TestAlertingFactory(unittest.TestCase):
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config
             .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
             PriceFeedObservedAgain,
             data_for_alerting, self.test_parent_id, self.test_node_id,
             self.proxy_1,
             MetricCode.PriceFeedNotObserved.value,
             self.test_node_name, alert_timestamp
         )
-        expected_alert = PriceFeedObservationsIncreasedAboveThreshold(
+        expected_alert = PriceFeedObservationsMissedIncreasedAboveThreshold(
             self.test_node_name, current, "CRITICAL", alert_timestamp,
             "CRITICAL", self.test_parent_id, self.test_node_id, self.proxy_1)
         self.assertEqual(1, len(data_for_alerting))
@@ -381,7 +381,7 @@ class TestAlertingFactory(unittest.TestCase):
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config
             .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
             PriceFeedObservedAgain,
             data_for_alerting, self.test_parent_id, self.test_node_id,
             self.proxy_1,
@@ -401,7 +401,7 @@ class TestAlertingFactory(unittest.TestCase):
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config
             .price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
             PriceFeedObservedAgain,
             data_for_alerting, self.test_parent_id, self.test_node_id,
             self.proxy_1,

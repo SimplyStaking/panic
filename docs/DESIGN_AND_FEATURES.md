@@ -112,6 +112,8 @@ A complete list of alerts will now be presented. These are grouped into:
 + [System Alerts](#system-alerts)
 + [GitHub Repository Alerts](#github-repository-alerts)
 + [Chainlink Node Alerts](#chainlink-node-alerts)
++ [Chainlink Contract Alerts](#chainlink-contract-alerts)
++ [EVM Node Alerts](#evm-node-alerts)
 
 Each alert has either severity thresholds associated, or is associated a single severity. A severity threshold is a (`value`, `severity`) pair such that when a metric associated with the alert reaches `value`, an alert with `severity` is raised. For example, the `System CPU Usage Critical` severity threshold can be configured to `95%`, meaning that you will get a `CRITICAL` `SystemCPUUsageIncreasedAboveThresholdAlert` alert if the `CPU Usage` of a system reaches `95%`. On the other hand, if an alert is associated a single severity, that alert will always be raised with the same severity whenever the alert rule is obeyed. For example, when a System is back up again after it was down, a `SystemBackUpAgainAlert` with severity `INFO` is raised. In addition to this, not all alerts have their severities or severity thresholds configurable, also some alerts can be even disabled altogether.
 
@@ -136,21 +138,6 @@ In the lists below we will show which alerts have severity thresholds and which 
 | `SystemRAMUsageDecreasedBelowThresholdAlert`      |                       | `INFO`   |      ✗       |        ✗         | This alert is raised if the system's RAM usage percentage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemRAMUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively.                                                                                                 |
 | `SystemStorageUsageIncreasedAboveThresholdAlert`  | `WARNING`, `CRITICAL` |          |      ✓       |        ✓         | A `WARNING`/`CRITICAL` alert is raised if the system's storage usage percentage increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the system's storage usage percentage is still above `critical_threshold`.                   |
 | `SystemStorageUsageDecreasedBelowThresholdAlert`  |                       | `INFO`   |      ✗       |        ✗         | This alert is raised if the system's storage usage percentage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemStorageUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively.                                                                                         |
-| Alert Class | Severity Thresholds | Severity | Configurable | Enabled/Disabled | Description |
-|---|---|---|:-:|:-:|---|
-| `SystemWentDownAtAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if `warning_threshold`/`critical_threshold` seconds pass after a system is down respectively. |
-| `SystemBackUpAgainAlert` | | `INFO` | ✗ | Depends on `SystemWentDownAtAlert` | This alert is raised if the the system was down and is back up again. This alert can only be enabled/disabled if the downtime alert is enabled/disabled respectively. |
-| `SystemStillDownAlert` | `CRITICAL` | | ✓ | ✓ | This alert is raised periodically every `critical_repeat` seconds if a `SystemWentDownAt` alert has already been raised. |
-| `InvalidUrlAlert` | | `ERROR` | ✗ | ✗ | This alert is raised if the System's provided Node Exporter endpoint has an invalid URL schema. |
-| `MetricNotFoundErrorAlert` | | `ERROR` | ✗ | ✗ | This alert is raised if a metric that is being monitored cannot be found at the system's Node Exporter endpoint. |
-| `OpenFileDescriptorsIncreasedAboveThresholdAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if the percentage number of open file descriptors increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the percentage number of open file descriptors is still above `critical_threshold`. |
-| `OpenFileDescriptorsDecreasedBelowThresholdAlert` | | `INFO` | ✗ | Depends on `OpenFileDescriptorsIncreasedAboveThresholdAlert` | This alert is raised if the percentage number of open file descriptors decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `OpenFileDescriptorsIncreasedAboveThresholdAlert` is enabled/disabled respectively. |
-| `SystemCPUUsageIncreasedAboveThresholdAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if the system's CPU usage percentage increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the system's CPU usage percentage is still above `critical_threshold`. |
-| `SystemCPUUsageDecreasedBelowThresholdAlert` | | `INFO` | ✗ | Depends on `SystemCPUUsageIncreasedAboveThresholdAlert` | This alert is raised if the system's CPU usage percentage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemCPUUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively. |
-| `SystemRAMUsageIncreasedAboveThresholdAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if the system's RAM usage percentage increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the system's RAM usage percentage is still above `critical_threshold`. |
-| `SystemRAMUsageDecreasedBelowThresholdAlert` | | `INFO` | ✗ | Depends on `SystemRAMUsageIncreasedAboveThresholdAlert` | This alert is raised if the system's RAM usage percentage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemRAMUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively. |
-| `SystemStorageUsageIncreasedAboveThresholdAlert` | `WARNING`, `CRITICAL` | | ✓ | ✓ | A `WARNING`/`CRITICAL` alert is raised if the system's storage usage percentage increases above `warning_threshold`/`critical_threshold` respectively. This alert is raised periodically every `critical_repeat` seconds with `CRITICAL` severity if the system's storage usage percentage is still above `critical_threshold`. |
-| `SystemStorageUsageDecreasedBelowThresholdAlert` | | `INFO` | ✗ | Depends on `SystemStorageUsageIncreasedAboveThresholdAlert` | This alert is raised if the system's storage usage percentage decreases below `warning_threshold`/`critical_threshold`. This alert can only be enabled/disabled if the `SystemStorageUsageIncreasedAboveThresholdAlert` is enabled/disabled respectively. |
 
 **Note:** 
 - `warning_threshold` and `critical_threshold` represent the `WARNING` and `CRITICAL` configurable thresholds respectively. These are set by the user during installation.
@@ -191,6 +178,34 @@ In the lists below we will show which alerts have severity thresholds and which 
 |`NodeStillDownAlert`||`CRITICAL`|✗|Depends on `NodeWentDownAtAlert`|If a node has been classified as down for sometime this alert will keep repeating for a period until it is back up again.|
 |`MetricNotFoundErrorAlert`||`ERROR`|✗|✗|The endpoint had it's prometheus data changed therefore PANIC cannot find the correct metrics to read. Either th wrong endpoint was given or PANIC needs updating.|
 |`MetricFoundAlert`||`INFO`|✗|✗|This is raised when the `MetricNotFoundErrorAlert` was raised for whatever reason and now PANIC has managed to locate the metric at the prometheus endpoint.|
+
+## Chainlink Contract Alerts
+
+| Alert Class | Severity Thresholds | Severity | Configurable | Enabled/Disabled | Description |
+|---|---|---|:-:|:-:|---|
+|`PriceFeedObservationsMissedIncreasedAboveThreshold`|`WARNING`,`CRITICAL`|| ✓|✓| Raised when the number of missed price feed observations increased above thresholds. |
+|`PriceFeedObservedAgain`|`INFO`|| ✗| Depends on `PriceFeedObservationsMissedIncreasedAboveThreshold` |Raised after a Chainlink node start to observe price feeds again. |
+|`PriceFeedDeviationInreasedAboveThreshold`|`WARNING`,`CRITICAL`|| ✓|✓| Raised when the price feed observation submitted deviates from the consensus above thresholds. |
+|`PriceFeedDeviationDecreasedBelowThreshold`|`INFO`|| ✗| Depends on `PriceFeedDeviationInreasedAboveThreshold` | Raised when the Chainlink node's price feed submissions are no longer deviating from consensus. |
+|`ConsensusFailure`||`WARNING`| ✗| ✓ | Raised when the price feed our Chainlink node submits to doesn't reach a consensus. |
+|`ErrorContractsNotRetrieved`||`ERROR`| ✗ | ✗ | This is raised when weiwatchers isn't available therefore contracts cannot be retrieved. |
+|`ContractsNowRetrieved`||`INFO`| ✗ | ✗ | This is raised when weiwatchers is available again therefore contracts can be retrieved. |
+|`ErrorNoSyncedDataSources`||`ERROR`| ✗ | ✗ | This is raised when no EVM nodes are available to retrieve data from. |
+|`SyncedDataSourcesFound`||`INFO`| ✗ | ✗ | This is raised when synced EVM nodes are found and  contract data can be retrieved again. |
+
+## EVM Node Alerts
+
+| Alert Class | Severity Thresholds | Severity | Configurable | Enabled/Disabled | Description |
+|---|---|---|:-:|:-:|---|
+|`NoChangeInBlockHeight`|`WARNING`,`CRITICAL`|| ✓|✓| Raised when there hasn't been a change in node block height over a period of time. |
+|`BlockHeightUpdatedAlert`|`INFO`|| ✗| Depends on `NoChangeInBlockHeight` | Raised after an EVM node starts to update it's block height. |
+|`BlockHeightDifferenceIncreasedAboveThresholdAlert`|`WARNING`,`CRITICAL`|| ✓|✓| Raised when the block height difference between multiple EVM nodes has exceed thresholds. |
+|`BlockHeightDifferenceDecreasedBelowThresholdAlert`|`INFO`|| ✗| Depends on `BlockHeightDifferenceIncreasedAboveThresholdAlert` | Raised after the difference between EVM node's block heights has decreased below thresholds. |
+|`InvalidUrlAlert`||`ERROR`| ✗ | ✗ | Raised when the EVM node URL is invalid. |
+|`ValidUrlAlert`||`INFO`| ✗ | ✗ | Raised when the EVM node URL is found after being invalid. |
+|`NodeWentDownAtAlert`|`WARNING`,`CRITICAL`|| ✓ | ✓ | Raised when the EVM node is unreachable. |
+|`NodeBackUpAgainAlert`|`INFO`|| ✗ | Depends on `NodeWentDownAtAlert` | Raised when the EVM node is back up again. |
+|`NodeStillDownAlert`|`CRITICAL`|| ✗ | Depends on `NodeWentDownAtAlert` | Raised when the EVM node is still detected as down after a period of time.  |
 
 
 ---

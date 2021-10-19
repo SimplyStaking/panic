@@ -217,7 +217,7 @@ class ChainlinkContractAlerter(Alerter):
                     sub_config = configs.price_feed_not_observed
                     self.alerting_factory.classify_thresholded_and_conditional_alert(
                         current_missed_observations, sub_config,
-                        cl_alerts.PriceFeedObservationsIncreasedAboveThreshold,
+                        cl_alerts.PriceFeedObservationsMissedIncreasedAboveThreshold,
                         cl_alerts.PriceFeedObservedAgain,
                         self._equal_condition_function, [
                             current_missed_observations, 0],

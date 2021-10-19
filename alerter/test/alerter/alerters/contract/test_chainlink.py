@@ -14,7 +14,7 @@ from parameterized import parameterized
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerts.contract.chainlink import (
     PriceFeedObservedAgain,
-    PriceFeedObservationsIncreasedAboveThreshold,
+    PriceFeedObservationsMissedIncreasedAboveThreshold,
     PriceFeedDeviationInreasedAboveThreshold,
     PriceFeedDeviationDecreasedBelowThreshold,
     ConsensusFailure, ErrorContractsNotRetrieved,
@@ -751,7 +751,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         self.assertEqual(1, mock_thresh_cond_alert.call_count)
         call_1 = call(
             eval(mock_observed), configs.price_feed_not_observed,
-            PriceFeedObservationsIncreasedAboveThreshold,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
             PriceFeedObservedAgain,
             self.test_contract_alerter._equal_condition_function, [
                 eval(mock_observed), 0],
