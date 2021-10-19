@@ -18,7 +18,6 @@ Change the contents of this file to this:
 - Added ChainlinkContractAlerter and its tests.
 - Removed `no_of_active_jobs` as `job_subscriber_subscriptions` is no longer found
 
-## Unreleased
 ## 0.2.0
 
 - Fixed tests to work with alerter changes. Merged multiple tests into one using parameterization.

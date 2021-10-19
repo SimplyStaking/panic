@@ -16,6 +16,8 @@ The PANIC alerter can alert a node operator on the following sources:
 - The host systems that the Cosmos-SDK/Substrate/Chainlink nodes are running on based on system metrics obtained from the node via [Node Exporter](https://github.com/prometheus/node_exporter)
 - GitHub repository releases using the [GitHub Releases API](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#releases).
 - Chainlink nodes will be monitored through their prometheus metrics.
+- Chainlink contracts are monitored through the use of EVM nodes and Chainlink node addresses.
+- EVM nodes will be monitored through the RPC endpoint.
 
 Given the above, system monitoring and GitHub repository monitoring were developed as general as possible to give the node operator the option to monitor any system and/or any GitHub repository (Don't have to be Substrate/Cosmos-SDK/Chainlink based nodes/repositories).
 
@@ -36,7 +38,7 @@ For system monitoring and alerting, PANIC operates as follows:
 - When a **Channel Handler** receives an alert via **RabbitMQ**, it simply forwards it to the channel it handles and the **Node Operator** would be notified via this channel.
 - If the user sets-up a **Telegram** or **Slack** Channel with **Commands** enabled, the user would be able to control and query PANIC via Telegram Bot/Slack App Commands. A list of available commands is given [here](#telegram-and-slack-commands).
 
-For GitHub repository monitoring and alerting, PANIC operates similarly to the above but the data flows through GitHub repository dedicated processes.
+For the EVM Node and GitHub repository monitoring and alerting, PANIC operates similarly to the above but the data flows through GitHub repository dedicated processes and the EVM node dedicated processes respectively.
 
 For Chainlink node monitoring and alerting, PANIC operates as follows:
 - When the **Monitors** **Manager Process** receives the configurations, it starts as many **Chainlink Node Monitors** as there are Chainlink configurations to be monitored. A Chainlink configuration could have multiple prometheus data points setup as a node operator would have multiple Chainlink nodes setup but one running. If one Chainlink node goes down another would start operating to ensure fully functional operations. The node monitor is built to consider this and checks all prometheus data points to find the active one, if none are found an appropriate response is passed on.
@@ -48,6 +50,15 @@ For Chainlink node monitoring and alerting, PANIC operates as follows:
 - When a **Channel Handler** receives an alert via **RabbitMQ**, it simply forwards it to the channel it handles and the **Node Operator** would be notified via this channel.
 - If the user sets-up a **Telegram Channel** with **Commands** enabled, the user would be able to control and query PANIC via Telegram Bot Commands. A list of available commands is given [here](#telegram-commands).
 
+For Chainlink contract monitoring and alerting, PANIC operates as follows:
+- When the **Monitors** **Manager Process** receives the configurations, it starts one **Chainlink Contract Monitor** per chain and keeps the configurations updated. A Chainlink Contract monitor uses EVM nodes to retrieve price feed data. The Chainlink contract monitor knows which  contracts to monitor as it retrieves the address of the Chainlink nodes previously setup and checks if the addresses exist in the list of contracts from `weiwatchers`. If a users has multiple EVM nodes setup and one goes down the monitor will attempt to retrieve data from the next node in the list, if none are reachable an appropriate message is passed on.
+- Each **Chainlink Contract Monitor** extracts the Chainlink contract data from the EVM node's rpc endpoint and forwards this data to the **Chainlink Contract Data Transformer** via **RabbitMQ**.
+- The **Chainlink Contract Data Transformer** starts by listening for data from the **Chainlink Contract Monitors** via **RabbitMQ**. Whenever a Chainlink contract's data is received, the **Chainlink Contract Data Transformer** combines the received data with the Chainlink contract's state obtained from **Redis**, and sends the combined data to the **Data Store** and the **Chainlink Contract Alerter** via RabbitMQ.
+- The **Chainlink Contract Alerter** starts by listening for data from the **Chainlink Contract Data Transformer** via **RabbitMQ**. Whenever a Chainlink contract's transformed data is received, the **Chainlink Contract Alerter** compares the received data with the alert rules set during installation, and raises an alert if any of these rules are triggered. This alert is then sent to the **Alert Router** via **RabbitMQ** .
+- The **Data Store** also received data from the **Chainlink Contract Data Transformer** via **RabbitMQ** and saves this data to both **Redis** and **MongoDB** as required.
+- When the **Alert Router** receives an alert from the **Chainlink Contract Alerter** via **RabbitMQ**, it checks the configurations to determine which channels should receive this alert. As a result, this alert is then routed to the appropriate channel and the **Data Store** (so that the alert is stored in a **Mongo** database) via **RabbitMQ**.
+- When a **Channel Handler** receives an alert via **RabbitMQ**, it simply forwards it to the channel it handles and the **Node Operator** would be notified via this channel.
+- If the user sets-up a **Telegram Channel** with **Commands** enabled, the user would be able to control and query PANIC via Telegram Bot Commands. A list of available commands is given [here](#telegram-commands).
 
 **Notes**: 
 
