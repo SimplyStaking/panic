@@ -150,7 +150,7 @@ services:
       dockerfile: './alerter/Health_Checker_Dockerfile'
     image: 'simplyvc/alerter_health_checker:0.3.0'
     volumes:
-      - './logs:/opt/panic/logs'
+      - './alerter/logs:/opt/panic/alerter/logs'
     restart: always
     networks:
       panic_net:
