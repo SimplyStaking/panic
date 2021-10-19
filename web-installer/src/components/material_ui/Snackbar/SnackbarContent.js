@@ -4,8 +4,7 @@ import PropTypes from 'prop-types';
 // @material-ui/core components
 import Snack from '@material-ui/core/SnackbarContent';
 import Icon from '@material-ui/core/Icon';
-import useStyles from
-  'assets/jss/material-kit-react/components/snackbarContentStyle';
+import useStyles from 'assets/jss/material-kit-react/components/snackbarContentStyle';
 
 export default function SnackbarContent(props) {
   const {
