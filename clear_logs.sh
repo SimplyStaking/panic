@@ -1,2 +1,2 @@
-cd logs/alerter
+cd alerter
 find . -name "*.log" -type f -delete

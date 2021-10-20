@@ -32,12 +32,12 @@ class V4ChainlinkContract(ChainlinkContract):
             {
                 'roundId': int,
                 'roundAnswer': int,
-                'roundTimestamp': float,
+                'roundTimestamp': int,
                 'answeredInRound': int,
                 'nodeSubmission': Or(int, None),
-                'deviation': Or(float, None),
                 'noOfObservations': int,
                 'noOfTransmitters': int,
+                'deviation': Or(float, None),
             }
         ])
         return schema.is_valid(new_historical_rounds)

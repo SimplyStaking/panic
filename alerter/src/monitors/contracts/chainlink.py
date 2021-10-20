@@ -386,7 +386,7 @@ class ChainlinkContractsMonitor(Monitor):
                 historical_rounds.append({
                     'roundId': round_id,
                     'roundAnswer': round_answer,
-                    'roundTimestamp': round_timestamp,
+                    'roundTimestamp': int(round_timestamp),
                     'answeredInRound': answered_in_round,
                     'nodeSubmission': event['args']['submission']
                 })
@@ -422,7 +422,7 @@ class ChainlinkContractsMonitor(Monitor):
                 'historicalRounds': [{
                     'roundId': int,
                     'roundAnswer': int,
-                    'roundTimestamp': float,
+                    'roundTimestamp': int,
                     'answeredInRound': int,
                     'nodeSubmission': Optional[int],
                     'noOfObservations': int,
@@ -460,6 +460,10 @@ class ChainlinkContractsMonitor(Monitor):
                                          proxy_address] + 1 \
                 if proxy_address in self.last_block_monitored[node_id] \
                 else current_block_height
+
+            if first_block_to_monitor > current_block_height:
+                first_block_to_monitor = current_block_height
+
             event_filter = \
                 aggregator_contract.events.NewTransmission.createFilter(
                     fromBlock=first_block_to_monitor,
@@ -513,7 +517,7 @@ class ChainlinkContractsMonitor(Monitor):
                 historical_rounds.append({
                     'roundId': round_id,
                     'roundAnswer': round_data[1],
-                    'roundTimestamp': round_data[3],
+                    'roundTimestamp': int(round_data[3]),
                     'answeredInRound': round_data[4],
                     'nodeSubmission': node_submission,
                     'noOfObservations': len(event['args']['observations']),

@@ -33,7 +33,7 @@ class V3ChainlinkContract(ChainlinkContract):
             {
                 'roundId': int,
                 'roundAnswer': Or(int, None),
-                'roundTimestamp': Or(float, None),
+                'roundTimestamp': Or(int, None),
                 'answeredInRound': Or(int, None),
                 'nodeSubmission': int,
                 'deviation': Or(float, None)

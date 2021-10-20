@@ -20,6 +20,7 @@ from src.utils.constants.rabbitmq import (
     CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
+from src.utils.logging import log_and_print
 from src.utils.types import Monitorable, convert_to_int, convert_to_float
 
 
@@ -343,15 +344,18 @@ class ChainlinkContractsDataTransformer(DataTransformer):
             # answer for each contract
             for proxy_address, contract_data in td_metrics.items():
                 historical_rounds = contract_data['historicalRounds']
-                for round_data in historical_rounds:
-                    node_submission = round_data['nodeSubmission']
-                    round_answer = round_data['roundAnswer']
+                temp_rounds = []
+                for i in range(len(historical_rounds)):
+                    temp_rounds.append(historical_rounds[i])
+                    node_submission = historical_rounds[i]['nodeSubmission']
+                    round_answer = historical_rounds[i]['roundAnswer']
                     if None in [node_submission, round_answer]:
-                        round_data['deviation'] = None
+                        temp_rounds[i]['deviation'] = None
                     else:
-                        round_data['deviation'] = convert_to_float(abs(
+                        temp_rounds[i]['deviation'] = convert_to_float(abs(
                             ((round_answer - node_submission) /
                              round_answer) * 100), None)
+                td_metrics[proxy_address]['historicalRounds'] = temp_rounds
         elif 'error' in data:
             # In case of errors only remove the monitor_name from the meta data
             transformed_data = copy.deepcopy(data)
