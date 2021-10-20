@@ -142,7 +142,7 @@ const chainlinkThresholdAlerts = {
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 120,
+        threshold: 180,
         enabled: true,
       },
       critical: {
@@ -163,11 +163,11 @@ const chainlinkThresholdAlerts = {
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 60,
+        threshold: 180,
         enabled: true,
       },
       critical: {
-        threshold: 180,
+        threshold: 240,
         repeat: 180,
         repeat_enabled: true,
         enabled: true,
