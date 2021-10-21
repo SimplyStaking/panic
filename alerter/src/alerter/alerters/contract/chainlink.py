@@ -234,7 +234,8 @@ class ChainlinkContractAlerter(Alerter):
                 if (str_to_bool(configs.price_feed_deviation['enabled']) and
                     None not in [current_missed_observations,
                                  sorted_historical_rounds] and
-                        current_missed_observations == 0):
+                        current_missed_observations == 0 and
+                        len(sorted_historical_rounds) > 0):
                     sub_config = configs.price_feed_deviation
                     current_deviation = sorted_historical_rounds[0][
                         'deviation']
