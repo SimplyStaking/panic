@@ -12,13 +12,13 @@ class NoChangeInBlockHeight(Alert):
                  timestamp: float, parent_id: str, origin_id: str,
                  last_processed_block: int) -> None:
         super().__init__(
-            EVMNodeAlertCode.NoChangeInHeightAlert,
+            EVMNodeAlertCode.NoChangeInBlockHeight,
             "The latest block height processed by {} was at least {} "
             "ago. Last processed block: {}.".format(origin_name, strfdelta(
                 timedelta(seconds=duration),
                 "{hours}h, {minutes}m, {seconds}s"), last_processed_block),
             severity, timestamp, parent_id, origin_id,
-            GroupedEVMNodeAlertsMetricCode.NoChangeInHeight)
+            GroupedEVMNodeAlertsMetricCode.NoChangeInBlockHeight)
 
 
 class BlockHeightUpdatedAlert(Alert):
@@ -30,7 +30,7 @@ class BlockHeightUpdatedAlert(Alert):
             "{} is now processing blocks again. Last processed block: "
             "{}.".format(origin_name, last_processed_block),
             severity, timestamp, parent_id, origin_id,
-            GroupedEVMNodeAlertsMetricCode.NoChangeInHeight)
+            GroupedEVMNodeAlertsMetricCode.NoChangeInBlockHeight)
 
 
 class BlockHeightDifferenceIncreasedAboveThresholdAlert(Alert):
