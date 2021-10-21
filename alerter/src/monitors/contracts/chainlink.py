@@ -289,7 +289,7 @@ class ChainlinkContractsMonitor(Monitor):
                     'roundId': int,
                     'roundAnswer': int/None (if round consensus not reached
                                              yet),
-                    'roundTimestamp': float/None (if round consensus not reached
+                    'roundTimestamp': int/None (if round consensus not reached
                                                   yet),
                     'answeredInRound': int/None (if round consensus not reached
                                                  yet)
@@ -386,7 +386,7 @@ class ChainlinkContractsMonitor(Monitor):
                 historical_rounds.append({
                     'roundId': round_id,
                     'roundAnswer': round_answer,
-                    'roundTimestamp': int(round_timestamp),
+                    'roundTimestamp': round_timestamp,
                     'answeredInRound': answered_in_round,
                     'nodeSubmission': event['args']['submission']
                 })
@@ -517,7 +517,7 @@ class ChainlinkContractsMonitor(Monitor):
                 historical_rounds.append({
                     'roundId': round_id,
                     'roundAnswer': round_data[1],
-                    'roundTimestamp': int(round_data[3]),
+                    'roundTimestamp': round_data[3],
                     'answeredInRound': round_data[4],
                     'nodeSubmission': node_submission,
                     'noOfObservations': len(event['args']['observations']),

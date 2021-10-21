@@ -86,14 +86,14 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             {
                 'roundId': 38,
                 'roundAnswer': 10,
-                'roundTimestamp': self.test_last_monitored + 10,
+                'roundTimestamp': int(self.test_last_monitored + 10),
                 'answeredInRound': 38,
                 'nodeSubmission': 5
             },
             {
                 'roundId': 39,
                 'roundAnswer': 5,
-                'roundTimestamp': self.test_last_monitored + 20,
+                'roundTimestamp': int(self.test_last_monitored + 20),
                 'answeredInRound': 39,
                 'nodeSubmission': 10
             }
@@ -114,14 +114,14 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             {
                 'roundId': 48,
                 'roundAnswer': 10,
-                'roundTimestamp': self.test_last_monitored + 10,
+                'roundTimestamp': int(self.test_last_monitored + 10),
                 'answeredInRound': 48,
                 'nodeSubmission': 5
             },
             {
                 'roundId': 49,
                 'roundAnswer': 5,
-                'roundTimestamp': self.test_last_monitored + 20,
+                'roundTimestamp': int(self.test_last_monitored + 20),
                 'answeredInRound': 49,
                 'nodeSubmission': 10
             }
@@ -134,7 +134,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             {
                 'roundId': 28,
                 'roundAnswer': 10,
-                'roundTimestamp': self.test_last_monitored + 10,
+                'roundTimestamp': int(self.test_last_monitored + 10),
                 'answeredInRound': 48,
                 'nodeSubmission': 5,
                 'noOfObservations': 4,
@@ -143,7 +143,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             {
                 'roundId': 29,
                 'roundAnswer': 5,
-                'roundTimestamp': self.test_last_monitored + 20,
+                'roundTimestamp': int(self.test_last_monitored + 20),
                 'answeredInRound': 49,
                 'nodeSubmission': 10,
                 'noOfObservations': 5,
@@ -158,7 +158,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             {
                 'roundId': 38,
                 'roundAnswer': 10,
-                'roundTimestamp': self.test_last_monitored + 10,
+                'roundTimestamp': int(self.test_last_monitored + 10),
                 'answeredInRound': 38,
                 'nodeSubmission': 5,
                 'noOfObservations': 6,
@@ -167,7 +167,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             {
                 'roundId': 39,
                 'roundAnswer': 5,
-                'roundTimestamp': self.test_last_monitored + 20,
+                'roundTimestamp': int(self.test_last_monitored + 20),
                 'answeredInRound': 39,
                 'nodeSubmission': 10,
                 'noOfObservations': 7,
