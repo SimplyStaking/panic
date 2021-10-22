@@ -11,7 +11,7 @@ class EVMNode(Node):
         # Metrics
         self._went_down_at = None
         self._current_height = None
-
+        self._syncing = None
         # This stores the timestamp of the last successful monitoring round.
         self._last_monitored = None
 
@@ -26,6 +26,10 @@ class EVMNode(Node):
     @property
     def current_height(self) -> Optional[int]:
         return self._current_height
+
+    @property
+    def syncing(self) -> Optional[bool]:
+        return self._syncing
 
     @property
     def last_monitored(self) -> Optional[float]:
@@ -49,6 +53,9 @@ class EVMNode(Node):
     def set_last_monitored(self, last_monitored: Optional[float]) -> None:
         self._last_monitored = last_monitored
 
+    def set_syncing(self, syncing: Optional[bool]) -> None:
+        self._syncing = syncing
+
     @staticmethod
     def get_int_metric_attributes() -> List[str]:
         """
@@ -63,7 +70,15 @@ class EVMNode(Node):
         """
         return ['went_down_at', 'last_monitored']
 
+    @staticmethod
+    def get_bool_metric_attributes() -> List[str]:
+        """
+        :return: A list of all variable names representing bool metrics.
+        """
+        return ['syncing']
+
     def reset(self) -> None:
         self.set_went_down_at(None)
         self.set_current_height(None)
+        self.set_syncing(None)
         self.set_last_monitored(None)

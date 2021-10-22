@@ -45,12 +45,19 @@ class EVMNodeMonitor(Monitor):
     def _display_data(self, data: Dict) -> str:
         # This function assumes that the data has been obtained and processed
         # successfully by the node monitor
-        return "current_height={}".format(data['current_height'])
+        return "current_height={}, syncing={}".format(
+            data['current_height'], data['syncing'])
 
     def _get_data(self) -> Dict:
+        """
+        w3_interface.eth.syncing
+        Returns either False if the node is not syncing or a dictionary
+        showing sync status. We only care about the bool state of the node's
+        syncing status.
+        """
         return {
             'current_height': self.w3_interface.eth.block_number,
-            'syncing': self.w3_interface.eth.syncing,
+            'syncing': bool(self.w3_interface.eth.syncing)
         }
 
     def _process_error(self, error: PANICException) -> Dict:

@@ -101,6 +101,10 @@ class TestEVMNodeAlerter(unittest.TestCase):
                     'current': self.test_current_height_1,
                     'previous': self.test_current_height_1 - 10
                 },
+                'syncing': {
+                    'current': False,
+                    'previous': False
+                },
                 'went_down_at': {
                     'current': self.test_last_monitored,
                     'previous': None,

@@ -40,6 +40,7 @@ _key_cl_node_last_monitored_prometheus = 'cl13'
 _key_evm_node_current_height = 'evm1'
 _key_evm_node_went_down_at = 'evm2'
 _key_evm_node_last_monitored = 'evm3'
+_key_evm_node_syncing = 'evm4'
 
 # ChainlinkContractX_<cl_node_id>_<contract_proxy_address>
 _key_cl_contract_version = 'ChainlinkContract1'
@@ -265,6 +266,10 @@ class Keys:
     @staticmethod
     def get_evm_node_last_monitored(evm_node_id: str) -> str:
         return Keys._as_prefix(_key_evm_node_last_monitored) + evm_node_id
+
+    @staticmethod
+    def get_evm_node_syncing(evm_node_id: str) -> str:
+        return Keys._as_prefix(_key_evm_node_syncing) + evm_node_id
 
     @staticmethod
     def get_cl_contract_version(cl_node_id: str,

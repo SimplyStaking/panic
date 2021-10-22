@@ -166,10 +166,11 @@ class EVMNodeAlerter(Alerter):
             if str_to_bool(
                     configs.evm_block_syncing_no_change_in_block_height[
                         'enabled']):
+                syncing = data['syncing']['current']
                 current = data['current_height']['current']
                 previous = data['current_height']['previous']
                 sub_config = configs.evm_block_syncing_no_change_in_block_height
-                if current is not None and previous is not None:
+                if None not in [current, previous, syncing] and not syncing:
                     self.alerting_factory.classify_no_change_in_alert(
                         current, previous, sub_config,
                         evm_alerts.NoChangeInBlockHeight,
@@ -181,9 +182,10 @@ class EVMNodeAlerter(Alerter):
 
             if str_to_bool(configs.evm_block_syncing_block_height_difference[
                     'enabled']):
+                syncing = data['syncing']['current']
                 current = data['current_height']['current']
                 sub_config = configs.evm_block_syncing_block_height_difference
-                if current is not None:
+                if None not in [current, syncing] and not syncing:
                     self.alerting_factory.alerting_state[meta_data[
                         'node_parent_id']][meta_data['node_id']][
                             'current_height'] = current
@@ -197,6 +199,7 @@ class EVMNodeAlerter(Alerter):
                     for key, value in self.alerting_factory.alerting_state[
                             meta_data['node_parent_id']].items():
                         node_heights.append(value['current_height'])
+                    node_heights = list(filter((None).__ne__, node_heights))
                     difference = max(node_heights) - current
                     self.alerting_factory. \
                         classify_thresholded_alert(

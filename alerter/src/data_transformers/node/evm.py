@@ -19,8 +19,8 @@ from src.utils.constants.rabbitmq import (
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   NodeIsDownException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import Monitorable, convert_to_int, convert_to_float
-
+from src.utils.types import (Monitorable, convert_to_int, convert_to_float,
+                             convert_none_to_bool)
 
 class EVMNodeDataTransformer(DataTransformer):
     def __init__(self, transformer_name: str, logger: logging.Logger,
@@ -83,10 +83,12 @@ class EVMNodeDataTransformer(DataTransformer):
         if state_type == int:
             metric_attributes = evm_node.get_int_metric_attributes()
             convert_fn = convert_to_int
-        else:
+        elif state_type == float:
             metric_attributes = evm_node.get_float_metric_attributes()
             convert_fn = convert_to_float
-
+        else:
+            metric_attributes = evm_node.get_bool_metric_attributes()
+            convert_fn = convert_none_to_bool
         # We iterate over the number metric attributes and attempt to load from
         # redis. We are saving metrics in the following format b"value", so
         # first we need to decode, and then convert to int/float. Note, since
@@ -113,10 +115,12 @@ class EVMNodeDataTransformer(DataTransformer):
 
         self._load_number_state(int, evm_node)
         self._load_number_state(float, evm_node)
+        self._load_number_state(bool, evm_node)
 
         self.logger.debug(
-            "Restored %s state: _current_height=%s, _last_monitored=%s, "
-            "_went_down_at=%s", evm_node, evm_node.current_height,
+            "Restored %s state: _current_height=%s, _syncing=%s, "
+            "_last_monitored=%s, _went_down_at=%s", evm_node,
+            evm_node.current_height, evm_node.syncing,
             evm_node.last_monitored, evm_node.went_down_at)
 
         return evm_node
@@ -139,6 +143,7 @@ class EVMNodeDataTransformer(DataTransformer):
             # Save the new metrics in process memory
             node.set_last_monitored(meta_data['last_monitored'])
             node.set_current_height(metrics['current_height'])
+            node.set_syncing(metrics['syncing'])
             node.set_as_up()
         elif 'error' in transformed_data:
             meta_data = transformed_data['error']['meta_data']
@@ -208,6 +213,7 @@ class EVMNodeDataTransformer(DataTransformer):
 
             processed_data_metrics['current_height'][
                 'previous'] = node.current_height
+            processed_data_metrics['syncing']['previous'] = node.syncing
             processed_data_metrics['went_down_at'][
                 'previous'] = node.went_down_at
         elif 'error' in transformed_data:

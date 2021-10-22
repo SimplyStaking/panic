@@ -59,7 +59,8 @@ class TestEVMNodeMonitor(unittest.TestCase):
         }
         self.test_queue_name = 'Test Queue'
         self.retrieved_metrics_example = {
-            'current_height': 2003024
+            'current_height': 2003024,
+            'syncing': True
         }
         self.test_exception = PANICException('test_exception', 1)
         self.node_config = EVMNodeConfig(self.node_id, self.parent_id,
@@ -195,8 +196,9 @@ class TestEVMNodeMonitor(unittest.TestCase):
         self.assertEqual(self.test_heartbeat, json.loads(body))
 
     def test_display_data_returns_the_correct_string(self) -> None:
-        expected_output = "current_height={}".format(
-            self.retrieved_metrics_example['current_height'])
+        expected_output = "current_height={}, syncing={}".format(
+            self.retrieved_metrics_example['current_height'],
+            self.retrieved_metrics_example['syncing'])
         actual_output = self.test_monitor._display_data(
             self.retrieved_metrics_example)
         self.assertEqual(expected_output, actual_output)

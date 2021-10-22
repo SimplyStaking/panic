@@ -81,6 +81,7 @@ class TestEVMNodeDataTransformer(unittest.TestCase):
         # Set evm node values
         self.test_evm_node.set_went_down_at(self.test_went_down_at)
         self.test_evm_node.set_current_height(self.test_current_height)
+        self.test_evm_node.set_syncing(True)
         self.test_evm_node.set_last_monitored(self.test_last_monitored)
 
         # Some raw data examples
@@ -95,6 +96,7 @@ class TestEVMNodeDataTransformer(unittest.TestCase):
                 },
                 'data': {
                     'current_height': 1010,
+                    'syncing': True
                 },
             }
         }
@@ -136,6 +138,7 @@ class TestEVMNodeDataTransformer(unittest.TestCase):
                 },
                 'data': {
                     'current_height': 1010,
+                    'syncing': True,
                     'went_down_at': None,
                 },
             }
@@ -179,6 +182,7 @@ class TestEVMNodeDataTransformer(unittest.TestCase):
             self.test_evm_node_parent_id)
         self.test_evm_node_new_metrics.set_went_down_at(None)
         self.test_evm_node_new_metrics.set_current_height(1010)
+        self.test_evm_node_new_metrics.set_syncing(True)
         self.test_evm_node_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
 
@@ -192,6 +196,10 @@ class TestEVMNodeDataTransformer(unittest.TestCase):
                         'current':
                             self.test_evm_node_new_metrics.current_height,
                         'previous': self.test_evm_node.current_height
+                    },
+                    'syncing': {
+                        'current': self.test_evm_node_new_metrics.syncing,
+                        'previous': self.test_evm_node.syncing,
                     },
                     'went_down_at': {
                         'current': self.test_evm_node_new_metrics.went_down_at,
@@ -401,6 +409,7 @@ class TestEVMNodeDataTransformer(unittest.TestCase):
         self.assertEqual(self.test_went_down_at, loaded_evm_node.went_down_at)
         self.assertEqual(self.test_current_height,
                          loaded_evm_node.current_height)
+        self.assertEqual(False, loaded_evm_node.syncing)
         self.assertEqual(self.test_last_monitored,
                          loaded_evm_node.last_monitored)
 
@@ -429,6 +438,7 @@ class TestEVMNodeDataTransformer(unittest.TestCase):
 
         self.assertEqual(None, loaded_evm_node.went_down_at)
         self.assertEqual(None, loaded_evm_node.current_height)
+        self.assertEqual(False, loaded_evm_node.syncing)
         self.assertEqual(None, loaded_evm_node.last_monitored)
 
         # Clean test db
@@ -446,6 +456,7 @@ class TestEVMNodeDataTransformer(unittest.TestCase):
         self.assertEqual(self.test_went_down_at, loaded_evm_node.went_down_at)
         self.assertEqual(self.test_current_height,
                          loaded_evm_node.current_height)
+        self.assertEqual(True, loaded_evm_node.syncing)
         self.assertEqual(self.test_last_monitored,
                          loaded_evm_node.last_monitored)
 
@@ -469,6 +480,7 @@ class TestEVMNodeDataTransformer(unittest.TestCase):
         self.assertEqual(self.test_went_down_at, loaded_evm_node.went_down_at)
         self.assertEqual(self.test_current_height,
                          loaded_evm_node.current_height)
+        self.assertEqual(True, loaded_evm_node.syncing)
         self.assertEqual(self.test_last_monitored,
                          loaded_evm_node.last_monitored)
 
