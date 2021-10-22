@@ -199,7 +199,8 @@ class EVMNodeAlerter(Alerter):
                     for key, value in self.alerting_factory.alerting_state[
                             meta_data['node_parent_id']].items():
                         node_heights.append(value['current_height'])
-                    node_heights = list(filter((None).__ne__, node_heights))
+                    node_heights = list(filter(lambda a: a is not None,
+                                        node_heights))
                     difference = max(node_heights) - current
                     self.alerting_factory. \
                         classify_thresholded_alert(

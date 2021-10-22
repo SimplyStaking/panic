@@ -613,6 +613,68 @@ class TestEVMNodeAlerter(unittest.TestCase):
 
     @mock.patch.object(EVMNodeAlertingFactory, "classify_downtime_alert")
     @mock.patch.object(EVMNodeAlertingFactory, "classify_error_alert")
+    @mock.patch.object(EVMNodeAlertingFactory, "classify_no_change_in_alert")
+    @mock.patch.object(EVMNodeAlertingFactory,
+                       "classify_thresholded_alert")
+    @mock.patch.object(EVMNodeAlertingFactory,
+                       "classify_thresholded_in_time_period_alert")
+    @mock.patch.object(EVMNodeAlertingFactory,
+                       "classify_conditional_alert")
+    @mock.patch.object(EVMNodeAlertingFactory,
+                       "classify_thresholded_alert_reverse")
+    def test_process_result_classifies_correctly_if_data_valid_syncing_true(
+            self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
+            mock_thresh_alert, mock_no_change_alert,
+            mock_error_alert, mock_downtime_alert) -> None:
+        """
+        In this test we will check that the correct classification functions are
+        called correctly by the process_result function. Note that
+        the actual logic for these classification functions was tested in the
+        alert factory class.
+        """
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(chain,
+                                                 self.received_configurations)
+        configs = self.test_configs_factory.configs[chain]
+
+        data_for_alerting = []
+        self.test_result_data['data']['syncing']['current'] = True
+        self.test_node_alerter._process_result(self.test_result_data,
+                                               data_for_alerting)
+
+        calls = mock_error_alert.call_args_list
+        self.assertEqual(1, mock_error_alert.call_count)
+        call_1 = call(
+            5009, InvalidUrlAlert,
+            ValidUrlAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            self.test_node_name,
+            self.test_last_monitored,
+            GroupedEVMNodeAlertsMetricCode.InvalidUrl.value, "",
+            "EVM URL is now valid!.", None)
+        self.assertTrue(call_1 in calls)
+
+        calls = mock_downtime_alert.call_args_list
+        self.assertEqual(1, mock_downtime_alert.call_count)
+        call_1 = call(
+            None, configs.evm_node_is_down, NodeWentDownAtAlert,
+            NodeStillDownAlert, NodeBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            GroupedEVMNodeAlertsMetricCode.NodeIsDown.value,
+            self.test_node_name, self.test_last_monitored)
+        self.assertTrue(call_1 in calls)
+
+        mock_no_change_alert.assert_not_called
+        mock_thresh_alert.assert_not_called()
+        mock_cond_alert.assert_not_called()
+        mock_reverse.assert_not_called()
+        mock_thresh_per_alert.assert_not_called()
+
+    @mock.patch.object(EVMNodeAlertingFactory, "classify_downtime_alert")
+    @mock.patch.object(EVMNodeAlertingFactory, "classify_error_alert")
     def test_process_error_classifies_correctly_if_data_valid(
             self, mock_error_alert, mock_downtime_alert) -> None:
         """
