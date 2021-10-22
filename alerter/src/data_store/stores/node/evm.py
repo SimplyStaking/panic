@@ -122,14 +122,17 @@ class EVMNodeStore(Store):
         metrics = data['data']
 
         self.logger.debug(
-            "Saving %s state: _current_height=%s, _last_monitored=%s, "
-            "_went_down_at=%s", node_name,
-            metrics['current_height'], meta_data['last_monitored'],
+            "Saving %s state: _current_height=%s, _syncing=%s, "
+            "_last_monitored=%s, _went_down_at=%s", node_name,
+            metrics['current_height'], metrics['syncing'],
+            meta_data['last_monitored'],
             metrics['went_down_at'])
 
         self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
             Keys.get_evm_node_current_height(node_id):
                 str(metrics['current_height']),
+            Keys.get_evm_node_syncing(node_id):
+                str(metrics['syncing']),
             Keys.get_evm_node_went_down_at(node_id): str(
                 metrics['went_down_at']),
             Keys.get_evm_node_last_monitored(node_id):
@@ -196,6 +199,7 @@ class EVMNodeStore(Store):
                 '$push': {
                     node_id: {
                         'current_height': str(metrics['current_height']),
+                        'syncing': str(metrics['syncing']),
                         'went_down_at': str(metrics['went_down_at']),
                         'timestamp': meta_data['last_monitored'],
                     }

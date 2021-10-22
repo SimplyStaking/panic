@@ -21,7 +21,8 @@ from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           EVM_NODE_STORE_INPUT_QUEUE_NAME)
 from src.utils.exceptions import (PANICException, NodeIsDownException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import convert_to_int, convert_to_float
+from src.utils.types import (convert_to_int, convert_to_float,
+                             convert_none_to_bool)
 from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,
@@ -92,6 +93,7 @@ class TestEVMNodeStore(unittest.TestCase):
                 "data": {
                     "went_down_at": self.test_went_down_at,
                     "current_height": self.test_current_height,
+                    "syncing": False
                 }
             }
         }
@@ -107,6 +109,7 @@ class TestEVMNodeStore(unittest.TestCase):
                 "data": {
                     "went_down_at": self.test_went_down_at,
                     "current_height": self.test_current_height + self.pad,
+                    "syncing": False
                 }
             }
         }
@@ -409,6 +412,13 @@ class TestEVMNodeStore(unittest.TestCase):
                                                self.node_id)
                                            ).decode("utf-8"), 'bad_val'))
         self.assertEqual(
+            data['data']['syncing'],
+            convert_none_to_bool(
+                self.redis.hget(
+                    redis_hash,
+                    Keys.get_evm_node_syncing(self.node_id)).decode("utf-8"),
+                'bad_val'))
+        self.assertEqual(
             data['meta_data']['last_monitored'],
             convert_to_float(self.redis.hget(
                 redis_hash,
@@ -453,6 +463,11 @@ class TestEVMNodeStore(unittest.TestCase):
                                   Keys.get_evm_node_current_height(
                                       self.node_id))
         )
+        self.assertEqual(
+            None, self.redis.hget(redis_hash,
+                                  Keys.get_evm_node_syncing(
+                                      self.node_id))
+        )
         self.assertEqual(None, self.redis.hget(
             redis_hash, Keys.get_evm_node_last_monitored(self.node_id)
         ))
@@ -481,6 +496,7 @@ class TestEVMNodeStore(unittest.TestCase):
             'node',
             1,
             metrics['current_height'],
+            metrics['syncing'],
             metrics['went_down_at'],
             meta_data['last_monitored'],
         ]
@@ -488,6 +504,7 @@ class TestEVMNodeStore(unittest.TestCase):
             document['doc_type'],
             document['n_entries'],
             convert_to_int(document[node_id][0]['current_height'], 'bad_val'),
+            convert_none_to_bool(document[node_id][0]['syncing'], 'bad_val'),
             None if document[node_id][0]['went_down_at'] == 'None'
             else convert_to_float(
                 document[node_id][0]['went_down_at'], 'bad_val'),
