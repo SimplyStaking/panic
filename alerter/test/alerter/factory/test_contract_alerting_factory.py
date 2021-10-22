@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from freezegun import freeze_time
 from parameterized import parameterized
-from typing import Dict
+from typing import Dict, Any
 
 from src.alerter.alerts.contract.chainlink import (
     PriceFeedObservedAgain,
@@ -56,6 +56,8 @@ class TestAlertingFactory(unittest.TestCase):
             MetricCode.ErrorContractsNotRetrieved.value: False,
             MetricCode.ErrorNoSyncedDataSources.value: False,
         }
+        self.missed_obs = 0
+        self.last_timestamp = datetime.now().timestamp()
         # Construct the configs
         severity_metrics = [
             'consensus_failure'
@@ -99,6 +101,10 @@ class TestAlertingFactory(unittest.TestCase):
             self.test_parent_id, self.test_node_id, self.proxy_1,
             self.test_alerts_config)
 
+    @staticmethod
+    def _equal_condition_function(current: Any, previous: Any) -> bool:
+        return current == previous
+
     def tearDown(self) -> None:
         self.dummy_logger = None
         self.test_alerts_config = None
@@ -114,83 +120,7 @@ class TestAlertingFactory(unittest.TestCase):
         self.assertEqual(self.dummy_logger,
                          self.test_factory_instance.component_logger)
 
-    @freeze_time("2012-01-01")
-    def test_classify_conditional_alert_raises_condition_true_alert_if_true(
-            self) -> None:
-        """
-        Given a true condition, in this test we will check that the
-        classify_conditional_alert fn calls the condition_true_alert
-        """
-
-        def condition_function(*args): return True
-
-        data_for_alerting = []
-
-        self.test_factory_instance.classify_conditional_alert(
-            ConsensusFailure, condition_function, [], [
-                self.test_node_name, 'WARNING',
-                datetime.now().timestamp(), self.test_parent_id,
-                self.test_node_id, self.proxy_1
-            ], data_for_alerting
-        )
-
-        expected_alert_1 = ConsensusFailure(
-            self.test_node_name, 'WARNING',
-            datetime.now().timestamp(), self.test_parent_id, self.test_node_id,
-            self.proxy_1)
-        self.assertEqual(1, len(data_for_alerting))
-        self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
-
-    @freeze_time("2012-01-01")
-    def test_classify_conditional_alert_raises_condition_false_alert_if_false(
-            self) -> None:
-        """
-        Given a false condition, in this test we will check that the
-        classify_conditional_alert fn calls the condition_false_alert if it is
-        not None.
-        """
-
-        def condition_function(*args): return False
-
-        data_for_alerting = []
-
-        self.test_factory_instance.classify_conditional_alert(
-            ConsensusFailure, condition_function, [], [
-                self.test_node_name, 'WARNING', datetime.now().timestamp(),
-                self.test_parent_id, self.test_node_id, self.proxy_1
-            ], data_for_alerting, ConsensusFailure,
-            [self.test_node_name, 'INFO', datetime.now().timestamp(),
-             self.test_parent_id, self.test_node_id,  self.proxy_1]
-        )
-
-        expected_alert_1 = ConsensusFailure(
-            self.test_node_name, 'INFO', datetime.now().timestamp(),
-            self.test_parent_id, self.test_node_id, self.proxy_1)
-        self.assertEqual(1, len(data_for_alerting))
-        self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
-
-    @freeze_time("2012-01-01")
-    def test_classify_conditional_alert_no_alert_if_no_false_alert_and_false(
-            self) -> None:
-        """
-        Given a false condition and no condition_false_alert, in this test we
-        will check that no alert is raised by the classify_conditional_alert fn.
-        """
-
-        def condition_function(*args): return False
-
-        data_for_alerting = []
-
-        self.test_factory_instance.classify_conditional_alert(
-            ConsensusFailure, condition_function, [], [
-                self.test_node_name, 'WARNING', datetime.now().timestamp(),
-                self.test_parent_id, self.test_node_id,  self.proxy_1
-            ], data_for_alerting
-        )
-
-        self.assertEqual([], data_for_alerting)
-
-    def test_classify_thresholded_does_nothing_warning_critical_disabled(
+    def test_classify_thresh_and_cond_alert_does_nothing_warning_critical_disabled(
             self) -> None:
         """
         In this test we will check that no alert is raised whenever both warning
@@ -207,13 +137,260 @@ class TestAlertingFactory(unittest.TestCase):
         data_for_alerting = []
         current = float(self.test_alerts_config.price_feed_not_observed[
             'critical_threshold']) + 1
-        self.test_factory_instance.classify_thresholded_alert(
+        self.test_factory_instance.classify_thresholded_and_conditional_alert(
             current, self.test_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
             PriceFeedObservedAgain,
-            data_for_alerting,
+            self._equal_condition_function, [current, 0], data_for_alerting,
             self.test_parent_id, self.test_node_id, self.proxy_1,
             MetricCode.PriceFeedNotObserved.value,
+            self.test_node_name, self.last_timestamp
+        )
+
+        self.assertEqual([], data_for_alerting)
+
+    @parameterized.expand([
+        ('WARNING', 'warning_threshold'),
+        ('CRITICAL', 'critical_threshold'),
+    ])
+    @freeze_time("2012-01-01")
+    def test_classify_thresh_and_cond_alert_raises_alert_if_above_threshold(
+            self, severity, threshold_var) -> None:
+        """
+        In this test we will check that a warning/critical above threshold
+        alert is raised if the current value goes above the warning/critical
+        threshold.
+        """
+        data_for_alerting = []
+
+        current = float(self.test_alerts_config.price_feed_not_observed[
+            threshold_var]) + 1
+        self.test_factory_instance.classify_thresholded_and_conditional_alert(
+            current, self.test_alerts_config.price_feed_not_observed,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
+            PriceFeedObservedAgain,
+            self._equal_condition_function, [current, 0], data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.proxy_1,
+            MetricCode.PriceFeedNotObserved.value,
+            self.test_node_name, self.last_timestamp
+        )
+        expected_alert = PriceFeedObservationsMissedIncreasedAboveThreshold(
+            self.test_node_name, current, severity, self.last_timestamp,
+            severity, self.test_parent_id, self.test_node_id, self.proxy_1)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_thresh_and_cond_alert_no_warning_if_warning_already_sent(
+            self) -> None:
+        """
+        In this test we will check that no warning alert is raised if a warning
+        alert has already been sent
+        """
+        data_for_alerting = []
+
+        # Send first warning alert
+        current = float(self.test_alerts_config.price_feed_not_observed[
+                'warning_threshold']) + 1
+        self.test_factory_instance.classify_thresholded_and_conditional_alert(
+            current, self.test_alerts_config.price_feed_not_observed,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
+            PriceFeedObservedAgain,
+            self._equal_condition_function, [current, 0],
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
+            self.test_node_name, self.last_timestamp
+        )
+        self.assertEqual(1, len(data_for_alerting))
+        data_for_alerting.clear()
+
+        # Classify again to check if a warning alert is raised
+        self.test_factory_instance.classify_thresholded_and_conditional_alert(
+            current, self.test_alerts_config.price_feed_not_observed,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
+            PriceFeedObservedAgain,
+            self._equal_condition_function, [current, 0],
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
+            self.test_node_name, self.last_timestamp + 1
+        )
+        self.assertEqual([], data_for_alerting)
+
+    @freeze_time("2012-01-01")
+    def test_classify_thresh_and_cond_alert_raises_critical_if_repeat_elapsed(
+            self) -> None:
+        """
+        In this test we will check that a critical above threshold alert is
+        re-raised if the critical repeat window elapses. We will also check that
+        if the critical window does not elapse, a critical alert is not
+        re-raised.
+        """
+        data_for_alerting = []
+
+        # First critical below threshold alert
+        current = (int(self.test_alerts_config.price_feed_not_observed[
+                'critical_threshold']) + 1)
+        self.test_factory_instance.classify_thresholded_and_conditional_alert(
+            current, self.test_alerts_config.price_feed_not_observed,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
+            PriceFeedObservedAgain,
+            self._equal_condition_function, [current, 0],
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
+            self.test_node_name, datetime.now().timestamp()
+        )
+        self.assertEqual(1, len(data_for_alerting))
+        data_for_alerting.clear()
+
+        # Classify with not elapsed repeat to confirm that no critical alert is
+        # raised.
+        pad = (float(self.test_alerts_config.price_feed_not_observed[
+                    'critical_repeat']) - 1)
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_and_conditional_alert(
+            current, self.test_alerts_config.price_feed_not_observed,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
+            PriceFeedObservedAgain,
+            self._equal_condition_function, [current, 0],
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
+            self.test_node_name, alert_timestamp
+        )
+        self.assertEqual([], data_for_alerting)
+
+        # Let repeat time to elapse and check that a critical alert is
+        # re-raised
+        pad = float(self.test_alerts_config.price_feed_not_observed[
+                'critical_repeat'])
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_and_conditional_alert(
+            current, self.test_alerts_config.price_feed_not_observed,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
+            PriceFeedObservedAgain,
+            self._equal_condition_function, [current, 0],
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
+            self.test_node_name, alert_timestamp
+        )
+        expected_alert = PriceFeedObservationsMissedIncreasedAboveThreshold(
+            self.test_node_name, current, "CRITICAL", alert_timestamp,
+            "CRITICAL", self.test_parent_id, self.test_node_id, self.proxy_1)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_thresh_and_cond_alert_only_1_critical_if_above_and_no_repeat(
+            self) -> None:
+        """
+        In this test we will check that if critical_repeat is disabled, a
+        increase above critical alert is not re-raised.
+        """
+        self.test_alerts_config.price_feed_not_observed[
+            'critical_repeat_enabled'] = "False"
+        data_for_alerting = []
+
+        # First critical below threshold alert
+        current = (float(self.test_alerts_config.price_feed_not_observed[
+                'critical_threshold']) + 1)
+        self.test_factory_instance.classify_thresholded_and_conditional_alert(
+            current, self.test_alerts_config.price_feed_not_observed,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
+            PriceFeedObservedAgain,
+            self._equal_condition_function, [current, 0],
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
+            self.test_node_name, datetime.now().timestamp()
+        )
+        self.assertEqual(1, len(data_for_alerting))
+        data_for_alerting.clear()
+
+        # Let repeat time to elapse and check that a critical alert is not
+        # re-raised
+        pad = (float(self.test_alerts_config.price_feed_not_observed[
+                'critical_repeat']))
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_and_conditional_alert(
+            current, self.test_alerts_config.price_feed_not_observed,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
+            PriceFeedObservedAgain,
+            self._equal_condition_function, [current, 0],
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
+            self.test_node_name, alert_timestamp
+        )
+        self.assertEqual([], data_for_alerting)
+
+    @parameterized.expand([
+        ('critical_threshold', 'CRITICAL',),
+        ('warning_threshold', 'WARNING',)
+    ])
+    @freeze_time("2012-01-01")
+    def test_classify_thresh_and_cond_alert_info_alert_if_below_thresh_and_alert_sent(
+            self, threshold_var, threshold_severity) -> None:
+        """
+        In this test we will check that once the current value is lower than a
+        threshold, a decrease below threshold info alert is sent. We will
+        perform this test for both warning and critical.
+        """
+        data_for_alerting = []
+
+        # First below threshold alert
+        current = float(self.test_alerts_config.price_feed_not_observed[
+            threshold_var]) + 1
+        self.test_factory_instance.classify_thresholded_and_conditional_alert(
+            current, self.test_alerts_config.price_feed_not_observed,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
+            PriceFeedObservedAgain,
+            self._equal_condition_function, [current, 0],
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
+            self.test_node_name, datetime.now().timestamp()
+        )
+        self.assertEqual(1, len(data_for_alerting))
+        data_for_alerting.clear()
+
+        # Check that a below threshold INFO alert is raised.
+        current = 0
+        alert_timestamp = datetime.now().timestamp()
+        self.test_factory_instance.classify_thresholded_and_conditional_alert(
+            current, self.test_alerts_config.price_feed_not_observed,
+            PriceFeedObservationsMissedIncreasedAboveThreshold,
+            PriceFeedObservedAgain,
+            self._equal_condition_function, [current, 0],
+            data_for_alerting, self.test_parent_id, self.test_node_id,
+            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
+            self.test_node_name, alert_timestamp
+        )
+        expected_alert = PriceFeedObservedAgain(
+            self.test_node_name, 'INFO', alert_timestamp,
+            self.test_parent_id, self.test_node_id, self.proxy_1)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    def test_classify_thresholded_does_nothing_warning_critical_disabled(
+            self) -> None:
+        """
+        In this test we will check that no alert is raised whenever both warning
+        and critical alerts are disabled. We will perform this test for both
+        when current>= critical and current >= warning. For an alert to be
+        raised when current < critical or current < warning it must be that one
+        of the severities is enabled.
+        """
+        self.test_alerts_config.price_feed_deviation[
+            'warning_enabled'] = 'False'
+        self.test_alerts_config.price_feed_deviation[
+            'critical_enabled'] = 'False'
+
+        data_for_alerting = []
+        current = float(self.test_alerts_config.price_feed_deviation[
+            'critical_threshold']) + 1
+        self.test_factory_instance.classify_thresholded_alert(
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
+            data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.proxy_1,
+            MetricCode.PriceFeedDeviation.value,
             self.test_node_name, datetime.now().timestamp()
         )
 
@@ -234,19 +411,17 @@ class TestAlertingFactory(unittest.TestCase):
         data_for_alerting = []
 
         current = float(
-            self.test_alerts_config
-            .price_feed_not_observed[threshold_var]) + 1
+            self.test_alerts_config.price_feed_deviation[threshold_var]) + 1
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting,
             self.test_parent_id, self.test_node_id, self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
+            MetricCode.PriceFeedDeviation.value,
             self.test_node_name, datetime.now().timestamp()
         )
-        expected_alert = PriceFeedObservationsMissedIncreasedAboveThreshold(
+        expected_alert = PriceFeedDeviationInreasedAboveThreshold(
             self.test_node_name, current, severity, datetime.now().timestamp(),
             severity, self.test_parent_id, self.test_node_id, self.proxy_1)
         self.assertEqual(1, len(data_for_alerting))
@@ -263,16 +438,14 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Send first warning alert
         current = float(
-            self.test_alerts_config
-            .price_feed_not_observed['warning_threshold']) + 1
+            self.test_alerts_config.price_feed_deviation[
+                'warning_threshold']) + 1
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
+            self.proxy_1, MetricCode.PriceFeedDeviation.value,
             self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual(1, len(data_for_alerting))
@@ -280,13 +453,11 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Classify again to check if a warning alert is raised
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
+            self.proxy_1, MetricCode.PriceFeedDeviation.value,
             self.test_node_name, datetime.now().timestamp() + 1
         )
         self.assertEqual([], data_for_alerting)
@@ -304,17 +475,14 @@ class TestAlertingFactory(unittest.TestCase):
 
         # First critical below threshold alert
         current = (float(
-            self.test_alerts_config
-            .price_feed_not_observed['critical_threshold'])
-            + 1)
+            self.test_alerts_config.price_feed_deviation[
+                'critical_threshold']) + 1)
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
+            self.proxy_1, MetricCode.PriceFeedDeviation.value,
             self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual(1, len(data_for_alerting))
@@ -322,41 +490,33 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Classify with not elapsed repeat to confirm that no critical alert is
         # raised.
-        pad = (float(
-               self.test_alerts_config
-               .price_feed_not_observed[
-                   'critical_repeat']) - 1)
+        pad = (float(self.test_alerts_config.price_feed_deviation[
+                    'critical_repeat']) - 1)
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
+            self.proxy_1, MetricCode.PriceFeedDeviation.value,
             self.test_node_name, alert_timestamp
         )
         self.assertEqual([], data_for_alerting)
 
         # Let repeat time to elapse and check that a critical alert is
         # re-raised
-        pad = float(
-            self.test_alerts_config
-            .price_feed_not_observed[
+        pad = float(self.test_alerts_config.price_feed_deviation[
                 'critical_repeat'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
+            self.proxy_1, MetricCode.PriceFeedDeviation.value,
             self.test_node_name, alert_timestamp
         )
-        expected_alert = PriceFeedObservationsMissedIncreasedAboveThreshold(
+        expected_alert = PriceFeedDeviationInreasedAboveThreshold(
             self.test_node_name, current, "CRITICAL", alert_timestamp,
             "CRITICAL", self.test_parent_id, self.test_node_id, self.proxy_1)
         self.assertEqual(1, len(data_for_alerting))
@@ -369,23 +529,19 @@ class TestAlertingFactory(unittest.TestCase):
         In this test we will check that if critical_repeat is disabled, a
         increase above critical alert is not re-raised.
         """
-        self.test_alerts_config.price_feed_not_observed[
+        self.test_alerts_config.price_feed_deviation[
             'critical_repeat_enabled'] = "False"
         data_for_alerting = []
 
         # First critical below threshold alert
-        current = (float(
-            self.test_alerts_config
-            .price_feed_not_observed[
+        current = (float(self.test_alerts_config.price_feed_deviation[
                 'critical_threshold']) + 1)
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
+            self.proxy_1, MetricCode.PriceFeedDeviation.value,
             self.test_node_name, datetime.now().timestamp()
         )
         self.assertEqual(1, len(data_for_alerting))
@@ -393,19 +549,15 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Let repeat time to elapse and check that a critical alert is not
         # re-raised
-        pad = (float(
-            self.test_alerts_config
-            .price_feed_not_observed[
+        pad = (float(self.test_alerts_config.price_feed_deviation[
                 'critical_repeat']))
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_alert(
-            current, self.test_alerts_config
-            .price_feed_not_observed,
-            PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
+            current, self.test_alerts_config.price_feed_deviation,
+            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
+            self.proxy_1, MetricCode.PriceFeedDeviation.value,
             self.test_node_name, alert_timestamp
         )
         self.assertEqual([], data_for_alerting)

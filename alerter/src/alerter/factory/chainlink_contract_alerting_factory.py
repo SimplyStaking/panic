@@ -204,10 +204,10 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
 
         monitoring_datetime = datetime.fromtimestamp(monitoring_timestamp)
 
-        if (critical_sent[metric_name] or warning_sent[metric_name] and
+        if ((critical_sent[metric_name] or warning_sent[metric_name]) and
                 condition_function(*condition_fn_args)):
             alert = condition_true_alert(
-                monitorable_name, Severity.INFO.value,
+                monitorable_name, Severity.INFO.value, monitoring_timestamp,
                 parent_id, monitorable_id, contract_proxy_address)
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
@@ -232,7 +232,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
                 critical_repeat_limiter.set_last_time_that_did_task(
                     monitoring_datetime)
             elif (critical_enabled and critical_sent[metric_name] and
-                  critical_repeat_limiter.can_do_task(monitoring_datetime)):
+                  critical_repeat_limiter.can_do_task(monitoring_datetime) and
+                  critical_repeat_enabled):
                 alert = increased_above_threshold_alert(
                     monitorable_name, current, Severity.CRITICAL.value,
                     monitoring_timestamp, Severity.CRITICAL.value, parent_id,
