@@ -2,7 +2,7 @@ from ..grouped_alerts_metric_code import GroupedAlertsMetricCode
 
 
 class GroupedChainlinkNodeAlertsMetricCode(GroupedAlertsMetricCode):
-    NoChangeInHeight = 'head_tacker_current_head'
+    NoChangeInHeight = 'head_tracker_current_head'
     NoChangeInTotalHeadersReceived = 'head_tracker_heads_received_total'
     MaxUnconfirmedBlocksThreshold = 'max_unconfirmed_blocks'
     ChangeInSourceNode = 'process_start_time_seconds'

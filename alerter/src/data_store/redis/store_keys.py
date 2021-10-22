@@ -85,7 +85,7 @@ _key_alert_github_release = 'alert_github1'
 _key_alert_cannot_access_github = 'alert_github2'
 
 # alert_cl_nodeX_<origin_id>
-_key_alert_cl_head_tacker_current_head = 'alert_cl_node1'
+_key_alert_cl_head_tracker_current_head = 'alert_cl_node1'
 _key_alert_cl_head_tracker_heads_received_total = 'alert_cl_node2'
 _key_alert_cl_max_unconfirmed_blocks = 'alert_cl_node3'
 _key_alert_cl_process_start_time_seconds = 'alert_cl_node4'
@@ -452,9 +452,9 @@ class Keys:
             _key_alert_cl_head_tracker_heads_received_total) + origin_id
 
     @staticmethod
-    def get_alert_cl_head_tacker_current_head(origin_id: str) -> str:
+    def get_alert_cl_head_tracker_current_head(origin_id: str) -> str:
         return Keys._as_prefix(
-            _key_alert_cl_head_tacker_current_head) + origin_id
+            _key_alert_cl_head_tracker_current_head) + origin_id
 
     @staticmethod
     def get_alert_cl_contract_price_feed_not_observed(

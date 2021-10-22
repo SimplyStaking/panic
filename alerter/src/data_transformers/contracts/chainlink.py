@@ -219,7 +219,35 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                                              transformed_data: Dict) -> Dict:
         self.logger.debug("Performing further processing for storage ...")
 
-        if 'result' in transformed_data or 'error' in transformed_data:
+        if 'result' in transformed_data:
+            processed_data = copy.deepcopy(transformed_data)
+            td_metrics = transformed_data['result']['data']
+
+            for proxy_address, contract_data in td_metrics.items():
+
+                last_round_observed = None
+                # Get the current value of the last round the price feed was
+                # observed.
+                if contract_data['historicalRounds']:
+                    sorted_historical_rounds = sorted(
+                        contract_data['historicalRounds'],
+                        key=lambda k: k['roundId'],
+                        reverse=True)
+                    if int(contract_data['contractVersion']) == 3:
+                        last_round_observed = int(sorted_historical_rounds[0][
+                            'roundId'])
+                    elif int(contract_data['contractVersion']) == 4:
+                        round_data = next((
+                            item for item in
+                            sorted_historical_rounds if
+                            item['nodeSubmission'] is not None), None)
+                        if round_data:
+                            last_round_observed = int(round_data['roundId'])
+
+                processed_data['result']['data'][proxy_address][
+                    'lastRoundObserved'] = last_round_observed
+
+        elif 'error' in transformed_data:
             processed_data = copy.deepcopy(transformed_data)
         else:
             raise ReceivedUnexpectedDataException(

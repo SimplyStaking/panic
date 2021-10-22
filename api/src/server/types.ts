@@ -102,7 +102,7 @@ export interface AlertKeysGitHubRepo {
 }
 
 export interface AlertKeysChainlinkNode {
-  head_tacker_current_head: string,
+  head_tracker_current_head: string,
   head_tracker_heads_received_total: string,
   max_unconfirmed_blocks: string,
   process_start_time_seconds: string,

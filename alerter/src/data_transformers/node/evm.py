@@ -22,6 +22,7 @@ from src.utils.exceptions import (ReceivedUnexpectedDataException,
 from src.utils.types import (Monitorable, convert_to_int, convert_to_float,
                              convert_none_to_bool)
 
+
 class EVMNodeDataTransformer(DataTransformer):
     def __init__(self, transformer_name: str, logger: logging.Logger,
                  redis: RedisApi, rabbitmq: RabbitMQApi,

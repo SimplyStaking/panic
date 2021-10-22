@@ -94,7 +94,7 @@ export const getAlertKeysGitHubRepo = (): AlertKeysGitHubRepo => ({
 });
 
 export const getAlertKeysChainlinkNode = (): AlertKeysChainlinkNode => ({
-    head_tacker_current_head: 'alert_cl_node1',
+    head_tracker_current_head: 'alert_cl_node1',
     head_tracker_heads_received_total: 'alert_cl_node2',
     max_unconfirmed_blocks: 'alert_cl_node3',
     process_start_time_seconds: 'alert_cl_node4',

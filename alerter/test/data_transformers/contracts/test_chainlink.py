@@ -198,7 +198,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         'latestTimestamp': self.test_latest_timestamp_1,
                         'answeredInRound': self.test_answered_in_round_1,
                         'withdrawablePayment': self.test_withdrawable_payment_1,
-                        'historicalRounds': self.test_historical_rounds_1
+                        'historicalRounds': self.test_historical_rounds_1,
                     },
                     self.test_proxy_address_2: {
                         'contractVersion': 3,
@@ -208,7 +208,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         'latestTimestamp': self.test_latest_timestamp_2,
                         'answeredInRound': self.test_answered_in_round_2,
                         'withdrawablePayment': self.test_withdrawable_payment_2,
-                        'historicalRounds': self.test_historical_rounds_2
+                        'historicalRounds': self.test_historical_rounds_2,
                     },
                 },
             }
@@ -231,7 +231,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         'latestTimestamp': self.test_latest_timestamp_1,
                         'answeredInRound': self.test_answered_in_round_1,
                         'owedPayment': self.test_owed_payment_1,
-                        'historicalRounds': self.test_historical_rounds_3
+                        'historicalRounds': self.test_historical_rounds_3,
                     },
                     self.test_proxy_address_2: {
                         'contractVersion': 4,
@@ -241,7 +241,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         'latestTimestamp': self.test_latest_timestamp_2,
                         'answeredInRound': self.test_answered_in_round_2,
                         'owedPayment': self.test_owed_payment_2,
-                        'historicalRounds': self.test_historical_rounds_4
+                        'historicalRounds': self.test_historical_rounds_4,
                     },
                 },
             }
@@ -293,6 +293,15 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                 },
             }
         }
+        self.transformed_data_example_result_v3_last_round_obs = \
+            copy.deepcopy(self.transformed_data_example_result_v3)
+        self.transformed_data_example_result_v3_last_round_obs['result'][
+            'data'][self.test_proxy_address_1]['lastRoundObserved'] = \
+            self.test_latest_round_1 - 1
+        self.transformed_data_example_result_v3_last_round_obs['result'][
+            'data'][self.test_proxy_address_2]['lastRoundObserved'] = \
+            self.test_latest_round_2 - 1
+
         self.transformed_data_example_result_v4 = {
             'result': {
                 'meta_data': {
@@ -327,6 +336,13 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                 },
             }
         }
+        self.transformed_data_example_result_v4_last_round_obs = \
+            copy.deepcopy(self.transformed_data_example_result_v4)
+        self.transformed_data_example_result_v4_last_round_obs['result'][
+            'data'][self.test_proxy_address_1]['lastRoundObserved'] = 29
+        self.transformed_data_example_result_v4_last_round_obs['result'][
+            'data'][self.test_proxy_address_2]['lastRoundObserved'] = 39
+
         self.transformed_data_example_error = {
             'error': {
                 'meta_data': {
@@ -1002,9 +1018,9 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
 
     @parameterized.expand([
         ('self.transformed_data_example_result_v3',
-         'self.transformed_data_example_result_v3'),
+         'self.transformed_data_example_result_v3_last_round_obs'),
         ('self.transformed_data_example_result_v4',
-         'self.transformed_data_example_result_v4'),
+         'self.transformed_data_example_result_v4_last_round_obs'),
         ('self.transformed_data_example_error',
          'self.transformed_data_example_error'),
     ])
