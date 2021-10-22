@@ -49,7 +49,8 @@ class EVMNodeMonitor(Monitor):
 
     def _get_data(self) -> Dict:
         return {
-            'current_height': self.w3_interface.eth.block_number
+            'current_height': self.w3_interface.eth.block_number,
+            'syncing': self.w3_interface.eth.syncing,
         }
 
     def _process_error(self, error: PANICException) -> Dict:
