@@ -17,9 +17,10 @@ from pika.exceptions import AMQPChannelError, AMQPConnectionError
 from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
-from src.abstract.publisher_subscriber import PublisherSubscriberComponent
+from src.abstract.publisher_subscriber import QueuingPublisherSubscriberComponent
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import routing_key
+from src.utils import env
 from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, CONFIGS_MANAGER_HEARTBEAT_QUEUE,
     PING_ROUTING_KEY, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
@@ -32,7 +33,7 @@ from ..utils.logging import log_and_print
 _FIRST_RUN_EVENT = 'first run'
 
 
-class ConfigsManager(PublisherSubscriberComponent):
+class ConfigsManager(QueuingPublisherSubscriberComponent):
     """
     This class reads all configurations and sends them over to the "config"
     topic in Rabbit MQ. Updated configs are sent as well
@@ -69,7 +70,8 @@ class ConfigsManager(PublisherSubscriberComponent):
             logger.getChild("config_{}".format(RabbitMQApi.__name__)),
             host=rabbit_ip)
 
-        super().__init__(logger, rabbitmq)
+        super().__init__(logger, rabbitmq,
+                         env.CONFIG_PUBLISHING_QUEUE_SIZE)
 
         self._logger.debug("Creating heartbeat RabbitMQ connection")
         self._heartbeat_rabbit = RabbitMQApi(
@@ -225,6 +227,23 @@ class ConfigsManager(PublisherSubscriberComponent):
                 self._logger.debug(
                     "Attempting to send config with routing key %s", route_key
                 )
+
+                """
+                RabbitMQ closes connections after being idle for a while,
+                hence we must check if RabbitMQ is connected if not then
+                we must reconnect to it. Otherwise we will fail updating
+                configs are some idle time.
+                """
+                try:
+                    self.rabbitmq.connection.channel()
+                except (
+                    ConnectionNotInitialisedException, AMQPConnectionError
+                ) as connection_error:
+                    self._logger.error("There has been a connection error")
+                    self._logger.info("Restarting the connection")
+                    self._connected_to_rabbit = False
+                    self._connect_to_rabbit()
+
                 # We need to definitely send this
                 self.rabbitmq.basic_publish_confirm(
                     CONFIG_EXCHANGE, route_key, config, mandatory=True,

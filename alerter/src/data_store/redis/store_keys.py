@@ -396,7 +396,7 @@ class Keys:
         return Keys._as_prefix(_key_alert_cannot_access_github) + origin_id
 
     @staticmethod
-    def get_key_alert_cl_prometheus_is_down(origin_id: str) -> str:
+    def get_alert_cl_prometheus_is_down(origin_id: str) -> str:
         return Keys._as_prefix(_key_alert_cl_prometheus_is_down) + origin_id
 
     @staticmethod
@@ -404,20 +404,20 @@ class Keys:
         return Keys._as_prefix(_key_alert_cl_node_is_down) + origin_id
 
     @staticmethod
-    def get_key_alert_cl_metric_not_found(origin_id: str) -> str:
+    def get_alert_cl_metric_not_found(origin_id: str) -> str:
         return Keys._as_prefix(_key_alert_cl_metric_not_found) + origin_id
 
     @staticmethod
-    def get_key_alert_cl_invalid_url(origin_id: str) -> str:
+    def get_alert_cl_invalid_url(origin_id: str) -> str:
         return Keys._as_prefix(_key_alert_cl_invalid_url) + origin_id
 
     @staticmethod
-    def get_key_alert_cl_eth_balance_amount_increase(origin_id: str) -> str:
+    def get_alert_cl_eth_balance_amount_increase(origin_id: str) -> str:
         return Keys._as_prefix(
             _key_alert_cl_eth_balance_amount_increase) + origin_id
 
     @staticmethod
-    def get_key_alert_cl_eth_balance_amount(origin_id: str) -> str:
+    def get_alert_cl_eth_balance_amount(origin_id: str) -> str:
         return Keys._as_prefix(_key_alert_cl_eth_balance_amount) + origin_id
 
     @staticmethod

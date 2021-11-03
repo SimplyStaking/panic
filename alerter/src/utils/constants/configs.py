@@ -68,7 +68,7 @@ MONITORABLES_PARSING_HELPER = {
         "id": 'id',
         "name_key": 'name',
         "master_monitor_key": 'monitor_node',
-        "sub_monitor_keys": ['monitor_prometheus'],
+        "sub_monitor_keys": ['monitor_prometheus', 'monitor_contracts'],
         "config_key": 'nodes'
     }],
     CHAINLINK_EVM_NODES_CONFIG: [{
@@ -77,5 +77,5 @@ MONITORABLES_PARSING_HELPER = {
         "master_monitor_key": 'monitor_node',
         "sub_monitor_keys": None,
         "config_key": 'evm_nodes'
-    }]
+    }],
 }
