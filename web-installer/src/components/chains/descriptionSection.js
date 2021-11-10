@@ -47,6 +47,7 @@ export default function DescriptionSection() {
                     <li>{Data.chains.chain_1}</li>
                     <li>{Data.chains.chain_2}</li>
                     <li>{Data.chains.chain_3}</li>
+                    <li>{Data.chains.chain_4}</li>
                   </ul>
                 </div>
               )}

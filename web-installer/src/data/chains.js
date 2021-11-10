@@ -12,7 +12,8 @@ export default {
       blockchain is built with.`,
     chain_1: 'Cosmos-SDK: framework released by ICF for building application-specific blockchains.',
     chain_2: 'Substrate: framework released by Web3 for building application-specific blockchains.',
-    chain_3: `Other: Here you can monitor systems which do not belong to any 
+    chain_3: 'Chainlink: decentralized network of nodes that provide data and information from off-blockchain sources to on-blockchain smart contracts via oracles.',
+    chain_4: `Other: Here you can monitor systems which do not belong to any 
       blockchain through Node Exporter.`,
     how_1: `Chains can be setup in the section below, you can configure as 
       many chains as you want.`,
