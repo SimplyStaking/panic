@@ -40,7 +40,7 @@ const SystemTable = ({
     return (
       <div>
         <Box py={4}>
-          <Grid container spacing={3} justify="center" alignItems="center">
+          <Grid container spacing={3} justifyContent="center" alignItems="center">
             <Grid item xs={4} />
             <Grid item xs={2}>
               {currentChain === GENERAL ? (
@@ -112,7 +112,7 @@ const SystemTable = ({
         </Table>
       </TableContainer>
       <Box py={4}>
-        <Grid container spacing={3} justify="center" alignItems="center">
+        <Grid container spacing={3} justifyContent="center" alignItems="center">
           <Grid item xs={4} />
           <Grid item xs={2}>
             {currentChain === GENERAL ? (

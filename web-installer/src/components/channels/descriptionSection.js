@@ -13,7 +13,7 @@ export default function DescriptionSection() {
   const classes = useStyles();
   return (
     <div className={classes.section}>
-      <GridContainer justify="center">
+      <GridContainer justifyContent="center">
         <GridItem xs={12} sm={12} md={8}>
           <h1 className={classes.title}>{Data.channels.subtitle_1}</h1>
         </GridItem>

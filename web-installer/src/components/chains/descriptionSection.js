@@ -14,7 +14,7 @@ export default function DescriptionSection() {
   return (
     <div className={classes.section}>
       <Box pb={5}>
-        <GridContainer justify="center">
+        <GridContainer justifyContent="center">
           <GridItem xs={12} sm={12} md={8}>
             <h1 className={classes.title}>{Data.chains.subtitle_1}</h1>
           </GridItem>

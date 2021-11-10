@@ -34,7 +34,7 @@ const NodesForm = ({
     <MuiThemeProvider theme={defaultTheme}>
       <div>
         <div className={classes.subsection}>
-          <GridContainer justify="center">
+          <GridContainer justifyContent="center">
             <GridItem xs={12} sm={12} md={8}>
               <h1 className={classes.title}>{data.nodeForm.title}</h1>
             </GridItem>
@@ -56,7 +56,7 @@ const NodesForm = ({
           <Divider />
           <Box m={2} p={3}>
             <form onSubmit={handleSubmit} className="root">
-              <Grid container spacing={3} justify="center" alignItems="center">
+              <Grid container spacing={3} justifyContent="center" alignItems="center">
                 <Grid item xs={12}>
                   <CssTextField
                     id="chain-name-outlined-full-width"
@@ -118,7 +118,7 @@ const NodesForm = ({
                   />
                 </Grid>
                 <Grid item xs={2}>
-                  <Grid container direction="row" justify="flex-end" alignItems="center">
+                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
                     <FormControlLabel
                       control={(
                         <Switch
@@ -136,7 +136,7 @@ const NodesForm = ({
                   </Grid>
                 </Grid>
                 <Grid item xs={2}>
-                  <Grid container direction="row" justify="flex-end" alignItems="center">
+                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
                     <PingMultiplePrometheus
                       disabled={false}
                       prometheusUrls={values.node_prometheus_urls}
@@ -165,7 +165,7 @@ const NodesForm = ({
                   />
                 </Grid>
                 <Grid item xs={1}>
-                  <Grid container justify="flex-start">
+                  <Grid container justifyContent="flex-start">
                     <MuiThemeProvider theme={theme}>
                       <Tooltip
                         title={data.nodeForm.monitorNodeTip}
@@ -181,7 +181,7 @@ const NodesForm = ({
                   <Grid
                     container
                     direction="row"
-                    justify="flex-end"
+                    justifyContent="flex-end"
                     alignItems="center"
                   >
                     <Box>

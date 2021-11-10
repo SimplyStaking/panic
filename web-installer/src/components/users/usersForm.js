@@ -9,7 +9,7 @@ const UsersForm = ({
 }) => (
   <div>
     <form onSubmit={handleSubmit} className="root">
-      <Grid container spacing={3} justify="center" alignItems="center">
+      <Grid container spacing={3} justifyContent="center" alignItems="center">
         <Grid item xs={12}>
           <CssTextField
             id="user-name-outlined-full-width"
@@ -57,7 +57,7 @@ const UsersForm = ({
           <Grid
             container
             direction="row"
-            justify="flex-end"
+            justifyContent="flex-end"
             alignItems="center"
           >
             <AddAccount

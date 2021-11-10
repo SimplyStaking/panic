@@ -62,7 +62,7 @@ const ChainNameForm = ({
     <MuiThemeProvider theme={defaultTheme}>
       <div>
         <div className={classes.subsection}>
-          <GridContainer justify="center">
+          <GridContainer justifyContent="center">
             <GridItem xs={12} sm={12} md={8}>
               <h1 className={classes.title}>{data.chainForm.title}</h1>
             </GridItem>
@@ -89,7 +89,7 @@ const ChainNameForm = ({
               }}
               className="root"
             >
-              <Grid container spacing={0} justify="center" alignItems="center">
+              <Grid container spacing={0} justifyContent="center" alignItems="center">
                 <Grid item xs={12}>
                   <CssTextField
                     id="channel-name-outlined-full-width"
@@ -127,7 +127,7 @@ const ChainNameForm = ({
             </form>
           </Box>
         </div>
-        <Grid container spacing={3} justify="center" alignItems="center">
+        <Grid container spacing={3} justifyContent="center" alignItems="center">
           <Grid item xs={4} />
           <Grid item xs={2}>
             <Box pt={5}>

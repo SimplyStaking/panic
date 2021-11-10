@@ -35,7 +35,7 @@ const SystemForm = ({
     <MuiThemeProvider theme={defaultTheme}>
       <div>
         <div className={classes.subsection}>
-          <GridContainer justify="center">
+          <GridContainer justifyContent="center">
             <GridItem xs={12} sm={12} md={8}>
               <h1 className={classes.title}>{data.systemForm.title}</h1>
             </GridItem>
@@ -57,7 +57,7 @@ const SystemForm = ({
           <Divider />
           <Box m={2} p={3}>
             <form onSubmit={handleSubmit} className="root">
-              <Grid container spacing={3} justify="center" alignItems="center">
+              <Grid container spacing={3} justifyContent="center" alignItems="center">
                 <Grid item xs={12}>
                   <CssTextField
                     id="system-name-outlined-full-width"
@@ -139,7 +139,7 @@ const SystemForm = ({
                   />
                 </Grid>
                 <Grid item xs={1}>
-                  <Grid container justify="flex-start">
+                  <Grid container justifyContent="flex-start">
                     <MuiThemeProvider theme={theme}>
                       <Tooltip title={data.systemForm.monitorSystemTip} placement="left">
                         <InfoIcon />
@@ -149,7 +149,7 @@ const SystemForm = ({
                 </Grid>
                 <Grid item xs={4} />
                 <Grid item xs={4}>
-                  <Grid container direction="row" justify="flex-end" alignItems="center">
+                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
                     <PingPrometheus
                       disabled={Object.keys(errors).length !== 0}
                       prometheusUrl={values.exporter_url}

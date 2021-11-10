@@ -52,7 +52,7 @@ const ChannelsTable = ({
   return (
     <div>
       <div className={classes.subsection}>
-        <GridContainer justify="center">
+        <GridContainer justifyContent="center">
           <GridItem xs={12} sm={12} md={8}>
             <h1 className={classes.title}>{data.channelsTable.title}</h1>
           </GridItem>
@@ -80,7 +80,7 @@ const ChannelsTable = ({
               && pagerduties.allIds.length === 0
               && slacks.allIds.length === 0
               && twilios.allIds.length === 0 && (
-                <GridContainer justify="center">
+                <GridContainer justifyContent="center">
                   <GridItem xs={12} sm={12} md={8}>
                     <h1 className={classes.title}>{data.channelsTable.empty}</h1>
                   </GridItem>

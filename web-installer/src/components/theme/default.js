@@ -1,8 +1,8 @@
-import { createMuiTheme } from '@material-ui/core/styles';
+import { createTheme } from '@material-ui/core/styles';
 
 // This is used to style tooltips through out all forms.
-const defaultTheme = createMuiTheme();
-const theme = createMuiTheme({
+const defaultTheme = createTheme();
+const theme = createTheme({
   overrides: {
     MuiTooltip: {
       tooltip: {

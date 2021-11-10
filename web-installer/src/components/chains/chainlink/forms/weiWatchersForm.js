@@ -91,7 +91,7 @@ const WeiWatchersForm = ({
     <MuiThemeProvider theme={defaultTheme}>
       <div>
         <div className={classes.subsection}>
-          <GridContainer justify="center">
+          <GridContainer justifyContent="center">
             <GridItem xs={12} sm={12} md={8}>
               <h1 className={classes.title}>{data.contractForm.title}</h1>
             </GridItem>
@@ -113,7 +113,7 @@ const WeiWatchersForm = ({
           <Divider />
           <Box m={2} p={3}>
             <form className="root">
-              <Grid container spacing={3} justify="center" alignItems="center">
+              <Grid container spacing={3} justifyContent="center" alignItems="center">
                 <Grid item xs={12}>
                   <InputLabel id="network-select-label">Network Name</InputLabel>
                   <br />
@@ -178,7 +178,7 @@ const WeiWatchersForm = ({
                   />
                 </Grid>
                 <Grid item xs={1}>
-                  <Grid container justify="flex-start">
+                  <Grid container justifyContent="flex-start">
                     <MuiThemeProvider theme={theme}>
                       <Tooltip title={data.contractForm.monitorContractTip} placement="left">
                         <InfoIcon />

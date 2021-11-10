@@ -29,7 +29,7 @@ const EvmNodesForm = ({
     <MuiThemeProvider theme={defaultTheme}>
       <div>
         <div className={classes.subsection}>
-          <GridContainer justify="center">
+          <GridContainer justifyContent="center">
             <GridItem xs={12} sm={12} md={8}>
               <h1 className={classes.title}>{data.evmForm.title}</h1>
             </GridItem>
@@ -51,7 +51,7 @@ const EvmNodesForm = ({
           <Divider />
           <Box m={2} p={3}>
             <form onSubmit={handleSubmit} className="root">
-              <Grid container spacing={3} justify="center" alignItems="center">
+              <Grid container spacing={3} justifyContent="center" alignItems="center">
                 <Grid item xs={12}>
                   <CssTextField
                     id="evm-node-name-outlined-full-width"
@@ -115,7 +115,7 @@ const EvmNodesForm = ({
                   />
                 </Grid>
                 <Grid item xs={2}>
-                  <Grid container direction="row" justify="flex-end" alignItems="center">
+                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
                     <PingRPC
                       disabled={false}
                       httpUrl={values.node_http_url}
@@ -143,7 +143,7 @@ const EvmNodesForm = ({
                   />
                 </Grid>
                 <Grid item xs={1}>
-                  <Grid container justify="flex-start">
+                  <Grid container justifyContent="flex-start">
                     <MuiThemeProvider theme={theme}>
                       <Tooltip
                         title={data.evmForm.monitorNodeTip}
@@ -159,7 +159,7 @@ const EvmNodesForm = ({
                   <Grid
                     container
                     direction="row"
-                    justify="flex-end"
+                    justifyContent="flex-end"
                     alignItems="center"
                   >
                     <Box>

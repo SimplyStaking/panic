@@ -42,7 +42,7 @@ const TwilioForm = ({
         <Divider />
         <form onSubmit={handleSubmit} className="root">
           <Box m={2} p={3}>
-            <Grid container spacing={1} justify="center" alignItems="center">
+            <Grid container spacing={1} justifyContent="center" alignItems="center">
               <Grid item xs={12}>
                 <CssTextField
                   id="channel-name-outlined-full-width"
@@ -207,7 +207,7 @@ const TwilioForm = ({
                 <Grid
                   container
                   direction="row"
-                  justify="flex-end"
+                  justifyContent="flex-end"
                 >
                   <TestCallButton
                     disabled={Object.keys(errors).length !== 0}

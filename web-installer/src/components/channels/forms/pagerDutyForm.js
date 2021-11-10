@@ -38,7 +38,7 @@ const PagerDutyForm = ({
       <Divider />
       <form onSubmit={handleSubmit} className="root">
         <Box m={2} p={3}>
-          <Grid container spacing={1} justify="center" alignItems="center">
+          <Grid container spacing={1} justifyContent="center" alignItems="center">
             <Grid item xs={12}>
               <CssTextField
                 id="channel-name-outlined-full-width"
@@ -135,7 +135,7 @@ const PagerDutyForm = ({
                 }}
               />
             </Grid>
-            <Grid container spacing={1} justify="center" alignItems="center">
+            <Grid container spacing={1} justifyContent="center" alignItems="center">
               <Grid item xs={2}>
                 <Box pl={2}>
                   <Typography variant="subtitle1">
@@ -194,7 +194,7 @@ const PagerDutyForm = ({
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="flex-end">
+                <Grid container justifyContent="flex-end">
                   <Box pr={1}>
                     <MuiThemeProvider theme={theme}>
                       <Tooltip title={Data.pagerDuty.severities} placement="left">
@@ -205,7 +205,7 @@ const PagerDutyForm = ({
                 </Grid>
               </Grid>
               <Grid item xs={4}>
-                <Grid container direction="row" justify="flex-end" alignItems="center">
+                <Grid container direction="row" justifyContent="flex-end" alignItems="center">
                   <SendTestPagerDutyButton
                     disabled={Object.keys(errors).length !== 0}
                     apiToken={values.api_token}

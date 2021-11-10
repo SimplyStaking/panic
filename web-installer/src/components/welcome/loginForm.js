@@ -37,7 +37,7 @@ const LoginForm = ({
       }}
     >
       <form onSubmit={handleSubmit} className={classes.form}>
-        <Grid container justify="center">
+        <Grid container justifyContent="center">
           <img
             src={PanicLogo}
             alt="PANIC Logo"

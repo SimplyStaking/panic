@@ -40,7 +40,7 @@ const TelegramForm = ({
       <Divider />
       <form onSubmit={handleSubmit} className="root">
         <Box m={2} p={3}>
-          <Grid container spacing={1} justify="center" alignItems="center">
+          <Grid container spacing={1} justifyContent="center" alignItems="center">
             <Grid item xs={12}>
               <CssTextField
                 id="channel-name-outlined-full-width"
@@ -137,7 +137,7 @@ const TelegramForm = ({
                 }}
               />
             </Grid>
-            <Grid container spacing={1} justify="center" alignItems="center">
+            <Grid container spacing={1} justifyContent="center" alignItems="center">
               <Grid item xs={2}>
                 <Box pl={2}>
                   <Typography variant="subtitle1">
@@ -196,7 +196,7 @@ const TelegramForm = ({
                 />
               </Grid>
               <Grid item xs={1}>
-                <Grid container justify="flex-end">
+                <Grid container justifyContent="flex-end">
                   <Box pr={1}>
                     <MuiThemeProvider theme={theme}>
                       <Tooltip title={Data.telegram.severities} placement="left">
@@ -215,7 +215,7 @@ const TelegramForm = ({
               </Box>
             </Grid>
             <Grid item xs={1}>
-              <Grid container justify="center">
+              <Grid container justifyContent="center">
                 <MuiThemeProvider theme={theme}>
                   <Tooltip title={Data.telegram.commands} placement="left">
                     <InfoIcon />
@@ -242,7 +242,7 @@ const TelegramForm = ({
               <Typography> Telegram Alerts </Typography>
             </Grid>
             <Grid item xs={1}>
-              <Grid container justify="center">
+              <Grid container justifyContent="center">
                 <MuiThemeProvider theme={theme}>
                   <Tooltip title={Data.telegram.alerts} placement="left">
                     <InfoIcon />
@@ -266,7 +266,7 @@ const TelegramForm = ({
               />
             </Grid>
             <Grid item xs={4}>
-              <Grid container direction="row" justify="flex-end" alignItems="center">
+              <Grid container direction="row" justifyContent="flex-end" alignItems="center">
                 <SendTestTelegramButton
                   disabled={Object.keys(errors).length !== 0}
                   botChatID={values.chat_id}

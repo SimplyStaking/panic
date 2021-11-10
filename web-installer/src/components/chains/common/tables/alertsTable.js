@@ -63,7 +63,7 @@ const AlertsTable = ({
     <MuiThemeProvider theme={defaultTheme}>
       <div>
         <div className={classes.subsection}>
-          <GridContainer justify="center">
+          <GridContainer justifyContent="center">
             <GridItem xs={12} sm={12} md={8}>
               <h1 className={classes.title}>{Data.title}</h1>
             </GridItem>
@@ -82,7 +82,7 @@ const AlertsTable = ({
           </Box>
         </Typography>
         <div className={classes.subsection}>
-          <GridContainer justify="center">
+          <GridContainer justifyContent="center">
             <GridItem xs={12} sm={12} md={8}>
               <h1 className={classes.title}>{Data.subtitle_1}</h1>
             </GridItem>
@@ -109,7 +109,7 @@ const AlertsTable = ({
                       <p>{RepeatAlerts.byId[id].description}</p>
                     </StyledTableCell>
                     <StyledTableCell align="center">
-                      <Grid container spacing={1} justify="flex-end" alignItems="flex-end">
+                      <Grid container spacing={1} justifyContent="flex-end" alignItems="flex-end">
                         <Grid item>
                           <FormControlLabel
                             control={(
@@ -196,7 +196,7 @@ const AlertsTable = ({
                       </Grid>
                     </StyledTableCell>
                     <StyledTableCell align="center">
-                      <Grid container spacing={1} justify="flex-end" alignItems="flex-end">
+                      <Grid container spacing={1} justifyContent="flex-end" alignItems="flex-end">
                         <Grid item>
                           <FormControlLabel
                             control={(
@@ -357,7 +357,7 @@ const AlertsTable = ({
                       <p>{TimeWindowAlerts.byId[id].description}</p>
                     </StyledTableCell>
                     <StyledTableCell align="center">
-                      <Grid container spacing={1} justify="flex-end" alignItems="center">
+                      <Grid container spacing={1} justifyContent="flex-end" alignItems="center">
                         <Grid item>
                           <FormControlLabel
                             control={(
@@ -526,7 +526,7 @@ const AlertsTable = ({
                       </Grid>
                     </StyledTableCell>
                     <StyledTableCell align="center">
-                      <Grid container spacing={1} justify="flex-end" alignItems="flex-end">
+                      <Grid container spacing={1} justifyContent="flex-end" alignItems="flex-end">
                         <Grid item>
                           <FormControlLabel
                             control={(
@@ -851,7 +851,7 @@ const AlertsTable = ({
                       <p>{ThresholdAlerts.byId[id].description}</p>
                     </StyledTableCell>
                     <StyledTableCell align="center">
-                      <Grid container spacing={1} justify="flex-end" alignItems="flex-end">
+                      <Grid container spacing={1} justifyContent="flex-end" alignItems="flex-end">
                         <Grid item>
                           <FormControlLabel
                             control={(
@@ -948,7 +948,7 @@ const AlertsTable = ({
                       </Grid>
                     </StyledTableCell>
                     <StyledTableCell align="center">
-                      <Grid container spacing={1} justify="flex-end" alignItems="flex-end">
+                      <Grid container spacing={1} justifyContent="flex-end" alignItems="flex-end">
                         <Grid item>
                           <FormControlLabel
                             control={(
@@ -1180,7 +1180,7 @@ const AlertsTable = ({
             : (
               <div>
                 <div className={classes.subsection}>
-                  <GridContainer justify="center">
+                  <GridContainer justifyContent="center">
                     <GridItem xs={12} sm={12} md={8}>
                       <h1 className={classes.title}>{Data.subtitle_2}</h1>
                     </GridItem>

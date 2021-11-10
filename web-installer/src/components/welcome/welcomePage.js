@@ -24,14 +24,14 @@ function WelcomePage() {
           sm={6}
           alignItems="center"
           direction="column"
-          justify="space-between"
+          justifyContent="space-between"
           style={{ padding: 10 }}
         >
           <div />
           <div />
           <LoginContainer />
           <div />
-          <Grid container justify="center" spacing={2}>
+          <Grid container justifyContent="center" spacing={2}>
             <Grid item>
               <Button href="https://simply-vc.com.mt/" target="_blank">
                 Visit the SimplyVC Website!

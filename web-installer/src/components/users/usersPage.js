@@ -52,7 +52,7 @@ function UsersPage() {
                 </Typography>
                 <Divider />
                 <Box m={2} p={3}>
-                  <Grid container spacing={1} justify="center" alignItems="center">
+                  <Grid container spacing={1} justifyContent="center" alignItems="center">
                     <Grid item xs={12}>
                       <Box p={2} className="flex_root">
                         <Box
@@ -69,7 +69,7 @@ function UsersPage() {
               </div>
               <UsersTableContainer />
               <Box py={5}>
-                <Grid container spacing={3} justify="center" alignItems="center">
+                <Grid container spacing={3} justifyContent="center" alignItems="center">
                   <Grid item xs={4} />
                   <Grid item xs={2}>
                     <NavigationButtonContainer
