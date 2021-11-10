@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import time
+import threading
 from configparser import (ConfigParser, DuplicateSectionError,
                           DuplicateOptionError, InterpolationError,
                           ParsingError)
@@ -64,6 +65,7 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
         self._file_patterns = file_patterns
         self._watching = False
         self._connected_to_rabbit = False
+        self._current_thread = None
 
         logger.debug("Creating config RabbitMQ connection")
         rabbitmq = RabbitMQApi(
@@ -154,7 +156,7 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
                 # too.
                 self._logger.error(
                     "Something went wrong that meant a connection was not made")
-                self._logger.error(connection_error.message)
+                self._logger.error(connection_error)
                 raise connection_error
             except AMQPChannelError:
                 # This error would have already been logged by the RabbitMQ
@@ -219,68 +221,6 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
             self._logger.error("Error when sending heartbeat")
             self._logger.exception(e)
 
-    def _send_data(self, config: Dict[str, Any], route_key: str) -> None:
-        self._logger.debug("Sending %s with routing key %s", config, route_key)
-
-        while True:
-            try:
-                self._logger.debug(
-                    "Attempting to send config with routing key %s", route_key
-                )
-
-                """
-                RabbitMQ closes connections after being idle for a while,
-                hence we must check if RabbitMQ is connected if not then
-                we must reconnect to it. Otherwise we will fail updating
-                configs are some idle time.
-                """
-                try:
-                    self.rabbitmq.connection.channel()
-                except (
-                    ConnectionNotInitialisedException, AMQPConnectionError
-                ) as connection_error:
-                    self._logger.error("There has been a connection error")
-                    self._logger.info("Restarting the connection")
-                    self._connected_to_rabbit = False
-                    self._connect_to_rabbit()
-
-                # We need to definitely send this
-                self.rabbitmq.basic_publish_confirm(
-                    CONFIG_EXCHANGE, route_key, config, mandatory=True,
-                    is_body_dict=True,
-                    properties=BasicProperties(delivery_mode=2)
-                )
-                self._logger.info("Configuration update sent")
-                break
-            except MessageWasNotDeliveredException as mwnde:
-                self._logger.error("Config was not successfully sent with "
-                                   "routing key %s", route_key)
-                self._logger.exception(mwnde)
-                self._logger.info("Will attempt sending the config again with "
-                                  "routing key %s", route_key)
-                self.rabbitmq.connection.sleep(10)
-            except (
-                    ConnectionNotInitialisedException, AMQPConnectionError
-            ) as connection_error:
-                # If the connection is not initialised or there is a connection
-                # error, we need to restart the connection and try it again
-                self._logger.error("There has been a connection error")
-                self._logger.exception(connection_error)
-                self._logger.info("Restarting the connection")
-                self._connected_to_rabbit = False
-
-                # Wait some time before reconnecting and then retrying
-                time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
-                self._connect_to_rabbit()
-
-                self._logger.info("Connection restored, will attempt sending "
-                                  "the config with routing key %s", route_key)
-            except AMQPChannelError:
-                # This error would have already been logged by the RabbitMQ
-                # logger and handled by RabbitMQ. Since a new channel is created
-                # we need to re-initialise RabbitMQ
-                self._initialise_rabbitmq()
-
     def _on_event_thrown(self, event: FileSystemEvent) -> None:
         """
         When an event is thrown, it reads the config and sends it as a dict via
@@ -323,7 +263,7 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
         key = routing_key.get_routing_key(event.src_path, config_folder)
         self._logger.debug("Sending config %s to RabbitMQ with routing key %s",
                            config_dict, key)
-        self._send_data(config_dict, key)
+        self._push_to_queue(config_dict, CONFIG_EXCHANGE, key)
 
     @property
     def config_directory(self) -> str:
@@ -348,6 +288,12 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
 
         self._initialise_rabbitmq()
 
+        """
+        We want to start a thread that connects to rabbitmq and begins attempts
+        to send configs.
+        """
+        self._create_and_start_sending_configs_thread()
+
         def do_first_run_event(name: str) -> None:
             event = FileSystemEvent(name)
             event.event_type = _FIRST_RUN_EVENT
@@ -366,6 +312,53 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
         self._logger.debug("Config file observer started")
         self._connect_to_rabbit()
         self._listen_for_data()
+
+    def _sending_configs_thread(self) -> None:
+        while True:
+            try:
+                if not self.publishing_queue.empty():
+                    try:
+                        self._send_data()
+                    except MessageWasNotDeliveredException as e:
+                        self.logger.exception(e)
+            except (ConnectionNotInitialisedException,
+                    AMQPConnectionError) as e:
+                # If the connection is not initialised or there is a connection
+                # error, we need to restart the connection and try it again
+                self._logger.error("There has been a connection error")
+                self._logger.exception(e)
+                self._logger.info("Restarting the connection")
+                self._connected_to_rabbit = False
+
+                # Wait some time before reconnecting and then retrying
+                time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+                self._connect_to_rabbit()
+
+                self._logger.info("Connection restored, will attempt sending "
+                                  "the config.")
+            except AMQPChannelError:
+                # This error would have already been logged by the RabbitMQ
+                # logger and handled by RabbitMQ. Since a new channel is
+                # created we need to re-initialise RabbitMQ
+                self._initialise_rabbitmq()
+                raise e
+
+            self.rabbitmq.connection.sleep(10)
+
+    def _create_and_start_sending_configs_thread(self) -> None:
+        try:
+            self._current_thread = threading.Thread(
+                target=self._sending_configs_thread)
+            self._current_thread.start()
+        except Exception as e:
+            self._logger.error("Failed to start sending configs thread!")
+            self._logger.exception(e)
+            raise e
+
+    def _terminate_and_stop_sending_configs_thread(self) -> None:
+        if self._current_thread is not None:
+            self._current_thread.join()
+            self._current_thread = None
 
     def _listen_for_data(self) -> None:
         self._logger.info("Starting the config ping listener")
@@ -388,6 +381,7 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
         else:
             self._logger.info("Config file observer already stopped")
         self.disconnect_from_rabbit()
+        self._terminate_and_stop_sending_configs_thread()
         log_and_print("{} terminated.".format(self), self._logger)
         sys.exit()
 
