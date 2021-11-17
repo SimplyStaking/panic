@@ -49,6 +49,7 @@ const Form = withFormik({
     saveNodeDetails(payload);
     resetForm();
   },
+
 })(NodesForm);
 
 // ------------------------- Cosmos Based Chain Data --------------------
@@ -83,7 +84,10 @@ function mapDispatchToPropsRemove(dispatch) {
 }
 
 // Combine cosmos state and dispatch functions to the node form
-const NodesFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
+const NodesFormContainer = connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(Form);
 
 // Combine cosmos state and dispatch functions to the node table
 const NodesTableContainer = connect(

@@ -3,35 +3,74 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { changeStep } from 'redux/actions/pageActions';
 import NavigationButton from 'components/global/navigationButton';
+import PopUp from 'components/global/popUp';
 
 class StepButtonContainer extends Component {
   constructor(props) {
     super(props);
     this.nextStep = this.nextStep.bind(this);
+    this.handlePopUpResponse = this.handlePopUpResponse.bind(this);
+    this.state = {
+      popUpActive: false,
+      nextStep: '',
+    };
+  }
+
+  handlePopUpResponse(bool) {
+    const { stepChanger } = this.props;
+    const { nextStep } = this.state;
+
+    this.controlPopUpActivity(false);
+    if (bool) {
+      stepChanger({ nextStep });
+    }
+  }
+
+  controlPopUpActivity(bool) {
+    this.setState({
+      popUpActive: bool,
+    });
   }
 
   nextStep(step) {
-    const { stepChanger } = this.props;
-    // Change the upcoming page information
-    stepChanger({ step });
+    const { stepChanger, dirty } = this.props;
+
+    this.setState({
+      nextStep: step,
+    });
+
+    if (!dirty) {
+      // Change the upcoming page information
+      stepChanger({ step });
+    }
+
+    this.controlPopUpActivity(true);
   }
 
   render() {
     const { text, navigation, disabled } = this.props;
+    const { popUpActive } = this.state;
 
     return (
-      <NavigationButton
-        disabled={disabled}
-        nextPage={this.nextStep}
-        buttonText={text}
-        navigation={navigation}
-      />
+      <>
+        <NavigationButton
+          disabled={disabled}
+          nextPage={this.nextStep}
+          buttonText={text}
+          navigation={navigation}
+        />
+        <PopUp
+          trigger={popUpActive}
+          stepControlAdvanceNextStep={this.handlePopUpResponse}
+        />
+      </>
     );
   }
 }
 
 const mapStateToProps = (state) => ({
   step: state.ChangeStepReducer.step,
+  dirty: state.ChangeStepReducer.dirty,
 });
 
 function mapDispatchToProps(dispatch) {
@@ -43,6 +82,7 @@ function mapDispatchToProps(dispatch) {
 StepButtonContainer.propTypes = {
   disabled: PropTypes.bool.isRequired,
   stepChanger: PropTypes.func.isRequired,
+  dirty: PropTypes.bool.isRequired,
   text: PropTypes.string.isRequired,
   navigation: PropTypes.string.isRequired,
 };

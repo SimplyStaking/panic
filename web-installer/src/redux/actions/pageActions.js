@@ -1,4 +1,8 @@
-import { CHANGE_PAGE, CHANGE_STEP } from './types';
+import {
+  CHANGE_PAGE,
+  CHANGE_STEP,
+  TOGGLE_DIRTY,
+} from './types';
 
 export function changePage(payload) {
   return {
@@ -10,6 +14,13 @@ export function changePage(payload) {
 export function changeStep(payload) {
   return {
     type: CHANGE_STEP,
+    payload,
+  };
+}
+
+export function toggleDirty(payload) {
+  return {
+    type: TOGGLE_DIRTY,
     payload,
   };
 }
