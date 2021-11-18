@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import {
   Typography, Box, Grid, Switch, FormControlLabel, Tooltip,
@@ -14,6 +15,9 @@ import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/p
 import GridContainer from 'components/material_ui/Grid/GridContainer';
 import GridItem from 'components/material_ui/Grid/GridItem';
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
+import { toggleDirty } from 'redux/actions/pageActions';
+
+let isDirty = false;
 
 /*
  * Systems form contains all the information and structure needed to setup
@@ -27,9 +31,14 @@ const SystemForm = ({
   handleSubmit,
   handleChange,
   setFieldValue,
-  data,
+  data, dirty, toggleDirtyForm,
 }) => {
   const classes = useStyles();
+
+  if (dirty !== isDirty) {
+    isDirty = dirty;
+    toggleDirtyForm({ isDirty });
+  }
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -187,6 +196,8 @@ SystemForm.propTypes = {
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
+  toggleDirtyForm: PropTypes.func.isRequired,
+  dirty: PropTypes.bool.isRequired,
   data: PropTypes.shape({
     systemForm: PropTypes.shape({
       title: PropTypes.string.isRequired,
@@ -203,4 +214,11 @@ SystemForm.propTypes = {
   }).isRequired,
 };
 
-export default SystemForm;
+// Functions to be used in the Cosmos Node form to save the form's details
+function mapDispatchToProps(dispatch) {
+  return {
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
+  };
+}
+
+export default connect(null, mapDispatchToProps)(SystemForm);

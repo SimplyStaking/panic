@@ -22,7 +22,7 @@ class StepButtonContainer extends Component {
 
     this.controlPopUpActivity(false);
     if (bool) {
-      stepChanger({ nextStep });
+      stepChanger({ step: nextStep });
     }
   }
 
@@ -35,14 +35,14 @@ class StepButtonContainer extends Component {
   nextStep(step) {
     const { stepChanger, dirty } = this.props;
 
-    this.setState({
-      nextStep: step,
-    });
-
     if (!dirty) {
       // Change the upcoming page information
       stepChanger({ step });
     }
+
+    this.setState({
+      nextStep: step,
+    });
 
     this.controlPopUpActivity(true);
   }

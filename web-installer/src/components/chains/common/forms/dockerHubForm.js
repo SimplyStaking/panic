@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import {
   Typography, Box, Grid, Switch, FormControlLabel, Tooltip, Divider,
@@ -13,6 +14,9 @@ import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/p
 import GridContainer from 'components/material_ui/Grid/GridContainer';
 import GridItem from 'components/material_ui/Grid/GridItem';
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
+import { toggleDirty } from 'redux/actions/pageActions';
+
+let isDirty = false;
 
 /*
  * DockerHub form contains all the information and structure needed to setup
@@ -21,9 +25,14 @@ import CssTextField from 'assets/jss/custom-jss/CssTextField';
  */
 
 const DockerHubForm = ({
-  errors, values, handleSubmit, handleChange, setFieldValue, data,
+  errors, values, handleSubmit, handleChange, setFieldValue, data, dirty, toggleDirtyForm,
 }) => {
   const classes = useStyles();
+
+  if (dirty !== isDirty) {
+    isDirty = dirty;
+    toggleDirtyForm({ isDirty });
+  }
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -148,6 +157,8 @@ DockerHubForm.propTypes = {
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
+  toggleDirtyForm: PropTypes.func.isRequired,
+  dirty: PropTypes.bool.isRequired,
   data: PropTypes.shape({
     dockerHubForm: PropTypes.shape({
       title: PropTypes.string.isRequired,
@@ -161,4 +172,10 @@ DockerHubForm.propTypes = {
   }).isRequired,
 };
 
-export default DockerHubForm;
+function mapDispatchToProps(dispatch) {
+  return {
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
+  };
+}
+
+export default connect(null, mapDispatchToProps)(DockerHubForm);

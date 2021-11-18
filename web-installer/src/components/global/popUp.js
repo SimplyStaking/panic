@@ -41,7 +41,7 @@ const PopUp = (props) => {
           </Button>
           <Grid item xs={12} />
           <Typography variant="h7">
-            Hint: Press ADD NODE when node details have been filled.
+            Hint: Be sure to press ADD after filling in the form details.
           </Typography>
         </Grid>
       </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import {
   Box, Typography, Grid, Tooltip, InputAdornment,
@@ -12,14 +13,22 @@ import { TestCallButton } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
 import Data from 'data/channels';
+import { toggleDirty } from 'redux/actions/pageActions';
+
+let isDirty = false;
 
 const TwilioForm = ({
   errors,
   values,
   handleSubmit,
   handleChange,
-  setFieldValue,
+  setFieldValue, dirty, toggleDirtyForm,
 }) => {
+  if (dirty !== isDirty) {
+    isDirty = dirty;
+    toggleDirtyForm({ isDirty });
+  }
+
   const updateTwilioNumbers = (events, phoneNums) => {
     setFieldValue('twilio_phone_numbers_to_dial_valid', phoneNums);
   };
@@ -247,6 +256,8 @@ TwilioForm.propTypes = {
     twilio_phone_numbers_to_dial_valid: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
+  toggleDirtyForm: PropTypes.func.isRequired,
+  dirty: PropTypes.bool.isRequired,
   values: PropTypes.shape({
     channel_name: PropTypes.string.isRequired,
     account_sid: PropTypes.string.isRequired,
@@ -259,4 +270,10 @@ TwilioForm.propTypes = {
   setFieldValue: PropTypes.func.isRequired,
 };
 
-export default TwilioForm;
+function mapDispatchToProps(dispatch) {
+  return {
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
+  };
+}
+
+export default connect(null, mapDispatchToProps)(TwilioForm);

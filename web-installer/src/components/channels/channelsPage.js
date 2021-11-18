@@ -2,6 +2,7 @@
 /* eslint-disable react/require-default-props */
 /* eslint-disable react/forbid-prop-types */
 import React from 'react';
+import { connect } from 'react-redux';
 import {
   Grid, AppBar, Tabs, Tab, Box,
 } from '@material-ui/core';
@@ -31,6 +32,8 @@ import CardBody from 'components/material_ui/Card/CardBody';
 import useStyles from 'assets/jss/material-kit-react/views/componentsSections/channelsStyle';
 import Parallax from 'components/material_ui/Parallax/Parallax';
 import DescriptionSection from 'components/channels/descriptionSection';
+import PopUp from 'components/global/popUp';
+import { resetDirty } from 'redux/actions/pageActions';
 
 function TabPanel(props) {
   const {
@@ -67,13 +70,32 @@ function a11yProps(index) {
   };
 }
 
-function ChannelsPage() {
+function ChannelsPage(props) {
   const classes = useStyles();
   // Internal state to keep track of clicked tabs
   const [value, setValue] = React.useState(0);
+  const [popUpActive, setPopUpActive] = React.useState(false);
+  const [potentialNewValue, setPotentialNewValue] = React.useState(0);
+
+  const handlePopUpResponse = (bool) => {
+    const { resetDirtyness } = props;
+
+    setPopUpActive(false);
+    if (bool) {
+      setValue(potentialNewValue);
+      setPotentialNewValue(0);
+      resetDirtyness();
+    }
+  };
 
   const handleChange = (event, newValue) => {
-    setValue(newValue);
+    const { dirty } = props;
+    if (!dirty) {
+      setValue(newValue);
+    } else {
+      setPotentialNewValue(newValue);
+      setPopUpActive(true);
+    }
   };
 
   return (
@@ -182,8 +204,25 @@ function ChannelsPage() {
           </CardBody>
         </Card>
       </div>
+      <PopUp
+        trigger={popUpActive}
+        stepControlAdvanceNextStep={handlePopUpResponse}
+      />
     </div>
   );
 }
 
-export default ChannelsPage;
+const mapStateToProps = (state) => ({
+  dirty: state.ChangePageReducer.dirty,
+});
+
+const mapDispatchToProps = (dispatch) => ({
+  resetDirtyness: () => dispatch(resetDirty()),
+});
+
+ChannelsPage.propTypes = {
+  dirty: PropTypes.bool.isRequired,
+  resetDirtyness: PropTypes.func.isRequired,
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(ChannelsPage);

@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import {
   Box,
@@ -18,10 +19,18 @@ import { SendTestEmailButton } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
 import Data from 'data/channels';
+import { toggleDirty } from 'redux/actions/pageActions';
+
+let isDirty = false;
 
 const EmailForm = ({
-  errors, values, handleSubmit, handleChange, setFieldValue,
+  errors, values, handleSubmit, handleChange, setFieldValue, dirty, toggleDirtyForm,
 }) => {
+  if (dirty !== isDirty) {
+    isDirty = dirty;
+    toggleDirtyForm({ isDirty });
+  }
+
   const updateToEmails = (event, emailsTo) => {
     setFieldValue('emails_to', emailsTo);
   };
@@ -375,6 +384,8 @@ EmailForm.propTypes = {
     port: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
+  toggleDirtyForm: PropTypes.func.isRequired,
+  dirty: PropTypes.bool.isRequired,
   values: PropTypes.shape({
     channel_name: PropTypes.string.isRequired,
     smtp: PropTypes.string.isRequired,
@@ -392,4 +403,10 @@ EmailForm.propTypes = {
   setFieldValue: PropTypes.func.isRequired,
 };
 
-export default EmailForm;
+function mapDispatchToProps(dispatch) {
+  return {
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
+  };
+}
+
+export default connect(null, mapDispatchToProps)(EmailForm);

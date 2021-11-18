@@ -2,6 +2,7 @@ import {
   CHANGE_PAGE,
   CHANGE_STEP,
   TOGGLE_DIRTY,
+  RESET_DIRTY,
 } from './types';
 
 export function changePage(payload) {
@@ -22,5 +23,11 @@ export function toggleDirty(payload) {
   return {
     type: TOGGLE_DIRTY,
     payload,
+  };
+}
+
+export function resetDirty() {
+  return {
+    type: RESET_DIRTY,
   };
 }
