@@ -35,8 +35,6 @@ class NavigationButtonContainer extends Component {
   nextPage(page) {
     const { pageChanger, dirty } = this.props;
 
-    console.log(page, dirty);
-
     if (!dirty) {
       // Change the upcoming page information
       pageChanger({ page });

@@ -512,7 +512,15 @@ function LoginButton({
     }
   };
   return (
-    <Button color="primary" size="lg" disabled={disabled} onClick={onClick} fullWidth>
+    <Button
+      type="submit"
+      color="primary"
+      size="lg"
+      disabled={disabled}
+      onSubmit={onClick}
+      onClick={onClick}
+      fullWidth
+    >
       Get started
     </Button>
   );
