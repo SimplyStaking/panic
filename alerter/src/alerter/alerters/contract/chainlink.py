@@ -175,8 +175,8 @@ class ChainlinkContractAlerter(Alerter):
                     # Compile all the historical rounds into one list to make
                     # querying easier
                     all_historical_rounds = current_historical_rounds + [
-                        x for x in previous_historical_rounds if x not in
-                                                                 current_historical_rounds
+                        x for x in previous_historical_rounds
+                        if x not in current_historical_rounds
                     ]
                 elif current_historical_rounds is not None:
                     all_historical_rounds = current_historical_rounds
@@ -202,7 +202,7 @@ class ChainlinkContractAlerter(Alerter):
                 # This data is re-used in other alerts so it needs to be
                 # calculated beforehand
                 current_missed_observations = 0
-                if (None not in [curr_latest_round, last_round_observed]):
+                if None not in [curr_latest_round, last_round_observed]:
                     current_missed_observations = curr_latest_round - \
                                                   last_round_observed
                 else:
@@ -212,9 +212,11 @@ class ChainlinkContractAlerter(Alerter):
                 if (str_to_bool(configs.price_feed_not_observed['enabled'])
                         and current_missed_observations is not None):
                     sub_config = configs.price_feed_not_observed
-                    self.alerting_factory.classify_thresholded_and_conditional_alert(
+                    self.alerting_factory.\
+                        classify_thresholded_and_conditional_alert(
                         current_missed_observations, sub_config,
-                        cl_alerts.PriceFeedObservationsMissedIncreasedAboveThreshold,
+                        cl_alerts.
+                            PriceFeedObservationsMissedIncreasedAboveThreshold,
                         cl_alerts.PriceFeedObservedAgain,
                         self._equal_condition_function, [
                             current_missed_observations, 0],
