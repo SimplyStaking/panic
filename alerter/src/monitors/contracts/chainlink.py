@@ -13,6 +13,7 @@ from requests.exceptions import (ConnectionError as ReqConnectionError,
 from urllib3.exceptions import ProtocolError
 from web3 import Web3
 from web3.exceptions import ContractLogicError
+from web3.middleware import geth_poa_middleware
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -59,8 +60,10 @@ class ChainlinkContractsMonitor(Monitor):
         # with open connections not being closed.
         self._evm_node_w3_interface = {}
         for evm_node_url in evm_nodes:
-            self._evm_node_w3_interface[evm_node_url] = Web3(Web3.HTTPProvider(
+            w3_interface = Web3(Web3.HTTPProvider(
                 evm_node_url, request_kwargs={'timeout': 2}))
+            w3_interface.middleware_onion.inject(geth_poa_middleware, layer=0)
+            self._evm_node_w3_interface[evm_node_url] = w3_interface
 
         # This dict stores the eth address of a chainlink node indexed by the
         # node id. The eth address is obtained from prometheus.
