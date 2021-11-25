@@ -1,13 +1,12 @@
 import logging
 from datetime import timedelta
-from typing import Dict
+
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode as AlertsMetricCode
 from src.configs.alerts.node.evm import EVMNodeAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
-from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
-                              OccurrencesInTimePeriodTracker)
+from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter)
 
 
 class EVMNodeAlertingFactory(AlertingFactory):
@@ -82,11 +81,11 @@ class EVMNodeAlertingFactory(AlertingFactory):
             block_height_difference_thresholds = parse_alert_time_thresholds(
                 ['critical_repeat'],
                 evm_node_alerts_config.
-                evm_block_syncing_block_height_difference)
+                    evm_block_syncing_block_height_difference)
             no_change_in_block_height_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 evm_node_alerts_config.
-                evm_block_syncing_no_change_in_block_height)
+                    evm_block_syncing_no_change_in_block_height)
 
             warning_window_timer = {
                 AlertsMetricCode.NoChangeInBlockHeight.value:

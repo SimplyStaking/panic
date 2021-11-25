@@ -1,29 +1,24 @@
 import logging
 import unittest
 from datetime import datetime
-from datetime import timedelta
+from typing import Any
 
 from freezegun import freeze_time
 from parameterized import parameterized
-from typing import Dict, Any
 
+import src.alerter.alerts.contract.chainlink as cl_alerts
 from src.alerter.alerts.contract.chainlink import (
     PriceFeedObservedAgain,
     PriceFeedObservationsMissedIncreasedAboveThreshold,
     PriceFeedDeviationInreasedAboveThreshold,
     PriceFeedDeviationDecreasedBelowThreshold,
-    ConsensusFailure, )
-import src.alerter.alerts.contract.chainlink as cl_alerts
-from src.alerter.factory.alerting_factory import AlertingFactory
+)
 from src.alerter.factory.chainlink_contract_alerting_factory import \
     ChainlinkContractAlertingFactory
 from src.alerter.grouped_alerts_metric_code.contract. \
     chainlink_contract_metric_code import \
     GroupedChainlinkContractAlertsMetricCode as MetricCode
 from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
-from src.utils.configs import parse_alert_time_thresholds
-from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
-                              OccurrencesInTimePeriodTracker)
 from src.utils.exceptions import (CouldNotRetrieveContractsException,
                                   NoSyncedDataSourceWasAccessibleException)
 
@@ -136,7 +131,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         data_for_alerting = []
         current = float(self.test_alerts_config.price_feed_not_observed[
-            'critical_threshold']) + 1
+                            'critical_threshold']) + 1
         self.test_factory_instance.classify_thresholded_and_conditional_alert(
             current, self.test_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
@@ -164,7 +159,7 @@ class TestAlertingFactory(unittest.TestCase):
         data_for_alerting = []
 
         current = float(self.test_alerts_config.price_feed_not_observed[
-            threshold_var]) + 1
+                            threshold_var]) + 1
         self.test_factory_instance.classify_thresholded_and_conditional_alert(
             current, self.test_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
@@ -191,7 +186,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Send first warning alert
         current = float(self.test_alerts_config.price_feed_not_observed[
-                'warning_threshold']) + 1
+                            'warning_threshold']) + 1
         self.test_factory_instance.classify_thresholded_and_conditional_alert(
             current, self.test_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
@@ -229,7 +224,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # First critical below threshold alert
         current = (int(self.test_alerts_config.price_feed_not_observed[
-                'critical_threshold']) + 1)
+                           'critical_threshold']) + 1)
         self.test_factory_instance.classify_thresholded_and_conditional_alert(
             current, self.test_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
@@ -245,7 +240,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Classify with not elapsed repeat to confirm that no critical alert is
         # raised.
         pad = (float(self.test_alerts_config.price_feed_not_observed[
-                    'critical_repeat']) - 1)
+                         'critical_repeat']) - 1)
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_and_conditional_alert(
             current, self.test_alerts_config.price_feed_not_observed,
@@ -261,7 +256,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Let repeat time to elapse and check that a critical alert is
         # re-raised
         pad = float(self.test_alerts_config.price_feed_not_observed[
-                'critical_repeat'])
+                        'critical_repeat'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_and_conditional_alert(
             current, self.test_alerts_config.price_feed_not_observed,
@@ -291,7 +286,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # First critical below threshold alert
         current = (float(self.test_alerts_config.price_feed_not_observed[
-                'critical_threshold']) + 1)
+                             'critical_threshold']) + 1)
         self.test_factory_instance.classify_thresholded_and_conditional_alert(
             current, self.test_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
@@ -307,7 +302,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Let repeat time to elapse and check that a critical alert is not
         # re-raised
         pad = (float(self.test_alerts_config.price_feed_not_observed[
-                'critical_repeat']))
+                         'critical_repeat']))
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_and_conditional_alert(
             current, self.test_alerts_config.price_feed_not_observed,
@@ -336,7 +331,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # First below threshold alert
         current = float(self.test_alerts_config.price_feed_not_observed[
-            threshold_var]) + 1
+                            threshold_var]) + 1
         self.test_factory_instance.classify_thresholded_and_conditional_alert(
             current, self.test_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
@@ -383,7 +378,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         data_for_alerting = []
         current = float(self.test_alerts_config.price_feed_deviation[
-            'critical_threshold']) + 1
+                            'critical_threshold']) + 1
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config.price_feed_deviation,
             PriceFeedDeviationInreasedAboveThreshold,
@@ -491,7 +486,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Classify with not elapsed repeat to confirm that no critical alert is
         # raised.
         pad = (float(self.test_alerts_config.price_feed_deviation[
-                    'critical_repeat']) - 1)
+                         'critical_repeat']) - 1)
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config.price_feed_deviation,
@@ -506,7 +501,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Let repeat time to elapse and check that a critical alert is
         # re-raised
         pad = float(self.test_alerts_config.price_feed_deviation[
-                'critical_repeat'])
+                        'critical_repeat'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config.price_feed_deviation,
@@ -535,7 +530,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # First critical below threshold alert
         current = (float(self.test_alerts_config.price_feed_deviation[
-                'critical_threshold']) + 1)
+                             'critical_threshold']) + 1)
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config.price_feed_deviation,
             PriceFeedDeviationInreasedAboveThreshold,
@@ -550,7 +545,7 @@ class TestAlertingFactory(unittest.TestCase):
         # Let repeat time to elapse and check that a critical alert is not
         # re-raised
         pad = (float(self.test_alerts_config.price_feed_deviation[
-                'critical_repeat']))
+                         'critical_repeat']))
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config.price_feed_deviation,
@@ -654,7 +649,7 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Check that 2 alerts are raised, below critical and above warning
         current = float(self.test_alerts_config.price_feed_deviation[
-            'critical_threshold']) - 1
+                            'critical_threshold']) - 1
         alert_timestamp = datetime.now().timestamp() + 10
         self.test_factory_instance.classify_thresholded_alert(
             current, self.test_alerts_config.price_feed_deviation,
@@ -667,10 +662,10 @@ class TestAlertingFactory(unittest.TestCase):
 
         expected_alert_1 = PriceFeedDeviationDecreasedBelowThreshold(
             self.test_node_name, current, 'INFO', alert_timestamp,
-            'CRITICAL', self.test_parent_id, self.test_node_id,  self.proxy_1)
+            'CRITICAL', self.test_parent_id, self.test_node_id, self.proxy_1)
         expected_alert_2 = PriceFeedDeviationInreasedAboveThreshold(
             self.test_node_name, current, 'WARNING', alert_timestamp,
-            'WARNING', self.test_parent_id, self.test_node_id,  self.proxy_1)
+            'WARNING', self.test_parent_id, self.test_node_id, self.proxy_1)
         self.assertEqual(2, len(data_for_alerting))
         self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
         self.assertEqual(expected_alert_2.alert_data, data_for_alerting[1])
@@ -721,7 +716,7 @@ class TestAlertingFactory(unittest.TestCase):
         data_for_alerting = []
 
         self.test_factory_instance.classify_error_alert(
-            test_err_1.code,  cl_alerts.ErrorContractsNotRetrieved,
+            test_err_1.code, cl_alerts.ErrorContractsNotRetrieved,
             cl_alerts.ContractsNowRetrieved, data_for_alerting,
             self.test_parent_id, self.test_node_id, self.test_node_name,
             datetime.now().timestamp(),
@@ -730,7 +725,7 @@ class TestAlertingFactory(unittest.TestCase):
         )
 
         self.test_factory_instance.classify_error_alert(
-            test_err_2.code,  cl_alerts.ErrorNoSyncedDataSources,
+            test_err_2.code, cl_alerts.ErrorNoSyncedDataSources,
             cl_alerts.SyncedDataSourcesFound, data_for_alerting,
             self.test_parent_id, self.test_node_id, self.test_node_name,
             datetime.now().timestamp(),

@@ -9,8 +9,7 @@ from src.alerter.grouped_alerts_metric_code.contract.chainlink_contract_metric_c
     import GroupedChainlinkContractAlertsMetricCode as MetricCode
 from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
-from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
-                              OccurrencesInTimePeriodTracker)
+from src.utils.timing import (TimedTaskLimiter)
 
 
 class TestChainlinkContractAlertingFactory(unittest.TestCase):

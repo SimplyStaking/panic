@@ -1,4 +1,4 @@
-import copy
+import datetime
 import datetime
 import json
 import logging
@@ -21,22 +21,20 @@ from src.alerter.alerts.contract.chainlink import (
     ContractsNowRetrieved, ErrorNoSyncedDataSources, SyncedDataSourcesFound)
 from src.alerter.factory.chainlink_contract_alerting_factory import \
     ChainlinkContractAlertingFactory
-from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.alerter.grouped_alerts_metric_code.contract.chainlink_contract_metric_code \
     import GroupedChainlinkContractAlertsMetricCode as MetricCode
+from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.configs.factory.node.chainlink_alerts import \
     ChainlinkContractAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
-    ALERT_EXCHANGE, TOPIC, CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+    ALERT_EXCHANGE, CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
-    CONFIG_EXCHANGE, CL_CONTRACT_ALERT_ROUTING_KEY,
-    CL_ALERTS_CONFIGS_ROUTING_KEY)
+    CONFIG_EXCHANGE, CL_CONTRACT_ALERT_ROUTING_KEY)
 from src.utils.env import RABBIT_IP
 from src.utils.exceptions import PANICException
 from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
                               delete_exchange_if_exists, disconnect_from_rabbit)
-from src.utils.types import str_to_bool
 
 
 class TestChainlinkContractAlerter(unittest.TestCase):
@@ -399,6 +397,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
     config processing and alerting were performed in separate test files which
     targeted the factory classes.
     """
+
     @mock.patch.object(ChainlinkContractAlertsConfigsFactory, "get_parent_id")
     @mock.patch.object(ChainlinkContractAlertsConfigsFactory, "add_new_config")
     @mock.patch.object(ChainlinkContractAlertingFactory,
@@ -821,7 +820,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         # Ensure that current_missed_observations is 0
         result_data['result']['data'][eval(mock_proxy)]['lastRoundObserved'][
             'current'] = result_data['result']['data'][eval(mock_proxy)][
-                'latestRound']['current']
+            'latestRound']['current']
 
         data_for_alerting = []
         self.test_contract_alerter._process_result(

@@ -1,11 +1,8 @@
-from datetime import datetime, timedelta
-
 from src.alerter.alert_code.contract.chainlink_alert_code import (
     ChainlinkContractAlertCode)
 from src.alerter.alerts.alert import Alert
 from src.alerter.grouped_alerts_metric_code.contract.chainlink_contract_metric_code \
     import GroupedChainlinkContractAlertsMetricCode as MetricCode
-from src.utils.datetime import strfdelta
 
 
 class PriceFeedObservationsMissedIncreasedAboveThreshold(Alert):
@@ -74,7 +71,7 @@ class ConsensusFailure(Alert):
             ChainlinkContractAlertCode.ConsensusNotReached,
             "The Price Feed {} has a Consensus failure."
             "The Chainlink Node observing the price feed is {}."
-            .format(proxy_address, origin_name),
+                .format(proxy_address, origin_name),
             severity, timestamp, parent_id, origin_id,
             MetricCode.ConsensusFailure)
 

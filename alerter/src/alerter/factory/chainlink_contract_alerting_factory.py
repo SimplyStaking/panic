@@ -1,21 +1,20 @@
 import logging
-from datetime import datetime, timezone, timedelta
-from typing import Dict, List, Any, Type, Callable, Optional
+from datetime import datetime, timedelta
+from typing import Dict, List, Any, Type, Callable
+
+from src.alerter.alert_severities import Severity
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.grouped_alerts_metric_code.contract. \
     chainlink_contract_metric_code import \
     GroupedChainlinkContractAlertsMetricCode as AlertsMetricCode
 from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
-from src.utils.types import (NoChangeInAlert, ChangeInAlert, str_to_bool,
+from src.utils.timing import (TimedTaskLimiter)
+from src.utils.types import (str_to_bool,
                              IncreasedAboveThresholdAlert,
                              DecreasedBelowThresholdAlert, convert_to_float,
                              ErrorAlert, ErrorSolvedAlert,
-                             ConditionalAlert, DownAlert,
-                             StillDownAlert, BackUpAlert)
-from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
-                              OccurrencesInTimePeriodTracker)
-from src.alerter.alert_severities import Severity
+                             ConditionalAlert)
 
 
 class ChainlinkContractAlertingFactory(AlertingFactory):
@@ -106,8 +105,7 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
             self.alerting_state[parent_id][node_id] = {}
 
         if contract_proxy_address not in self.alerting_state[parent_id][
-                node_id]:
-
+            node_id]:
             warning_sent = {
                 AlertsMetricCode.PriceFeedNotObserved.value: False,
                 AlertsMetricCode.PriceFeedDeviation.value: False,

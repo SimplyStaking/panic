@@ -39,11 +39,11 @@ class BlockHeightDifferenceIncreasedAboveThresholdAlert(Alert):
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             EVMNodeAlertCode
-            .BlockHeightDifferenceIncreasedAboveThresholdAlert,
+                .BlockHeightDifferenceIncreasedAboveThresholdAlert,
             "{} maximum number of blocks between node block heights "
             "has INCREASED above {} threshold. This node is {} blocks "
             "behind the node with the highest block height."
-            .format(origin_name, threshold_severity, current_value),
+                .format(origin_name, threshold_severity, current_value),
             severity, timestamp, parent_id, origin_id,
             GroupedEVMNodeAlertsMetricCode.BlockHeightDifference)
 
@@ -54,7 +54,7 @@ class BlockHeightDifferenceDecreasedBelowThresholdAlert(Alert):
                  origin_id: str) -> None:
         super().__init__(
             EVMNodeAlertCode
-            .BlockHeightDifferenceDecreasedBelowThresholdAlert,
+                .BlockHeightDifferenceDecreasedBelowThresholdAlert,
             "{} maximum number of blocks between node block heights "
             "has DECREASED below {} threshold. This node is now {} blocks "
             "behind the node with the highest block height".format(
