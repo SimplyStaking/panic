@@ -252,6 +252,7 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
                 self.alerting_state[parent_id][monitorable_id][
                     contract_proxy_address]['warning_sent'][metric_name] = True
 
+    # TODO: Tmrw start with failing tests
     # TODO: Tmrw continue fixing from here, first check why we need this fn to
     #     : try and find another solution
 
