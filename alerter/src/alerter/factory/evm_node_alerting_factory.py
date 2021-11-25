@@ -52,7 +52,6 @@ class EVMNodeAlertingFactory(AlertingFactory):
         state for a node based on the passed alerts config.
         :param parent_id: The id of the chain
         :param node_id: The id of the node
-        :param node_name: The name of the node
         :param evm_node_alerts_config: The alerts configuration
         :return: None
         """

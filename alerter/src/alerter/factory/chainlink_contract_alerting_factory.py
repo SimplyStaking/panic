@@ -104,8 +104,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
         if node_id not in self.alerting_state[parent_id]:
             self.alerting_state[parent_id][node_id] = {}
 
-        if contract_proxy_address not in self.alerting_state[parent_id][
-            node_id]:
+        if contract_proxy_address not in \
+                self.alerting_state[parent_id][node_id]:
             warning_sent = {
                 AlertsMetricCode.PriceFeedNotObserved.value: False,
                 AlertsMetricCode.PriceFeedDeviation.value: False,
@@ -172,8 +172,6 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
         :param config: The metric's configuration to obtain the thresholds
         :param increased_above_threshold_alert: The alert to be raised if the
         current value is no longer smaller than a threshold
-        :param decreased_below_threshold_alert: The alert to be raised if the
-        current value is smaller than a threshold
         :param data_for_alerting: The list to be appended with alerts
         :param parent_id: The id of the base chain
         :param monitorable_id: The id of the monitorable
@@ -253,6 +251,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
                                             alert.alert_data)
                 self.alerting_state[parent_id][monitorable_id][
                     contract_proxy_address]['warning_sent'][metric_name] = True
+
+    # TODO: Tmrw continue fixing from here
 
     def classify_thresholded_alert(
             self, current: Any, config: Dict,
