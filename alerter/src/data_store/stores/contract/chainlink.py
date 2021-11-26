@@ -209,19 +209,19 @@ class ChainlinkContractStore(Store):
                             'node_id': str(node_id),
                             'node_name': str(node_name),
                             'contractVersion': str(contract_data[
-                                'contractVersion']),
+                                                       'contractVersion']),
                             'aggregatorAddress': str(contract_data[
-                                'aggregatorAddress']),
+                                                         'aggregatorAddress']),
                             'latestRound': str(contract_data[
-                                'latestRound']),
+                                                   'latestRound']),
                             'latestAnswer': str(contract_data[
-                                'latestAnswer']),
+                                                    'latestAnswer']),
                             'latestTimestamp': str(contract_data[
-                                'latestTimestamp']),
+                                                       'latestTimestamp']),
                             'answeredInRound': str(contract_data[
-                                'answeredInRound']),
+                                                       'answeredInRound']),
                             payment_key: str(contract_data[
-                                payment_key]),
+                                                 payment_key]),
                             'historicalRounds': json.dumps(
                                 contract_data['historicalRounds']),
                             'lastRoundObserved': str(

@@ -1,17 +1,13 @@
 import copy
 import json
 import logging
-import sys
 from datetime import datetime
-from typing import List, Dict, Optional, Any
+from typing import List, Dict
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
 import src.alerter.alerts.node.evm as evm_alerts
-from src.alerter.alert_severities import Severity
-from src.alerter.alerters.alerter import Alerter
-from src.message_broker.rabbitmq import RabbitMQApi
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.factory.evm_node_alerting_factory import \
     EVMNodeAlertingFactory
@@ -24,7 +20,6 @@ from src.utils.constants.rabbitmq import (
     EVM_NODE_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
     CONFIG_EXCHANGE, EVM_NODE_ALERT_ROUTING_KEY,
     EVM_ALERTS_CONFIGS_ROUTING_KEY)
-from src.utils.data import transformed_data_processing_helper
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 from src.utils.types import str_to_bool
@@ -181,14 +176,14 @@ class EVMNodeAlerter(Alerter):
                     )
 
             if str_to_bool(configs.evm_block_syncing_block_height_difference[
-                    'enabled']):
+                               'enabled']):
                 syncing = data['syncing']['current']
                 current = data['current_height']['current']
                 sub_config = configs.evm_block_syncing_block_height_difference
                 if None not in [current, syncing] and not syncing:
                     self.alerting_factory.alerting_state[meta_data[
                         'node_parent_id']][meta_data['node_id']][
-                            'current_height'] = current
+                        'current_height'] = current
 
                     # The only data we need is the highest node block height,
                     # we then return the difference between the current
@@ -197,23 +192,23 @@ class EVMNodeAlerter(Alerter):
                     # our own node.
                     node_heights = []
                     for key, value in self.alerting_factory.alerting_state[
-                            meta_data['node_parent_id']].items():
+                        meta_data['node_parent_id']].items():
                         node_heights.append(value['current_height'])
                     node_heights = list(filter(lambda a: a is not None,
-                                        node_heights))
+                                               node_heights))
                     difference = max(node_heights) - current
                     self.alerting_factory. \
                         classify_thresholded_alert(
-                            difference, sub_config,
-                            evm_alerts.
+                        difference, sub_config,
+                        evm_alerts.
                             BlockHeightDifferenceIncreasedAboveThresholdAlert,
-                            evm_alerts.
+                        evm_alerts.
                             BlockHeightDifferenceDecreasedBelowThresholdAlert,
-                            data_for_alerting, meta_data['node_parent_id'],
-                            meta_data['node_id'],
-                            MetricCode.BlockHeightDifference.value,
-                            meta_data['node_name'], meta_data['last_monitored']
-                        )
+                        data_for_alerting, meta_data['node_parent_id'],
+                        meta_data['node_id'],
+                        MetricCode.BlockHeightDifference.value,
+                        meta_data['node_name'], meta_data['last_monitored']
+                    )
 
     def _process_error(self, data: Dict, data_for_alerting: List) -> None:
         meta_data = data['meta_data']

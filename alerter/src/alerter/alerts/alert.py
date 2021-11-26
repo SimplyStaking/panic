@@ -65,5 +65,6 @@ class Alert:
             'parent_id': self._parent_id,
             'origin_id': self._origin_id,
             'timestamp': self._timestamp,
-            'alert_data': self._alert_data
+            'alert_data': (None if self._alert_data is None
+                           else self._alert_data.alert_data)
         }

@@ -22,7 +22,6 @@ from src.alerter.factory.evm_node_alerting_factory import (
     EVMNodeAlertingFactory)
 from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode
-from src.configs.alerts.node.evm import EVMNodeAlertsConfig
 from src.configs.factory.node.evm_alerts import (
     EVMNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -268,6 +267,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
     config processing and alerting were performed in separate test files which
     targeted the factory classes.
     """
+
     @mock.patch.object(EVMNodeAlertsConfigsFactory, "get_parent_id")
     @mock.patch.object(EVMNodeAlertsConfigsFactory, "add_new_config")
     @mock.patch.object(EVMNodeAlertingFactory, "remove_chain_alerting_state")
@@ -667,7 +667,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
             self.test_node_name, self.test_last_monitored)
         self.assertTrue(call_1 in calls)
 
-        mock_no_change_alert.assert_not_called
+        mock_no_change_alert.assert_not_called()
         mock_thresh_alert.assert_not_called()
         mock_cond_alert.assert_not_called()
         mock_reverse.assert_not_called()

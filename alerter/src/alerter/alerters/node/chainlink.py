@@ -3,7 +3,7 @@ import json
 import logging
 import sys
 from datetime import datetime
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
@@ -15,9 +15,9 @@ from src.alerter.factory.chainlink_node_alerting_factory import (
     ChainlinkNodeAlertingFactory)
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode as MetricCode
-from src.configs.factory.node.chainlink_alerts import (
-    ChainlinkAlertsConfigsFactory, ChainlinkNodeAlertsConfigsFactory)
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
+from src.configs.factory.node.chainlink_alerts import (
+    ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.data import VALID_CHAINLINK_SOURCES
 from src.utils.constants.rabbitmq import (
@@ -199,16 +199,16 @@ class ChainlinkNodeAlerter(Alerter):
                 if current is not None:
                     self.alerting_factory. \
                         classify_thresholded_time_window_alert(
-                            current, sub_config,
-                            cl_alerts.
+                        current, sub_config,
+                        cl_alerts.
                             MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
-                            cl_alerts.
+                        cl_alerts.
                             MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
-                            data_for_alerting, meta_data['node_parent_id'],
-                            meta_data['node_id'],
-                            MetricCode.MaxUnconfirmedBlocksThreshold.value,
-                            meta_data['node_name'], meta_data['last_monitored']
-                        )
+                        data_for_alerting, meta_data['node_parent_id'],
+                        meta_data['node_id'],
+                        MetricCode.MaxUnconfirmedBlocksThreshold.value,
+                        meta_data['node_name'], meta_data['last_monitored']
+                    )
             if str_to_bool(configs.process_start_time_seconds['enabled']):
                 current = data['process_start_time_seconds']['current']
                 previous = data['process_start_time_seconds']['previous']
@@ -246,16 +246,16 @@ class ChainlinkNodeAlerter(Alerter):
                 if current is not None:
                     self.alerting_factory. \
                         classify_thresholded_time_window_alert(
-                            current, sub_config,
-                            cl_alerts.
+                        current, sub_config,
+                        cl_alerts.
                             NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
-                            cl_alerts.
+                        cl_alerts.
                             NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
-                            data_for_alerting, meta_data['node_parent_id'],
-                            meta_data['node_id'],
-                            MetricCode.NoOfUnconfirmedTxsThreshold.value,
-                            meta_data['node_name'], meta_data['last_monitored']
-                        )
+                        data_for_alerting, meta_data['node_parent_id'],
+                        meta_data['node_id'],
+                        MetricCode.NoOfUnconfirmedTxsThreshold.value,
+                        meta_data['node_name'], meta_data['last_monitored']
+                    )
             if str_to_bool(configs.run_status_update_total['enabled']):
                 current = data['total_errored_job_runs']['current']
                 previous = data['total_errored_job_runs']['previous']
@@ -263,16 +263,16 @@ class ChainlinkNodeAlerter(Alerter):
                 if current is not None and previous is not None:
                     self.alerting_factory \
                         .classify_thresholded_in_time_period_alert(
-                            current, previous, sub_config,
-                            cl_alerts.
+                        current, previous, sub_config,
+                        cl_alerts.
                             TotalErroredJobRunsIncreasedAboveThresholdAlert,
-                            cl_alerts.
+                        cl_alerts.
                             TotalErroredJobRunsDecreasedBelowThresholdAlert,
-                            data_for_alerting, meta_data['node_parent_id'],
-                            meta_data['node_id'],
-                            MetricCode.TotalErroredJobRunsThreshold.value,
-                            meta_data['node_name'], meta_data['last_monitored']
-                        )
+                        data_for_alerting, meta_data['node_parent_id'],
+                        meta_data['node_id'],
+                        MetricCode.TotalErroredJobRunsThreshold.value,
+                        meta_data['node_name'], meta_data['last_monitored']
+                    )
             if str_to_bool(configs.eth_balance_amount['enabled']):
                 current = data['eth_balance_info']['current']
                 sub_config = configs.eth_balance_amount
@@ -417,7 +417,7 @@ class ChainlinkNodeAlerter(Alerter):
                                 else new_went_down
                             monitoring_timestamp = monitoring_timestamp \
                                 if monitoring_timestamp <= \
-                                new_monitoring_timestamp \
+                                   new_monitoring_timestamp \
                                 else new_monitoring_timestamp
 
                     self.alerting_factory.classify_downtime_alert(
@@ -443,7 +443,7 @@ class ChainlinkNodeAlerter(Alerter):
                                 else data['meta_data']['time']
                             monitoring_timestamp = monitoring_timestamp \
                                 if monitoring_timestamp <= \
-                                new_monitoring_timestamp \
+                                   new_monitoring_timestamp \
                                 else new_monitoring_timestamp
 
                     # Classify downtime so that a node back up again alert is

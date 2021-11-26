@@ -1336,7 +1336,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         # given data.
         self.assertEqual(2, len(self.test_data_transformer._state.keys()))
         self.assertEqual(2, len(self.test_data_transformer._state[
-            self.test_node_id_1].keys()))
+                                    self.test_node_id_1].keys()))
         contract_1_expected_data = copy.deepcopy(
             self.test_cl_contract_1_new_metrics)
         contract_2_expected_data = copy.deepcopy(
@@ -1400,7 +1400,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         expected_data_contract_2 = copy.deepcopy(new_contract_2)
         self.assertEqual(1, len(self.test_data_transformer._state.keys()))
         self.assertEqual(2, len(self.test_data_transformer._state[
-            self.test_node_id_1].keys()))
+                                    self.test_node_id_1].keys()))
         self.assertEqual(
             expected_data_contract_1,
             self.test_data_transformer._state[self.test_node_id_1][

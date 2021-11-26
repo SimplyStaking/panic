@@ -1,4 +1,4 @@
-from .handler import ChannelHandler
 from .email.alerts import EmailAlertsHandler
-from .telegram.alerts import TelegramAlertsHandler
+from .handler import ChannelHandler
 from .slack.alerts import SlackAlertsHandler
+from .telegram.alerts import TelegramAlertsHandler

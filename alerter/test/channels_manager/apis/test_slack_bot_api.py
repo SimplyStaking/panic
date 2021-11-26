@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import patch
+
 from slack_sdk import WebClient
 
 from src.channels_manager.apis.slack_bot_api import SlackBotApi

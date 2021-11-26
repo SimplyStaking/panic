@@ -4,10 +4,10 @@ import time
 import pika.exceptions
 
 from src.alerter.alerters.alerter import Alerter
-from src.alerter.alerters.github import GithubAlerter
-from src.alerter.alerters.node.evm import EVMNodeAlerter
-from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
+from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
+from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.alerts.system import SystemAlertsConfig
 from src.configs.factory.node.chainlink_alerts import (
@@ -178,7 +178,7 @@ def _initialise_chainlink_contract_alerter(
 
 
 def _initialise_evm_node_alerter(
-    evm_alerts_configs_factory: EVMNodeAlertsConfigsFactory
+        evm_alerts_configs_factory: EVMNodeAlertsConfigsFactory
 ) -> EVMNodeAlerter:
     alerter_display_name = EVM_NODE_ALERTER_NAME
 
@@ -230,7 +230,7 @@ def start_chainlink_node_alerter(
 
 
 def start_chainlink_contract_alerter(
-      chainlink_alerts_configs_factory: ChainlinkContractAlertsConfigsFactory
+        chainlink_alerts_configs_factory: ChainlinkContractAlertsConfigsFactory
 ) -> None:
     chainlink_contract_alerter = _initialise_chainlink_contract_alerter(
         chainlink_alerts_configs_factory)

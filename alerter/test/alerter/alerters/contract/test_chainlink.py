@@ -1,4 +1,3 @@
-import copy
 import datetime
 import json
 import logging
@@ -21,22 +20,21 @@ from src.alerter.alerts.contract.chainlink import (
     ContractsNowRetrieved, ErrorNoSyncedDataSources, SyncedDataSourcesFound)
 from src.alerter.factory.chainlink_contract_alerting_factory import \
     ChainlinkContractAlertingFactory
-from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
-from src.alerter.grouped_alerts_metric_code.contract.chainlink_contract_metric_code \
+from src.alerter.grouped_alerts_metric_code.contract. \
+    chainlink_contract_metric_code \
     import GroupedChainlinkContractAlertsMetricCode as MetricCode
+from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.configs.factory.node.chainlink_alerts import \
     ChainlinkContractAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
-    ALERT_EXCHANGE, TOPIC, CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+    ALERT_EXCHANGE, CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
-    CONFIG_EXCHANGE, CL_CONTRACT_ALERT_ROUTING_KEY,
-    CL_ALERTS_CONFIGS_ROUTING_KEY)
+    CONFIG_EXCHANGE, CL_CONTRACT_ALERT_ROUTING_KEY)
 from src.utils.env import RABBIT_IP
 from src.utils.exceptions import PANICException
 from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
                               delete_exchange_if_exists, disconnect_from_rabbit)
-from src.utils.types import str_to_bool
 
 
 class TestChainlinkContractAlerter(unittest.TestCase):
@@ -399,6 +397,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
     config processing and alerting were performed in separate test files which
     targeted the factory classes.
     """
+
     @mock.patch.object(ChainlinkContractAlertsConfigsFactory, "get_parent_id")
     @mock.patch.object(ChainlinkContractAlertsConfigsFactory, "add_new_config")
     @mock.patch.object(ChainlinkContractAlertingFactory,
@@ -583,7 +582,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_no_change_in_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
-                       "classify_thresholded_alert")
+                       "classify_thresholded_alert_contract")
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_thresholded_in_time_period_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
@@ -613,7 +612,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_no_change_in_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
-                       "classify_thresholded_alert")
+                       "classify_thresholded_alert_contract")
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_thresholded_in_time_period_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
@@ -683,7 +682,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_no_change_in_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
-                       "classify_thresholded_alert")
+                       "classify_thresholded_alert_contract")
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_thresholded_in_time_period_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
@@ -784,7 +783,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
          "self.test_contract_proxy_address_1", 100.0),
     ])
     @mock.patch.object(ChainlinkContractAlertingFactory,
-                       "classify_thresholded_alert")
+                       "classify_thresholded_alert_contract")
     def test_price_feed_deviation_executed_correctly(
             self, mock_result_data, mock_curr_hist, mock_prev_hist,
             call_count, mock_proxy, mock_deviation, mock_thresh_alert) -> None:
@@ -821,7 +820,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         # Ensure that current_missed_observations is 0
         result_data['result']['data'][eval(mock_proxy)]['lastRoundObserved'][
             'current'] = result_data['result']['data'][eval(mock_proxy)][
-                'latestRound']['current']
+            'latestRound']['current']
 
         data_for_alerting = []
         self.test_contract_alerter._process_result(
@@ -854,7 +853,6 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         del self.received_configurations['DEFAULT']
         self.test_configs_factory.add_new_config(chain,
                                                  self.received_configurations)
-        configs = self.test_configs_factory.configs[chain]
 
         data_for_alerting = []
         self.test_contract_alerter._process_error(
