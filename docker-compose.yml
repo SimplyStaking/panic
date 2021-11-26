@@ -22,8 +22,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-file: 5
-        max-size: 10m
+        max-file: "5"
+        max-size: "10m"
     volumes:
       - './config:/opt/panic/config'
       - './certificates:/opt/panic/certificates'
@@ -41,8 +41,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-file: 5
-        max-size: 10m
+        max-file: "5"
+        max-size: "10m"
     networks:
       panic_net:
         ipv4_address: '${DB_IP}'
@@ -56,8 +56,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-file: 5
-        max-size: 10m
+        max-file: "5"
+        max-size: "10m"
     networks:
       panic_net:
         ipv4_address: '${REDIS_IP}'
@@ -69,8 +69,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-file: 5
-        max-size: 10m
+        max-file: "5"
+        max-size: "10m"
     networks:
       panic_net:
         ipv4_address: '${RABBIT_IP}'
@@ -121,8 +121,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-file: 5
-        max-size: 10m
+        max-file: "5"
+        max-size: "10m"
     volumes:
       - './config:/opt/panic/config'
       - './alerter/logs:/opt/panic/alerter/logs'
@@ -179,8 +179,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-file: 5
-        max-size: 10m
+        max-file: "5"
+        max-size: "10m"
     volumes:
       - './alerter/logs:/opt/panic/alerter/logs'
     restart: always
