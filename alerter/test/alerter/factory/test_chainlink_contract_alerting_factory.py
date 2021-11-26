@@ -299,7 +299,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         """
         In this test we will check that no alert is raised whenever both warning
         and critical alerts are disabled. We will perform this test for both
-        when current>= critical and current >= warning. For an alert to be
+        when current >= critical and current >= warning. For an alert to be
         raised when current < critical or current < warning it must be that one
         of the severities is enabled.
         """
