@@ -240,7 +240,8 @@ class ChainlinkContractAlerter(Alerter):
                         'deviation']
 
                     if current_deviation is not None:
-                        self.alerting_factory.classify_thresholded_alert(
+                        self.alerting_factory.\
+                            classify_thresholded_alert_contract(
                             current_deviation, sub_config,
                             cl_alerts.PriceFeedDeviationInreasedAboveThreshold,
                             cl_alerts.PriceFeedDeviationDecreasedBelowThreshold,
@@ -266,9 +267,8 @@ class ChainlinkContractAlerter(Alerter):
                     # Attempt to get the previous historical round
                     round_to_find = curr_latest_round - 1
                     previous_round = next((
-                        item for item in all_historical_rounds if item[
-                                                                      'roundId'] == round_to_find),
-                        None)
+                        item for item in all_historical_rounds
+                        if item['roundId'] == round_to_find), None)
                     sub_config = configs.consensus_failure
                     if previous_round is not None:
                         self.alerting_factory.classify_conditional_alert(

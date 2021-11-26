@@ -252,9 +252,7 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
                 self.alerting_state[parent_id][monitorable_id][
                     contract_proxy_address]['warning_sent'][metric_name] = True
 
-    # TODO: Tmrw continue fixing from here, first check why we need this fn to
-    #     : try and find another solution
-    def classify_thresholded_alert(
+    def classify_thresholded_alert_contract(
             self, current: Any, config: Dict,
             increased_above_threshold_alert: Type[IncreasedAboveThresholdAlert],
             decreased_below_threshold_alert: Type[DecreasedBelowThresholdAlert],

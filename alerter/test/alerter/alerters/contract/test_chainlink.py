@@ -1,5 +1,4 @@
 import datetime
-import datetime
 import json
 import logging
 import unittest
@@ -21,7 +20,8 @@ from src.alerter.alerts.contract.chainlink import (
     ContractsNowRetrieved, ErrorNoSyncedDataSources, SyncedDataSourcesFound)
 from src.alerter.factory.chainlink_contract_alerting_factory import \
     ChainlinkContractAlertingFactory
-from src.alerter.grouped_alerts_metric_code.contract.chainlink_contract_metric_code \
+from src.alerter.grouped_alerts_metric_code.contract. \
+    chainlink_contract_metric_code \
     import GroupedChainlinkContractAlertsMetricCode as MetricCode
 from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.configs.factory.node.chainlink_alerts import \
@@ -582,7 +582,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_no_change_in_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
-                       "classify_thresholded_alert")
+                       "classify_thresholded_alert_contract")
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_thresholded_in_time_period_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
@@ -612,7 +612,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_no_change_in_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
-                       "classify_thresholded_alert")
+                       "classify_thresholded_alert_contract")
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_thresholded_in_time_period_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
@@ -682,7 +682,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_no_change_in_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
-                       "classify_thresholded_alert")
+                       "classify_thresholded_alert_contract")
     @mock.patch.object(ChainlinkContractAlertingFactory,
                        "classify_thresholded_in_time_period_alert")
     @mock.patch.object(ChainlinkContractAlertingFactory,
@@ -783,7 +783,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
          "self.test_contract_proxy_address_1", 100.0),
     ])
     @mock.patch.object(ChainlinkContractAlertingFactory,
-                       "classify_thresholded_alert")
+                       "classify_thresholded_alert_contract")
     def test_price_feed_deviation_executed_correctly(
             self, mock_result_data, mock_curr_hist, mock_prev_hist,
             call_count, mock_proxy, mock_deviation, mock_thresh_alert) -> None:
@@ -853,7 +853,6 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         del self.received_configurations['DEFAULT']
         self.test_configs_factory.add_new_config(chain,
                                                  self.received_configurations)
-        configs = self.test_configs_factory.configs[chain]
 
         data_for_alerting = []
         self.test_contract_alerter._process_error(

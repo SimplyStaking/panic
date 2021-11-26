@@ -1146,8 +1146,7 @@ class TestAlertingFactory(unittest.TestCase):
             'CRITICAL', self.test_parent_id, self.test_node_id)
         expected_alert_2 = MaxUnconfirmedBlocksIncreasedAboveThresholdAlert(
             self.test_node_name, current - 1, 'WARNING', alert_timestamp,
-                                 pad + 60, 'WARNING', self.test_parent_id,
-            self.test_node_id
+            pad + 60, 'WARNING', self.test_parent_id, self.test_node_id
         )
         self.assertEqual(2, len(data_for_alerting))
         self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
@@ -1476,7 +1475,7 @@ class TestAlertingFactory(unittest.TestCase):
                 'warning_threshold'])
         previous = 0
 
-        # Allow a lot of time to pass so that all previous occurences are
+        # Allow a lot of time to pass so that all previous occurrences are
         # automatically deleted, and we are thus above warning.
         alert_timestamp = datetime.now().timestamp() + critical_period + 100
 
@@ -1925,11 +1924,12 @@ class TestAlertingFactory(unittest.TestCase):
         """
         data_for_alerting = []
 
-        current = float(
-            self.evm_node_alerts_config
-                .evm_block_syncing_block_height_difference[threshold_var]) + 1
+        current = int(self.evm_node_alerts_config
+                      .evm_block_syncing_block_height_difference[
+                          threshold_var]) + 1
         self.test_evm_factory_instance.classify_thresholded_alert(
-            current, self.evm_node_alerts_config
+            current,
+            self.evm_node_alerts_config
                 .evm_block_syncing_block_height_difference,
             BlockHeightDifferenceIncreasedAboveThresholdAlert,
             BlockHeightDifferenceDecreasedBelowThresholdAlert,
@@ -1954,10 +1954,9 @@ class TestAlertingFactory(unittest.TestCase):
         data_for_alerting = []
 
         # Send first warning alert
-        current = float(
-            self.evm_node_alerts_config
-                .evm_block_syncing_block_height_difference[
-                'warning_threshold']) + 1
+        current = float(self.evm_node_alerts_config
+                        .evm_block_syncing_block_height_difference[
+                            'warning_threshold']) + 1
         self.test_evm_factory_instance.classify_thresholded_alert(
             current, self.evm_node_alerts_config
                 .evm_block_syncing_block_height_difference,
@@ -1972,7 +1971,8 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Classify again to check if a warning alert is raised
         self.test_evm_factory_instance.classify_thresholded_alert(
-            current, self.evm_node_alerts_config
+            current,
+            self.evm_node_alerts_config
                 .evm_block_syncing_block_height_difference,
             BlockHeightDifferenceIncreasedAboveThresholdAlert,
             BlockHeightDifferenceDecreasedBelowThresholdAlert,
@@ -1994,13 +1994,12 @@ class TestAlertingFactory(unittest.TestCase):
         data_for_alerting = []
 
         # First critical below threshold alert
-        current = (float(
-            self.evm_node_alerts_config
-                .evm_block_syncing_block_height_difference[
-                'critical_threshold'])
-                   + 1)
+        current = int(self.evm_node_alerts_config
+                        .evm_block_syncing_block_height_difference[
+                            'critical_threshold']) + 1
         self.test_evm_factory_instance.classify_thresholded_alert(
-            current, self.evm_node_alerts_config
+            current,
+            self.evm_node_alerts_config
                 .evm_block_syncing_block_height_difference,
             BlockHeightDifferenceIncreasedAboveThresholdAlert,
             BlockHeightDifferenceDecreasedBelowThresholdAlert,
@@ -2013,13 +2012,13 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Classify with not elapsed repeat to confirm that no critical alert is
         # raised.
-        pad = (float(
-            self.evm_node_alerts_config
-                .evm_block_syncing_block_height_difference[
-                'critical_repeat']) - 1)
+        pad = float(self.evm_node_alerts_config
+                    .evm_block_syncing_block_height_difference[
+                        'critical_repeat']) - 1
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_evm_factory_instance.classify_thresholded_alert(
-            current, self.evm_node_alerts_config
+            current,
+            self.evm_node_alerts_config
                 .evm_block_syncing_block_height_difference,
             BlockHeightDifferenceIncreasedAboveThresholdAlert,
             BlockHeightDifferenceDecreasedBelowThresholdAlert,
@@ -2031,10 +2030,8 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Let repeat time to elapse and check that a critical alert is
         # re-raised
-        pad = float(
-            self.evm_node_alerts_config
-                .evm_block_syncing_block_height_difference[
-                'critical_repeat'])
+        pad = int(self.evm_node_alerts_config
+                  .evm_block_syncing_block_height_difference['critical_repeat'])
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_evm_factory_instance.classify_thresholded_alert(
             current, self.evm_node_alerts_config
@@ -2063,12 +2060,12 @@ class TestAlertingFactory(unittest.TestCase):
         data_for_alerting = []
 
         # First critical below threshold alert
-        current = (float(
-            self.evm_node_alerts_config
-                .evm_block_syncing_block_height_difference[
-                'critical_threshold']) + 1)
+        current = float(self.evm_node_alerts_config
+                        .evm_block_syncing_block_height_difference[
+                            'critical_threshold']) + 1
         self.test_evm_factory_instance.classify_thresholded_alert(
-            current, self.evm_node_alerts_config
+            current,
+            self.evm_node_alerts_config
                 .evm_block_syncing_block_height_difference,
             BlockHeightDifferenceIncreasedAboveThresholdAlert,
             BlockHeightDifferenceDecreasedBelowThresholdAlert,
@@ -2081,13 +2078,14 @@ class TestAlertingFactory(unittest.TestCase):
 
         # Let repeat time to elapse and check that a critical alert is not
         # re-raised
-        pad = (float(
-            self.evm_node_alerts_config
-                .evm_block_syncing_block_height_difference[
-                'critical_repeat']))
+        pad = (
+            float(self.evm_node_alerts_config
+                  .evm_block_syncing_block_height_difference[
+                      'critical_repeat']))
         alert_timestamp = datetime.now().timestamp() + pad
         self.test_evm_factory_instance.classify_thresholded_alert(
-            current, self.evm_node_alerts_config
+            current,
+            self.evm_node_alerts_config
                 .evm_block_syncing_block_height_difference,
             BlockHeightDifferenceIncreasedAboveThresholdAlert,
             BlockHeightDifferenceDecreasedBelowThresholdAlert,
@@ -2112,11 +2110,12 @@ class TestAlertingFactory(unittest.TestCase):
         data_for_alerting = []
 
         # First below threshold alert
-        current = float(
-            self.evm_node_alerts_config
-                .evm_block_syncing_block_height_difference[threshold_var]) + 1
+        current = int(self.evm_node_alerts_config
+                        .evm_block_syncing_block_height_difference[
+                            threshold_var]) + 1
         self.test_evm_factory_instance.classify_thresholded_alert(
-            current, self.evm_node_alerts_config
+            current,
+            self.evm_node_alerts_config
                 .evm_block_syncing_block_height_difference,
             BlockHeightDifferenceIncreasedAboveThresholdAlert,
             BlockHeightDifferenceDecreasedBelowThresholdAlert,
@@ -2130,12 +2129,14 @@ class TestAlertingFactory(unittest.TestCase):
         # Check that an above threshold INFO alert is raised. Current is set to
         # warning + 1 to not trigger a warning alert as it is expected that
         # critical <= warning.
-        current = float(self.evm_node_alerts_config
+        current = int(
+            self.evm_node_alerts_config
                         .evm_block_syncing_block_height_difference[
                             'warning_threshold']) - 1
         alert_timestamp = datetime.now().timestamp()
         self.test_evm_factory_instance.classify_thresholded_alert(
-            current, self.evm_node_alerts_config
+            current,
+            self.evm_node_alerts_config
                 .evm_block_syncing_block_height_difference,
             BlockHeightDifferenceIncreasedAboveThresholdAlert,
             BlockHeightDifferenceDecreasedBelowThresholdAlert,
@@ -2178,11 +2179,12 @@ class TestAlertingFactory(unittest.TestCase):
         self.assertEqual(1, len(data_for_alerting))
 
         # Send critical decrease below threshold alert
-        current = float(self.evm_node_alerts_config
+        current = int(self.evm_node_alerts_config
                         .evm_block_syncing_block_height_difference[
                             'critical_threshold']) + 1
         self.test_evm_factory_instance.classify_thresholded_alert(
-            current, self.evm_node_alerts_config
+            current,
+            self.evm_node_alerts_config
                 .evm_block_syncing_block_height_difference,
             BlockHeightDifferenceIncreasedAboveThresholdAlert,
             BlockHeightDifferenceDecreasedBelowThresholdAlert,
@@ -2194,12 +2196,13 @@ class TestAlertingFactory(unittest.TestCase):
         data_for_alerting.clear()
 
         # Check that 2 alerts are raised, below critical and above warning
-        current = float(self.evm_node_alerts_config
+        current = int(self.evm_node_alerts_config
                         .evm_block_syncing_block_height_difference[
                             'critical_threshold']) - 1
         alert_timestamp = datetime.now().timestamp() + 10
         self.test_evm_factory_instance.classify_thresholded_alert(
-            current, self.evm_node_alerts_config
+            current,
+            self.evm_node_alerts_config
                 .evm_block_syncing_block_height_difference,
             BlockHeightDifferenceIncreasedAboveThresholdAlert,
             BlockHeightDifferenceDecreasedBelowThresholdAlert,

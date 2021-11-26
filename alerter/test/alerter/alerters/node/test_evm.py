@@ -667,7 +667,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
             self.test_node_name, self.test_last_monitored)
         self.assertTrue(call_1 in calls)
 
-        mock_no_change_alert.assert_not_called
+        mock_no_change_alert.assert_not_called()
         mock_thresh_alert.assert_not_called()
         mock_cond_alert.assert_not_called()
         mock_reverse.assert_not_called()

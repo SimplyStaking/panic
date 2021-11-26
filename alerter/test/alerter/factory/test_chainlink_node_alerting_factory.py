@@ -181,13 +181,15 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
                 TimedTaskTracker(timedelta(
                     seconds=total_headers_thresholds['warning_threshold'])),
             GroupedChainlinkNodeAlertsMetricCode.
-                MaxUnconfirmedBlocksThreshold.value: TimedTaskTracker(
-                timedelta(seconds=unconfirmed_blocks_thresholds[
-                    'warning_time_window'])),
+                MaxUnconfirmedBlocksThreshold.value:
+                TimedTaskTracker(
+                    timedelta(seconds=unconfirmed_blocks_thresholds[
+                        'warning_time_window'])),
             GroupedChainlinkNodeAlertsMetricCode.
-                NoOfUnconfirmedTxsThreshold.value: TimedTaskTracker(
-                timedelta(seconds=unconfirmed_txs_thresholds[
-                    'warning_time_window'])),
+                NoOfUnconfirmedTxsThreshold.value:
+                TimedTaskTracker(
+                    timedelta(seconds=unconfirmed_txs_thresholds[
+                        'warning_time_window'])),
             GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
                 TimedTaskTracker(timedelta(seconds=node_is_down_thresholds[
                     'warning_threshold'])),
@@ -201,13 +203,15 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
                 TimedTaskTracker(timedelta(seconds=total_headers_thresholds[
                     'critical_threshold'])),
             GroupedChainlinkNodeAlertsMetricCode.
-                MaxUnconfirmedBlocksThreshold.value: TimedTaskTracker(
-                timedelta(seconds=unconfirmed_blocks_thresholds[
-                    'critical_time_window'])),
+                MaxUnconfirmedBlocksThreshold.value:
+                TimedTaskTracker(
+                    timedelta(seconds=unconfirmed_blocks_thresholds[
+                        'critical_time_window'])),
             GroupedChainlinkNodeAlertsMetricCode.
-                NoOfUnconfirmedTxsThreshold.value: TimedTaskTracker(
-                timedelta(seconds=unconfirmed_txs_thresholds[
-                    'critical_time_window'])),
+                NoOfUnconfirmedTxsThreshold.value:
+                TimedTaskTracker(
+                    timedelta(seconds=unconfirmed_txs_thresholds[
+                        'critical_time_window'])),
             GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
                 TimedTaskTracker(timedelta(seconds=node_is_down_thresholds[
                     'critical_threshold'])),
@@ -221,17 +225,20 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
                 TimedTaskLimiter(timedelta(
                     seconds=total_headers_thresholds['critical_repeat'])),
             GroupedChainlinkNodeAlertsMetricCode.
-                MaxUnconfirmedBlocksThreshold.value: TimedTaskLimiter(
-                timedelta(seconds=unconfirmed_blocks_thresholds[
-                    'critical_repeat'])),
+                MaxUnconfirmedBlocksThreshold.value:
+                TimedTaskLimiter(
+                    timedelta(seconds=unconfirmed_blocks_thresholds[
+                        'critical_repeat'])),
             GroupedChainlinkNodeAlertsMetricCode.
-                NoOfUnconfirmedTxsThreshold.value: TimedTaskLimiter(
-                timedelta(seconds=unconfirmed_txs_thresholds[
-                    'critical_repeat'])),
+                NoOfUnconfirmedTxsThreshold.value:
+                TimedTaskLimiter(
+                    timedelta(seconds=unconfirmed_txs_thresholds[
+                        'critical_repeat'])),
             GroupedChainlinkNodeAlertsMetricCode.
-                TotalErroredJobRunsThreshold.value: TimedTaskLimiter(
-                timedelta(seconds=error_jobs_thresholds[
-                    'critical_repeat'])),
+                TotalErroredJobRunsThreshold.value:
+                TimedTaskLimiter(
+                    timedelta(seconds=error_jobs_thresholds[
+                        'critical_repeat'])),
             GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value:
                 TimedTaskLimiter(timedelta(seconds=eth_balance_thresholds[
                     'critical_repeat'])),
