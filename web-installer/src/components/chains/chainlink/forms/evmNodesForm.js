@@ -15,6 +15,8 @@ import CssTextField from 'assets/jss/custom-jss/CssTextField';
 import GridContainer from 'components/material_ui/Grid/GridContainer';
 import GridItem from 'components/material_ui/Grid/GridItem';
 
+let isDirty = false;
+
 const EvmNodesForm = ({
   errors,
   values,
@@ -22,8 +24,15 @@ const EvmNodesForm = ({
   handleChange,
   setFieldValue,
   data,
+  dirty,
+  toggleDirtyForm,
 }) => {
   const classes = useStyles();
+
+  if (dirty !== isDirty) {
+    isDirty = dirty;
+    toggleDirtyForm({ isDirty });
+  }
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -51,7 +60,12 @@ const EvmNodesForm = ({
           <Divider />
           <Box m={2} p={3}>
             <form onSubmit={handleSubmit} className="root">
-              <Grid container spacing={3} justifyContent="center" alignItems="center">
+              <Grid
+                container
+                spacing={3}
+                justifyContent="center"
+                alignItems="center"
+              >
                 <Grid item xs={12}>
                   <CssTextField
                     id="evm-node-name-outlined-full-width"
@@ -75,7 +89,10 @@ const EvmNodesForm = ({
                       endAdornment: (
                         <InputAdornment position="end">
                           <MuiThemeProvider theme={theme}>
-                            <Tooltip title={data.evmForm.nameTip} placement="left">
+                            <Tooltip
+                              title={data.evmForm.nameTip}
+                              placement="left"
+                            >
                               <InfoIcon />
                             </Tooltip>
                           </MuiThemeProvider>
@@ -105,7 +122,10 @@ const EvmNodesForm = ({
                       endAdornment: (
                         <InputAdornment position="end">
                           <MuiThemeProvider theme={theme}>
-                            <Tooltip title={data.evmForm.httpUrlTip} placement="left">
+                            <Tooltip
+                              title={data.evmForm.httpUrlTip}
+                              placement="left"
+                            >
                               <InfoIcon />
                             </Tooltip>
                           </MuiThemeProvider>
@@ -115,7 +135,12 @@ const EvmNodesForm = ({
                   />
                 </Grid>
                 <Grid item xs={2}>
-                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
+                  <Grid
+                    container
+                    direction="row"
+                    justifyContent="flex-end"
+                    alignItems="center"
+                  >
                     <PingRPC
                       disabled={false}
                       httpUrl={values.node_http_url}
@@ -195,6 +220,8 @@ EvmNodesForm.propTypes = {
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
+  toggleDirtyForm: PropTypes.func.isRequired,
+  dirty: PropTypes.bool.isRequired,
   data: PropTypes.shape({
     evmForm: PropTypes.shape({
       title: PropTypes.string.isRequired,

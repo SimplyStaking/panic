@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import OpsGenieForm from 'components/channels/forms/opsGenieForm';
 import OpsGenieTable from 'components/channels/tables/opsGenieTable';
 import { addOpsGenie, removeOpsGenie } from 'redux/actions/channelActions';
+import { toggleDirty } from 'redux/actions/pageActions';
 import OpsGenieSchema from './schemas/opsGenieSchema';
 
 const Form = withFormik({
@@ -19,6 +20,10 @@ const Form = withFormik({
     critical: false,
     error: false,
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => OpsGenieSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveOpsGenieDetails } = props;
@@ -50,6 +55,7 @@ const mapStateToProps = (state) => ({
 function mapDispatchToProps(dispatch) {
   return {
     saveOpsGenieDetails: (details) => dispatch(addOpsGenie(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 

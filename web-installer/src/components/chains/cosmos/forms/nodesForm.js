@@ -20,10 +20,17 @@ import CssTextField from 'assets/jss/custom-jss/CssTextField';
 import GridContainer from 'components/material_ui/Grid/GridContainer';
 import GridItem from 'components/material_ui/Grid/GridItem';
 
+let isDirty = false;
+
 const NodesForm = ({
-  errors, values, handleSubmit, handleChange, setFieldValue, data,
+  errors, values, handleSubmit, handleChange, setFieldValue, data, dirty, toggleDirtyForm,
 }) => {
   const classes = useStyles();
+
+  if (dirty !== isDirty) {
+    isDirty = dirty;
+    toggleDirtyForm({ isDirty });
+  }
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -470,6 +477,8 @@ NodesForm.propTypes = {
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
+  toggleDirtyForm: PropTypes.func.isRequired,
+  dirty: PropTypes.bool.isRequired,
   data: PropTypes.shape({
     nodeForm: PropTypes.shape({
       title: PropTypes.string.isRequired,

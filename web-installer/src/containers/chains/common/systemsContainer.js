@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import SystemForm from 'components/chains/common/forms/systemForm';
 import SystemTable from 'components/chains/common/tables/systemTable';
 import { addSystem, removeSystem } from 'redux/actions/generalActions';
-import { changeStep, changePage } from 'redux/actions/pageActions';
+import { changeStep, changePage, toggleDirty } from 'redux/actions/pageActions';
 import { GENERAL } from 'constants/constants';
 import GeneralData from 'data/general';
 import ChainlinkData from 'data/chainlink';
@@ -21,6 +21,10 @@ const Form = withFormik({
     exporter_url: '',
     monitor_system: true,
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => SystemSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveSystemDetails, currentChain } = props;
@@ -40,6 +44,7 @@ const Form = withFormik({
 function mapDispatchToPropsSave(dispatch) {
   return {
     saveSystemDetails: (details) => dispatch(addSystem(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 

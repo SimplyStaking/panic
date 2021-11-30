@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import {
@@ -11,7 +12,11 @@ import {
   MenuItem,
   Select,
   InputLabel,
+  InputAdornment,
 } from '@material-ui/core';
+import IconButton from '@material-ui/core/IconButton';
+import AddCircleIcon from '@material-ui/icons/AddCircle';
+import CancelIcon from '@material-ui/icons/Cancel';
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
@@ -32,6 +37,9 @@ const WeiWatchersForm = ({
   const [name, setName] = useState('');
   const [weiWatchersUrl, setWeiWatchersUrl] = useState('');
   const [monitorContracts, setMonitorContracts] = useState(false);
+  const [customWeiWatchersNetworkInput, setcustomWeiWatchersNetworkInput] = useState('');
+  const [customWeiWatchersURLInput, setcustomWeiWatchersURLInput] = useState('');
+  const [customWeiWatchersInput, setCustomWeiWatchersInputActive] = useState(false);
 
   const createSendPayload = () => {
     const payload = {
@@ -45,6 +53,15 @@ const WeiWatchersForm = ({
 
   const handleNameChange = (event) => {
     setName(event.target.value);
+    setCustomWeiWatchersInputActive(false);
+  };
+
+  const handleCustomWeiWatchersNetworkChange = (event) => {
+    setcustomWeiWatchersNetworkInput(event.target.value);
+  };
+
+  const handleCustomWeiWatchersURLChange = (event) => {
+    setcustomWeiWatchersURLInput(event.target.value);
   };
 
   const handleSetMonitor = (monitorContract) => {
@@ -113,10 +130,11 @@ const WeiWatchersForm = ({
           <Divider />
           <Box m={2} p={3}>
             <form className="root">
-              <Grid container spacing={3} justifyContent="center" alignItems="center">
-                <Grid item xs={12}>
+              <Grid container spacing={3} justifyContent="flex-end">
+                <Grid container item xs={12} spacing={3} justifyContent="flex-start">
                   <InputLabel id="network-select-label">Network Name</InputLabel>
-                  <br />
+                </Grid>
+                <Grid item xs={customWeiWatchersInput ? 12 : 11}>
                   <Select
                     labelId="network-select-label"
                     id="network-names-customized-select"
@@ -138,47 +156,158 @@ const WeiWatchersForm = ({
                     ))}
                   </Select>
                 </Grid>
-                <Grid item xs={12}>
-                  <CssTextField
-                    id="wei-watchers-url-outlined-full-width"
-                    value={weiWatchersUrl}
-                    disabled
-                    label="WeiWatchers URL"
-                    type="text"
-                    style={{ margin: 8 }}
-                    name="weiwatchers_url"
-                    placeholder={data.contractForm.weiWatchersHolder}
-                    fullWidth
-                    margin="normal"
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                    variant="outlined"
-                    autoComplete="off"
-                  />
-                </Grid>
-                <Grid item xs={4}>
-                  <Box pl={1}>
-                    <Typography> Enable Contract Monitoring </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={1}>
-                  <FormControlLabel
-                    control={(
-                      <Switch
-                        checked={monitorContracts}
+                {!customWeiWatchersInput
+                  ? (
+                    <Grid container item xs={1} alignContent="center" justifyContent="center">
+                      <IconButton
                         onClick={() => {
-                          handleSetMonitor(!monitorContracts);
+                          setCustomWeiWatchersInputActive(!customWeiWatchersInput);
                         }}
-                        name="monitor_contracts"
-                        color="primary"
+                      >
+                        <AddCircleIcon />
+                      </IconButton>
+                    </Grid>
+                  )
+                  : ''}
+                {!customWeiWatchersInput
+                  ? (
+                    <Grid item xs={12}>
+                      <CssTextField
+                        id="wei-watchers-url-outlined-full-width"
+                        value={weiWatchersUrl}
+                        disabled
+                        label="WeiWatchers URL"
+                        type="text"
+                        style={{ margin: 8 }}
+                        name="weiwatchers_url"
+                        placeholder={data.contractForm.weiWatchersHolder}
+                        fullWidth
+                        margin="normal"
+                        InputLabelProps={{
+                          shrink: true,
+                        }}
+                        variant="outlined"
+                        autoComplete="off"
                       />
-                    )}
-                    label=""
-                  />
-                </Grid>
-                <Grid item xs={1}>
-                  <Grid container justifyContent="flex-start">
+                    </Grid>
+                  )
+                  : (
+                    <Grid container spacing={1} xs={12} alignContent="center">
+                      <Grid item xs={5}>
+                        <CssTextField
+                          id="custom-wei-watchers-network-outlined-full-width"
+                          value={customWeiWatchersNetworkInput}
+                          label="Custom Network Name"
+                          type="text"
+                          style={{ margin: 8 }}
+                          name="customWeiWatchersNetworkInput"
+                          placeholder="Enter custom network name."
+                          onChange={handleCustomWeiWatchersNetworkChange}
+                          fullWidth
+                          margin="normal"
+                          InputLabelProps={{
+                            shrink: true,
+                          }}
+                          variant="outlined"
+                          autoComplete="off"
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <MuiThemeProvider theme={theme}>
+                                  <Tooltip title={data.contractForm.nameTip} placement="left">
+                                    <InfoIcon />
+                                  </Tooltip>
+                                </MuiThemeProvider>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      </Grid>
+                      <Grid item xs={5}>
+                        <CssTextField
+                          id="custom-wei-watchers-url-outlined-full-width"
+                          value={customWeiWatchersURLInput}
+                          label="Custom Network URL"
+                          type="text"
+                          style={{ margin: 8 }}
+                          name="customWeiWatchersURLInput"
+                          placeholder="Enter custom network URL."
+                          onChange={handleCustomWeiWatchersURLChange}
+                          fullWidth
+                          margin="normal"
+                          InputLabelProps={{
+                            shrink: true,
+                          }}
+                          variant="outlined"
+                          autoComplete="off"
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <MuiThemeProvider theme={theme}>
+                                  <Tooltip title={data.contractForm.urlTip} placement="left">
+                                    <InfoIcon />
+                                  </Tooltip>
+                                </MuiThemeProvider>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      </Grid>
+                      <Grid container xs={1} alignContent="center" justifyContent="flex-end">
+                        <Grid item alignContent="center" justifyContent="flex-end">
+                          <IconButton
+                            disabled={customWeiWatchersNetworkInput === '' || customWeiWatchersURLInput === ''}
+                            onClick={() => {
+                              if (customWeiWatchersNetworkInput !== '') {
+                                setList(weiWatchersList.concat([{
+                                  network: customWeiWatchersNetworkInput,
+                                  url: customWeiWatchersURLInput,
+                                }]));
+                                setName(customWeiWatchersNetworkInput);
+                                setCustomWeiWatchersInputActive(!customWeiWatchersInput);
+                                setcustomWeiWatchersNetworkInput('');
+                                setcustomWeiWatchersURLInput('');
+                              }
+                            }}
+                          >
+                            <AddCircleIcon />
+                          </IconButton>
+
+                        </Grid>
+                      </Grid>
+                      <Grid container xs={1} alignContent="center" justifyContent="center">
+                        <Grid item alignContent="center">
+                          <IconButton
+                            onClick={() => {
+                              setCustomWeiWatchersInputActive(!customWeiWatchersInput);
+                            }}
+                          >
+                            <CancelIcon />
+                          </IconButton>
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  )}
+                <Grid container alignContent="flex-start" justifyContent="flex-start">
+                  <Grid container item xs={3} alignContent="center" justifyContent="center">
+                    <Typography> Enable Contract Monitoring </Typography>
+                  </Grid>
+                  <Grid item xs={1}>
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={monitorContracts}
+                          onClick={() => {
+                            handleSetMonitor(!monitorContracts);
+                          }}
+                          name="monitor_contracts"
+                          color="primary"
+                        />
+                      )}
+                      label=""
+                    />
+                  </Grid>
+                  <Grid container item xs={1} alignContent="center" justifyContent="flex-start">
                     <MuiThemeProvider theme={theme}>
                       <Tooltip title={data.contractForm.monitorContractTip} placement="left">
                         <InfoIcon />
@@ -186,7 +315,6 @@ const WeiWatchersForm = ({
                     </MuiThemeProvider>
                   </Grid>
                 </Grid>
-                <Grid item xs={6} />
               </Grid>
             </form>
           </Box>
@@ -201,6 +329,7 @@ WeiWatchersForm.propTypes = {
     name: PropTypes.string.isRequired,
     weiwatchers_url: PropTypes.string.isRequired,
     monitor_contracts: PropTypes.bool.isRequired,
+    customWeiWatchersNetworkInput: PropTypes.string.isRequired,
   }).isRequired,
   data: PropTypes.shape({
     contractForm: PropTypes.shape({
@@ -209,7 +338,6 @@ WeiWatchersForm.propTypes = {
       nameHolder: PropTypes.string.isRequired,
       nameTip: PropTypes.string.isRequired,
       weiWatchersUrlHolder: PropTypes.string.isRequired,
-      weiWatchersTip: PropTypes.string.isRequired,
       monitorContractTip: PropTypes.string.isRequired,
       backStep: PropTypes.string.isRequired,
       nextStep: PropTypes.string.isRequired,

@@ -15,6 +15,8 @@ import GridContainer from 'components/material_ui/Grid/GridContainer';
 import GridItem from 'components/material_ui/Grid/GridItem';
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
 
+let isDirty = false;
+
 /*
  * Systems form contains all the information and structure needed to setup
  * a system configuration. Contains functionality to test if the provided system
@@ -27,9 +29,14 @@ const SystemForm = ({
   handleSubmit,
   handleChange,
   setFieldValue,
-  data,
+  data, dirty, toggleDirtyForm,
 }) => {
   const classes = useStyles();
+
+  if (dirty !== isDirty) {
+    isDirty = dirty;
+    toggleDirtyForm({ isDirty });
+  }
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -187,6 +194,8 @@ SystemForm.propTypes = {
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
+  toggleDirtyForm: PropTypes.func.isRequired,
+  dirty: PropTypes.bool.isRequired,
   data: PropTypes.shape({
     systemForm: PropTypes.shape({
       title: PropTypes.string.isRequired,

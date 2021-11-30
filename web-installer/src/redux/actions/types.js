@@ -15,6 +15,8 @@ export const REMOVE_SLACK = 'REMOVE_SLACK';
 // Page related actions
 export const CHANGE_PAGE = 'CHANGE_PAGE';
 export const CHANGE_STEP = 'CHANGE_STEP';
+export const TOGGLE_DIRTY = 'TOGGLE_DIRTY';
+export const RESET_DIRTY = 'RESET_DIRTY';
 
 // Cosmos chains related actions
 export const ADD_CHAIN_COSMOS = 'ADD_CHAIN_COSMOS';

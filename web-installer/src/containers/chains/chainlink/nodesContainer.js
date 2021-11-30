@@ -4,6 +4,7 @@ import NodesForm from 'components/chains/chainlink/forms/nodesForm';
 import NodesTable from 'components/chains/chainlink/tables/nodesTable';
 import { addNodeChainlink, removeNodeChainlink } from 'redux/actions/chainlinkActions';
 import ChainlinkData from 'data/chainlink';
+import { toggleDirty } from 'redux/actions/pageActions';
 import ChainlinkNodeSchema from './schemas/chainlinkNodeSchema';
 
 // This performs chainlink node name validation, by checking if the node name
@@ -18,6 +19,10 @@ const Form = withFormik({
     monitor_prometheus: true,
     monitor_node: true,
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => ChainlinkNodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveNodeDetails, currentChain } = props;
@@ -53,6 +58,7 @@ const mapStateToProps = (state) => ({
 function mapDispatchToProps(dispatch) {
   return {
     saveNodeDetails: (details) => dispatch(addNodeChainlink(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 

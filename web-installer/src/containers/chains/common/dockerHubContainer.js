@@ -8,6 +8,7 @@ import GeneralData from 'data/general';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
 import ChainlinkData from 'data/chainlink';
+import { toggleDirty } from 'redux/actions/pageActions';
 import DockerHubSchema from './schemas/dockerHubSchema';
 
 // This performs docker validation, by checking if the docker is already
@@ -20,6 +21,10 @@ const Form = withFormik({
     name: '',
     monitor_docker: true,
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => DockerHubSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveDockerHubDetails, currentChain } = props;
@@ -40,6 +45,7 @@ const Form = withFormik({
 function mapDispatchToProps(dispatch) {
   return {
     saveDockerHubDetails: (details) => dispatch(addDockerHub(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 

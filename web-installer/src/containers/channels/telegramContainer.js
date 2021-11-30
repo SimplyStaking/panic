@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import TelegramForm from 'components/channels/forms/telegramForm';
 import TelegramTable from 'components/channels/tables/telegramTable';
 import { addTelegram, removeTelegram } from 'redux/actions/channelActions';
+import { toggleDirty } from 'redux/actions/pageActions';
 import TelegramSchema from './schemas/telegramSchema';
 
 const Form = withFormik({
@@ -22,6 +23,10 @@ const Form = withFormik({
     alerts: true,
     commands: true,
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => TelegramSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveTelegramDetails } = props;
@@ -55,6 +60,7 @@ const mapStateToProps = (state) => ({
 function mapDispatchToProps(dispatch) {
   return {
     saveTelegramDetails: (details) => dispatch(addTelegram(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 

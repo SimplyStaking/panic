@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import PagerDutyForm from 'components/channels/forms/pagerDutyForm';
 import PagerDutyTable from 'components/channels/tables/pagerDutyTable';
 import { addPagerDuty, removePagerDuty } from 'redux/actions/channelActions';
+import { toggleDirty } from 'redux/actions/pageActions';
 import PagerDutySchema from './schemas/pagerDutySchema';
 
 const Form = withFormik({
@@ -20,6 +21,10 @@ const Form = withFormik({
     critical: false,
     error: false,
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => PagerDutySchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { savePagerDutyDetails } = props;
@@ -51,6 +56,7 @@ const mapStateToProps = (state) => ({
 function mapDispatchToProps(dispatch) {
   return {
     savePagerDutyDetails: (details) => dispatch(addPagerDuty(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 

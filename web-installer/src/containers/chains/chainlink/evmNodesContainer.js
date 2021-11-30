@@ -4,6 +4,7 @@ import EvmNodesForm from 'components/chains/chainlink/forms/evmNodesForm';
 import EvmNodesTable from 'components/chains/chainlink/tables/evmNodesTable';
 import { addNodeEvm, removeNodeEvm } from 'redux/actions/chainlinkActions';
 import ChainlinkData from 'data/chainlink';
+import { toggleDirty } from 'redux/actions/pageActions';
 import EvmNodeSchema from './schemas/evmNodeSchema';
 
 // This performs evm node name validation, by checking if the node name
@@ -17,6 +18,10 @@ const Form = withFormik({
     node_http_url: '',
     monitor_node: true,
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => EvmNodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveNodeDetails, currentChain } = props;
@@ -51,6 +56,7 @@ const mapStateToProps = (state) => ({
 function mapDispatchToProps(dispatch) {
   return {
     saveNodeDetails: (details) => dispatch(addNodeEvm(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 

@@ -142,11 +142,11 @@ const chainlinkThresholdAlerts = {
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 180,
+        threshold: 300,
         enabled: true,
       },
       critical: {
-        threshold: 240,
+        threshold: 450,
         repeat: 180,
         repeat_enabled: true,
         enabled: true,
@@ -163,11 +163,11 @@ const chainlinkThresholdAlerts = {
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 180,
+        threshold: 300,
         enabled: true,
       },
       critical: {
-        threshold: 240,
+        threshold: 450,
         repeat: 180,
         repeat_enabled: true,
         enabled: true,
@@ -251,7 +251,7 @@ const chainlinkThresholdAlerts = {
         enabled: true,
       },
       critical: {
-        threshold: 5,
+        threshold: 15,
         repeat: 300,
         repeat_enabled: true,
         enabled: true,
@@ -310,11 +310,11 @@ const chainlinkThresholdAlerts = {
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 200,
+        threshold: 300,
         enabled: true,
       },
       critical: {
-        threshold: 300,
+        threshold: 450,
         repeat: 300,
         repeat_enabled: true,
         enabled: true,

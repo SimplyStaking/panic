@@ -9,6 +9,8 @@ const Form = withFormik({
     name: '',
     weiwatchers_url: '',
     monitor_contracts: true,
+    customWeiWatchersNetworkInput: '',
+    customWeiWatchersUrlInput: '',
   }),
 })(WeiWatchersForm);
 

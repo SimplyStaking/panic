@@ -19,9 +19,16 @@ import { defaultTheme, theme } from 'components/theme/default';
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
 import Data from 'data/channels';
 
+let isDirty = false;
+
 const EmailForm = ({
-  errors, values, handleSubmit, handleChange, setFieldValue,
+  errors, values, handleSubmit, handleChange, setFieldValue, dirty, toggleDirtyForm,
 }) => {
+  if (dirty !== isDirty) {
+    isDirty = dirty;
+    toggleDirtyForm({ isDirty });
+  }
+
   const updateToEmails = (event, emailsTo) => {
     setFieldValue('emails_to', emailsTo);
   };
@@ -375,6 +382,8 @@ EmailForm.propTypes = {
     port: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
+  toggleDirtyForm: PropTypes.func.isRequired,
+  dirty: PropTypes.bool.isRequired,
   values: PropTypes.shape({
     channel_name: PropTypes.string.isRequired,
     smtp: PropTypes.string.isRequired,

@@ -8,6 +8,7 @@ import GeneralData from 'data/general';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
 import ChainlinkData from 'data/chainlink';
+import { toggleDirty } from 'redux/actions/pageActions';
 import RepositorySchema from './schemas/repositorySchema';
 
 // This performs repository validation, by checking if the repository is already
@@ -20,6 +21,10 @@ const Form = withFormik({
     repo_name: '',
     monitor_repo: true,
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => RepositorySchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveRepositoryDetails, currentChain } = props;
@@ -40,6 +45,7 @@ const Form = withFormik({
 function mapDispatchToProps(dispatch) {
   return {
     saveRepositoryDetails: (details) => dispatch(addRepository(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 
