@@ -20,7 +20,6 @@ from src.utils.constants.rabbitmq import (
     CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from src.utils.logging import log_and_print
 from src.utils.types import Monitorable, convert_to_int, convert_to_float
 
 
@@ -235,7 +234,7 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                         reverse=True)
                     if int(contract_data['contractVersion']) == 3:
                         last_round_observed = int(sorted_historical_rounds[0][
-                            'roundId'])
+                                                      'roundId'])
                     elif int(contract_data['contractVersion']) == 4:
                         round_data = next((
                             item for item in
@@ -298,7 +297,7 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                         reverse=True)
                     if int(contract_data['contractVersion']) == 3:
                         last_round_observed = int(sorted_historical_rounds[0][
-                            'roundId'])
+                                                      'roundId'])
                     elif int(contract_data['contractVersion']) == 4:
                         round_data = next((
                             item for item in

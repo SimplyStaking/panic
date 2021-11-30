@@ -3,6 +3,11 @@ version: '3.7'
 services:
   mongo-test:
     image: 'mongo'
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
     networks:
       panic_net:
         ipv4_address: '${DB_IP_TEST}'
@@ -13,6 +18,11 @@ services:
 
   redis-test:
     image: 'redis'
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
     networks:
       panic_net:
         ipv4_address: '${REDIS_IP_TEST}'
@@ -21,6 +31,11 @@ services:
 
   rabbitmq-test:
     image: 'rabbitmq:3-management'
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
     networks:
       panic_net:
         ipv4_address: '${RABBIT_IP_TEST}'
@@ -68,6 +83,11 @@ services:
       context: './'
       dockerfile: './alerter/Tests_Dockerfile'
     image: 'simplyvc/panic_alerter_tests:0.3.0'
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
     volumes:
       - './config:/opt/panic/config'
       - './alerter/logs:/opt/panic/alerter/logs'

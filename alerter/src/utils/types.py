@@ -1,6 +1,12 @@
 from enum import Enum
 from typing import Union, Any, Type
 
+from src.alerter.alerts.contract.chainlink import (
+    ErrorNoSyncedDataSources, SyncedDataSourcesFound,
+    ErrorContractsNotRetrieved, ContractsNowRetrieved,
+    PriceFeedObservationsMissedIncreasedAboveThreshold, PriceFeedObservedAgain,
+    PriceFeedDeviationInreasedAboveThreshold,
+    PriceFeedDeviationDecreasedBelowThreshold, ConsensusFailure)
 from src.alerter.alerts.node.chainlink import (
     NoChangeInHeightAlert, BlockHeightUpdatedAlert,
     NoChangeInTotalHeadersReceivedAlert, ReceivedANewHeaderAlert,
@@ -16,6 +22,9 @@ from src.alerter.alerts.node.chainlink import (
     InvalidUrlAlert, ValidUrlAlert, MetricNotFoundErrorAlert, MetricFoundAlert,
     PrometheusSourceIsDownAlert, PrometheusSourceBackUpAgainAlert,
     NodeStillDownAlert, NodeWentDownAtAlert, NodeBackUpAgainAlert)
+from src.alerter.alerts.node.evm import NoChangeInBlockHeight, \
+    BlockHeightDifferenceIncreasedAboveThresholdAlert, \
+    BlockHeightDifferenceDecreasedBelowThresholdAlert
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -46,17 +55,18 @@ IncreasedAboveThresholdSystemAlert = Union[
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,
     SystemRAMUsageIncreasedAboveThresholdAlert,
-    SystemStorageUsageIncreasedAboveThresholdAlert
+    SystemStorageUsageIncreasedAboveThresholdAlert,
 ]
 DecreasedBelowThresholdSystemAlert = Union[
     OpenFileDescriptorsDecreasedBelowThresholdAlert,
     SystemCPUUsageDecreasedBelowThresholdAlert,
     SystemRAMUsageDecreasedBelowThresholdAlert,
-    SystemStorageUsageDecreasedBelowThresholdAlert
+    SystemStorageUsageDecreasedBelowThresholdAlert,
 ]
 
 ChainlinkNodeNoChangeInAlert = Union[
     NoChangeInHeightAlert, NoChangeInTotalHeadersReceivedAlert,
+    NoChangeInBlockHeight
 ]
 ChainlinkNodeChangeInAlert = Union[
     BlockHeightUpdatedAlert, ReceivedANewHeaderAlert
@@ -68,13 +78,18 @@ IncreasedAboveThresholdChainlinkNodeAlert = Union[
     MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
     NoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
     TotalErroredJobRunsIncreasedAboveThresholdAlert,
-    EthBalanceIncreasedAboveThresholdAlert
+    EthBalanceIncreasedAboveThresholdAlert,
+    PriceFeedObservationsMissedIncreasedAboveThreshold,
+    PriceFeedDeviationInreasedAboveThreshold,
+    BlockHeightDifferenceIncreasedAboveThresholdAlert
 ]
 DecreasedBelowThresholdChainlinkNodeAlert = Union[
     MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
     NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
     TotalErroredJobRunsDecreasedBelowThresholdAlert,
-    EthBalanceDecreasedBelowThresholdAlert
+    EthBalanceDecreasedBelowThresholdAlert,
+    PriceFeedDeviationDecreasedBelowThreshold,
+    BlockHeightDifferenceDecreasedBelowThresholdAlert
 ]
 IncreasedAboveThresholdAlert = Union[IncreasedAboveThresholdChainlinkNodeAlert]
 DecreasedBelowThresholdAlert = Union[DecreasedBelowThresholdChainlinkNodeAlert]
@@ -82,15 +97,17 @@ DecreasedBelowThresholdAlert = Union[DecreasedBelowThresholdChainlinkNodeAlert]
 ChainlinkNodeConditionalAlert = Union[
     ChangeInSourceNodeAlert, GasBumpIncreasedOverNodeGasPriceLimitAlert,
     EthBalanceToppedUpAlert, PrometheusSourceIsDownAlert,
-    PrometheusSourceBackUpAgainAlert
+    PrometheusSourceBackUpAgainAlert, PriceFeedObservedAgain, ConsensusFailure
 ]
 ConditionalAlert = Union[ChainlinkNodeConditionalAlert]
 
 ChainlinkNodeErrorAlert = Union[
-    InvalidUrlAlert, MetricNotFoundErrorAlert
+    InvalidUrlAlert, MetricNotFoundErrorAlert, ErrorNoSyncedDataSources,
+    ErrorContractsNotRetrieved
 ]
 ChainlinkNodeErrorSolvedAlert = Union[
-    ValidUrlAlert, MetricFoundAlert
+    ValidUrlAlert, MetricFoundAlert, SyncedDataSourcesFound,
+    ContractsNowRetrieved
 ]
 ErrorAlert = Union[ChainlinkNodeErrorAlert]
 ErrorSolvedAlert = Union[ChainlinkNodeErrorSolvedAlert]

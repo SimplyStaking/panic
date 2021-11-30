@@ -2,26 +2,26 @@ import fnmatch
 import logging
 import os
 import sys
-import time
 import threading
+import time
 from configparser import (ConfigParser, DuplicateSectionError,
                           DuplicateOptionError, InterpolationError,
                           ParsingError)
 from datetime import datetime
 from types import FrameType
-from typing import Any, Dict, List, Optional, Callable
+from typing import List, Optional, Callable
 
 import pika
-from pika import BasicProperties
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.exceptions import AMQPChannelError, AMQPConnectionError
 from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
-from src.abstract.publisher_subscriber import QueuingPublisherSubscriberComponent
+from src.abstract.publisher_subscriber import \
+    QueuingPublisherSubscriberComponent
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils import routing_key
 from src.utils import env
+from src.utils import routing_key
 from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, CONFIGS_MANAGER_HEARTBEAT_QUEUE,
     PING_ROUTING_KEY, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)

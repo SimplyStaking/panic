@@ -8,7 +8,6 @@ from datetime import timedelta, datetime
 from typing import Dict, Any
 from unittest import mock
 from unittest.mock import MagicMock
-from unittest.mock import call
 
 import pika
 import pika.exceptions
@@ -18,8 +17,6 @@ from watchdog.events import (
     FileCreatedEvent, FileModifiedEvent, FileSystemEvent, FileDeletedEvent
 )
 from watchdog.observers.polling import PollingObserver
-from src.abstract.publisher_subscriber import \
-    QueuingPublisherSubscriberComponent
 
 from src.config_manager import ConfigsManager
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -30,7 +27,7 @@ from src.utils.constants.rabbitmq import (CONFIG_EXCHANGE,
                                           PING_ROUTING_KEY)
 from test.utils.utils import (
     delete_exchange_if_exists, delete_queue_if_exists,
-    disconnect_from_rabbit, connect_to_rabbit, infinite_fn
+    disconnect_from_rabbit, connect_to_rabbit
 )
 
 
@@ -232,7 +229,7 @@ class TestConfigsManager(unittest.TestCase):
               "test_field_2": "",
               "test_field_3": "10",
               "test_field_4": "true"
-         }}),
+          }}),
         (FileModifiedEvent("test_config"),
          """ [test_section_1]
              test_field_1=Hello
@@ -260,7 +257,7 @@ class TestConfigsManager(unittest.TestCase):
                  "test_field_3": "4",
                  "test_field_4": "off"
              }
-        }),
+         }),
         (FileDeletedEvent("test_config"), "", {}),
     ])
     @mock.patch.object(ConfigParser, "read", autospec=True)
@@ -299,22 +296,22 @@ class TestConfigsManager(unittest.TestCase):
               "test_field_2": "",
               "test_field_3": "10",
               "test_field_4": "true"
-        }},),
+          }},),
         ({
-            "DEFAULT": {},
-            "test_section_1": {
-                "test_field_1": "Hello",
-                "test_field_2": "",
-                "test_field_3": "10",
-                "test_field_4": "true"
-            },
-            "test_section_2": {
-                "test_field_1": "OK",
-                "test_field_2": "Bye",
-                "test_field_3": "4",
-                "test_field_4": "off"
-            }
-        },),
+             "DEFAULT": {},
+             "test_section_1": {
+                 "test_field_1": "Hello",
+                 "test_field_2": "",
+                 "test_field_3": "10",
+                 "test_field_4": "true"
+             },
+             "test_section_2": {
+                 "test_field_1": "OK",
+                 "test_field_2": "Bye",
+                 "test_field_3": "4",
+                 "test_field_4": "off"
+             }
+         },),
     ])
     def test_send_data(self, config: Dict[str, Any]):
         route_key = "test.route"

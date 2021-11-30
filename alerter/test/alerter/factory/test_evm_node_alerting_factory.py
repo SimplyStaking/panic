@@ -9,8 +9,7 @@ from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode as MetricCode
 from src.configs.alerts.node.evm import EVMNodeAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
-from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
-                              OccurrencesInTimePeriodTracker)
+from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter)
 
 
 class TestEVMNodeAlertingFactory(unittest.TestCase):
@@ -104,12 +103,12 @@ class TestEVMNodeAlertingFactory(unittest.TestCase):
             self.evm_node_alerts_config.evm_node_is_down)
         block_height_difference_thresholds = parse_alert_time_thresholds(
             ['critical_repeat'],
-            self.evm_node_alerts_config.
-            evm_block_syncing_block_height_difference)
+            self.evm_node_alerts_config
+                .evm_block_syncing_block_height_difference)
         no_change_in_block_height_thresholds = parse_alert_time_thresholds(
             ['warning_threshold', 'critical_threshold', 'critical_repeat'],
-            self.evm_node_alerts_config.
-            evm_block_syncing_no_change_in_block_height
+            self.evm_node_alerts_config
+                .evm_block_syncing_no_change_in_block_height
         )
 
         warning_window_timer = {

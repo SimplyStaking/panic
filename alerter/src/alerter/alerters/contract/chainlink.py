@@ -1,25 +1,22 @@
 import copy
 import json
 import logging
-import sys
 from datetime import datetime
-from typing import List, Dict, Optional, Any
+from typing import List, Dict
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
 import src.alerter.alerts.contract.chainlink as cl_alerts
-from src.alerter.alert_severities import Severity
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.factory.chainlink_contract_alerting_factory import \
     ChainlinkContractAlertingFactory
 from src.alerter.grouped_alerts_metric_code.contract.chainlink_contract_metric_code \
     import GroupedChainlinkContractAlertsMetricCode as MetricCode
+from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.configs.factory.node.chainlink_alerts import \
     ChainlinkContractAlertsConfigsFactory
-from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants.data import VALID_CHAINLINK_SOURCES
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, TOPIC, CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
@@ -178,8 +175,8 @@ class ChainlinkContractAlerter(Alerter):
                     # Compile all the historical rounds into one list to make
                     # querying easier
                     all_historical_rounds = current_historical_rounds + [
-                        x for x in previous_historical_rounds if x not in
-                        current_historical_rounds
+                        x for x in previous_historical_rounds
+                        if x not in current_historical_rounds
                     ]
                 elif current_historical_rounds is not None:
                     all_historical_rounds = current_historical_rounds
@@ -205,9 +202,9 @@ class ChainlinkContractAlerter(Alerter):
                 # This data is re-used in other alerts so it needs to be
                 # calculated beforehand
                 current_missed_observations = 0
-                if (None not in [curr_latest_round, last_round_observed]):
+                if None not in [curr_latest_round, last_round_observed]:
                     current_missed_observations = curr_latest_round - \
-                        last_round_observed
+                                                  last_round_observed
                 else:
                     current_missed_observations = None
 
@@ -215,9 +212,11 @@ class ChainlinkContractAlerter(Alerter):
                 if (str_to_bool(configs.price_feed_not_observed['enabled'])
                         and current_missed_observations is not None):
                     sub_config = configs.price_feed_not_observed
-                    self.alerting_factory.classify_thresholded_and_conditional_alert(
+                    self.alerting_factory.\
+                        classify_thresholded_and_conditional_alert(
                         current_missed_observations, sub_config,
-                        cl_alerts.PriceFeedObservationsMissedIncreasedAboveThreshold,
+                        cl_alerts.
+                            PriceFeedObservationsMissedIncreasedAboveThreshold,
                         cl_alerts.PriceFeedObservedAgain,
                         self._equal_condition_function, [
                             current_missed_observations, 0],
@@ -232,8 +231,8 @@ class ChainlinkContractAlerter(Alerter):
                 historical rounds and we are currently submitting observations.
                 """
                 if (str_to_bool(configs.price_feed_deviation['enabled']) and
-                    None not in [current_missed_observations,
-                                 sorted_historical_rounds] and
+                        None not in [current_missed_observations,
+                                     sorted_historical_rounds] and
                         current_missed_observations == 0 and
                         len(sorted_historical_rounds) > 0):
                     sub_config = configs.price_feed_deviation
@@ -241,7 +240,8 @@ class ChainlinkContractAlerter(Alerter):
                         'deviation']
 
                     if current_deviation is not None:
-                        self.alerting_factory.classify_thresholded_alert(
+                        self.alerting_factory.\
+                            classify_thresholded_alert_contract(
                             current_deviation, sub_config,
                             cl_alerts.PriceFeedDeviationInreasedAboveThreshold,
                             cl_alerts.PriceFeedDeviationDecreasedBelowThreshold,
@@ -267,8 +267,8 @@ class ChainlinkContractAlerter(Alerter):
                     # Attempt to get the previous historical round
                     round_to_find = curr_latest_round - 1
                     previous_round = next((
-                        item for item in all_historical_rounds if item[
-                            'roundId'] == round_to_find), None)
+                        item for item in all_historical_rounds
+                        if item['roundId'] == round_to_find), None)
                     sub_config = configs.consensus_failure
                     if previous_round is not None:
                         self.alerting_factory.classify_conditional_alert(
