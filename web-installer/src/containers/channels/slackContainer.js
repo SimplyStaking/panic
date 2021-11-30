@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import SlackForm from 'components/channels/forms/slackForm';
 import SlackTable from 'components/channels/tables/slackTable';
 import { addSlack, removeSlack } from 'redux/actions/channelActions';
+import { toggleDirty } from 'redux/actions/pageActions';
 import SlackSchema from './schemas/slackSchema';
 
 const Form = withFormik({
@@ -24,6 +25,10 @@ const Form = withFormik({
     alerts: true,
     commands: true,
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => SlackSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveSlackDetails } = props;
@@ -58,6 +63,7 @@ const mapStateToProps = (state) => ({
 function mapDispatchToProps(dispatch) {
   return {
     saveSlackDetails: (details) => dispatch(addSlack(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 

@@ -17,9 +17,7 @@ Change the contents of this file to this:
 - Added ChainlinkNodeAlerter and its tests.
 - Added ChainlinkContractAlerter and its tests.
 - Removed `no_of_active_jobs` as `job_subscriber_subscriptions` is no longer found
-- Added popups for mid-form navigation
-- Added custom weiwatcher network input
-- Added QOL improvements such as descriptions etc
+- Added QOL improvements: mid-form popup warnings, custom weiwatcher network input, other changes such as descriptions etc.
 
 ## 0.2.0
 

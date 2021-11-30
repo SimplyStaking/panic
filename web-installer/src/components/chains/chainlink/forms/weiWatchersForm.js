@@ -1,8 +1,6 @@
 /* eslint-disable react/prop-types */
-/* eslint-disable no-unused-vars */
 
 import React, { useState, useEffect } from 'react';
-import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import {
   Typography,
@@ -27,7 +25,6 @@ import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/p
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
 import GridContainer from 'components/material_ui/Grid/GridContainer';
 import GridItem from 'components/material_ui/Grid/GridItem';
-import { toggleDirty } from 'redux/actions/pageActions';
 
 const WeiWatchersForm = ({
   saveWeiWatchersDetails,

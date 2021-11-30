@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import EmailForm from 'components/channels/forms/emailForm';
 import EmailTable from 'components/channels/tables/emailTable';
 import { addEmail, removeEmail } from 'redux/actions/channelActions';
+import { toggleDirty } from 'redux/actions/pageActions';
 import EmailSchema from './schemas/emailSchema';
 
 const Form = withFormik({
@@ -26,6 +27,10 @@ const Form = withFormik({
     critical: false,
     error: false,
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => EmailSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveEmailDetails } = props;
@@ -61,6 +66,7 @@ const mapStateToProps = (state) => ({
 function mapDispatchToProps(dispatch) {
   return {
     saveEmailDetails: (details) => dispatch(addEmail(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 

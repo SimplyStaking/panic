@@ -1,4 +1,4 @@
-FROM node:12
+FROM node:16
 
 # Create app directory
 WORKDIR /opt/panic
@@ -11,7 +11,7 @@ COPY ./web-installer ./
 ENV GENERATE_SOURCEMAP=false
 
 # RUN npm install
-RUN npm install
+RUN npm ci --include=dev
 
 # Build installer
 RUN npm run-script build --only=production

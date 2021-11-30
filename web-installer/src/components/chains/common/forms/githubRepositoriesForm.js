@@ -1,5 +1,4 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import {
   Typography, Box, Grid, Switch, FormControlLabel, Tooltip, Divider,
@@ -14,7 +13,6 @@ import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/p
 import GridContainer from 'components/material_ui/Grid/GridContainer';
 import GridItem from 'components/material_ui/Grid/GridItem';
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
-import { toggleDirty } from 'redux/actions/pageActions';
 
 let isDirty = false;
 
@@ -168,10 +166,4 @@ GithubRepositoriesForm.propTypes = {
   }).isRequired,
 };
 
-function mapDispatchToProps(dispatch) {
-  return {
-    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
-  };
-}
-
-export default connect(null, mapDispatchToProps)(GithubRepositoriesForm);
+export default GithubRepositoriesForm;

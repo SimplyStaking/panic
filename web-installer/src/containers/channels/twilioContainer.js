@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import TwilioForm from 'components/channels/forms/twilioForm';
 import TwilioTable from 'components/channels/tables/twilioTable';
 import { addTwilio, removeTwilio } from 'redux/actions/channelActions';
+import { toggleDirty } from 'redux/actions/pageActions';
 import TwilioSchema from './schemas/twilioSchema';
 
 const Form = withFormik({
@@ -20,6 +21,10 @@ const Form = withFormik({
     twilio_phone_no: '',
     twilio_phone_numbers_to_dial_valid: [],
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => TwilioSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveTwilioDetails } = props;
@@ -49,6 +54,7 @@ const mapStateToProps = (state) => ({
 function mapDispatchToProps(dispatch) {
   return {
     saveTwilioDetails: (details) => dispatch(addTwilio(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 

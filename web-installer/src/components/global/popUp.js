@@ -11,14 +11,14 @@ const PopUp = (props) => {
 
         <Grid container spacing={2} justifyContent="center" alignItems="center">
 
-          <Grid container item xs={4} justify="center">
+          <Grid container item xs={12} justify="center">
             <WarningIcon fontSize="large" />
           </Grid>
           <Typography variant="h5">
-            Continuing will reset the unsubmitted data in this form.
+            Unsaved Changes.
           </Typography>
           <Typography variant="h6">
-            Are you sure you would like to proceed?
+            Form contains changes that will be lost. Do you wish to proceed?
           </Typography>
 
           <Grid item xs={12} />

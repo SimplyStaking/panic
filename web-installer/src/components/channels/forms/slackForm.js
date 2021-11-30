@@ -1,5 +1,4 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import {
   InputAdornment,
@@ -19,7 +18,6 @@ import { SendTestSlackButton } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
 import Data from 'data/channels';
-import { toggleDirty } from 'redux/actions/pageActions';
 
 let isDirty = false;
 
@@ -353,10 +351,4 @@ SlackForm.propTypes = {
   setFieldValue: PropTypes.func.isRequired,
 };
 
-function mapDispatchToProps(dispatch) {
-  return {
-    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
-  };
-}
-
-export default connect(null, mapDispatchToProps)(SlackForm);
+export default SlackForm;
