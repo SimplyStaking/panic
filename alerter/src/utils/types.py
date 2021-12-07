@@ -169,11 +169,17 @@ def convert_to_int(value: Union[int, str, float], default_return: Any) -> Any:
 
 
 def convert_none_to_bool(value: Union[str, bool], default_return: bool) -> bool:
-    # Converts the string 'none' to false else just returns the bool
+    # Converts the string 'none' to false else just returns the bool if the
+    # passed string represents a bool. If not successful it returns the
+    # default_return
     try:
-        if str(value).lower() in ['none', 'false']:
+        str_val = str(value).lower()
+        if str_val in ['none', 'false']:
             return False
-        return True
+        elif str_val in ['true']:
+            return True
+        else:
+            return default_return
     except (TypeError, ValueError):
         return default_return
 
