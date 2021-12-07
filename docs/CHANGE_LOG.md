@@ -4,6 +4,8 @@ Change the contents of this file to this:
 
 ## 0.3.0
 
+Released on 7th December 2021
+
 - Updated the Web-Installer to cater for GETH RPC Monitoring
 - Added EVM node store, Chainlink contract store and tests for both.
 - Added EVM Node Monitoring along with the monitor tests.
@@ -19,7 +21,9 @@ Change the contents of this file to this:
 - Removed `no_of_active_jobs` as `job_subscriber_subscriptions` is no longer found
 - Added QOL improvements: mid-form popup warnings, custom weiwatcher network input, other changes such as descriptions etc.
 
-## 0.2.0
+## 0.2.0 (Part of 0.3.0 tag)
+
+Released on 7th December 2021
 
 - Fixed tests to work with alerter changes. Merged multiple tests into one using parameterization.
 - Updated Alerter to fix bugs with regards to metric changes in thresholds.
