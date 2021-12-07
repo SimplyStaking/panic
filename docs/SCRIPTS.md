@@ -23,3 +23,9 @@
 ```
 ./clear_logs.sh
 ```
+
+## Reset RabbitMQ
+
+```
+./reset_rabbit.sh
+```
