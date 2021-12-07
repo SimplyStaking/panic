@@ -125,8 +125,7 @@ class EVMNodeStore(Store):
             "Saving %s state: _current_height=%s, _syncing=%s, "
             "_last_monitored=%s, _went_down_at=%s", node_name,
             metrics['current_height'], metrics['syncing'],
-            meta_data['last_monitored'],
-            metrics['went_down_at'])
+            meta_data['last_monitored'], metrics['went_down_at'])
 
         self.redis.hset_multiple(Keys.get_hash_parent(parent_id), {
             Keys.get_evm_node_current_height(node_id):
@@ -156,8 +155,8 @@ class EVMNodeStore(Store):
 
             self.redis.hset(
                 Keys.get_hash_parent(parent_id),
-                Keys.get_evm_node_went_down_at(node_id), str(metrics[
-                                                                 'went_down_at'])
+                Keys.get_evm_node_went_down_at(node_id),
+                str(metrics['went_down_at'])
             )
 
     def _process_mongo_store(self, data: Dict) -> None:
