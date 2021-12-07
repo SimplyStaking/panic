@@ -293,7 +293,7 @@ class ChainlinkContractsMonitor(Monitor):
                     'roundAnswer': int/None (if round consensus not reached
                                              yet),
                     'roundTimestamp': int/None (if round consensus not reached
-                                                  yet),
+                                                yet),
                     'answeredInRound': int/None (if round consensus not reached
                                                  yet)
                     'nodeSubmission': int
