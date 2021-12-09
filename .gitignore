@@ -9,6 +9,11 @@
 
 # dependencies
 web-installer/node_modules
+ui/node_modules
+ui/www
+ui/src/components.d.ts
+api/node_modules
+api/**/*.js
 # IDE
 .idea
 

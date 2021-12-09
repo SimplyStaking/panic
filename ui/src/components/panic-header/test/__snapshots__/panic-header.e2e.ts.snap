@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-header renders 1`] = `
+<panic-header class="hydrated">
+  <svc-header imglink="/" imgpath="/assets/logos/panic_logo.png" imgposition="start" menuposition="end">
+    <svc-dropdown-menu label="Networks" slot="menu"></svc-dropdown-menu>
+  </svc-header>
+</panic-header>
+`;

@@ -7,6 +7,7 @@ import {
   EmailsReducer,
   PagerDutyReducer,
   OpsGenieReducer,
+  SlacksReducer,
 } from './channelsReducer';
 import {
   SubstrateNodesReducer,
@@ -17,13 +18,18 @@ import {
   CosmosNodesReducer,
   CosmosChainsReducer,
   CurrentCosmosChain,
-// eslint-disable-next-line import/named
 } from './cosmosChainsReducer';
 import {
-  RepositoryReducer,
+  ChainlinkNodesReducer,
+  ChainlinkChainsReducer,
+  CurrentChainlinkChain,
+  EvmNodesReducer,
+} from './chainlinkChainsReducer';
+import {
+  GitHubRepositoryReducer,
+  DockerHubReducer,
   SystemsReducer,
   PeriodicReducer,
-  KmsReducer,
   GeneralReducer,
 } from './generalReducer';
 import UsersReducer from './usersReducer';
@@ -33,6 +39,7 @@ export default combineReducers({
   ChangePageReducer,
   ChangeStepReducer,
   TelegramsReducer,
+  SlacksReducer,
   TwiliosReducer,
   EmailsReducer,
   PagerDutyReducer,
@@ -43,11 +50,15 @@ export default combineReducers({
   SubstrateNodesReducer,
   SubstrateChainsReducer,
   CurrentSubstrateChain,
-  RepositoryReducer,
+  GitHubRepositoryReducer,
+  DockerHubReducer,
   SystemsReducer,
   PeriodicReducer,
   GeneralReducer,
-  KmsReducer,
   UsersReducer,
   LoginReducer,
+  ChainlinkNodesReducer,
+  ChainlinkChainsReducer,
+  CurrentChainlinkChain,
+  EvmNodesReducer,
 });

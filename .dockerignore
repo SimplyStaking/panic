@@ -3,3 +3,5 @@
 ./certificates
 ./web-installer/node_modules
 ./web-installer/build
+./ui/build
+./ui/node_modules

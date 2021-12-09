@@ -21,7 +21,7 @@ const PeriodicForm = ({ periodic, savePeriodicDetails }) => {
   return (
     <div>
       <div className={classes.subsection}>
-        <GridContainer justify="center">
+        <GridContainer justifyContent="center">
           <GridItem xs={12} sm={12} md={8}>
             <h1 className={classes.title}>{Data.periodic.title}</h1>
           </GridItem>
@@ -35,7 +35,7 @@ const PeriodicForm = ({ periodic, savePeriodicDetails }) => {
       <Divider />
       <Box py={4}>
         <form className="root">
-          <Grid container spacing={3} justify="center" alignItems="center">
+          <Grid container spacing={3} justifyContent="center" alignItems="center">
             <Grid item xs={12} />
             <Grid item xs={2}>
               <Typography> Interval Seconds </Typography>

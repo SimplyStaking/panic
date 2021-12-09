@@ -9,6 +9,8 @@ from typing import Tuple
 import pika.exceptions
 
 from src.alert_router.alert_router import AlertRouter
+from src.alerter.managers.chainlink import ChainlinkAlertersManager
+from src.alerter.managers.evm import EVMNodeAlerterManager
 from src.alerter.managers.github import GithubAlerterManager
 from src.alerter.managers.manager import AlertersManager
 from src.alerter.managers.system import SystemAlertersManager
@@ -17,26 +19,40 @@ from src.config_manager import ConfigsManager
 from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.monitors.managers.contracts import ContractMonitorsManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
+from src.monitors.managers.node import NodeMonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
 from src.utils import env
-from src.utils.constants import (ALERT_ROUTER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 STORE_CONFIGS_QUEUE_NAME,
-                                 RE_INITIALISE_SLEEPING_PERIOD,
-                                 RESTART_SLEEPING_PERIOD,
-                                 SYSTEM_ALERTERS_MANAGER_NAME,
-                                 GITHUB_ALERTER_MANAGER_NAME,
-                                 SYSTEM_MONITORS_MANAGER_NAME,
-                                 GITHUB_MONITORS_MANAGER_NAME,
-                                 DATA_TRANSFORMERS_MANAGER_NAME,
-                                 CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME,
-                                 CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME)
+from src.utils.constants.names import (
+    SYSTEM_ALERTERS_MANAGER_NAME, GITHUB_ALERTER_MANAGER_NAME,
+    SYSTEM_MONITORS_MANAGER_NAME, GITHUB_MONITORS_MANAGER_NAME,
+    DATA_TRANSFORMERS_MANAGER_NAME, CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME,
+    CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME, NODE_MONITORS_MANAGER_NAME,
+    CONTRACT_MONITORS_MANAGER_NAME, EVM_NODE_ALERTER_MANAGER_NAME,
+    CL_ALERTERS_MANAGER_NAME)
+from src.utils.constants.rabbitmq import (
+    ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+    SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+    CHANNELS_MANAGER_CONFIGS_QUEUE_NAME, GH_MON_MAN_CONFIGS_QUEUE_NAME,
+    SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIGS_STORE_INPUT_QUEUE_NAME,
+    NODE_MON_MAN_CONFIGS_QUEUE_NAME, EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS,
+    NODES_CONFIGS_ROUTING_KEY_CHAINS, GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+    GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
+    SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN, ALERTS_CONFIGS_ROUTING_KEY_CHAIN,
+    ALERTS_CONFIGS_ROUTING_KEY_GEN, ALERT_ROUTER_CONFIGS_ROUTING_KEY,
+    CONFIGS_STORE_INPUT_ROUTING_KEY, CHANNELS_MANAGER_CONFIGS_ROUTING_KEY,
+    TOPIC, CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME, CL_ALERTS_CONFIGS_ROUTING_KEY,
+    CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+    CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
+    EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+    EVM_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+    CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME)
+from src.utils.constants.starters import (
+    RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD,
+)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_reattempting_message, get_stopped_message)
@@ -124,6 +140,63 @@ def _initialise_github_alerter_manager() -> GithubAlerterManager:
     return github_alerter_manager
 
 
+def _initialise_chainlink_alerters_manager() -> ChainlinkAlertersManager:
+    manager_display_name = CL_ALERTERS_MANAGER_NAME
+
+    chainlink_alerters_manager_logger = _initialise_logger(
+        manager_display_name, ChainlinkAlertersManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialise the chainlink node alerter manager
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=chainlink_alerters_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=env.RABBIT_IP)
+            chainlink_alerters_manager = ChainlinkAlertersManager(
+                chainlink_alerters_manager_logger, manager_display_name,
+                rabbitmq)
+            break
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), chainlink_alerters_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          chainlink_alerters_manager_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return chainlink_alerters_manager
+
+
+def _initialise_evm_node_alerter_manager() -> EVMNodeAlerterManager:
+    manager_display_name = EVM_NODE_ALERTER_MANAGER_NAME
+
+    evm_node_alerter_manager_logger = _initialise_logger(
+        manager_display_name, EVMNodeAlerterManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialise the EVM node alerter manager
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=evm_node_alerter_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=env.RABBIT_IP)
+            evm_node_alerter_manager = EVMNodeAlerterManager(
+                evm_node_alerter_manager_logger, manager_display_name, rabbitmq)
+            break
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), evm_node_alerter_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          evm_node_alerter_manager_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return evm_node_alerter_manager
+
+
 def _initialise_system_monitors_manager() -> SystemMonitorsManager:
     manager_display_name = SYSTEM_MONITORS_MANAGER_NAME
 
@@ -182,6 +255,65 @@ def _initialise_github_monitors_manager() -> GitHubMonitorsManager:
     return github_monitors_manager
 
 
+def _initialise_node_monitors_manager() -> NodeMonitorsManager:
+    manager_display_name = NODE_MONITORS_MANAGER_NAME
+
+    node_monitors_manager_logger = _initialise_logger(
+        manager_display_name, NodeMonitorsManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialise the node monitors manager
+    while True:
+        try:
+            rabbit_ip = env.RABBIT_IP
+            rabbitmq = RabbitMQApi(
+                logger=node_monitors_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=rabbit_ip)
+            node_monitors_manager = NodeMonitorsManager(
+                node_monitors_manager_logger, manager_display_name, rabbitmq)
+            break
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), node_monitors_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          node_monitors_manager_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return node_monitors_manager
+
+
+def _initialise_contract_monitors_manager() -> ContractMonitorsManager:
+    manager_display_name = CONTRACT_MONITORS_MANAGER_NAME
+
+    contract_monitors_manager_logger = _initialise_logger(
+        manager_display_name, ContractMonitorsManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialise the contract monitors manager
+    while True:
+        try:
+            rabbit_ip = env.RABBIT_IP
+            rabbitmq = RabbitMQApi(
+                logger=contract_monitors_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=rabbit_ip)
+            contract_monitors_manager = ContractMonitorsManager(
+                contract_monitors_manager_logger, manager_display_name,
+                rabbitmq)
+            break
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), contract_monitors_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          contract_monitors_manager_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return contract_monitors_manager
+
+
 def _initialise_data_transformers_manager() -> DataTransformersManager:
     manager_display_name = DATA_TRANSFORMERS_MANAGER_NAME
 
@@ -219,7 +351,7 @@ def _initialise_channels_manager() -> ChannelsManager:
         env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
-    # Attempt to initialise the data transformers manager
+    # Attempt to initialise the data channels manager
     while True:
         try:
             rabbitmq = RabbitMQApi(
@@ -370,6 +502,16 @@ def run_github_monitors_manager() -> None:
     run_monitors_manager(github_monitors_manager)
 
 
+def run_node_monitors_manager() -> None:
+    node_monitors_manager = _initialise_node_monitors_manager()
+    run_monitors_manager(node_monitors_manager)
+
+
+def run_contract_monitors_manager() -> None:
+    contract_monitors_manager = _initialise_contract_monitors_manager()
+    run_monitors_manager(contract_monitors_manager)
+
+
 def run_system_alerters_manager() -> None:
     system_alerters_manager = _initialise_system_alerters_manager()
     run_alerters_manager(system_alerters_manager)
@@ -378,6 +520,16 @@ def run_system_alerters_manager() -> None:
 def run_github_alerters_manager() -> None:
     github_alerter_manager = _initialise_github_alerter_manager()
     run_alerters_manager(github_alerter_manager)
+
+
+def run_chainlink_alerters_manager() -> None:
+    cl_alerters_manager = _initialise_chainlink_alerters_manager()
+    run_alerters_manager(cl_alerters_manager)
+
+
+def run_evm_node_alerter_manager() -> None:
+    evm_node_alerter_manager = _initialise_evm_node_alerter_manager()
+    run_alerters_manager(evm_node_alerter_manager)
 
 
 def run_monitors_manager(manager: MonitorsManager) -> None:
@@ -529,6 +681,9 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     terminate_and_join_process(github_monitors_manager_process,
                                GITHUB_MONITORS_MANAGER_NAME)
 
+    terminate_and_join_process(contract_monitors_manager_process,
+                               CONTRACT_MONITORS_MANAGER_NAME)
+
     terminate_and_join_process(data_transformers_manager_process,
                                DATA_TRANSFORMERS_MANAGER_NAME)
 
@@ -537,6 +692,12 @@ def on_terminate(signum: int, stack: FrameType) -> None:
 
     terminate_and_join_process(github_alerter_manager_process,
                                GITHUB_ALERTER_MANAGER_NAME)
+
+    terminate_and_join_process(chainlink_alerters_manager_process,
+                               CL_ALERTERS_MANAGER_NAME)
+
+    terminate_and_join_process(evm_node_alerter_manager_process,
+                               EVM_NODE_ALERTER_MANAGER_NAME)
 
     terminate_and_join_process(data_store_process,
                                DATA_STORE_MANAGER_NAME)
@@ -553,8 +714,6 @@ def on_terminate(signum: int, stack: FrameType) -> None:
 
 
 def _initialise_and_declare_config_queues() -> None:
-    # TODO: This can be refactored by storing the queue configurations in
-    #     : constant.py so that it is easier to maintain.
     dummy_logger = logging.getLogger('Dummy')
 
     while True:
@@ -575,7 +734,7 @@ def _initialise_and_declare_config_queues() -> None:
             log_and_print("Creating {} exchange.".format(CONFIG_EXCHANGE),
                           dummy_logger)
             rabbitmq.exchange_declare(
-                CONFIG_EXCHANGE, 'topic', False, True, False, False
+                CONFIG_EXCHANGE, TOPIC, False, True, False, False
             )
 
             # Alert router queues
@@ -585,30 +744,108 @@ def _initialise_and_declare_config_queues() -> None:
                                    False, False)
             log_and_print("Binding queue '{}' to '{}' exchange with routing "
                           "key {}.".format(ALERT_ROUTER_CONFIGS_QUEUE_NAME,
-                                           CONFIG_EXCHANGE, 'channels.*'),
+                                           CONFIG_EXCHANGE,
+                                           ALERT_ROUTER_CONFIGS_ROUTING_KEY),
                           dummy_logger)
             rabbitmq.queue_bind(ALERT_ROUTER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'channels.*')
+                                CONFIG_EXCHANGE,
+                                ALERT_ROUTER_CONFIGS_ROUTING_KEY)
 
             # System Alerters Manager queues
             log_and_print("Creating queue '{}'".format(
-                SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
                                    False, True, False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'chains.*.*.alerts_config'),
+                "key {}.".format(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 ALERTS_CONFIGS_ROUTING_KEY_CHAIN),
                 dummy_logger)
-            rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'chains.*.*.alerts_config')
+            rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'general.alerts_config'),
+                "key {}.".format(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 ALERTS_CONFIGS_ROUTING_KEY_GEN),
                 dummy_logger)
-            rabbitmq.queue_bind(SYSTEM_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'general.alerts_config')
+            rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                ALERTS_CONFIGS_ROUTING_KEY_GEN)
+
+            # Chainlink Alerters Manager queues
+            log_and_print("Creating queue '{}'".format(
+                CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME, False,
+                                   True, False, False)
+            log_and_print("Binding queue '{}' to '{}' exchange with routing "
+                          "key {}.".format(CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
+                                           CONFIG_EXCHANGE,
+                                           CL_ALERTS_CONFIGS_ROUTING_KEY),
+                          dummy_logger)
+            rabbitmq.queue_bind(CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE, CL_ALERTS_CONFIGS_ROUTING_KEY)
+
+            # Chainlink Node Alerter queues
+            log_and_print("Creating queue '{}'".format(
+                CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 CL_ALERTS_CONFIGS_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                CL_ALERTS_CONFIGS_ROUTING_KEY)
+
+            # Chainlink Contract Alerter queues
+            log_and_print("Creating queue '{}'".format(
+                CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 CL_ALERTS_CONFIGS_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                CL_ALERTS_CONFIGS_ROUTING_KEY)
+
+            # EVM Node Alerters Manager queues
+            log_and_print("Creating queue '{}'".format(
+                EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(
+                EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME, False, True, False,
+                False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 CL_ALERTS_CONFIGS_ROUTING_KEY), dummy_logger)
+            rabbitmq.queue_bind(EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE, CL_ALERTS_CONFIGS_ROUTING_KEY)
+
+            # EVM Node Alerter queues
+            log_and_print("Creating queue '{}'".format(
+                EVM_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(EVM_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(EVM_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 CL_ALERTS_CONFIGS_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(EVM_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                CL_ALERTS_CONFIGS_ROUTING_KEY)
 
             # Channels manager queues
             log_and_print("Creating queue '{}'".format(
@@ -618,63 +855,114 @@ def _initialise_and_declare_config_queues() -> None:
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
                 "key {}.".format(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'channels.*'),
+                                 CONFIG_EXCHANGE,
+                                 CHANNELS_MANAGER_CONFIGS_ROUTING_KEY),
                 dummy_logger)
             rabbitmq.queue_bind(CHANNELS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'channels.*')
+                                CONFIG_EXCHANGE,
+                                CHANNELS_MANAGER_CONFIGS_ROUTING_KEY)
 
             # GitHub Monitors Manager queues
             log_and_print("Creating queue '{}'".format(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                   False, True, False, False)
+                GH_MON_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(GH_MON_MAN_CONFIGS_QUEUE_NAME, False, True,
+                                   False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'chains.*.*.repos_config'),
+                "key {}.".format(GH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                 GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS),
                 dummy_logger)
-            rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'chains.*.*.repos_config')
+            rabbitmq.queue_bind(GH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'general.repos_config'),
+                "key {}.".format(GH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                 GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN),
                 dummy_logger)
-            rabbitmq.queue_bind(GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'general.repos_config')
+            rabbitmq.queue_bind(GH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
 
             # System Monitors Manager queues
             log_and_print("Creating queue '{}'".format(
-                SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                   False, True, False, False)
+                SYS_MON_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(SYS_MON_MAN_CONFIGS_QUEUE_NAME, False, True,
+                                   False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'chains.*.*.nodes_config'),
+                "key {}.".format(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS),
                 dummy_logger)
-            rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'chains.*.*.nodes_config')
+            rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, 'general.systems_config'),
+                "key {}.".format(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 NODES_CONFIGS_ROUTING_KEY_CHAINS),
                 dummy_logger)
-            rabbitmq.queue_bind(SYSTEM_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, 'general.systems_config')
+            rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                NODES_CONFIGS_ROUTING_KEY_CHAINS)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(SYS_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN),
+                dummy_logger)
+            rabbitmq.queue_bind(SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
+
+            # Node Monitors Manager queues
+            log_and_print("Creating queue '{}'".format(
+                NODE_MON_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(NODE_MON_MAN_CONFIGS_QUEUE_NAME, False, True,
+                                   False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 NODES_CONFIGS_ROUTING_KEY_CHAINS),
+                dummy_logger)
+            rabbitmq.queue_bind(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                NODES_CONFIGS_ROUTING_KEY_CHAINS)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS),
+                dummy_logger)
+            rabbitmq.queue_bind(NODE_MON_MAN_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS)
+
+            # Contract Monitors Manager queues
+            log_and_print("Creating queue '{}'".format(
+                CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME, False,
+                                   True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 NODES_CONFIGS_ROUTING_KEY_CHAINS),
+                dummy_logger)
+            rabbitmq.queue_bind(CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                NODES_CONFIGS_ROUTING_KEY_CHAINS)
 
             # Config Store queues
             log_and_print("Creating queue '{}'".format(
-                STORE_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(STORE_CONFIGS_QUEUE_NAME,
-                                   False, True, False, False)
+                CONFIGS_STORE_INPUT_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(CONFIGS_STORE_INPUT_QUEUE_NAME, False, True,
+                                   False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(STORE_CONFIGS_QUEUE_NAME,
-                                 CONFIG_EXCHANGE, '#'),
-                dummy_logger)
-            rabbitmq.queue_bind(STORE_CONFIGS_QUEUE_NAME,
-                                CONFIG_EXCHANGE, '#')
+                "key {}.".format(CONFIGS_STORE_INPUT_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 CONFIGS_STORE_INPUT_ROUTING_KEY), dummy_logger)
+            rabbitmq.queue_bind(CONFIGS_STORE_INPUT_QUEUE_NAME, CONFIG_EXCHANGE,
+                                CONFIGS_STORE_INPUT_ROUTING_KEY)
 
             ret = rabbitmq.disconnect()
             if ret == -1:
@@ -713,18 +1001,44 @@ def _initialise_and_declare_config_queues() -> None:
 
 
 if __name__ == '__main__':
-    # First initialise the config queues so that no config is lost if the
-    # individual components
+    # First initialise the config queues so that no config is lost when sending
+    # the configs and the components are not ready yet.
     _initialise_and_declare_config_queues()
 
-    # Start the managers in a separate process
-    system_monitors_manager_process = multiprocessing.Process(
-        target=run_system_monitors_manager, args=())
-    system_monitors_manager_process.start()
+    # Start the configs manager so that the configurations are read first. We
+    # need to wait a bit first until the configs are read
+    # TODO: In the future we must implement a way how can we detect that the
+    #     : configs manager has finished reading the configs.
+    config_manager_runner_process = multiprocessing.Process(
+        target=run_config_manager, args=())
+    config_manager_runner_process.start()
 
-    github_monitors_manager_process = multiprocessing.Process(
-        target=run_github_monitors_manager, args=())
-    github_monitors_manager_process.start()
+    time.sleep(15)
+
+    # Start the components that do not generate or cause alerts to be sent. Then
+    # sleep for a few seconds so that these components are ready reading the
+    # configs before alerting starts.
+
+    # Start the alert router in a separate process
+    alert_router_process = multiprocessing.Process(target=run_alert_router,
+                                                   args=())
+    alert_router_process.start()
+
+    # Start the data store in a separate process
+    data_store_process = multiprocessing.Process(target=run_data_stores_manager,
+                                                 args=())
+    data_store_process.start()
+
+    # Start the channels manager in a separate process
+    channels_manager_process = multiprocessing.Process(
+        target=run_channels_manager, args=())
+    channels_manager_process.start()
+
+    data_transformers_manager_process = multiprocessing.Process(
+        target=run_data_transformers_manager, args=())
+    data_transformers_manager_process.start()
+
+    time.sleep(15)
 
     # Start the alerters in a separate process
     system_alerters_manager_process = multiprocessing.Process(
@@ -735,31 +1049,30 @@ if __name__ == '__main__':
         target=run_github_alerters_manager, args=())
     github_alerter_manager_process.start()
 
-    data_transformers_manager_process = multiprocessing.Process(
-        target=run_data_transformers_manager, args=())
-    data_transformers_manager_process.start()
+    chainlink_alerters_manager_process = multiprocessing.Process(
+        target=run_chainlink_alerters_manager, args=())
+    chainlink_alerters_manager_process.start()
 
-    # Start the data store in a separate process
-    data_store_process = multiprocessing.Process(target=run_data_stores_manager,
-                                                 args=())
-    data_store_process.start()
+    evm_node_alerter_manager_process = multiprocessing.Process(
+        target=run_evm_node_alerter_manager, args=())
+    evm_node_alerter_manager_process.start()
 
-    # Start the alert router in a separate process
-    alert_router_process = multiprocessing.Process(target=run_alert_router,
-                                                   args=())
-    alert_router_process.start()
+    # Start the monitor managers in a separate process
+    system_monitors_manager_process = multiprocessing.Process(
+        target=run_system_monitors_manager, args=())
+    system_monitors_manager_process.start()
 
-    # Start the channels manager in a separate process
-    channels_manager_process = multiprocessing.Process(
-        target=run_channels_manager, args=())
-    channels_manager_process.start()
+    github_monitors_manager_process = multiprocessing.Process(
+        target=run_github_monitors_manager, args=())
+    github_monitors_manager_process.start()
 
-    # Config manager must be the last to start since it immediately begins by
-    # sending the configs. That being said, all previous processes need to wait
-    # for the config manager too.
-    config_manager_runner_process = multiprocessing.Process(
-        target=run_config_manager, args=())
-    config_manager_runner_process.start()
+    node_monitors_manager_process = multiprocessing.Process(
+        target=run_node_monitors_manager, args=())
+    node_monitors_manager_process.start()
+
+    contract_monitors_manager_process = multiprocessing.Process(
+        target=run_contract_monitors_manager, args=())
+    contract_monitors_manager_process.start()
 
     signal.signal(signal.SIGTERM, on_terminate)
     signal.signal(signal.SIGINT, on_terminate)
@@ -769,9 +1082,13 @@ if __name__ == '__main__':
     # exit
     config_manager_runner_process.join()
     github_monitors_manager_process.join()
+    node_monitors_manager_process.join()
     system_monitors_manager_process.join()
+    contract_monitors_manager_process.join()
     system_alerters_manager_process.join()
     github_alerter_manager_process.join()
+    chainlink_alerters_manager_process.join()
+    evm_node_alerter_manager_process.join()
     data_transformers_manager_process.join()
     data_store_process.join()
     alert_router_process.join()

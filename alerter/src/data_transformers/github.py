@@ -2,7 +2,7 @@ import copy
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Union, Tuple
+from typing import Dict, Tuple
 
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
@@ -12,16 +12,16 @@ from src.data_store.redis.store_keys import Keys
 from src.data_transformers.data_transformer import DataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.repo import GitHubRepo
-from src.monitorables.system import System
-from src.utils.constants import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
-                                 ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE)
+from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
+                                          ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                          GITHUB_DT_INPUT_QUEUE_NAME,
+                                          GITHUB_RAW_DATA_ROUTING_KEY,
+                                          GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import (convert_to_float_if_not_none,
-                             convert_to_int_if_not_none)
-
-GITHUB_DT_INPUT_QUEUE = 'github_data_transformer_raw_data_queue'
-GITHUB_DT_INPUT_ROUTING_KEY = 'github'
+from src.utils.types import (convert_to_float,
+                             convert_to_int, Monitorable)
 
 
 class GitHubDataTransformer(DataTransformer):
@@ -39,66 +39,66 @@ class GitHubDataTransformer(DataTransformer):
 
         # Set consuming configuration
         self.logger.info("Creating '%s' exchange", RAW_DATA_EXCHANGE)
-        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, 'direct', False, True,
+        self.rabbitmq.exchange_declare(RAW_DATA_EXCHANGE, TOPIC, False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'", GITHUB_DT_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(GITHUB_DT_INPUT_QUEUE, False, True, False,
+        self.logger.info("Creating queue '%s'", GITHUB_DT_INPUT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(GITHUB_DT_INPUT_QUEUE_NAME, False, True,
+                                    False,
                                     False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                         GITHUB_DT_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(GITHUB_DT_INPUT_QUEUE, RAW_DATA_EXCHANGE,
-                                 GITHUB_DT_INPUT_ROUTING_KEY)
+                         "'%s'", GITHUB_DT_INPUT_QUEUE_NAME, RAW_DATA_EXCHANGE,
+                         GITHUB_RAW_DATA_ROUTING_KEY)
+        self.rabbitmq.queue_bind(GITHUB_DT_INPUT_QUEUE_NAME, RAW_DATA_EXCHANGE,
+                                 GITHUB_RAW_DATA_ROUTING_KEY)
 
         # Pre-fetch count is 5 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
         self.rabbitmq.basic_qos(prefetch_count=prefetch_count)
         self.logger.debug('Declaring consuming intentions')
-        self.rabbitmq.basic_consume(GITHUB_DT_INPUT_QUEUE,
-                                    self._process_raw_data, False, False, None)
+        self.rabbitmq.basic_consume(GITHUB_DT_INPUT_QUEUE_NAME,
+                                    self._process_raw_data,
+                                    False, False, None)
 
         # Set producing configuration
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", STORE_EXCHANGE)
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'direct', False, True,
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
-        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, 'topic', False, True,
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, TOPIC, False, True,
                                        False, False)
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
-    def load_state(self, repo: Union[System, GitHubRepo]) \
-            -> Union[System, GitHubRepo]:
-        # If Redis is down, the data passed as default will be stored as
-        # the repo state.
+    def load_state(self, repo: Monitorable) -> Monitorable:
+        # Below, we will try and get the data stored in redis and store it
+        # in the repo's state. If the data from Redis cannot be obtained, the
+        # state won't be updated.
 
         self.logger.debug("Loading the state of %s from Redis", repo)
         redis_hash = Keys.get_hash_parent(repo.parent_id)
         repo_id = repo.repo_id
 
-        # Below, we will try and get the data stored in redis and store it
-        # in the repo's state. If the data from Redis cannot be obtained, the
-        # state won't be updated.
-
         # Load no_of_releases from Redis
         state_no_of_releases = repo.no_of_releases
         redis_no_of_releases = self.redis.hget(
             redis_hash, Keys.get_github_no_of_releases(repo_id),
-            state_no_of_releases)
-        no_of_releases = \
-            convert_to_int_if_not_none(redis_no_of_releases, None)
+            bytes(str(state_no_of_releases), 'utf-8'))
+        redis_no_of_releases = 'None' if redis_no_of_releases is None \
+            else redis_no_of_releases.decode("utf-8")
+        no_of_releases = convert_to_int(redis_no_of_releases, None)
         repo.set_no_of_releases(no_of_releases)
 
         # Load last_monitored from Redis
         state_last_monitored = repo.last_monitored
         redis_last_monitored = self.redis.hget(
             redis_hash, Keys.get_github_last_monitored(repo_id),
-            state_last_monitored)
-        last_monitored = \
-            convert_to_float_if_not_none(redis_last_monitored, None)
+            bytes(str(state_last_monitored), 'utf-8'))
+        redis_last_monitored = 'None' if redis_last_monitored is None \
+            else redis_last_monitored.decode("utf-8")
+        last_monitored = convert_to_float(redis_last_monitored, None)
         repo.set_last_monitored(last_monitored)
 
         self.logger.debug(
@@ -136,6 +136,9 @@ class GitHubDataTransformer(DataTransformer):
             repo.set_parent_id(parent_id)
             repo.set_repo_name(repo_name)
         else:
+            # Since the processing function calling this method caters for
+            # unexpected data this condition will never be executed. Regardless,
+            # this condition should be kept as a precaution for the function.
             raise ReceivedUnexpectedDataException(
                 "{}: _update_state".format(self))
 
@@ -161,6 +164,9 @@ class GitHubDataTransformer(DataTransformer):
         elif 'error' in transformed_data:
             processed_data = copy.deepcopy(transformed_data)
         else:
+            # Since the processing function calling this method caters for
+            # unexpected data this condition will never be executed. Regardless,
+            # this condition should be kept as a precaution for the function.
             raise ReceivedUnexpectedDataException(
                 "{}: _process_transformed_data_for_saving".format(self))
 
@@ -204,6 +210,9 @@ class GitHubDataTransformer(DataTransformer):
         elif 'error' in transformed_data:
             processed_data = copy.deepcopy(transformed_data)
         else:
+            # Since the processing function calling this method caters for
+            # unexpected data this condition will never be executed. Regardless,
+            # this condition should be kept as a precaution for the function.
             raise ReceivedUnexpectedDataException(
                 "{}: _process_transformed_data_for_alerting".format(self))
 
@@ -243,6 +252,9 @@ class GitHubDataTransformer(DataTransformer):
             transformed_data = copy.deepcopy(data)
             del transformed_data['error']['meta_data']['monitor_name']
         else:
+            # Since the processing function calling this method caters for
+            # unexpected data this condition will never be executed. Regardless,
+            # this condition should be kept as a precaution for the function.
             raise ReceivedUnexpectedDataException(
                 "{}: _transform_data".format(self))
 
@@ -255,13 +267,13 @@ class GitHubDataTransformer(DataTransformer):
 
         return transformed_data, data_for_alerting, data_for_saving
 
-    def _place_latest_data_on_queue(self, transformed_data: Dict,
-                                    data_for_alerting: Dict,
+    def _place_latest_data_on_queue(self, data_for_alerting: Dict,
                                     data_for_saving: Dict) -> None:
         self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
-                            'alerter.github',
+                            GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
                             pika.BasicProperties(delivery_mode=2), True)
-        self._push_to_queue(data_for_saving, STORE_EXCHANGE, 'github',
+        self._push_to_queue(data_for_saving, STORE_EXCHANGE,
+                            GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
                             pika.BasicProperties(delivery_mode=2), True)
 
     def _process_raw_data(self, ch: BlockingChannel,
@@ -321,8 +333,7 @@ class GitHubDataTransformer(DataTransformer):
         # acknowledgement fails, the data is processed again and we do not have
         # duplication of data in the queue
         if not processing_error:
-            self._place_latest_data_on_queue(
-                transformed_data, data_for_alerting, data_for_saving)
+            self._place_latest_data_on_queue(data_for_alerting, data_for_saving)
 
         # Send any data waiting in the publisher queue, if any
         try:

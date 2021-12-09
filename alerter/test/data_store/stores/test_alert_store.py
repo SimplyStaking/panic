@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import unittest
@@ -11,16 +12,23 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
+from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
+from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
+from src.alerter.alerters.node.evm import EVMNodeAlerter
+from src.alerter.alerters.system import SystemAlerter
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.redis_api import RedisApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.alert import AlertStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 ALERT_STORE_INPUT_QUEUE,
-                                 ALERT_STORE_INPUT_ROUTING_KEY)
-from src.utils.exceptions import (PANICException)
+from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                          ALERT_STORE_INPUT_QUEUE_NAME,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
+from src.utils.exceptions import (PANICException,
+                                  MessageWasNotDeliveredException)
 from test.utils.utils import (connect_to_rabbit,
                               disconnect_from_rabbit,
                               delete_exchange_if_exists,
@@ -63,18 +71,17 @@ class TestAlertStore(unittest.TestCase):
                                      self.dummy_logger,
                                      self.rabbitmq)
 
-        self.routing_key = 'heartbeat.worker'
+        self.heartbeat_routing_key = HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY
         self.test_queue_name = 'test queue'
 
         connect_to_rabbit(self.rabbitmq)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'direct', False,
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE, False, True,
+        self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE_NAME, False, True,
                                     False, False)
-        self.rabbitmq.queue_bind(ALERT_STORE_INPUT_QUEUE,
-                                 STORE_EXCHANGE,
+        self.rabbitmq.queue_bind(ALERT_STORE_INPUT_QUEUE_NAME, STORE_EXCHANGE,
                                  ALERT_STORE_INPUT_ROUTING_KEY)
 
         connect_to_rabbit(self.test_rabbit_manager)
@@ -82,13 +89,18 @@ class TestAlertStore(unittest.TestCase):
                                                True, False, False)
         self.test_rabbit_manager.queue_bind(self.test_queue_name,
                                             HEALTH_CHECK_EXCHANGE,
-                                            self.routing_key)
+                                            self.heartbeat_routing_key)
 
         self.test_data_str = 'test data'
         self.test_exception = PANICException('test_exception', 1)
 
-        self.parent_id = 'test_parent_id'
+        self.info = 'INFO'
+        self.warning = 'WARNING'
+        self.critical = 'CRITICAL'
+        self.internal = 'INTERNAL'
 
+        self.parent_id = 'test_parent_id'
+        self.parent_id2 = 'test_parent_id2'
         self.alert_id = 'test_alert_id'
         self.origin_id = 'test_origin_id'
         self.alert_name = 'test_alert'
@@ -100,6 +112,7 @@ class TestAlertStore(unittest.TestCase):
         self.alert_id_2 = 'test_alert_id_2'
         self.origin_id_2 = 'test_origin_id_2'
         self.alert_name_2 = 'test_alert_2'
+        self.metric_2 = 'system_cpu_usage'
         self.severity_2 = 'critical'
         self.message_2 = 'alert message 2'
         self.value_2 = 'alert_code_2'
@@ -107,19 +120,49 @@ class TestAlertStore(unittest.TestCase):
         self.alert_id_3 = 'test_alert_id_3'
         self.origin_id_3 = 'test_origin_id_3'
         self.alert_name_3 = 'test_alert_3'
+        self.metric_3 = 'system_storage_usage'
         self.severity_3 = 'info'
         self.message_3 = 'alert message 3'
         self.value_3 = 'alert_code_3'
 
+        self.alert_id_4 = 'test_alert_id_4'
+        self.origin_id_4 = 'test_origin_id_4'
+        self.alert_name_4 = 'test_alert_4'
+        self.metric_4 = 'node_is_down'
+        self.severity_4 = 'info'
+        self.message_4 = 'alert message 4'
+        self.value_4 = 'alert_code_4'
+
+        self.alert_id_5 = 'test_alert_id_5'
+        self.origin_id_5 = 'test_origin_id_5'
+        self.alert_name_5 = 'test_alert_5'
+        self.metric_5 = 'price_feed_not_observed'
+        self.severity_5 = 'info'
+        self.message_5 = 'alert message 5'
+        self.value_5 = 'alert_code_5'
+
+        self.alert_id_6 = 'test_alert_id_6'
+        self.origin_id_6 = 'test_origin_id_6'
+        self.alert_name_6 = 'test_alert_6'
+        self.metric_6 = 'evm_node_is_down'
+        self.severity_6 = 'info'
+        self.message_6 = 'alert message 6'
+        self.value_6 = 'alert_code_6'
+
         self.last_monitored = datetime(2012, 1, 1).timestamp()
         self.none = None
 
+        # We do not want to reset `github_release` for Github metrics as we
+        # will lose the pending upgrades
+        self.github_alert_metrics = ['cannot_access_github']
+
+        # Normal alerts
         self.alert_data_1 = {
             'parent_id': self.parent_id,
             'origin_id': self.origin_id,
             'alert_code': {
                 'name': self.alert_name,
-                'value': self.value,
+                'code': self.value,
             },
             'severity': self.severity,
             'metric': self.metric,
@@ -127,14 +170,14 @@ class TestAlertStore(unittest.TestCase):
             'timestamp': self.last_monitored,
         }
         self.alert_data_2 = {
-            'parent_id': self.parent_id,
+            'parent_id': self.parent_id2,
             'origin_id': self.origin_id_2,
             'alert_code': {
                 'name': self.alert_name_2,
-                'value': self.value_2,
+                'code': self.value_2,
             },
             'severity': self.severity_2,
-            'metric': self.metric,
+            'metric': self.metric_2,
             'message': self.message_2,
             'timestamp': self.last_monitored,
         }
@@ -143,13 +186,62 @@ class TestAlertStore(unittest.TestCase):
             'origin_id': self.origin_id_3,
             'alert_code': {
                 'name': self.alert_name_3,
-                'value': self.value_3,
+                'code': self.value_3,
             },
             'severity': self.severity_3,
-            'metric': self.metric,
+            'metric': self.metric_3,
             'message': self.message_3,
             'timestamp': self.last_monitored,
         }
+        self.alert_data_4 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id_4,
+            'alert_code': {
+                'name': self.alert_name_4,
+                'code': self.value_4,
+            },
+            'severity': self.severity_4,
+            'metric': self.metric_4,
+            'message': self.message_4,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_data_4_1 = copy.deepcopy(self.alert_data_4)
+        self.alert_data_4_1['parent_id'] = self.parent_id2
+
+        self.alert_data_5 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id_5,
+            'alert_code': {
+                'name': self.alert_name_5,
+                'code': self.value_5,
+            },
+            'severity': self.severity_5,
+            'metric': self.metric_5,
+            'message': self.message_5,
+            'timestamp': self.last_monitored,
+            'alert_data': {'contract_proxy_address':
+                               '0x5DcB78343780E1B1e578ae0590dc1e868792a435'}
+        }
+        self.alert_data_5_1 = copy.deepcopy(self.alert_data_5)
+        self.alert_data_5_1['parent_id'] = self.parent_id2
+        self.alert_data_5_1['alert_data']['contract_proxy_address'] = \
+            '0xA5F7146D3cbB5a50Da36b8AC3857C48Ed3BF3bd9'
+        self.alert_data_6 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id_6,
+            'alert_code': {
+                'name': self.alert_name_6,
+                'code': self.value_6,
+            },
+            'severity': self.severity_6,
+            'metric': self.metric_6,
+            'message': self.message_6,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_data_6_1 = copy.deepcopy(self.alert_data_6)
+        self.alert_data_6_1['parent_id'] = self.parent_id2
+
+        # Bad data
         self.alert_data_key_error = {
             "result": {
                 "data": {},
@@ -160,9 +252,145 @@ class TestAlertStore(unittest.TestCase):
             "unexpected": {}
         }
 
+        # Alerts copied for GITHUB metric values, these are used to test
+        # Metric deletion on startup
+        self.alert_data_github_1 = copy.deepcopy(self.alert_data_1)
+        self.alert_data_github_1['metric'] = 'github_release'
+
+        self.alert_data_github_2 = copy.deepcopy(self.alert_data_1)
+        self.alert_data_github_2['metric'] = 'cannot_access_github'
+
+        self.alert_data_github_3 = copy.deepcopy(self.alert_data_2)
+        self.alert_data_github_3['metric'] = 'github_release'
+
+        """
+        Internal alerts on component reset which are used to clear metrics from
+        REDIS.
+        """
+        self.alert_internal_system_chain_1 = {
+            'parent_id': self.parent_id,
+            'origin_id': SystemAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric,
+            'message': self.message,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_system_all_chains = {
+            'parent_id': None,
+            'origin_id': SystemAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_2,
+            'message': self.message_2,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_chainlink_1 = {
+            'parent_id': self.parent_id,
+            'origin_id': ChainlinkNodeAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric,
+            'message': self.message,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_chainlink_all_chains = {
+            'parent_id': None,
+            'origin_id': ChainlinkNodeAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_2,
+            'message': self.message_2,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_chainlink_contract_1 = {
+            'parent_id': self.parent_id,
+            'origin_id': ChainlinkContractAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_5,
+            'message': self.message_5,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_chainlink_contract_all_chains = {
+            'parent_id': None,
+            'origin_id': ChainlinkContractAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_5,
+            'message': self.message_5,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_evm_node_1 = {
+            'parent_id': self.parent_id,
+            'origin_id': EVMNodeAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_6,
+            'message': self.message_6,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_evm_node_all_chains = {
+            'parent_id': None,
+            'origin_id': EVMNodeAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_6,
+            'message': self.message_6,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_github_chain_1 = {
+            'parent_id': self.parent_id,
+            'origin_id': GithubAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric,
+            'message': self.message,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_github_all_chains = {
+            'parent_id': None,
+            'origin_id': GithubAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric,
+            'message': self.message_2,
+            'timestamp': self.last_monitored,
+        }
+
     def tearDown(self) -> None:
         connect_to_rabbit(self.rabbitmq)
-        delete_queue_if_exists(self.rabbitmq, ALERT_STORE_INPUT_QUEUE)
+        delete_queue_if_exists(self.rabbitmq, ALERT_STORE_INPUT_QUEUE_NAME)
         delete_exchange_if_exists(self.rabbitmq, STORE_EXCHANGE)
         delete_exchange_if_exists(self.rabbitmq, HEALTH_CHECK_EXCHANGE)
         disconnect_from_rabbit(self.rabbitmq)
@@ -177,8 +405,10 @@ class TestAlertStore(unittest.TestCase):
         self.test_rabbit_manager = None
         self.redis.delete_all_unsafe()
         self.redis = None
+        self.test_store._redis = None
         self.mongo.drop_collection(self.parent_id)
         self.mongo = None
+        self.test_store._mongo = None
         self.test_store = None
 
     def test__str__returns_name_correctly(self) -> None:
@@ -207,7 +437,7 @@ class TestAlertStore(unittest.TestCase):
         try:
             # To make sure that the exchanges have not already been declared
             self.rabbitmq.connect()
-            self.rabbitmq.queue_delete(ALERT_STORE_INPUT_QUEUE)
+            self.rabbitmq.queue_delete(ALERT_STORE_INPUT_QUEUE_NAME)
             self.test_rabbit_manager.queue_delete(self.test_queue_name)
             self.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.rabbitmq.exchange_delete(STORE_EXCHANGE)
@@ -233,8 +463,9 @@ class TestAlertStore(unittest.TestCase):
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store.rabbitmq.basic_publish_confirm(
-                exchange=HEALTH_CHECK_EXCHANGE, routing_key=self.routing_key,
-                body=self.test_data_str, is_body_dict=False,
+                exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key=self.heartbeat_routing_key, body=self.test_data_str,
+                is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
 
@@ -249,7 +480,7 @@ class TestAlertStore(unittest.TestCase):
 
             # Re-declare queue to get the number of messages
             res = self.test_store.rabbitmq.queue_declare(
-                ALERT_STORE_INPUT_QUEUE, False, True, False, False)
+                ALERT_STORE_INPUT_QUEUE_NAME, False, True, False, False)
 
             self.assertEqual(1, res.method.message_count)
         except Exception as e:
@@ -277,7 +508,7 @@ class TestAlertStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.alert_data_unexpected).encode()
+                json.dumps(self.alert_data_unexpected)
             )
             self.assertRaises(eval(mock_error),
                               self.test_store._process_mongo_store,
@@ -313,7 +544,7 @@ class TestAlertStore(unittest.TestCase):
 
             self.test_rabbit_manager.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=self.routing_key)
+                routing_key=self.heartbeat_routing_key)
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
@@ -324,7 +555,7 @@ class TestAlertStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.alert_data_1).encode()
+                json.dumps(self.alert_data_1)
             )
 
             res = self.test_rabbit_manager.queue_declare(
@@ -366,7 +597,7 @@ class TestAlertStore(unittest.TestCase):
 
             self.test_rabbit_manager.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=self.routing_key)
+                routing_key=self.heartbeat_routing_key)
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
@@ -377,7 +608,7 @@ class TestAlertStore(unittest.TestCase):
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.alert_data_unexpected).encode()
+                json.dumps(self.alert_data_unexpected)
             )
 
             res = self.test_rabbit_manager.queue_declare(
@@ -395,7 +626,8 @@ class TestAlertStore(unittest.TestCase):
         mock_update_one.assert_called_once()
 
     @mock.patch.object(RedisApi, "hset")
-    def test_process_redis_store_calls_hset(self, mock_hset) -> None:
+    def test_process_redis_store_calls_hset_on_normal_alerts(
+            self, mock_hset) -> None:
         self.test_store._process_redis_store(self.alert_data_1)
         mock_hset.assert_called_once()
 
@@ -425,7 +657,7 @@ class TestAlertStore(unittest.TestCase):
                         'severity': data['severity'],
                         'metric': data['metric'],
                         'message': data['message'],
-                        'timestamp': str(data['timestamp']),
+                        'timestamp': data['timestamp'],
                     }
                 },
                 '$min': {'first': data['timestamp']},
@@ -440,15 +672,16 @@ class TestAlertStore(unittest.TestCase):
         ("self.alert_data_2",),
         ("self.alert_data_3",),
     ])
-    @freeze_time("2012-01-01")
     @mock.patch.object(RedisApi, "hset")
-    def test_process_redis_store_calls_redis_correctly(
+    def test_process_redis_store_calls_redis_correctly_storing_metrics(
             self, mock_system_data, mock_hset) -> None:
         data = eval(mock_system_data)
         self.test_store._process_redis_store(data)
 
         metric_data = {'severity': data['severity'],
-                       'message': data['message']}
+                       'message': data['message'],
+                       'timestamp': data['timestamp'],
+                       'expiry': None}
         key = data['origin_id']
 
         call_1 = call(Keys.get_hash_parent(data['parent_id']),
@@ -456,283 +689,389 @@ class TestAlertStore(unittest.TestCase):
                       json.dumps(metric_data))
         mock_hset.assert_has_calls([call_1])
 
+    def test_process_redis_store_system_removes_all_chains_sys_metrics_pid_none(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_1)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_1['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_{}(self.alert_data_1['origin_id'])".format(
+                self.alert_data_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_2)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_2['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_{}(self.alert_data_2['origin_id'])".format(
+                self.alert_data_2['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(self.alert_data_3)
+        chain_hash_3 = Keys.get_hash_parent(self.alert_data_3['parent_id'])
+        metric_key_3 = eval(
+            "Keys.get_alert_{}(self.alert_data_3['origin_id'])".format(
+                self.alert_data_3['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_3, metric_key_3))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_system_all_chains)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertFalse(self.redis.hexists(chain_hash_2, metric_key_2))
+        self.assertFalse(self.redis.hexists(chain_hash_3, metric_key_3))
+
+    def test_process_redis_store_system_removes_all_system_metrics_for_chain(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_1)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_1['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_{}(self.alert_data_1['origin_id'])".format(
+                self.alert_data_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_2)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_2['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_{}(self.alert_data_2['origin_id'])".format(
+                self.alert_data_2['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(self.alert_data_3)
+        chain_hash_3 = Keys.get_hash_parent(self.alert_data_3['parent_id'])
+        metric_key_3 = eval(
+            "Keys.get_alert_{}(self.alert_data_3['origin_id'])".format(
+                self.alert_data_3['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_3, metric_key_3))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_system_chain_1)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+        self.assertFalse(self.redis.hexists(chain_hash_3, metric_key_3))
+
+    def test_process_redis_store_chainlink_removes_all_chainlink_metrics_for_all_chains(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_4)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_4['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_cl_{}(self.alert_data_4['origin_id'])".format(
+                self.alert_data_4['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_4_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_4_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_cl_{}(self.alert_data_4_1['origin_id'])".format(
+                self.alert_data_4_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_chainlink_all_chains)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertFalse(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_chainlink_removes_all_chainlink_metrics_for_one_chain(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_4)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_4['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_cl_{}(self.alert_data_4['origin_id'])".format(
+                self.alert_data_4['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_4_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_4_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_cl_{}(self.alert_data_4_1['origin_id'])".format(
+                self.alert_data_4_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_chainlink_1)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_cl_contract_removes_all_cl_contracts_metrics_for_all_chains(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_5)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_5['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_cl_contract_{}(self.alert_data_5['origin_id'], "
+            "self.alert_data_5['alert_data']['contract_proxy_address'])".
+                format(self.alert_data_5['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_5_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_5_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_cl_contract_{}(self.alert_data_5_1['origin_id'], "
+            "self.alert_data_5_1['alert_data']['contract_proxy_address'])".
+                format(self.alert_data_5_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_chainlink_contract_all_chains)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertFalse(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_cl_contract_removes_all_cl_contract_metrics_for_one_chain(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_5)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_5['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_cl_contract_{}(self.alert_data_5['origin_id'], "
+            "self.alert_data_5['alert_data']['contract_proxy_address'])".
+                format(self.alert_data_5['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_5_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_5_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_cl_contract_{}(self.alert_data_5_1['origin_id'], "
+            "self.alert_data_5_1['alert_data']['contract_proxy_address'])".
+                format(self.alert_data_5_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_chainlink_contract_1)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_evm_node_removes_all_evm_node_metrics_for_all_chains(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_6)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_6['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_evm_{}(self.alert_data_6['origin_id'])".
+                format(self.alert_data_6['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_6_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_6_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_evm_{}(self.alert_data_6_1['origin_id'])".
+                format(self.alert_data_6_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_evm_node_all_chains)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertFalse(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_evm_node_removes_all_evm_node_metrics_for_one_chain(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_6)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_6['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_evm_{}(self.alert_data_6['origin_id'])".
+                format(self.alert_data_6['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_6_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_6_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_evm_{}(self.alert_data_6_1['origin_id'])".
+                format(self.alert_data_6_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_evm_node_1)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
     @parameterized.expand([
-        ("self.alert_data_1",),
-        ("self.alert_data_2",),
-        ("self.alert_data_3",),
+        ('self.alert_internal_github_all_chains',),
+        ('self.alert_internal_github_chain_1',),
     ])
+    def test_process_redis_store_github_removes_all_chains_github_metrics(
+            self, internal_alert) -> None:
+        # For github we will show that the value of the parent_id is irrelevant,
+        # we always delete all github metrics for all chains
+        self.test_store._process_redis_store(self.alert_data_github_1)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_github_1[
+                                                'parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_{}(self.alert_data_github_1['origin_id'])".format(
+                self.alert_data_github_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_github_2)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_github_2[
+                                                'parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_{}(self.alert_data_github_2['origin_id'])".format(
+                self.alert_data_github_2['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(self.alert_data_github_3)
+        chain_hash_3 = Keys.get_hash_parent(self.alert_data_github_3[
+                                                'parent_id'])
+        metric_key_3 = eval(
+            "Keys.get_alert_{}(self.alert_data_github_3['origin_id'])".format(
+                self.alert_data_github_3['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_3, metric_key_3))
+
+        eval_internal_alert = eval(internal_alert)
+        self.test_store._process_redis_store(eval_internal_alert)
+
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertFalse(self.redis.hexists(chain_hash_2, metric_key_2))
+        self.assertTrue(self.redis.hexists(chain_hash_3, metric_key_3))
+
+    @mock.patch.object(AlertStore, "_process_mongo_store")
+    @mock.patch.object(AlertStore, "_process_redis_store")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_data_calls_process_redis_and_mongo_store_correctly(
+            self, mock_ack, mock_proc_redis, mock_proc_mongo) -> None:
+        mock_ack.return_value = None
+        mock_proc_redis.return_value = None
+        mock_proc_mongo.return_value = None
+
+        self.test_store._initialise_rabbitmq()
+        blocking_channel = self.test_store.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
+        body = json.dumps(self.alert_data_1)
+        properties = pika.spec.BasicProperties()
+
+        self.test_store._process_data(blocking_channel, method, properties,
+                                      body)
+
+        mock_proc_redis.assert_called_once()
+        mock_proc_mongo.assert_called_once()
+        mock_ack.assert_called_once()
+
+    @mock.patch.object(AlertStore, "_send_heartbeat")
+    @mock.patch.object(AlertStore, "_process_mongo_store")
+    @mock.patch.object(AlertStore, "_process_redis_store")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_data_does_not_send_hb_if_processing_error(
+            self, mock_ack, mock_proc_redis, mock_proc_mongo,
+            mock_send_hb) -> None:
+        mock_ack.return_value = None
+        mock_proc_redis.return_value = None
+        mock_proc_mongo.side_effect = self.test_exception
+        mock_send_hb.return_value = None
+
+        self.test_store._initialise_rabbitmq()
+        blocking_channel = self.test_store.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
+        body = json.dumps(self.alert_data_1)
+        properties = pika.spec.BasicProperties()
+
+        self.test_store._process_data(blocking_channel, method, properties,
+                                      body)
+
+        mock_ack.assert_called_once()
+        mock_send_hb.assert_not_called()
+
     @freeze_time("2012-01-01")
-    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-                autospec=True)
-    @mock.patch("src.data_store.stores.alert.AlertStore._process_redis_store",
-                autospec=True)
-    @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-                autospec=True)
-    @mock.patch.object(MongoApi, "update_one")
-    def test_process_data_calls_mongo_correctly(
-            self, mock_system_data, mock_update_one, mock_send_hb,
-            mock_process_redis_store, mock_ack) -> None:
-
+    @mock.patch.object(AlertStore, "_send_heartbeat")
+    @mock.patch.object(AlertStore, "_process_mongo_store")
+    @mock.patch.object(AlertStore, "_process_redis_store")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_data_sends_hb_if_no_processing_errors(
+            self, mock_ack, mock_proc_redis, mock_proc_mongo,
+            mock_send_hb) -> None:
         mock_ack.return_value = None
-        try:
-            self.test_store._initialise_rabbitmq()
+        mock_proc_redis.return_value = None
+        mock_proc_mongo.return_value = None
+        mock_send_hb.return_value = None
 
-            data = eval(mock_system_data)
-            blocking_channel = self.test_store.rabbitmq.channel
-            method_chains = pika.spec.Basic.Deliver(
-                routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
+        self.test_store._initialise_rabbitmq()
+        blocking_channel = self.test_store.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
+        body = json.dumps(self.alert_data_1)
+        properties = pika.spec.BasicProperties()
 
-            properties = pika.spec.BasicProperties()
-            self.test_store._process_data(
-                blocking_channel,
-                method_chains,
-                properties,
-                json.dumps(data).encode()
-            )
+        self.test_store._process_data(blocking_channel, method, properties,
+                                      body)
 
-            mock_ack.assert_called_once()
-            mock_send_hb.assert_called_once()
+        test_hb = {
+            'component_name': self.test_store_name,
+            'is_alive': True,
+            'timestamp': datetime.now().timestamp()
+        }
+        mock_ack.assert_called_once()
+        mock_send_hb.assert_called_once_with(test_hb)
 
-            call_1 = call(
-                data['parent_id'],
-                {
-                    'doc_type': 'alert',
-                    'n_alerts': {'$lt': 1000}
-                },
-                {
-                    '$push': {
-                        'alerts': {
-                            'origin': data['origin_id'],
-                            'alert_name': data['alert_code']['name'],
-                            'severity': data['severity'],
-                            'metric': data['metric'],
-                            'message': data['message'],
-                            'timestamp': str(data['timestamp']),
-                        }
-                    },
-                    '$min': {'first': data['timestamp']},
-                    '$max': {'last': data['timestamp']},
-                    '$inc': {'n_alerts': 1},
-                }
-            )
-            mock_update_one.assert_has_calls([call_1])
-            mock_process_redis_store.assert_called_once()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ("self.alert_data_1",),
-        ("self.alert_data_2",),
-        ("self.alert_data_3",),
-    ])
-    @freeze_time("2012-01-01")
-    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-                autospec=True)
-    @mock.patch("src.data_store.stores.alert.AlertStore._process_mongo_store",
-                autospec=True)
-    @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-                autospec=True)
-    @mock.patch.object(RedisApi, "hset")
-    def test_process_data_calls_redis_correctly(
-            self, mock_system_data, mock_hset, mock_send_hb,
-            mock_process_mongo_store, mock_ack) -> None:
-
+    @mock.patch.object(AlertStore, "_send_heartbeat")
+    @mock.patch.object(AlertStore, "_process_mongo_store")
+    @mock.patch.object(AlertStore, "_process_redis_store")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_data_does_not_raise_msg_not_del_exception(
+            self, mock_ack, mock_proc_redis, mock_proc_mongo,
+            mock_send_hb) -> None:
         mock_ack.return_value = None
+        mock_proc_redis.return_value = None
+        mock_proc_mongo.return_value = None
+        mock_send_hb.side_effect = MessageWasNotDeliveredException('test')
+
+        self.test_store._initialise_rabbitmq()
+        blocking_channel = self.test_store.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
+        body = json.dumps(self.alert_data_1)
+        properties = pika.spec.BasicProperties()
+
         try:
-            self.test_store._initialise_rabbitmq()
+            self.test_store._process_data(blocking_channel, method, properties,
+                                          body)
+        except MessageWasNotDeliveredException as e:
+            self.fail('{} was not supposed to be raised.'.format(e))
 
-            data = eval(mock_system_data)
-            blocking_channel = self.test_store.rabbitmq.channel
-            method_chains = pika.spec.Basic.Deliver(
-                routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
-
-            properties = pika.spec.BasicProperties()
-            self.test_store._process_data(
-                blocking_channel,
-                method_chains,
-                properties,
-                json.dumps(data).encode()
-            )
-
-            mock_ack.assert_called_once()
-            mock_send_hb.assert_called_once()
-
-            metric_data = {'severity': data['severity'],
-                           'message': data['message']}
-            key = data['origin_id']
-
-            call_1 = call(Keys.get_hash_parent(data['parent_id']),
-                          eval('Keys.get_alert_{}(key)'.format(data['metric'])),
-                          json.dumps(metric_data))
-            mock_hset.assert_has_calls([call_1])
-            mock_process_mongo_store.assert_called_once()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        mock_ack.assert_called_once()
 
     @parameterized.expand([
-        ("self.alert_data_1",),
-        ("self.alert_data_2",),
-        ("self.alert_data_3",),
+        (pika.exceptions.AMQPConnectionError,
+         pika.exceptions.AMQPConnectionError('test'),),
+        (pika.exceptions.AMQPChannelError,
+         pika.exceptions.AMQPChannelError('test'),),
+        (Exception, Exception('test'),),
     ])
-    def test_process_mongo_store_mongo_stores_correctly(
-            self, mock_system_data) -> None:
-
-        data = eval(mock_system_data)
-        self.test_store._process_mongo_store(data)
-
-        documents = self.mongo.get_all(data['parent_id'])
-        document = documents[0]
-        expected = [
-            'alert',
-            1,
-            str(data['origin_id']),
-            str(data['alert_code']['name']),
-            str(data['severity']),
-            str(data['metric']),
-            str(data['message']),
-            str(data['timestamp'])
-        ]
-        actual = [
-            document['doc_type'],
-            document['n_alerts'],
-            document['alerts'][0]['origin'],
-            document['alerts'][0]['alert_name'],
-            document['alerts'][0]['severity'],
-            document['alerts'][0]['metric'],
-            document['alerts'][0]['message'],
-            document['alerts'][0]['timestamp']
-        ]
-
-        self.assertListEqual(expected, actual)
-
-    @parameterized.expand([
-        ("self.alert_data_1",),
-        ("self.alert_data_2",),
-        ("self.alert_data_3",),
-    ])
-    def test_process_redis_store_redis_stores_correctly(
-            self, mock_system_data) -> None:
-
-        data = eval(mock_system_data)
-        self.test_store._process_redis_store(data)
-
-        key = data['origin_id']
-
-        stored_data = self.redis.hget(
-            Keys.get_hash_parent(data['parent_id']),
-            eval('Keys.get_alert_{}(key)'.format(data['metric'])))
-
-        expected_data = {'severity': data['severity'],
-                         'message': data['message']}
-
-        self.assertEqual(expected_data, json.loads(stored_data))
-
-    @parameterized.expand([
-        ("self.alert_data_1",),
-        ("self.alert_data_2",),
-        ("self.alert_data_3",),
-    ])
-    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-                autospec=True)
-    @mock.patch("src.data_store.stores.alert.AlertStore._process_redis_store",
-                autospec=True)
-    @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-                autospec=True)
-    def test_process_data_results_stores_in_mongo_correctly(
-            self, mock_system_data, mock_send_hb, mock_process_redis_store,
-            mock_ack) -> None:
-
+    @mock.patch.object(AlertStore, "_process_mongo_store")
+    @mock.patch.object(AlertStore, "_process_redis_store")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    @mock.patch.object(AlertStore, "_send_heartbeat")
+    def test_process_data_raises_unrecognized_error_if_raised_by_send_hb(
+            self, exception_class, exception_instance, mock_send_hb, mock_ack,
+            mock_proc_redis, mock_proc_mongo) -> None:
         mock_ack.return_value = None
-        try:
-            self.test_store._initialise_rabbitmq()
+        mock_proc_redis.return_value = None
+        mock_proc_mongo.return_value = None
+        mock_send_hb.side_effect = exception_instance
 
-            data = eval(mock_system_data)
-            blocking_channel = self.test_store.rabbitmq.channel
-            method_chains = pika.spec.Basic.Deliver(
-                routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
+        self.test_store._initialise_rabbitmq()
+        blocking_channel = self.test_store.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(
+            routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
+        body = json.dumps(self.alert_data_1)
+        properties = pika.spec.BasicProperties()
 
-            properties = pika.spec.BasicProperties()
-            self.test_store._process_data(
-                blocking_channel,
-                method_chains,
-                properties,
-                json.dumps(data).encode()
-            )
-
-            mock_process_redis_store.assert_called_once()
-            mock_ack.assert_called_once()
-            mock_send_hb.assert_called_once()
-
-            documents = self.mongo.get_all(data['parent_id'])
-            document = documents[0]
-            expected = [
-                'alert',
-                1,
-                str(data['origin_id']),
-                str(data['alert_code']['name']),
-                str(data['severity']),
-                str(data['message']),
-                str(data['timestamp'])
-            ]
-            actual = [
-                document['doc_type'],
-                document['n_alerts'],
-                document['alerts'][0]['origin'],
-                document['alerts'][0]['alert_name'],
-                document['alerts'][0]['severity'],
-                document['alerts'][0]['message'],
-                document['alerts'][0]['timestamp']
-            ]
-
-            self.assertListEqual(expected, actual)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ("self.alert_data_1",),
-        ("self.alert_data_2",),
-        ("self.alert_data_3",),
-    ])
-    @mock.patch("src.data_store.stores.store.RabbitMQApi.basic_ack",
-                autospec=True)
-    @mock.patch("src.data_store.stores.alert.AlertStore._process_mongo_store",
-                autospec=True)
-    @mock.patch("src.data_store.stores.store.Store._send_heartbeat",
-                autospec=True)
-    def test_process_data_results_stores_in_redis_correctly(
-            self, mock_system_data, mock_send_hb, mock_process_mongo_store,
-            mock_ack) -> None:
-
-        mock_ack.return_value = None
-        try:
-            self.test_store._initialise_rabbitmq()
-
-            data = eval(mock_system_data)
-            blocking_channel = self.test_store.rabbitmq.channel
-            method_chains = pika.spec.Basic.Deliver(
-                routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
-
-            properties = pika.spec.BasicProperties()
-            self.test_store._process_data(
-                blocking_channel,
-                method_chains,
-                properties,
-                json.dumps(data).encode()
-            )
-
-            mock_process_mongo_store.assert_called_once()
-            mock_ack.assert_called_once()
-            mock_send_hb.assert_called_once()
-
-            key = data['origin_id']
-
-            stored_data = self.redis.hget(
-                Keys.get_hash_parent(data['parent_id']),
-                eval('Keys.get_alert_{}(key)'.format(data['metric'])))
-
-            expected_data = {'severity': data['severity'],
-                             'message': data['message']}
-
-            self.assertEqual(expected_data, json.loads(stored_data))
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        self.assertRaises(exception_class, self.test_store._process_data,
+                          blocking_channel, method, properties, body)
+        mock_ack.assert_called_once()

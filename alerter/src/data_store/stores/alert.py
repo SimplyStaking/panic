@@ -5,14 +5,32 @@ from typing import Dict
 
 import pika.exceptions
 
+from src.alerter.alert_code import InternalAlertCode
+from src.alerter.alert_severities import Severity
+from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
+from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
+from src.alerter.alerters.node.evm import EVMNodeAlerter
+from src.alerter.alerters.system import SystemAlerter
 from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
-from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 ALERT_STORE_INPUT_QUEUE,
-                                 ALERT_STORE_INPUT_ROUTING_KEY)
+from src.utils.constants.data import (EXPIRE_METRICS,
+                                      CHAINLINK_METRICS_TO_STORE,
+                                      SYSTEM_METRICS_TO_STORE,
+                                      CHAINLINK_CONTRACT_METRICS_TO_STORE,
+                                      EVM_METRICS_TO_STORE)
+from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                          ALERT_STORE_INPUT_QUEUE_NAME,
+                                          ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException)
+
+_LIST_OF_ALERTERS = [SystemAlerter.__name__,
+                     ChainlinkNodeAlerter.__name__,
+                     GithubAlerter.__name__,
+                     EVMNodeAlerter.__name__,
+                     ChainlinkContractAlerter.__name__]
 
 
 class AlertStore(Store):
@@ -34,13 +52,13 @@ class AlertStore(Store):
         """
         self.rabbitmq.connect_till_successful()
         self.rabbitmq.exchange_declare(exchange=STORE_EXCHANGE,
-                                       exchange_type='direct', passive=False,
+                                       exchange_type=TOPIC, passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE, passive=False,
+        self.rabbitmq.queue_declare(ALERT_STORE_INPUT_QUEUE_NAME, passive=False,
                                     durable=True, exclusive=False,
                                     auto_delete=False)
-        self.rabbitmq.queue_bind(queue=ALERT_STORE_INPUT_QUEUE,
+        self.rabbitmq.queue_bind(queue=ALERT_STORE_INPUT_QUEUE_NAME,
                                  exchange=STORE_EXCHANGE,
                                  routing_key=ALERT_STORE_INPUT_ROUTING_KEY)
 
@@ -48,11 +66,11 @@ class AlertStore(Store):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
     def _listen_for_data(self) -> None:
-        self.rabbitmq.basic_consume(queue=ALERT_STORE_INPUT_QUEUE,
+        self.rabbitmq.basic_consume(queue=ALERT_STORE_INPUT_QUEUE_NAME,
                                     on_message_callback=self._process_data,
                                     auto_ack=False, exclusive=False,
                                     consumer_tag=None)
@@ -69,7 +87,7 @@ class AlertStore(Store):
         alerts will be stored in mongo, there isn't a need to store them in
         redis. If successful, a heartbeat will be sent.
         """
-        alert_data = json.loads(body.decode())
+        alert_data = json.loads(body)
         self.logger.debug("Received %s. Now processing this data.", alert_data)
 
         processing_error = False
@@ -119,32 +137,148 @@ class AlertStore(Store):
         $max is the timestamp of the last alert entered
         $inc increments n_alerts by one each time an alert is added
         """
-        self.mongo.update_one(
-            alert['parent_id'],
-            {
-                'doc_type': 'alert',
-                'n_alerts': {'$lt': 1000}
-            }, {
-                '$push': {
-                    'alerts': {
-                        'origin': alert['origin_id'],
-                        'alert_name': alert['alert_code']['name'],
-                        'severity': alert['severity'],
-                        'message': alert['message'],
-                        'metric': alert['metric'],
-                        'timestamp': str(alert['timestamp']),
-                    }
-                },
-                '$min': {'first': alert['timestamp']},
-                '$max': {'last': alert['timestamp']},
-                '$inc': {'n_alerts': 1},
-            }
-        )
+
+        # Do not save the internal alerts into Mongo as they aren't useful to
+        # the user
+        if alert['severity'] != Severity.INTERNAL.value:
+            self.mongo.update_one(
+                alert['parent_id'],
+                {
+                    'doc_type': 'alert',
+                    'n_alerts': {'$lt': 1000}
+                }, {
+                    '$push': {
+                        'alerts': {
+                            'origin': alert['origin_id'],
+                            'alert_name': alert['alert_code']['name'],
+                            'severity': alert['severity'],
+                            'message': alert['message'],
+                            'metric': alert['metric'],
+                            'timestamp': alert['timestamp'],
+                        }
+                    },
+                    '$min': {'first': alert['timestamp']},
+                    '$max': {'last': alert['timestamp']},
+                    '$inc': {'n_alerts': 1},
+                }
+            )
 
     def _process_redis_store(self, alert: Dict) -> None:
-        metric_data = {'severity': alert['severity'],
-                       'message': alert['message']}
-        key = alert['origin_id']
-        self.redis.hset(Keys.get_hash_parent(alert['parent_id']),
-                        eval('Keys.get_alert_{}(key)'.format(alert['metric'])),
-                        json.dumps(metric_data))
+        if alert['severity'] == Severity.INTERNAL.value:
+            if alert['alert_code']['code'] == \
+                    InternalAlertCode.ComponentResetAlert.value and \
+                    alert['origin_id'] in _LIST_OF_ALERTERS:
+                """
+                The `ComponentResetAlert` indicates that a component or PANIC
+                has restarted. If this component is an alerter, we will reset
+                the relevant component metrics for all chains or for a
+                particular chain, depending on whether the parent_id is None or
+                not.
+                """
+                configuration = {
+                    SystemAlerter.__name__: {
+                        'metrics_type': 'system',
+                        'redis_key_index': 'alert_system'
+                    },
+                    ChainlinkNodeAlerter.__name__: {
+                        'metrics_type': 'chainlink node metrics',
+                        'redis_key_index': 'alert_cl_node'
+                    },
+                    GithubAlerter.__name__: {
+                        'metrics_type': 'github',
+                        'redis_key_index': 'alert_github2'
+                    },
+                    EVMNodeAlerter.__name__: {
+                        'metrics_type': 'evm node metrics',
+                        'redis_key_index': 'alert_evm_node'
+                    },
+                    ChainlinkContractAlerter.__name__: {
+                        'metrics_type': 'chainlink contract',
+                        'redis_key_index': 'alert_cl_contract'
+                    }
+                }
+                alerter_type = alert['origin_id']
+                metrics_type = configuration[alerter_type]['metrics_type']
+                redis_key_index = configuration[alerter_type]['redis_key_index']
+                if alert['parent_id'] is None:
+                    self.logger.debug("Resetting the %s metrics for all "
+                                      "chains.", metrics_type)
+                    parent_hash = Keys.get_hash_parent_raw()
+                    chain_hashes_list = self.redis.get_keys_unsafe(
+                        '*' + parent_hash + '*')
+
+                    # Go through all the chains that are in REDIS
+                    for chain in chain_hashes_list:
+                        # For each chain we need to load all the keys and only
+                        # delete the ones that match the pattern `alert_system*`
+                        # or `alert_cl_node*`, depending on the alerter_type.
+                        # Note, REDIS doesn't support this natively
+                        for key in self.redis.hkeys(chain):
+                            # We only want to delete alert keys
+                            if redis_key_index in key and self.redis.hexists(
+                                    chain, key):
+                                self.redis.hremove(chain, key)
+                else:
+                    self.logger.debug("Resetting %s metrics for chain %s.",
+                                      metrics_type, alert['parent_id'])
+                    """
+                    For the specified chain we need to load all the keys and
+                    only delete the ones that match the pattern `alert_system*`
+                    or `alert_cl_node*`, depending on the alerter_type.
+                    Note, REDIS doesn't support this natively.
+                    """
+                    chain_hash = Keys.get_hash_parent(alert['parent_id'])
+                    for key in self.redis.hkeys(chain_hash):
+                        # We only want to delete alert keys
+                        if redis_key_index in key and self.redis.hexists(
+                                chain_hash, key):
+                            self.redis.hremove(chain_hash, key)
+        else:
+            """
+            If the alert is not of severity Internal, the metric needs to be
+            stored in REDIS, this will be used for easier querying on the UI.
+            """
+            self.logger.debug("Saving alert in REDIS: %s.", alert)
+            metric_data = {'severity': alert['severity'],
+                           'message': alert['message'],
+                           'timestamp': alert['timestamp'],
+                           'expiry': None}
+            key = alert['origin_id']
+
+            # Check if this metric cannot be overwritten and has to be deleted
+            if alert['metric'] in EXPIRE_METRICS:
+                metric_data['expiry'] = alert['timestamp'] + 600
+
+            if alert['metric'] in CHAINLINK_METRICS_TO_STORE:
+                self.redis.hset(
+                    Keys.get_hash_parent(alert['parent_id']),
+                    eval('Keys.get_alert_cl_{}(key)'.format(alert['metric'])),
+                    json.dumps(metric_data)
+                )
+            elif alert['metric'] in SYSTEM_METRICS_TO_STORE:
+                self.redis.hset(
+                    Keys.get_hash_parent(alert['parent_id']),
+                    eval('Keys.get_alert_{}(key)'.format(alert['metric'])),
+                    json.dumps(metric_data)
+                )
+            elif alert['metric'] in EVM_METRICS_TO_STORE:
+                self.redis.hset(
+                    Keys.get_hash_parent(alert['parent_id']),
+                    eval('Keys.get_alert_evm_{}(key)'.format(alert['metric'])),
+                    json.dumps(metric_data)
+                )
+            elif alert['metric'] in CHAINLINK_CONTRACT_METRICS_TO_STORE:
+                contract_proxy_address = alert['alert_data'][
+                    'contract_proxy_address']
+                self.redis.hset(
+                    Keys.get_hash_parent(alert['parent_id']),
+                    eval('Keys.get_alert_cl_contract_{}(key, '
+                         'contract_proxy_address)'.format(alert['metric'])),
+                    json.dumps(metric_data)
+                )
+            else:
+                self.redis.hset(
+                    Keys.get_hash_parent(alert['parent_id']),
+                    eval('Keys.get_alert_{}(key)'.format(alert['metric'])),
+                    json.dumps(metric_data)
+                )

@@ -10,13 +10,19 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 from src.abstract.publisher_subscriber import PublisherSubscriberComponent
 from src.data_store.starters import (start_system_store, start_github_store,
-                                     start_alert_store, start_config_store)
+                                     start_alert_store, start_config_store,
+                                     start_chainlink_node_store,
+                                     start_evm_node_store,
+                                     start_cl_contract_store)
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_NAME,
-                                 GITHUB_STORE_NAME, ALERT_STORE_NAME,
-                                 DATA_STORE_MAN_INPUT_QUEUE,
-                                 DATA_STORE_MAN_INPUT_ROUTING_KEY,
-                                 CONFIG_STORE_NAME)
+from src.utils.constants.names import (SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
+                                       ALERT_STORE_NAME, CONFIG_STORE_NAME,
+                                       CL_NODE_STORE_NAME, EVM_NODE_STORE_NAME,
+                                       CL_CONTRACT_STORE_NAME)
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          PING_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -40,21 +46,20 @@ class StoreManager(PublisherSubscriberComponent):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", DATA_STORE_MAN_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(DATA_STORE_MAN_INPUT_QUEUE, False, True,
-                                    False, False)
+        self.logger.info("Creating queue '%s'",
+                         DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME, False,
+                                    True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", DATA_STORE_MAN_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE,
-                         DATA_STORE_MAN_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(DATA_STORE_MAN_INPUT_QUEUE,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 DATA_STORE_MAN_INPUT_ROUTING_KEY)
+                         "'%s'", DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
+        self.rabbitmq.queue_bind(DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.debug("Declaring consuming intentions on '%s'",
-                          DATA_STORE_MAN_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(DATA_STORE_MAN_INPUT_QUEUE,
+                          DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.basic_consume(DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 
         # Declare publishing intentions
@@ -66,9 +71,10 @@ class StoreManager(PublisherSubscriberComponent):
 
     def _send_heartbeat(self, data_to_send: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
-            exchange=HEALTH_CHECK_EXCHANGE, routing_key='heartbeat.manager',
-            body=data_to_send, is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, body=data_to_send,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
         self.logger.debug("Sent heartbeat to '%s' exchange",
                           HEALTH_CHECK_EXCHANGE)
 
@@ -113,43 +119,30 @@ class StoreManager(PublisherSubscriberComponent):
             raise e
 
     def _start_stores_processes(self) -> None:
-        # Start each store in a separate process if it is not yet started or it
-        # is not alive. This must be done in case of a restart of the manager.
-        if SYSTEM_STORE_NAME not in self._store_process_dict or \
-                not self._store_process_dict[SYSTEM_STORE_NAME].is_alive():
-            log_and_print("Attempting to start the {}.".format(
-                SYSTEM_STORE_NAME), self.logger)
-            system_store_process = Process(target=start_system_store, args=())
-            system_store_process.daemon = True
-            system_store_process.start()
-            self._store_process_dict[SYSTEM_STORE_NAME] = system_store_process
-
-        if GITHUB_STORE_NAME not in self._store_process_dict or \
-                not self._store_process_dict[GITHUB_STORE_NAME].is_alive():
-            log_and_print("Attempting to start the {}.".format(
-                GITHUB_STORE_NAME), self.logger)
-            github_store_process = Process(target=start_github_store, args=())
-            github_store_process.daemon = True
-            github_store_process.start()
-            self._store_process_dict[GITHUB_STORE_NAME] = github_store_process
-
-        if ALERT_STORE_NAME not in self._store_process_dict or \
-                not self._store_process_dict[ALERT_STORE_NAME].is_alive():
-            log_and_print("Attempting to start the {}.".format(
-                ALERT_STORE_NAME), self.logger)
-            alert_store_process = Process(target=start_alert_store, args=())
-            alert_store_process.daemon = True
-            alert_store_process.start()
-            self._store_process_dict[ALERT_STORE_NAME] = alert_store_process
-
-        if CONFIG_STORE_NAME not in self._store_process_dict or \
-                not self._store_process_dict[CONFIG_STORE_NAME].is_alive():
-            log_and_print("Attempting to start the {}.".format(
-                CONFIG_STORE_NAME), self.logger)
-            config_store_process = Process(target=start_config_store, args=())
-            config_store_process.daemon = True
-            config_store_process.start()
-            self._store_process_dict[CONFIG_STORE_NAME] = config_store_process
+        """
+        This method starts the data stores in a separate process if they are not
+        yet started or not alive. This must be done in case the manager
+        restarts.
+        :return: None
+        """
+        configuration = {
+            SYSTEM_STORE_NAME: start_system_store,
+            GITHUB_STORE_NAME: start_github_store,
+            ALERT_STORE_NAME: start_alert_store,
+            CONFIG_STORE_NAME: start_config_store,
+            CL_NODE_STORE_NAME: start_chainlink_node_store,
+            EVM_NODE_STORE_NAME: start_evm_node_store,
+            CL_CONTRACT_STORE_NAME: start_cl_contract_store,
+        }
+        for store_name, store_starter in configuration.items():
+            if store_name not in self._store_process_dict or not \
+                    self._store_process_dict[store_name].is_alive():
+                log_and_print("Attempting to start the {}.".format(
+                    store_name), self.logger)
+                transformer_process = Process(target=store_starter, args=())
+                transformer_process.daemon = True
+                transformer_process.start()
+                self._store_process_dict[store_name] = transformer_process
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)

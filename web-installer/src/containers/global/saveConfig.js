@@ -5,7 +5,8 @@ import PropTypes from 'prop-types';
 import { ToastsStore } from 'react-toasts';
 import { SaveConfigButton } from 'utils/buttons';
 import { sendConfig, deleteConfigs } from 'utils/data';
-import { GLOBAL } from 'constants/constants';
+import { GENERAL } from 'constants/constants';
+import { setAlertsData } from 'utils/helpers';
 
 // List of all the data that needs to be saved in the server
 const mapStateToProps = (state) => ({
@@ -13,8 +14,14 @@ const mapStateToProps = (state) => ({
   cosmosChains: state.CosmosChainsReducer,
   cosmosNodes: state.CosmosNodesReducer,
 
+  // Substrate related data
   substrateChains: state.SubstrateChainsReducer,
   substrateNodes: state.SubstrateNodesReducer,
+
+  // Chainlink related data
+  chainlinkChains: state.ChainlinkChainsReducer,
+  chainlinkNodes: state.ChainlinkNodesReducer,
+  evmNodes: state.EvmNodesReducer,
 
   // Channels related data
   emails: state.EmailsReducer,
@@ -22,13 +29,13 @@ const mapStateToProps = (state) => ({
   pagerduties: state.PagerDutyReducer,
   telegrams: state.TelegramsReducer,
   twilios: state.TwiliosReducer,
+  slacks: state.SlacksReducer,
 
   // General data related to
-  repositories: state.RepositoryReducer,
-  // kmses: state.KmsReducer,
-  general: state.GeneralReducer.byId[GLOBAL],
+  githubRepositories: state.GitHubRepositoryReducer,
+  general: state.GeneralReducer.byId[GENERAL],
   systems: state.SystemsReducer,
-  // periodic: state.PeriodicReducer,
+  dockerHub: state.DockerHubReducer,
 });
 
 class SaveConfig extends Component {
@@ -44,16 +51,19 @@ class SaveConfig extends Component {
       telegrams,
       twilios,
       opsgenies,
+      slacks,
       cosmosChains,
       cosmosNodes,
-      repositories,
-      // kmses,
+      chainlinkChains,
+      chainlinkNodes,
+      evmNodes,
+      githubRepositories,
       substrateChains,
       substrateNodes,
       general,
       systems,
+      dockerHub,
       closeOnSave,
-      // periodic,
     } = this.props;
 
     await deleteConfigs();
@@ -79,10 +89,14 @@ class SaveConfig extends Component {
       await sendConfig('channel', 'opsgenie_config.ini', '', '', opsgenies.byId);
     }
 
+    if (slacks.allIds.length !== 0) {
+      await sendConfig('channel', 'slack_config.ini', '', '', slacks.byId);
+    }
+
     // We have to use forEach as await requires the For loop to be async
     cosmosChains.allIds.forEach(async (currentChainId) => {
       const chainConfig = cosmosChains.byId[currentChainId];
-      // First we will save the nodes pretaining to the cosmos based chain
+      // First we will save the nodes pertaining to the cosmos based chain
       if (chainConfig.nodes.length !== 0) {
         const nodesToSave = {};
         for (let j = 0; j < chainConfig.nodes.length; j += 1) {
@@ -101,110 +115,45 @@ class SaveConfig extends Component {
         );
       }
 
-      // Repeat the above process for repositories
-      if (chainConfig.repositories.length !== 0) {
+      // Repeat the above process for githubRepositories
+      if (chainConfig.githubRepositories.length !== 0) {
         const reposToSave = {};
-        for (let j = 0; j < chainConfig.repositories.length; j += 1) {
-          const currentId = chainConfig.repositories[j];
-          reposToSave[currentId] = repositories.byId[currentId];
+        for (let j = 0; j < chainConfig.githubRepositories.length; j += 1) {
+          const currentId = chainConfig.githubRepositories[j];
+          reposToSave[currentId] = githubRepositories.byId[currentId];
         }
 
         // Once the node details are extracted from the list of all nodes, we
         // save it to it's own file
         await sendConfig(
           'chain',
-          'repos_config.ini',
+          'github_repos_config.ini',
           chainConfig.chain_name,
           'cosmos',
           reposToSave,
         );
       }
 
-      // // Repeat the above process for kms configs
-      // if (chainConfig.kmses.length !== 0) {
-      //   const kmsToSave = {};
-      //   for (let j = 0; j < chainConfig.kmses.length; j += 1) {
-      //     const currentId = chainConfig.kmses[j];
-      //     kmsToSave[currentId] = kmses.byId[currentId];
-      //   }
+      // Repeat the above process for dockerHub
+      if (chainConfig.dockerHubs.length !== 0) {
+        const dockerHubsToSave = {};
+        for (let j = 0; j < chainConfig.dockerHubs.length; j += 1) {
+          const currentId = chainConfig.dockerHubs[j];
+          dockerHubsToSave[currentId] = dockerHub.byId[currentId];
+        }
 
-      //   // Once the node details are extracted from the list of all nodes, we
-      //   // save it to it's own file
-      //   await sendConfig(
-      //     "chain",
-      //     "kms_config.ini",
-      //     chainConfig.chain_name,
-      //     "cosmos",
-      //     kmsToSave
-      //   );
-      // }
-
-      // Redo the structure of these alerts to be able to save them in the .ini
-      // file
-      const repeatAlertsConfig = {};
-      for (let i = 0; i < chainConfig.repeatAlerts.allIds.length; i += 1) {
-        const id = chainConfig.repeatAlerts.allIds[i];
-        repeatAlertsConfig[id] = {};
-        repeatAlertsConfig[id].name = chainConfig.repeatAlerts.byId[id].identifier;
-        repeatAlertsConfig[id].parent_id = currentChainId;
-        repeatAlertsConfig[id].enabled = chainConfig.repeatAlerts.byId[id].enabled;
-        repeatAlertsConfig[id].critical_enabled = chainConfig.repeatAlerts.byId[id].critical.enabled;
-        repeatAlertsConfig[id].critical_repeat = chainConfig.repeatAlerts.byId[id].critical.repeat;
-        repeatAlertsConfig[id].warning_enabled = chainConfig.repeatAlerts.byId[id].warning.enabled;
-        repeatAlertsConfig[id].warning_repeat = chainConfig.repeatAlerts.byId[id].warning.repeat;
+        // Once the node details are extracted from the list of all nodes, we
+        // save it to it's own file
+        await sendConfig(
+          'chain',
+          'dockerhub_repos_config.ini',
+          chainConfig.chain_name,
+          'cosmos',
+          dockerHubsToSave,
+        );
       }
 
-      // Redo the structure of these alerts to be able to save them in the .ini
-      // file
-      const thresholdAlertsConfig = {};
-      for (let i = 0; i < chainConfig.thresholdAlerts.allIds.length; i += 1) {
-        const id = chainConfig.thresholdAlerts.allIds[i];
-        thresholdAlertsConfig[id] = {};
-        thresholdAlertsConfig[id].name = chainConfig.thresholdAlerts.byId[id].identifier;
-        thresholdAlertsConfig[id].parent_id = currentChainId;
-        thresholdAlertsConfig[id].enabled = chainConfig.thresholdAlerts.byId[id].enabled;
-        thresholdAlertsConfig[id].warning_threshold = chainConfig.thresholdAlerts.byId[id].warning.threshold;
-        thresholdAlertsConfig[id].warning_enabled = chainConfig.thresholdAlerts.byId[id].warning.enabled;
-        thresholdAlertsConfig[id].critical_threshold = chainConfig.thresholdAlerts.byId[id].critical.threshold;
-        thresholdAlertsConfig[id].critical_repeat = chainConfig.thresholdAlerts.byId[id].critical.repeat;
-        thresholdAlertsConfig[id].critical_enabled = chainConfig.thresholdAlerts.byId[id].critical.enabled;
-      }
-
-      // Redo the structure of these alerts to be able to save them in the .ini
-      // file
-      const timeWindowAlertsConfig = {};
-      for (let i = 0; i < chainConfig.timeWindowAlerts.allIds.length; i += 1) {
-        const id = chainConfig.timeWindowAlerts.allIds[i];
-        timeWindowAlertsConfig[id] = {};
-        timeWindowAlertsConfig[id].name = chainConfig.timeWindowAlerts.byId[id].identifier;
-        timeWindowAlertsConfig[id].parent_id = currentChainId;
-        timeWindowAlertsConfig[id].enabled = chainConfig.timeWindowAlerts.byId[id].enabled;
-        timeWindowAlertsConfig[id].warning_threshold = chainConfig.timeWindowAlerts.byId[id].warning.threshold;
-        timeWindowAlertsConfig[id].warning_time_window = chainConfig.timeWindowAlerts.byId[id].warning.time_window;
-        timeWindowAlertsConfig[id].warning_enabled = chainConfig.timeWindowAlerts.byId[id].warning.enabled;
-        timeWindowAlertsConfig[id].critical_threshold = chainConfig.timeWindowAlerts.byId[id].critical.threshold;
-        timeWindowAlertsConfig[id].critical_time_window = chainConfig.timeWindowAlerts.byId[id].critical.time_window;
-        timeWindowAlertsConfig[id].critical_enabled = chainConfig.timeWindowAlerts.byId[id].critical.enabled;
-      }
-
-      // Redo the structure of these alerts to be able to save them in the .ini
-      // file
-      const severityAlertsConfig = {};
-      for (let i = 0; i < chainConfig.severityAlerts.allIds.length; i += 1) {
-        const id = chainConfig.severityAlerts.allIds[i];
-        severityAlertsConfig[id] = {};
-        severityAlertsConfig[id].name = chainConfig.severityAlerts.byId[id].identifier;
-        severityAlertsConfig[id].parent_id = currentChainId;
-        severityAlertsConfig[id].enabled = chainConfig.severityAlerts.byId[id].enabled;
-        severityAlertsConfig[id].severity = chainConfig.severityAlerts.byId[id].severity;
-      }
-
-      const allAlertsConfig = {
-        ...repeatAlertsConfig,
-        ...thresholdAlertsConfig,
-        ...timeWindowAlertsConfig,
-        ...severityAlertsConfig,
-      };
+      const allAlertsConfig = setAlertsData(chainConfig, currentChainId);
 
       await sendConfig(
         'chain',
@@ -237,99 +186,171 @@ class SaveConfig extends Component {
         );
       }
 
-      // Repeat the above process for repositories
-      if (chainConfig.repositories.length !== 0) {
+      // Repeat the above process for githubRepositories
+      if (chainConfig.githubRepositories.length !== 0) {
         const reposToSave = {};
-        for (let j = 0; j < chainConfig.repositories.length; j += 1) {
-          const currentId = chainConfig.repositories[j];
-          reposToSave[currentId] = repositories.byId[currentId];
+        for (let j = 0; j < chainConfig.githubRepositories.length; j += 1) {
+          const currentId = chainConfig.githubRepositories[j];
+          reposToSave[currentId] = githubRepositories.byId[currentId];
         }
 
         // Once the node details are extracted from the list of all nodes, we
         // save it to it's own file
         await sendConfig(
           'chain',
-          'repos_config.ini',
+          'github_repos_config.ini',
           chainConfig.chain_name,
           'substrate',
           reposToSave,
         );
       }
 
-      // Redo the structure of these alerts to be able to save them in the .ini
-      // file
-      const repeatAlertsConfig = {};
-      for (let i = 0; i < chainConfig.repeatAlerts.allIds.length; i += 1) {
-        const id = chainConfig.repeatAlerts.allIds[i];
-        repeatAlertsConfig[id] = {};
-        repeatAlertsConfig[id].name = chainConfig.repeatAlerts.byId[id].identifier;
-        repeatAlertsConfig[id].enabled = chainConfig.repeatAlerts.byId[id].enabled;
-        repeatAlertsConfig[id].parent_id = currentChainId;
-        repeatAlertsConfig[id].critical_delayed = chainConfig.repeatAlerts.byId[id].critical.delayed;
-        repeatAlertsConfig[id].critical_enabled = chainConfig.repeatAlerts.byId[id].critical.enabled;
-        repeatAlertsConfig[id].critical_repeat = chainConfig.repeatAlerts.byId[id].critical.repeat;
-        repeatAlertsConfig[id].warning_delayed = chainConfig.repeatAlerts.byId[id].warning.delayed;
-        repeatAlertsConfig[id].warning_enabled = chainConfig.repeatAlerts.byId[id].warning.enabled;
-        repeatAlertsConfig[id].warning_repeat = chainConfig.repeatAlerts.byId[id].warning.repeat;
+      // Repeat the above process for docker
+      if (chainConfig.dockerHubs.length !== 0) {
+        const dockerHubsToSave = {};
+        for (let j = 0; j < chainConfig.dockerHubs.length; j += 1) {
+          const currentId = chainConfig.dockerHubs[j];
+          dockerHubsToSave[currentId] = dockerHub.byId[currentId];
+        }
+
+        // Once the node details are extracted from the list of all nodes, we
+        // save it to it's own file
+        await sendConfig(
+          'chain',
+          'dockerhub_repos_config.ini',
+          chainConfig.chain_name,
+          'substrate',
+          dockerHubsToSave,
+        );
       }
 
-      // Redo the structure of these alerts to be able to save them in the .ini
-      // file
-      const thresholdAlertsConfig = {};
-      for (let i = 0; i < chainConfig.thresholdAlerts.allIds.length; i += 1) {
-        const id = chainConfig.thresholdAlerts.allIds[i];
-        thresholdAlertsConfig[id] = {};
-        thresholdAlertsConfig[id].name = chainConfig.thresholdAlerts.byId[id].identifier;
-        thresholdAlertsConfig[id].parent_id = currentChainId;
-        thresholdAlertsConfig[id].enabled = chainConfig.thresholdAlerts.byId[id].enabled;
-        thresholdAlertsConfig[id].critical_threshold = chainConfig.thresholdAlerts.byId[id].critical.threshold;
-        thresholdAlertsConfig[id].critical_repeat = chainConfig.thresholdAlerts.byId[id].critical.repeat;
-        thresholdAlertsConfig[id].critical_enabled = chainConfig.thresholdAlerts.byId[id].critical.enabled;
-        thresholdAlertsConfig[id].warning_threshold = chainConfig.thresholdAlerts.byId[id].warning.threshold;
-        thresholdAlertsConfig[id].warning_enabled = chainConfig.thresholdAlerts.byId[id].warning.enabled;
-      }
-
-      // Redo the structure of these alerts to be able to save them in the .ini
-      // file
-      const timeWindowAlertsConfig = {};
-      for (let i = 0; i < chainConfig.timeWindowAlerts.allIds.length; i += 1) {
-        const id = chainConfig.timeWindowAlerts.allIds[i];
-        timeWindowAlertsConfig[id] = {};
-        timeWindowAlertsConfig[id].name = chainConfig.timeWindowAlerts.byId[id].identifier;
-        timeWindowAlertsConfig[id].parent_id = currentChainId;
-        timeWindowAlertsConfig[id].enabled = chainConfig.timeWindowAlerts.byId[id].enabled;
-        timeWindowAlertsConfig[id].critical_threshold = chainConfig.timeWindowAlerts.byId[id].critical.threshold;
-        timeWindowAlertsConfig[id].critical_timewindow = chainConfig.timeWindowAlerts.byId[id].critical.timewindow;
-        timeWindowAlertsConfig[id].critical_enabled = chainConfig.timeWindowAlerts.byId[id].critical.enabled;
-        timeWindowAlertsConfig[id].warning_threshold = chainConfig.timeWindowAlerts.byId[id].warning.threshold;
-        timeWindowAlertsConfig[id].warning_timewindow = chainConfig.timeWindowAlerts.byId[id].warning.timewindow;
-        timeWindowAlertsConfig[id].warning_enabled = chainConfig.timeWindowAlerts.byId[id].warning.enabled;
-      }
-
-      // Redo the structure of these alerts to be able to save them in the .ini
-      // file
-      const severityAlertsConfig = {};
-      for (let i = 0; i < chainConfig.severityAlerts.allIds.length; i += 1) {
-        const id = chainConfig.severityAlerts.allIds[i];
-        severityAlertsConfig[id] = {};
-        severityAlertsConfig[id].name = chainConfig.severityAlerts.byId[id].identifier;
-        severityAlertsConfig[id].parent_id = currentChainId;
-        severityAlertsConfig[id].enabled = chainConfig.severityAlerts.byId[id].enabled;
-        severityAlertsConfig[id].severity = chainConfig.severityAlerts.byId[id].severity;
-      }
-
-      const allAlertsConfig = {
-        ...repeatAlertsConfig,
-        ...thresholdAlertsConfig,
-        ...timeWindowAlertsConfig,
-        ...severityAlertsConfig,
-      };
+      const allAlertsConfig = setAlertsData(chainConfig, currentChainId);
 
       await sendConfig(
         'chain',
         'alerts_config.ini',
         chainConfig.chain_name,
         'substrate',
+        allAlertsConfig,
+      );
+    });
+
+    // We have to use forEach as await requires the For loop to be async
+    chainlinkChains.allIds.forEach(async (currentChainId) => {
+      const chainConfig = chainlinkChains.byId[currentChainId];
+      const evmUrls = [];
+      const { weiWatchers } = chainlinkChains.byId[currentChainId];
+
+      await sendConfig('chain', 'weiwatchers_config.ini', chainConfig.chain_name, 'chainlink', {
+        weitwatchers: weiWatchers,
+      });
+      if (chainConfig.evmNodes.length !== 0) {
+        const evmNodesToSave = {};
+
+        for (let k = 0; k < chainConfig.evmNodes.length; k += 1) {
+          const currentId = chainConfig.evmNodes[k];
+          evmNodesToSave[currentId] = evmNodes.byId[currentId];
+          evmUrls.push(evmNodes.byId[currentId].node_http_url);
+        }
+
+        // Once the node details are extracted from the list of all nodes, we
+        // save it to it's own file
+        await sendConfig(
+          'chain',
+          'evm_nodes_config.ini',
+          chainConfig.chain_name,
+          'chainlink',
+          evmNodesToSave,
+        );
+      }
+
+      // First we will save the nodes pertaining to the substrate based chain
+      if (chainConfig.nodes.length !== 0) {
+        const nodesToSave = {};
+
+        for (let j = 0; j < chainConfig.nodes.length; j += 1) {
+          const currentId = chainConfig.nodes[j];
+          nodesToSave[currentId] = chainlinkNodes.byId[currentId];
+          nodesToSave[currentId].evm_nodes_urls = evmUrls;
+          nodesToSave[currentId].weiwatchers_url = weiWatchers.weiwatchers_url;
+          nodesToSave[currentId].monitor_contracts = weiWatchers.monitor_contracts;
+        }
+
+        // Once the node details are extracted from the list of all nodes, we
+        // save it to it's own file
+        await sendConfig(
+          'chain',
+          'nodes_config.ini',
+          chainConfig.chain_name,
+          'chainlink',
+          nodesToSave,
+        );
+      }
+
+      // Repeat the above process for githubRepositories
+      if (chainConfig.githubRepositories.length !== 0) {
+        const reposToSave = {};
+        for (let j = 0; j < chainConfig.githubRepositories.length; j += 1) {
+          const currentId = chainConfig.githubRepositories[j];
+          reposToSave[currentId] = githubRepositories.byId[currentId];
+        }
+
+        // Once the node details are extracted from the list of all nodes, we
+        // save it to it's own file
+        await sendConfig(
+          'chain',
+          'github_repos_config.ini',
+          chainConfig.chain_name,
+          'chainlink',
+          reposToSave,
+        );
+      }
+
+      // Repeat the above process for dockerHub
+      if (chainConfig.dockerHubs.length !== 0) {
+        const dockerHubsToSave = {};
+        for (let j = 0; j < chainConfig.dockerHubs.length; j += 1) {
+          const currentId = chainConfig.dockerHubs[j];
+          dockerHubsToSave[currentId] = dockerHub.byId[currentId];
+        }
+
+        // Once the node details are extracted from the list of all nodes, we
+        // save it to it's own file
+        await sendConfig(
+          'chain',
+          'dockerhub_repos_config.ini',
+          chainConfig.chain_name,
+          'chainlink',
+          dockerHubsToSave,
+        );
+      }
+
+      // Repeat the above process for systems
+      if (chainConfig.systems.length !== 0) {
+        const systemsToSave = {};
+        for (let j = 0; j < chainConfig.systems.length; j += 1) {
+          const currentId = chainConfig.systems[j];
+          systemsToSave[currentId] = systems.byId[currentId];
+        }
+
+        // Once the node details are extracted from the list of all nodes, we
+        // save it to it's own file
+        await sendConfig(
+          'chain',
+          'systems_config.ini',
+          chainConfig.chain_name,
+          'chainlink',
+          systemsToSave,
+        );
+      }
+
+      const allAlertsConfig = setAlertsData(chainConfig, currentChainId);
+
+      await sendConfig(
+        'chain',
+        'alerts_config.ini',
+        chainConfig.chain_name,
+        'chainlink',
         allAlertsConfig,
       );
     });
@@ -341,31 +362,20 @@ class SaveConfig extends Component {
     await sendConfig('general', 'systems_config.ini', '', '', generalSystems);
 
     const generalRepos = {};
-    for (let k = 0; k < general.repositories.length; k += 1) {
-      generalRepos[general.repositories[k]] = repositories.byId[general.repositories[k]];
+    for (let k = 0; k < general.githubRepositories.length; k += 1) {
+      generalRepos[general.githubRepositories[k]] = githubRepositories.byId[general.githubRepositories[k]];
     }
+    await sendConfig('general', 'github_repos_config.ini', '', '', generalRepos);
 
-    await sendConfig('general', 'repos_config.ini', '', '', generalRepos);
-
-    // Redo the structure of these alerts to be able to save them in the .ini
-    // file
-    const thresholdAlertsConfig = {};
-    for (let i = 0; i < general.thresholdAlerts.allIds.length; i += 1) {
-      const id = general.thresholdAlerts.allIds[i];
-      thresholdAlertsConfig[id] = {};
-      thresholdAlertsConfig[id].name = general.thresholdAlerts.byId[id].identifier;
-      thresholdAlertsConfig[id].enabled = general.thresholdAlerts.byId[id].enabled;
-      thresholdAlertsConfig[id].parent_id = 'GLOBAL';
-      thresholdAlertsConfig[id].critical_threshold = general.thresholdAlerts.byId[id].critical.threshold;
-      thresholdAlertsConfig[id].critical_repeat = general.thresholdAlerts.byId[id].critical.repeat;
-      thresholdAlertsConfig[id].critical_enabled = general.thresholdAlerts.byId[id].critical.enabled;
-      thresholdAlertsConfig[id].warning_threshold = general.thresholdAlerts.byId[id].warning.threshold;
-      thresholdAlertsConfig[id].warning_enabled = general.thresholdAlerts.byId[id].warning.enabled;
+    const generalDockerHub = {};
+    for (let k = 0; k < general.dockerHubs.length; k += 1) {
+      generalDockerHub[general.dockerHubs[k]] = dockerHub.byId[general.dockerHubs[k]];
     }
+    await sendConfig('general', 'dockerhub_repos_config.ini', '', '', generalDockerHub);
 
-    await sendConfig('general', 'alerts_config.ini', '', '', thresholdAlertsConfig);
+    const allAlertsConfig = setAlertsData(general, 'GENERAL');
+    await sendConfig('general', 'alerts_config.ini', '', '', allAlertsConfig);
 
-    // await sendConfig("general", "periodic_config.ini", "", "", { periodic });
     closeOnSave();
     ToastsStore.success('Saved Configs!', 5000);
   }
@@ -442,6 +452,41 @@ SaveConfig.propTypes = {
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
+  slacks: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      channel_name: PropTypes.string,
+      bot_token: PropTypes.string,
+      app_token: PropTypes.string,
+      bot_channel_id: PropTypes.string,
+      info: PropTypes.bool,
+      warning: PropTypes.bool,
+      critical: PropTypes.bool,
+      error: PropTypes.bool,
+      alerts: PropTypes.bool,
+      commands: PropTypes.bool,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  systems: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      parent_id: PropTypes.string,
+      name: PropTypes.string,
+      exporter_url: PropTypes.string,
+      monitor_system: PropTypes.bool,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  dockerHub: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      parent_id: PropTypes.string,
+      name: PropTypes.string,
+      monitor_docker: PropTypes.bool,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
   cosmosChains: PropTypes.shape({
     byId: PropTypes.shape({
       repeatAlerts: PropTypes.shape({
@@ -455,6 +500,7 @@ SaveConfig.propTypes = {
           critical: PropTypes.shape({
             delay: PropTypes.number,
             repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -472,6 +518,8 @@ SaveConfig.propTypes = {
           critical: PropTypes.shape({
             threshold: PropTypes.number,
             timewindow: PropTypes.number,
+            repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -487,6 +535,8 @@ SaveConfig.propTypes = {
           }),
           critical: PropTypes.shape({
             threshold: PropTypes.number,
+            repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -504,16 +554,6 @@ SaveConfig.propTypes = {
     }).isRequired,
     allIds: [],
   }).isRequired,
-  systems: PropTypes.shape({
-    byId: PropTypes.shape({
-      id: PropTypes.string,
-      parent_id: PropTypes.string,
-      name: PropTypes.string,
-      exporter_url: PropTypes.string,
-      monitor_system: PropTypes.bool,
-    }).isRequired,
-    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-  }).isRequired,
   cosmosNodes: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -530,7 +570,95 @@ SaveConfig.propTypes = {
     }).isRequired,
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
-  repositories: PropTypes.shape({
+  chainlinkChains: PropTypes.shape({
+    byId: PropTypes.shape({
+      repeatAlerts: PropTypes.shape({
+        byId: PropTypes.shape({
+          name: PropTypes.string,
+          warning: PropTypes.shape({
+            delay: PropTypes.number,
+            repeat: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          critical: PropTypes.shape({
+            delay: PropTypes.number,
+            repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
+            enabled: PropTypes.bool,
+          }),
+          enabled: PropTypes.bool,
+        }),
+        allIds: [],
+      }),
+      timeWindowAlerts: PropTypes.shape({
+        byId: PropTypes.shape({
+          name: PropTypes.string,
+          warning: PropTypes.shape({
+            threshold: PropTypes.number,
+            timewindow: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          critical: PropTypes.shape({
+            threshold: PropTypes.number,
+            timewindow: PropTypes.number,
+            repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
+            enabled: PropTypes.bool,
+          }),
+          enabled: PropTypes.bool,
+        }),
+        allIds: [],
+      }),
+      thresholdAlerts: PropTypes.shape({
+        byId: PropTypes.shape({
+          name: PropTypes.string,
+          warning: PropTypes.shape({
+            threshold: PropTypes.number,
+            enabled: PropTypes.bool,
+          }),
+          critical: PropTypes.shape({
+            threshold: PropTypes.number,
+            repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
+            enabled: PropTypes.bool,
+          }),
+          enabled: PropTypes.bool,
+        }),
+        allIds: [],
+      }),
+      severityAlerts: PropTypes.shape({
+        byId: PropTypes.shape({
+          name: PropTypes.string,
+          severity: PropTypes.string,
+          enabled: PropTypes.bool,
+        }),
+        allIds: [],
+      }),
+    }).isRequired,
+    allIds: [],
+  }).isRequired,
+  chainlinkNodes: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      parent_id: PropTypes.string,
+      name: PropTypes.string,
+      node_prometheus_urls: PropTypes.string,
+      monitor_prometheus: PropTypes.bool,
+      monitor_node: PropTypes.bool,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  evmNodes: PropTypes.shape({
+    byId: PropTypes.shape({
+      id: PropTypes.string,
+      parent_id: PropTypes.string,
+      name: PropTypes.string,
+      node_http_url: PropTypes.string,
+      monitor_node: PropTypes.bool,
+    }).isRequired,
+    allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+  }).isRequired,
+  githubRepositories: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
       parent_id: PropTypes.string,
@@ -552,6 +680,7 @@ SaveConfig.propTypes = {
           critical: PropTypes.shape({
             delay: PropTypes.number,
             repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -569,6 +698,8 @@ SaveConfig.propTypes = {
           critical: PropTypes.shape({
             threshold: PropTypes.number,
             timewindow: PropTypes.number,
+            repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -584,6 +715,8 @@ SaveConfig.propTypes = {
           }),
           critical: PropTypes.shape({
             threshold: PropTypes.number,
+            repeat: PropTypes.number,
+            repeat_enabled: PropTypes.bool,
             enabled: PropTypes.bool,
           }),
           enabled: PropTypes.bool,
@@ -619,13 +752,15 @@ SaveConfig.propTypes = {
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   general: PropTypes.shape({
-    repositories: PropTypes.arrayOf(PropTypes.string).isRequired,
+    githubRepositories: PropTypes.arrayOf(PropTypes.string).isRequired,
     systems: PropTypes.arrayOf(PropTypes.string).isRequired,
+    dockerHubs: PropTypes.arrayOf(PropTypes.string).isRequired,
     telegrams: PropTypes.arrayOf(PropTypes.string).isRequired,
     twilios: PropTypes.arrayOf(PropTypes.string).isRequired,
     emails: PropTypes.arrayOf(PropTypes.string).isRequired,
     pagerduties: PropTypes.arrayOf(PropTypes.string).isRequired,
     opsgenies: PropTypes.arrayOf(PropTypes.string).isRequired,
+    slacks: PropTypes.arrayOf(PropTypes.string).isRequired,
     thresholdAlerts: PropTypes.shape({
       byId: PropTypes.shape({
         name: PropTypes.string,
@@ -635,6 +770,8 @@ SaveConfig.propTypes = {
         }),
         critical: PropTypes.shape({
           threshold: PropTypes.number,
+          repeat: PropTypes.number,
+          repeat_enabled: PropTypes.bool,
           enabled: PropTypes.bool,
         }),
         enabled: PropTypes.bool,

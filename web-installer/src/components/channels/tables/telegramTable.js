@@ -1,10 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { forbidExtraProps } from 'airbnb-prop-types';
 import {
   Table,
   TableBody,
-  TableCell,
   TableContainer,
   TableHead,
   TableRow,
@@ -15,84 +13,86 @@ import Paper from '@material-ui/core/Paper';
 import CheckIcon from '@material-ui/icons/Check';
 import ClearIcon from '@material-ui/icons/Clear';
 import CancelIcon from '@material-ui/icons/Cancel';
+import StyledTableRow from 'assets/jss/custom-jss/StyledTableRow';
+import StyledTableCell from 'assets/jss/custom-jss/StyledTableCell';
 
 const TelegramTable = ({ telegrams, removeTelegramDetails }) => {
   if (telegrams.allIds.length === 0) {
     return <div />;
   }
   return (
-    <Box py={2}>
+    <Box pt={8}>
       <TableContainer component={Paper}>
-        <Table className="greyBackground" aria-label="simple table">
+        <Table className="greyBackground" aria-label="telegram-table">
           <TableHead>
             <TableRow>
-              <TableCell align="center">Telegram Name</TableCell>
-              <TableCell align="center">Token</TableCell>
-              <TableCell align="center">Chat ID</TableCell>
-              <TableCell align="center">Info</TableCell>
-              <TableCell align="center">Warning</TableCell>
-              <TableCell align="center">Critical</TableCell>
-              <TableCell align="center">Error</TableCell>
-              <TableCell align="center">Alerts</TableCell>
-              <TableCell align="center">Commands</TableCell>
-              <TableCell align="center">Delete</TableCell>
+              <StyledTableCell> Telegram Name </StyledTableCell>
+              <StyledTableCell align="right">Token</StyledTableCell>
+              <StyledTableCell align="right">Chat ID</StyledTableCell>
+              <StyledTableCell align="center">Info</StyledTableCell>
+              <StyledTableCell align="center">Warning</StyledTableCell>
+              <StyledTableCell align="center">Critical</StyledTableCell>
+              <StyledTableCell align="center">Error</StyledTableCell>
+              <StyledTableCell align="center">Alerts</StyledTableCell>
+              <StyledTableCell align="center">Commands</StyledTableCell>
+              <StyledTableCell align="center">Delete</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {Object.keys(telegrams.byId).map((telegram) => (
-              <TableRow key={telegrams.byId[telegram].id}>
-                <TableCell align="center">
+              <StyledTableRow key={telegrams.byId[telegram].id}>
+                <StyledTableCell>
                   {telegrams.byId[telegram].channel_name}
-                </TableCell>
-                <TableCell align="center">
+                </StyledTableCell>
+                <StyledTableCell align="right">
                   {telegrams.byId[telegram].bot_token}
-                </TableCell>
-                <TableCell align="center">
+                </StyledTableCell>
+                <StyledTableCell align="right">
                   {telegrams.byId[telegram].chat_id}
-                </TableCell>
-                <TableCell align="center">
+                </StyledTableCell>
+                <StyledTableCell align="center">
                   {telegrams.byId[telegram].info ? (
                     <CheckIcon />
                   ) : (
                     <ClearIcon />
                   )}
-                </TableCell>
-                <TableCell align="center">
+                </StyledTableCell>
+                <StyledTableCell align="center">
                   {telegrams.byId[telegram].warning ? (
                     <CheckIcon />
                   ) : (
                     <ClearIcon />
                   )}
-                </TableCell>
-                <TableCell align="center">
+                </StyledTableCell>
+                <StyledTableCell align="center">
                   {telegrams.byId[telegram].critical ? (
                     <CheckIcon />
                   ) : (
                     <ClearIcon />
                   )}
-                </TableCell>
-                <TableCell align="center">
+                </StyledTableCell>
+                <StyledTableCell align="center">
                   {telegrams.byId[telegram].error ? (
                     <CheckIcon />
                   ) : (
                     <ClearIcon />
                   )}
-                </TableCell>
-                <TableCell align="center">
+                </StyledTableCell>
+                <StyledTableCell align="center">
                   {telegrams.byId[telegram].alerts ? (
                     <CheckIcon />
                   ) : (
                     <ClearIcon />
                   )}
-                </TableCell>
-                <TableCell align="center">
+                </StyledTableCell>
+                <StyledTableCell align="center">
                   {telegrams.byId[telegram].commands ? (
                     <CheckIcon />
                   ) : (
                     <ClearIcon />
                   )}
-                </TableCell>
-                <TableCell align="center">
+                </StyledTableCell>
+                <StyledTableCell align="center">
                   <Button
                     onClick={() => {
                       removeTelegramDetails(telegrams.byId[telegram]);
@@ -100,8 +100,8 @@ const TelegramTable = ({ telegrams, removeTelegramDetails }) => {
                   >
                     <CancelIcon />
                   </Button>
-                </TableCell>
-              </TableRow>
+                </StyledTableCell>
+              </StyledTableRow>
             ))}
           </TableBody>
         </Table>
@@ -110,7 +110,7 @@ const TelegramTable = ({ telegrams, removeTelegramDetails }) => {
   );
 };
 
-TelegramTable.propTypes = forbidExtraProps({
+TelegramTable.propTypes = {
   telegrams: PropTypes.shape({
     byId: PropTypes.shape({
       id: PropTypes.string,
@@ -127,6 +127,6 @@ TelegramTable.propTypes = forbidExtraProps({
     allIds: PropTypes.arrayOf(PropTypes.string).isRequired,
   }).isRequired,
   removeTelegramDetails: PropTypes.func.isRequired,
-});
+};
 
 export default TelegramTable;

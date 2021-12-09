@@ -14,16 +14,18 @@ from freezegun import freeze_time
 
 from src.configs.repo import RepoConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitors.managers.github import (GitHubMonitorsManager,
-                                          GH_MON_MAN_ROUTING_KEY_GEN,
-                                          GH_MON_MAN_INPUT_QUEUE,
-                                          GH_MON_MAN_ROUTING_KEY_CHAINS,
-                                          GH_MON_MAN_INPUT_ROUTING_KEY)
+from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.starters import start_github_monitor
 from src.utils import env
-from src.utils.constants import (GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME,
-                                 HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
-                                 GITHUB_MONITOR_NAME_TEMPLATE)
+from src.utils.constants.names import GITHUB_MONITOR_NAME_TEMPLATE
+from src.utils.constants.rabbitmq import (GH_MON_MAN_CONFIGS_QUEUE_NAME,
+                                          GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+                                          GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
+                                          GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+                                          HEALTH_CHECK_EXCHANGE,
+                                          CONFIG_EXCHANGE, PING_ROUTING_KEY,
+                                          TOPIC)
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
 from test.utils.utils import infinite_fn
@@ -64,7 +66,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 'chain': 'general'
             },
         }
-        self.repos_configs_example = {
+        self.github_repos_configs_example = {
             'Substrate Polkadot': {
                 'config_id1': {
                     'id': 'config_id1',
@@ -112,8 +114,9 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                               self.releases_page_new)
         self.test_manager = GitHubMonitorsManager(
             self.dummy_logger, self.manager_name, self.rabbitmq)
-        self.chains_routing_key = 'chains.Substrate.Polkadot.repos_config'
-        self.general_routing_key = GH_MON_MAN_ROUTING_KEY_GEN
+        self.chains_routing_key = \
+            'chains.Substrate.Polkadot.github_repos_config'
+        self.general_routing_key = GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN
         self.test_exception = PANICException('test_exception', 1)
 
     def tearDown(self) -> None:
@@ -128,23 +131,24 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 auto_delete=False, passive=False
             )
             self.test_manager.rabbitmq.queue_declare(
-                GH_MON_MAN_INPUT_QUEUE, False, True, False, False)
+                GH_MON_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
             self.test_manager.rabbitmq.queue_declare(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
-                False)
+                GH_MON_MAN_CONFIGS_QUEUE_NAME, False, True, False, False)
             self.test_manager.rabbitmq.exchange_declare(
-                CONFIG_EXCHANGE, 'topic', False, True, False, False)
+                CONFIG_EXCHANGE, TOPIC, False, True, False, False)
             self.test_manager.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False)
+                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
 
             self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_purge(GH_MON_MAN_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_purge(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+                GH_MON_MAN_HEARTBEAT_QUEUE_NAME)
+            self.test_manager.rabbitmq.queue_purge(
+                GH_MON_MAN_CONFIGS_QUEUE_NAME)
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_delete(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+                GH_MON_MAN_HEARTBEAT_QUEUE_NAME)
+            self.test_manager.rabbitmq.queue_delete(
+                GH_MON_MAN_CONFIGS_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
             self.test_manager.rabbitmq.disconnect()
@@ -154,7 +158,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         self.dummy_logger = None
         self.rabbitmq = None
         self.config_process_dict_example = None
-        self.repos_configs_example = None
+        self.github_repos_configs_example = None
         self.repo_config_example = None
         self.test_manager = None
         self.test_exception = None
@@ -175,10 +179,11 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     def test_name_returns_manager_name(self) -> None:
         self.assertEqual(self.manager_name, self.test_manager.name)
 
-    def test_repos_configs_returns_repos_configs(self) -> None:
-        self.test_manager._repos_configs = self.repos_configs_example
-        self.assertEqual(self.repos_configs_example,
-                         self.test_manager.repos_configs)
+    def test_github_repos_configs_returns_github_repos_configs(self) -> None:
+        self.test_manager._github_repos_configs = \
+            self.github_repos_configs_example
+        self.assertEqual(self.github_repos_configs_example,
+                         self.test_manager.github_repos_configs)
 
     @mock.patch.object(RabbitMQApi, "start_consuming")
     def test_listen_for_data_calls_start_consuming(
@@ -198,9 +203,10 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             # To make sure that the exchanges and queues have not already been
             # declared
             self.rabbitmq.connect()
-            self.test_manager.rabbitmq.queue_delete(GH_MON_MAN_INPUT_QUEUE)
             self.test_manager.rabbitmq.queue_delete(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME)
+                GH_MON_MAN_HEARTBEAT_QUEUE_NAME)
+            self.test_manager.rabbitmq.queue_delete(
+                GH_MON_MAN_CONFIGS_QUEUE_NAME)
             self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
             self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
             self.rabbitmq.disconnect()
@@ -219,36 +225,35 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             # will also check if the size of the queues is 0 to confirm that
             # basic_consume was called (it will store the msg in the component
             # memory immediately). If one of the exchanges or queues is not
-            # created, then either an exception will be thrown or the queue size
-            # would be 1. Note when deleting the exchanges in the beginning we
-            # also released every binding, hence there are no other queue binded
-            # with the same routing key to any exchange at this point.
+            # created, then an exception will be thrown. Note when deleting the
+            # exchanges in the beginning we also released every binding, hence
+            # there is no other queue binded with the same routing key to any
+            # exchange at this point.
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=GH_MON_MAN_INPUT_ROUTING_KEY,
+                routing_key=PING_ROUTING_KEY, body=self.test_data_str,
+                is_body_dict=False,
+                properties=pika.BasicProperties(delivery_mode=2),
+                mandatory=True)
+            self.test_manager.rabbitmq.basic_publish_confirm(
+                exchange=CONFIG_EXCHANGE,
+                routing_key=GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
             self.test_manager.rabbitmq.basic_publish_confirm(
                 exchange=CONFIG_EXCHANGE,
-                routing_key=GH_MON_MAN_ROUTING_KEY_CHAINS,
-                body=self.test_data_str, is_body_dict=False,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self.test_manager.rabbitmq.basic_publish_confirm(
-                exchange=CONFIG_EXCHANGE,
-                routing_key=GH_MON_MAN_ROUTING_KEY_GEN,
+                routing_key=GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=True)
 
             # Re-declare queue to get the number of messages
             res = self.test_manager.rabbitmq.queue_declare(
-                GH_MON_MAN_INPUT_QUEUE, False, True, False, False)
+                GH_MON_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
             self.assertEqual(0, res.method.message_count)
             res = self.test_manager.rabbitmq.queue_declare(
-                GITHUB_MONITORS_MANAGER_CONFIGS_QUEUE_NAME, False, True, False,
-                False)
+                GH_MON_MAN_CONFIGS_QUEUE_NAME, False, True, False, False)
             self.assertEqual(0, res.method.message_count)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
@@ -270,7 +275,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._send_heartbeat(self.test_heartbeat)
 
             # By re-declaring the queue again we can get the number of messages
@@ -318,7 +323,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         self.test_manager._create_and_start_monitor_process(
             self.repo_config_example, self.repo_id_new, self.chain_example_new)
 
-        self.assertEqual(expected_output, self.test_manager.config_process_dict)
+        self.assertEqual(
+            expected_output, self.test_manager.config_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
     def test_create_and_start_monitor_process_creates_the_correct_process(
@@ -359,8 +365,10 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         # This would mean that the DEFAULT key was ignored, otherwise, it would
         # have been included as a new config.
         mock_ack.return_value = None
-        old_repos_configs = copy.deepcopy(self.repos_configs_example)
-        self.test_manager._repos_configs = self.repos_configs_example
+        old_github_repos_configs = copy.deepcopy(
+            self.github_repos_configs_example)
+        self.test_manager._github_repos_configs = \
+            self.github_repos_configs_example
 
         # We will pass the acceptable schema as a value to make sure that the
         # default key will never be added. By passing the schema we will also
@@ -395,10 +403,12 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             # cases
             self.test_manager._process_configs(blocking_channel, method_general,
                                                properties, body_general)
-            self.assertEqual(old_repos_configs, self.test_manager.repos_configs)
+            self.assertEqual(old_github_repos_configs,
+                             self.test_manager.github_repos_configs)
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties, body_chain)
-            self.assertEqual(old_repos_configs, self.test_manager.repos_configs)
+            self.assertEqual(old_github_repos_configs,
+                             self.test_manager.github_repos_configs)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -477,8 +487,9 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                                properties, body_chain_initial)
             self.test_manager._process_configs(blocking_channel, method_general,
                                                properties, body_general_initial)
-            expected_output = copy.deepcopy(self.repos_configs_example)
-            self.assertEqual(expected_output, self.test_manager.repos_configs)
+            expected_output = copy.deepcopy(self.github_repos_configs_example)
+            self.assertEqual(
+                expected_output, self.test_manager.github_repos_configs)
 
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties,
@@ -490,7 +501,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 new_configs_chain['config_id3']
             expected_output['general']['config_id5'] = \
                 new_configs_general['config_id5']
-            self.assertEqual(expected_output, self.test_manager.repos_configs)
+            self.assertEqual(
+                expected_output, self.test_manager.github_repos_configs)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -510,7 +522,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         startup_mock.return_value = None
         join_mock.return_value = None
         terminate_mock.return_value = None
-        self.test_manager._repos_configs = self.repos_configs_example
+        self.test_manager._github_repos_configs = \
+            self.github_repos_configs_example
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
 
@@ -555,31 +568,35 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             method_general = pika.spec.Basic.Deliver(
                 routing_key=self.general_routing_key)
             body_chain_mon_true = json.dumps(new_configs_chain_monitor_true)
-            body_general_mon_true = json.dumps(new_configs_general_monitor_true)
+            body_general_mon_true = json.dumps(
+                new_configs_general_monitor_true)
             body_chain_mon_false = json.dumps(new_configs_chain_monitor_false)
             body_general_mon_false = json.dumps(
                 new_configs_general_monitor_false)
             properties = pika.spec.BasicProperties()
-            expected_output = copy.deepcopy(self.repos_configs_example)
+            expected_output = copy.deepcopy(self.github_repos_configs_example)
 
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties, body_chain_mon_true)
             expected_output['Substrate Polkadot']['config_id1'] = \
                 new_configs_chain_monitor_true['config_id1']
-            self.assertEqual(expected_output, self.test_manager.repos_configs)
+            self.assertEqual(
+                expected_output, self.test_manager.github_repos_configs)
 
             self.test_manager._process_configs(blocking_channel, method_general,
                                                properties,
                                                body_general_mon_true)
             expected_output['general']['config_id2'] = \
                 new_configs_general_monitor_true['config_id2']
-            self.assertEqual(expected_output, self.test_manager.repos_configs)
+            self.assertEqual(
+                expected_output, self.test_manager.github_repos_configs)
 
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties,
                                                body_chain_mon_false)
             expected_output['Substrate Polkadot'] = {}
-            self.assertEqual(expected_output, self.test_manager.repos_configs)
+            self.assertEqual(
+                expected_output, self.test_manager.github_repos_configs)
             self.assertTrue(
                 'config_id1' not in self.test_manager.config_process_dict)
 
@@ -587,7 +604,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 blocking_channel, method_general, properties,
                 body_general_mon_false)
             expected_output['general'] = {}
-            self.assertEqual(expected_output, self.test_manager.repos_configs)
+            self.assertEqual(
+                expected_output, self.test_manager.github_repos_configs)
             self.assertTrue(
                 'config_id2' not in self.test_manager.config_process_dict)
         except Exception as e:
@@ -604,7 +622,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         mock_ack.return_value = None
         join_mock.return_value = None
         terminate_mock.return_value = None
-        self.test_manager._repos_configs = self.repos_configs_example
+        self.test_manager._github_repos_configs = \
+            self.github_repos_configs_example
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
 
@@ -621,19 +640,21 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             body_chain = json.dumps(new_configs_chain)
             body_general = json.dumps(new_configs_general)
             properties = pika.spec.BasicProperties()
-            expected_output = copy.deepcopy(self.repos_configs_example)
+            expected_output = copy.deepcopy(self.github_repos_configs_example)
 
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties, body_chain)
             expected_output['Substrate Polkadot'] = {}
-            self.assertEqual(expected_output, self.test_manager.repos_configs)
+            self.assertEqual(
+                expected_output, self.test_manager.github_repos_configs)
             self.assertTrue(
                 'config_id1' not in self.test_manager.config_process_dict)
 
             self.test_manager._process_configs(blocking_channel, method_general,
                                                properties, body_general)
             expected_output['general'] = {}
-            self.assertEqual(expected_output, self.test_manager.repos_configs)
+            self.assertEqual(
+                expected_output, self.test_manager.github_repos_configs)
             self.assertTrue(
                 'config_id2' not in self.test_manager.config_process_dict)
         except Exception as e:
@@ -846,9 +867,11 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             method_general = pika.spec.Basic.Deliver(
                 routing_key=self.general_routing_key)
             body_chain_initial = json.dumps(self.sent_configs_example_chain)
-            body_general_initial = json.dumps(self.sent_configs_example_general)
+            body_general_initial = json.dumps(
+                self.sent_configs_example_general)
             body_chain_mon_true = json.dumps(new_configs_chain_monitor_true)
-            body_general_mon_true = json.dumps(new_configs_general_monitor_true)
+            body_general_mon_true = json.dumps(
+                new_configs_general_monitor_true)
             body_chain_mon_false = json.dumps(new_configs_chain_monitor_false)
             body_general_mon_false = json.dumps(
                 new_configs_general_monitor_false)
@@ -947,7 +970,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 'monitor_repo': "True",
             },
         }
-        self.test_manager._repos_configs = self.repos_configs_example
+        self.test_manager._github_repos_configs = \
+            self.github_repos_configs_example
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         try:
@@ -1027,7 +1051,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             method_general = pika.spec.Basic.Deliver(
                 routing_key=self.general_routing_key)
             body_chain_initial = json.dumps(self.sent_configs_example_chain)
-            body_general_initial = json.dumps(self.sent_configs_example_general)
+            body_general_initial = json.dumps(
+                self.sent_configs_example_general)
             body_chain_new = json.dumps({})
             body_general_new = json.dumps({})
             properties = pika.spec.BasicProperties()
@@ -1089,7 +1114,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 'monitor_repostdfg': "True",
             },
         }
-        self.test_manager._repos_configs = self.repos_configs_example
+        self.test_manager._github_repos_configs = \
+            self.github_repos_configs_example
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         try:
@@ -1114,8 +1140,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(1, mock_ack.call_count)
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.config_process_dict)
-            self.assertEqual(self.repos_configs_example,
-                             self.test_manager.repos_configs)
+            self.assertEqual(self.github_repos_configs_example,
+                             self.test_manager.github_repos_configs)
 
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties,
@@ -1123,8 +1149,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(2, mock_ack.call_count)
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.config_process_dict)
-            self.assertEqual(self.repos_configs_example,
-                             self.test_manager.repos_configs)
+            self.assertEqual(self.github_repos_configs_example,
+                             self.test_manager.github_repos_configs)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1152,7 +1178,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                 'monitor_repo': "True",
             },
         }
-        self.test_manager._repos_configs = self.repos_configs_example
+        self.test_manager._github_repos_configs = \
+            self.github_repos_configs_example
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         try:
@@ -1177,8 +1204,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(1, mock_ack.call_count)
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.config_process_dict)
-            self.assertEqual(self.repos_configs_example,
-                             self.test_manager.repos_configs)
+            self.assertEqual(self.github_repos_configs_example,
+                             self.test_manager.github_repos_configs)
 
             self.test_manager._process_configs(blocking_channel, method_chains,
                                                properties,
@@ -1186,8 +1213,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(2, mock_ack.call_count)
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.config_process_dict)
-            self.assertEqual(self.repos_configs_example,
-                             self.test_manager.repos_configs)
+            self.assertEqual(self.github_repos_configs_example,
+                             self.test_manager.github_repos_configs)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1209,7 +1236,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             method_general = pika.spec.Basic.Deliver(
                 routing_key=self.general_routing_key)
             body_chain_initial = json.dumps(self.sent_configs_example_chain)
-            body_general_initial = json.dumps(self.sent_configs_example_general)
+            body_general_initial = json.dumps(
+                self.sent_configs_example_general)
             properties = pika.spec.BasicProperties()
 
             # First send the new configs as the state is empty
@@ -1225,7 +1253,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
             # Initialise
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -1234,7 +1263,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._process_ping(blocking_channel, method_hb,
                                             properties, body)
 
@@ -1291,7 +1320,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             method_general = pika.spec.Basic.Deliver(
                 routing_key=self.general_routing_key)
             body_chain_initial = json.dumps(self.sent_configs_example_chain)
-            body_general_initial = json.dumps(self.sent_configs_example_general)
+            body_general_initial = json.dumps(
+                self.sent_configs_example_general)
             properties = pika.spec.BasicProperties()
 
             # First send the new configs as the state is empty
@@ -1315,7 +1345,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
             # Initialise
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -1324,7 +1355,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._process_ping(blocking_channel, method_hb,
                                             properties, body)
 
@@ -1377,7 +1408,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             method_general = pika.spec.Basic.Deliver(
                 routing_key=self.general_routing_key)
             body_chain_initial = json.dumps(self.sent_configs_example_chain)
-            body_general_initial = json.dumps(self.sent_configs_example_general)
+            body_general_initial = json.dumps(
+                self.sent_configs_example_general)
             properties = pika.spec.BasicProperties()
 
             # First send the new configs as the state is empty
@@ -1405,7 +1437,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
             # Initialise
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
                 queue=self.test_queue_name, durable=True, exclusive=False,
@@ -1414,7 +1447,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._process_ping(blocking_channel, method_hb,
                                             properties, body)
 
@@ -1460,7 +1493,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             method_general = pika.spec.Basic.Deliver(
                 routing_key=self.general_routing_key)
             body_chain_initial = json.dumps(self.sent_configs_example_chain)
-            body_general_initial = json.dumps(self.sent_configs_example_general)
+            body_general_initial = json.dumps(
+                self.sent_configs_example_general)
             properties = pika.spec.BasicProperties()
 
             # First send the new configs as the state is empty
@@ -1492,7 +1526,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                  'config_id2']['process'].is_alive())
 
             # Initialise
-            method_hb = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method_hb = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             body = 'ping'
             self.test_manager._process_ping(blocking_channel, method_hb,
                                             properties, body)
@@ -1531,15 +1566,17 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         try:
             self.test_manager.rabbitmq.connect()
 
-            del self.repos_configs_example['general']
+            del self.github_repos_configs_example['general']
             del self.config_process_dict_example['config_id2']
-            self.test_manager._repos_configs = self.repos_configs_example
+            self.test_manager._github_repos_configs = \
+                self.github_repos_configs_example
             self.test_manager._config_process_dict = \
                 self.config_process_dict_example
 
             # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
             self.test_manager._process_ping(blocking_channel, method,
@@ -1548,20 +1585,26 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(1, startup_mock.call_count)
             args, _ = startup_mock.call_args
             self.assertTrue('config_id1' and 'Substrate Polkadot' in args)
-            self.assertEqual(self.repos_configs_example['Substrate Polkadot'][
-                                 'config_id1']['id'], args[0].repo_id)
-            self.assertEqual(self.repos_configs_example['Substrate Polkadot'][
-                                 'config_id1']['parent_id'], args[0].parent_id)
-            self.assertEqual(self.repos_configs_example['Substrate Polkadot'][
-                                 'config_id1']['repo_name'] + '/',
+            self.assertEqual(self.github_repos_configs_example[
+                                 'Substrate Polkadot']['config_id1']['id'],
+                             args[0].repo_id)
+            self.assertEqual(self.github_repos_configs_example[
+                                 'Substrate Polkadot']['config_id1'][
+                                 'parent_id'],
+                             args[0].parent_id)
+            self.assertEqual(self.github_repos_configs_example[
+                                 'Substrate Polkadot']['config_id1'][
+                                 'repo_name'] + '/',
                              args[0].repo_name)
             self.assertEqual(
-                str_to_bool(self.repos_configs_example['Substrate Polkadot'][
-                                'config_id1']['monitor_repo']),
+                str_to_bool(self.github_repos_configs_example[
+                                'Substrate Polkadot']['config_id1'][
+                                'monitor_repo']),
                 args[0].monitor_repo)
             self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
-                self.repos_configs_example['Substrate Polkadot']['config_id1'][
-                    'repo_name'] + '/'), args[0].releases_page)
+                self.github_repos_configs_example[
+                    'Substrate Polkadot']['config_id1']['repo_name'] + '/'),
+                args[0].releases_page)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
@@ -1582,13 +1625,15 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
-            self.test_manager._repos_configs = self.repos_configs_example
+            self.test_manager._github_repos_configs = \
+                self.github_repos_configs_example
             self.test_manager._config_process_dict = \
                 self.config_process_dict_example
 
             # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
             res = self.test_manager.rabbitmq.queue_declare(
@@ -1598,7 +1643,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(0, res.method.message_count)
             self.test_manager.rabbitmq.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key='heartbeat.manager')
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             self.test_manager._process_ping(blocking_channel, method,
                                             properties, body)
 
@@ -1619,7 +1664,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
 
             # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
 
@@ -1637,7 +1683,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
 
             # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
 
@@ -1656,7 +1703,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
 
             # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
 
@@ -1675,7 +1723,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
 
             # Initialise
             blocking_channel = self.test_manager.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(routing_key='heartbeat.manager')
+            method = pika.spec.Basic.Deliver(
+                routing_key=HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
             properties = pika.spec.BasicProperties()
             body = 'ping'
 

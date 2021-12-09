@@ -7,6 +7,7 @@ import {
   removeNodeSubstrate,
 } from 'redux/actions/substrateActions';
 import SubstrateData from 'data/substrate';
+import { toggleDirty } from 'redux/actions/pageActions';
 import NodeSchema from '../common/schemas/nodeSchema';
 
 // This performs substrate node name validation, by checking if the node name
@@ -14,7 +15,6 @@ import NodeSchema from '../common/schemas/nodeSchema';
 const Form = withFormik({
   mapPropsToErrors: () => ({
     name: '',
-    exporter_url: '',
   }),
   mapPropsToValues: () => ({
     name: '',
@@ -29,9 +29,13 @@ const Form = withFormik({
     stash_address: '',
     is_validator: false,
     monitor_node: true,
-    is_archive_node: true,
-    use_as_data_source: true,
+    is_archive_node: false,
+    use_as_data_source: false,
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => NodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveNodeDetails, currentChain } = props;
@@ -63,10 +67,13 @@ const Form = withFormik({
 const mapStateToProps = (state) => ({
   currentChain: state.CurrentSubstrateChain,
   chainConfig: state.SubstrateChainsReducer,
+  chainlinkNodesConfig: state.ChainlinkNodesReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
-  reposConfig: state.RepositoryReducer,
+  reposConfig: state.GitHubRepositoryReducer,
   systemConfig: state.SystemsReducer,
+  dockerHubConfig: state.DockerHubReducer,
+  evmNodesConfig: state.EvmNodesReducer,
   data: SubstrateData,
 });
 
@@ -74,6 +81,7 @@ const mapStateToProps = (state) => ({
 function mapDispatchToProps(dispatch) {
   return {
     saveNodeDetails: (details) => dispatch(addNodeSubstrate(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 

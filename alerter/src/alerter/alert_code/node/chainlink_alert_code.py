@@ -1,0 +1,28 @@
+from ..alert_code import AlertCode
+
+
+class ChainlinkNodeAlertCode(AlertCode):
+    NoChangeInHeightAlert = 'cl_node_alert_1'
+    BlockHeightUpdatedAlert = 'cl_node_alert_2'
+    NoChangeInTotalHeadersReceivedAlert = 'cl_node_alert_3'
+    ReceivedANewHeaderAlert = 'cl_node_alert_4'
+    MaxUnconfirmedBlocksIncreasedAboveThresholdAlert = 'cl_node_alert_5'
+    MaxUnconfirmedBlocksDecreasedBelowThresholdAlert = 'cl_node_alert_6'
+    ChangeInSourceNodeAlert = 'cl_node_alert_7'
+    GasBumpIncreasedOverNodeGasPriceLimitAlert = 'cl_node_alert_8'
+    NoOfUnconfirmedTxsIncreasedAboveThresholdAlert = 'cl_node_alert_9'
+    NoOfUnconfirmedTxsDecreasedBelowThresholdAlert = 'cl_node_alert_10'
+    TotalErroredJobRunsIncreasedAboveThresholdAlert = 'cl_node_alert_11'
+    TotalErroredJobRunsDecreasedBelowThresholdAlert = 'cl_node_alert_12'
+    EthBalanceIncreasedAboveThresholdAlert = 'cl_node_alert_13'
+    EthBalanceDecreasedBelowThresholdAlert = 'cl_node_alert_14'
+    EthBalanceToppedUpAlert = 'cl_node_alert_15'
+    InvalidUrlAlert = 'cl_node_alert_16'
+    ValidUrlAlert = 'cl_node_alert_17'
+    PrometheusSourceIsDownAlert = 'cl_node_alert_18'
+    PrometheusSourceBackUpAgainAlert = 'cl_node_alert_19'
+    NodeWentDownAtAlert = 'cl_node_alert_20'
+    NodeBackUpAgainAlert = 'cl_node_alert_21'
+    NodeStillDownAlert = 'cl_node_alert_22'
+    MetricNotFoundErrorAlert = 'cl_node_alert_23'
+    MetricFoundAlert = 'cl_node_alert_24'

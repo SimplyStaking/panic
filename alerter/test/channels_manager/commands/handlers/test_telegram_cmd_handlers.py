@@ -22,14 +22,14 @@ from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (SYSTEM_MONITORS_MANAGER_NAME,
-                                 GITHUB_MONITORS_MANAGER_NAME,
-                                 DATA_TRANSFORMERS_MANAGER_NAME,
-                                 SYSTEM_ALERTERS_MANAGER_NAME,
-                                 GITHUB_ALERTER_MANAGER_NAME,
-                                 DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME,
-                                 CONFIGS_MANAGER_NAME, CHANNELS_MANAGER_NAME,
-                                 PING_PUBLISHER_NAME, HEARTBEAT_HANDLER_NAME)
+from src.utils.constants.names import (
+    SYSTEM_MONITORS_MANAGER_NAME, GITHUB_MONITORS_MANAGER_NAME,
+    DATA_TRANSFORMERS_MANAGER_NAME, SYSTEM_ALERTERS_MANAGER_NAME,
+    GITHUB_ALERTER_MANAGER_NAME, CL_ALERTERS_MANAGER_NAME,
+    DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME,
+    CHANNELS_MANAGER_NAME, PING_PUBLISHER_NAME, HEARTBEAT_HANDLER_NAME,
+    NODE_MONITORS_MANAGER_NAME, CONTRACT_MONITORS_MANAGER_NAME,
+    EVM_NODE_ALERTER_MANAGER_NAME)
 from test.utils.utils import (
     assign_side_effect_if_not_none_otherwise_return_value)
 
@@ -150,15 +150,6 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                                                             self.test_str)
         mock_reply_text.assert_called_once_with(self.test_str,
                                                 parse_mode='Markdown')
-
-    @mock.patch.object(RedisApi, "ping_unsafe")
-    def test_redis_running_returns_true_if_redis_is_running(
-            self, mock_ping_unsafe) -> None:
-        # If redis is down an exception is always raised, therefore we can mock
-        # that an exception is not raised when calling RedisApi.ping_unsafe
-        mock_ping_unsafe.return_value = None
-        actual_ret = self.test_telegram_command_handlers.redis_running()
-        self.assertTrue(actual_ret)
 
     @mock.patch.object(RedisApi, "ping_unsafe")
     def test_redis_running_returns_true_if_redis_is_running(
@@ -761,9 +752,13 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                 {
                     SYSTEM_MONITORS_MANAGER_NAME: False,
                     GITHUB_MONITORS_MANAGER_NAME: False,
+                    NODE_MONITORS_MANAGER_NAME: False,
+                    CONTRACT_MONITORS_MANAGER_NAME: False,
                     DATA_TRANSFORMERS_MANAGER_NAME: False,
                     SYSTEM_ALERTERS_MANAGER_NAME: False,
                     GITHUB_ALERTER_MANAGER_NAME: False,
+                    CL_ALERTERS_MANAGER_NAME: False,
+                    EVM_NODE_ALERTER_MANAGER_NAME: False,
                     DATA_STORE_MANAGER_NAME: False,
                     ALERT_ROUTER_NAME: False,
                     CONFIGS_MANAGER_NAME: False,
@@ -774,9 +769,13 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                 {
                     SYSTEM_MONITORS_MANAGER_NAME: False,
                     GITHUB_MONITORS_MANAGER_NAME: False,
+                    NODE_MONITORS_MANAGER_NAME: False,
+                    CONTRACT_MONITORS_MANAGER_NAME: True,
                     DATA_TRANSFORMERS_MANAGER_NAME: False,
                     SYSTEM_ALERTERS_MANAGER_NAME: False,
                     GITHUB_ALERTER_MANAGER_NAME: True,
+                    CL_ALERTERS_MANAGER_NAME: True,
+                    EVM_NODE_ALERTER_MANAGER_NAME: False,
                     DATA_STORE_MANAGER_NAME: True,
                     ALERT_ROUTER_NAME: True,
                     CONFIGS_MANAGER_NAME: True,
@@ -829,6 +828,14 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': False,
                     },
+                    NODE_MONITORS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    CONTRACT_MONITORS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
                     DATA_TRANSFORMERS_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
@@ -838,6 +845,14 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_ok': False,
                     },
                     GITHUB_ALERTER_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    CL_ALERTERS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    EVM_NODE_ALERTER_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
                     },
@@ -869,6 +884,14 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': False,
                     },
+                    NODE_MONITORS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    CONTRACT_MONITORS_MANAGER_NAME: {
+                        'hb_exists': False,
+                        'hb_ok': False,
+                    },
                     DATA_TRANSFORMERS_MANAGER_NAME: {
                         'hb_exists': False,
                         'hb_ok': False,
@@ -880,6 +903,14 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                     GITHUB_ALERTER_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': True,
+                    },
+                    CL_ALERTERS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': True,
+                    },
+                    EVM_NODE_ALERTER_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
                     },
                     DATA_STORE_MANAGER_NAME: {
                         'hb_exists': True,
@@ -922,9 +953,13 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         ]
         manager_components = [SYSTEM_MONITORS_MANAGER_NAME,
                               GITHUB_MONITORS_MANAGER_NAME,
+                              NODE_MONITORS_MANAGER_NAME,
+                              CONTRACT_MONITORS_MANAGER_NAME,
                               DATA_TRANSFORMERS_MANAGER_NAME,
                               SYSTEM_ALERTERS_MANAGER_NAME,
                               GITHUB_ALERTER_MANAGER_NAME,
+                              CL_ALERTERS_MANAGER_NAME,
+                              EVM_NODE_ALERTER_MANAGER_NAME,
                               DATA_STORE_MANAGER_NAME, CHANNELS_MANAGER_NAME]
         worker_components = [ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME]
         mock_manager_status.side_effect = [

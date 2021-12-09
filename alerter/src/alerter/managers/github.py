@@ -1,3 +1,4 @@
+import copy
 import logging
 import sys
 from datetime import datetime
@@ -10,11 +11,15 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.alerter.alerter_starters import start_github_alerter
+from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.manager import AlertersManager
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (HEALTH_CHECK_EXCHANGE, GITHUB_ALERTER_NAME,
-                                 GITHUB_MANAGER_INPUT_QUEUE,
-                                 GITHUB_MANAGER_INPUT_ROUTING_KEY)
+from src.utils.constants.names import GITHUB_ALERTER_NAME
+from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
+                                          GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                          PING_ROUTING_KEY, ALERT_EXCHANGE,
+                                          GITHUB_ALERT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 
@@ -34,24 +39,29 @@ class GithubAlerterManager(AlertersManager):
 
         # Declare consuming intentions
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.logger.info("Creating queue '%s'", GITHUB_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(GITHUB_MANAGER_INPUT_QUEUE, False, True,
-                                    False, False)
+        self.logger.info("Creating queue '%s'",
+                         GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME, False,
+                                    True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
-                         "key '%s'", GITHUB_MANAGER_INPUT_QUEUE,
-                         HEALTH_CHECK_EXCHANGE,
-                         GITHUB_MANAGER_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(GITHUB_MANAGER_INPUT_QUEUE,
-                                 HEALTH_CHECK_EXCHANGE,
-                                 GITHUB_MANAGER_INPUT_ROUTING_KEY)
+                         "key '%s'", GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                         HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
+        self.rabbitmq.queue_bind(GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+                                 HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
         self.logger.info("Declaring consuming intentions on '%s'",
-                         GITHUB_MANAGER_INPUT_QUEUE)
-        self.rabbitmq.basic_consume(GITHUB_MANAGER_INPUT_QUEUE,
+                         GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME)
+        self.rabbitmq.basic_consume(GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
                                     self._process_ping, True, False, None)
 
         # Declare publishing intentions
+        self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
+        # Declare exchange to send data to
+        self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
+                                       exchange_type=TOPIC, passive=False,
+                                       durable=True, auto_delete=False,
+                                       internal=False)
         self.logger.info("Setting delivery confirmation on RabbitMQ channel.")
         self.rabbitmq.confirm_delivery()
 
@@ -74,7 +84,7 @@ class GithubAlerterManager(AlertersManager):
                     process.join()  # Just in case, to release resources
             heartbeat['timestamp'] = datetime.now().timestamp()
 
-            # Restart dead transformers
+            # Restart dead alerter
             if len(heartbeat['dead_processes']) != 0:
                 self._start_alerters_processes()
         except Exception as e:
@@ -96,25 +106,43 @@ class GithubAlerterManager(AlertersManager):
             raise e
 
     def _start_alerters_processes(self) -> None:
-        # Start the system data transformer in a separate process if it is not
-        # yet started or it is not alive. This must be done in case of a
-        # restart of the manager.
+        """
+        Start the GitHub Alerter in a separate process if it is not yet started
+        or it is not alive. This must be done in case of a restart of the
+        manager.
+        """
         if GITHUB_ALERTER_NAME not in self.alerter_process_dict or \
                 not self.alerter_process_dict[GITHUB_ALERTER_NAME].is_alive():
+            """
+            We must clear out all the metrics which are found in REDIS.
+            Sending this alert to the alert router and then the data store will
+            achieve this.
+            """
+            alert = ComponentResetAlert(GITHUB_ALERTER_NAME,
+                                        datetime.now().timestamp(),
+                                        GithubAlerter.__name__)
+            self._push_latest_data_to_queue_and_send(alert.alert_data)
+
             log_and_print("Attempting to start the {}.".format(
                 GITHUB_ALERTER_NAME), self.logger)
             github_alerter_process = Process(target=start_github_alerter,
                                              args=())
             github_alerter_process.daemon = True
             github_alerter_process.start()
-            self._alerter_process_dict[GITHUB_ALERTER_NAME] = \
-                github_alerter_process
+            self._alerter_process_dict[
+                GITHUB_ALERTER_NAME] = github_alerter_process
 
     def start(self) -> None:
         log_and_print("{} started.".format(self), self.logger)
         self._initialise_rabbitmq()
         while True:
             try:
+                # Empty the queue so that on restart we don't send multiple
+                # reset alerts. We are not sending the alert before starting
+                # a component, so that should be enough.
+                if not self.publishing_queue.empty():
+                    self.publishing_queue.queue.clear()
+
                 self._start_alerters_processes()
                 self._listen_for_data()
             except (pika.exceptions.AMQPConnectionError,
@@ -133,7 +161,6 @@ class GithubAlerterManager(AlertersManager):
                       "closed, and any running github alerters will be "
                       "stopped gracefully. Afterwards the {} process will "
                       "exit.".format(self, self), self.logger)
-        self.disconnect_from_rabbit()
 
         for alerter, process in self.alerter_process_dict.items():
             log_and_print("Terminating the process of {}".format(alerter),
@@ -141,6 +168,7 @@ class GithubAlerterManager(AlertersManager):
             process.terminate()
             process.join()
 
+        self.disconnect_from_rabbit()
         log_and_print("{} terminated.".format(self), self.logger)
         sys.exit()
 
@@ -150,5 +178,10 @@ class GithubAlerterManager(AlertersManager):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         pass
 
-    def _send_data(self, *args) -> None:
-        pass
+    def _push_latest_data_to_queue_and_send(self, alert: Dict) -> None:
+        self._push_to_queue(
+            data=copy.deepcopy(alert), exchange=ALERT_EXCHANGE,
+            routing_key=GITHUB_ALERT_ROUTING_KEY,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True
+        )
+        self._send_data()

@@ -7,6 +7,11 @@ import {
   resetCurrentChainIdCosmos,
 } from 'redux/actions/cosmosActions';
 import {
+  addChainChainlink,
+  updateChainChainlink,
+  resetCurrentChainIdChainlink,
+} from 'redux/actions/chainlinkActions';
+import {
   addChainSubstrate,
   updateChainSubstrate,
   resetCurrentChainIdSubstrate,
@@ -14,6 +19,7 @@ import {
 import { changeStep, changePage } from 'redux/actions/pageActions';
 import CosmosData from 'data/cosmos';
 import SubstrateData from 'data/substrate';
+import ChainlinkData from 'data/chainlink';
 import ChainSchema from './schemas/chainSchema';
 
 // This performs chain name validation, by checking if the base chain already
@@ -39,7 +45,8 @@ const Form = withFormik({
 const mapCosmosStateToProps = (state) => ({
   step: state.ChangeStepReducer.step,
   config: state.CosmosChainsReducer,
-  config2: state.SubstrateChainsReducer,
+  config2: state.ChainlinkChainsReducer,
+  config3: state.SubstrateChainsReducer,
   currentChain: state.CurrentCosmosChain,
   data: CosmosData,
 });
@@ -61,6 +68,35 @@ const CosmosChainFormContainer = connect(
   mapCosmosDispatchToProps,
 )(Form);
 
+// ------------------------- Chainlink Based Chain Data --------------------
+
+// Chainlink redux data that will be used to control the chain form.
+const mapChainlinkStateToProps = (state) => ({
+  step: state.ChangeStepReducer.step,
+  config: state.ChainlinkChainsReducer,
+  config2: state.CosmosChainsReducer,
+  config3: state.SubstrateChainsReducer,
+  currentChain: state.CurrentChainlinkChain,
+  data: ChainlinkData,
+});
+
+// Functions to be used in the Cosmos Chain Form
+function mapChainlinkDispatchToProps(dispatch) {
+  return {
+    saveChainDetails: (details) => dispatch(addChainChainlink(details)),
+    updateChainDetails: (details) => dispatch(updateChainChainlink(details)),
+    clearChainId: () => dispatch(resetCurrentChainIdChainlink()),
+    stepChanger: (step) => dispatch(changeStep(step)),
+    pageChanger: (page) => dispatch(changePage(page)),
+  };
+}
+
+// Combine chainlink state and dispatch functions to the chains form
+const ChainlinkChainFormContainer = connect(
+  mapChainlinkStateToProps,
+  mapChainlinkDispatchToProps,
+)(Form);
+
 // ------------------------- Substrate Based Chain Data --------------------
 
 // Substrate redux data that will be used to control the chain form.
@@ -68,6 +104,7 @@ const mapSubstrateStateToProps = (state) => ({
   step: state.ChangeStepReducer.step,
   config: state.SubstrateChainsReducer,
   config2: state.CosmosChainsReducer,
+  config3: state.ChainlinkChainsReducer,
   currentChain: state.CurrentSubstrateChain,
   data: SubstrateData,
 });
@@ -89,4 +126,8 @@ const SubstrateChainFormContainer = connect(
   mapSubstrateDispatchToProps,
 )(Form);
 
-export { CosmosChainFormContainer, SubstrateChainFormContainer };
+export {
+  CosmosChainFormContainer,
+  SubstrateChainFormContainer,
+  ChainlinkChainFormContainer,
+};

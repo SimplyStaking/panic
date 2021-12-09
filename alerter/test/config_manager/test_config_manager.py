@@ -1,6 +1,7 @@
 import copy
 import json
 import logging
+import threading
 import unittest
 from configparser import ConfigParser
 from datetime import timedelta, datetime
@@ -18,10 +19,12 @@ from watchdog.events import (
 from watchdog.observers.polling import PollingObserver
 
 from src.config_manager import ConfigsManager
-from src.config_manager.config_manager import CONFIG_PING_QUEUE
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE
+from src.utils.constants.rabbitmq import (CONFIG_EXCHANGE,
+                                          HEALTH_CHECK_EXCHANGE,
+                                          CONFIGS_MANAGER_HEARTBEAT_QUEUE,
+                                          PING_ROUTING_KEY)
 from test.utils.utils import (
     delete_exchange_if_exists, delete_queue_if_exists,
     disconnect_from_rabbit, connect_to_rabbit
@@ -53,7 +56,7 @@ class TestConfigsManager(unittest.TestCase):
         # flush and consume all from rabbit queues and exchanges
         connect_to_rabbit(self.rabbitmq)
 
-        queues = [CONFIG_PING_QUEUE]
+        queues = [CONFIGS_MANAGER_HEARTBEAT_QUEUE]
         for queue in queues:
             delete_queue_if_exists(self.rabbitmq, queue)
 
@@ -76,7 +79,7 @@ class TestConfigsManager(unittest.TestCase):
         )
 
     @parameterized.expand([
-        (CONFIG_PING_QUEUE,),
+        (CONFIGS_MANAGER_HEARTBEAT_QUEUE,),
     ])
     @mock.patch.object(RabbitMQApi, "confirm_delivery")
     @mock.patch.object(RabbitMQApi, "basic_consume")
@@ -187,7 +190,7 @@ class TestConfigsManager(unittest.TestCase):
 
             blocking_channel = self.test_config_manager._rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key="ping"
+                routing_key=PING_ROUTING_KEY
             )
             properties = pika.spec.BasicProperties()
 
@@ -258,12 +261,12 @@ class TestConfigsManager(unittest.TestCase):
         (FileDeletedEvent("test_config"), "", {}),
     ])
     @mock.patch.object(ConfigParser, "read", autospec=True)
-    @mock.patch.object(ConfigsManager, "_send_data", autospec=True)
+    @mock.patch.object(ConfigsManager, "_push_to_queue", autospec=True)
     @mock.patch("src.utils.routing_key.get_routing_key", autospec=True)
     def test__on_event_thrown(
             self, event_to_trigger: FileSystemEvent, config_file_input: str,
             expected_dict: Dict, mock_get_routing_key: MagicMock,
-            mock_send_data: MagicMock, mock_config_parser: MagicMock
+            mock_push_to_queue: MagicMock, mock_config_parser: MagicMock
     ):
         TEST_ROUTING_KEY = "test_config"
 
@@ -274,14 +277,15 @@ class TestConfigsManager(unittest.TestCase):
             cp.read_string(config_file_input)
 
         mock_get_routing_key.return_value = TEST_ROUTING_KEY
-        mock_send_data.return_value = None
+        mock_push_to_queue.return_value = None
         mock_config_parser.side_effect = read_config_side_effect
 
         self.test_config_manager._on_event_thrown(event_to_trigger)
 
         mock_get_routing_key.assert_called_once()
-        mock_send_data.assert_called_once_with(
-            self.test_config_manager, expected_dict, TEST_ROUTING_KEY
+        mock_push_to_queue.assert_called_once_with(
+            self.test_config_manager, expected_dict, CONFIG_EXCHANGE,
+            TEST_ROUTING_KEY
         )
 
     @parameterized.expand([
@@ -326,8 +330,10 @@ class TestConfigsManager(unittest.TestCase):
                 CONFIG_QUEUE, CONFIG_EXCHANGE, route_key
             )
 
-            self.test_config_manager._send_data(copy.deepcopy(config),
-                                                route_key)
+            self.test_config_manager._push_to_queue(copy.deepcopy(config),
+                                                    CONFIG_EXCHANGE,
+                                                    route_key)
+            self.test_config_manager._send_data()
 
             # By re-declaring the queue again we can get the number of messages
             # in the queue.
@@ -347,11 +353,15 @@ class TestConfigsManager(unittest.TestCase):
 
     @mock.patch.object(ConfigsManager, "_initialise_rabbitmq", autospec=True)
     @mock.patch.object(ConfigsManager, "foreach_config_file", autospec=True)
+    @mock.patch.object(
+        ConfigsManager, "_create_and_start_sending_configs_thread",
+        autospec=True)
     @mock.patch.object(PollingObserver, "start", autospec=True)
     @mock.patch.object(RabbitMQApi, "start_consuming", autospec=True)
     def test_start_not_watching(
             self, mock_start_consuming: MagicMock,
-            mock_observer_start: MagicMock, mock_foreach: MagicMock,
+            mock_observer_start: MagicMock, mock_create_start: MagicMock,
+            mock_foreach: MagicMock,
             mock_initialise_rabbit: MagicMock
     ):
         self.test_config_manager._watching = False
@@ -359,30 +369,37 @@ class TestConfigsManager(unittest.TestCase):
         mock_initialise_rabbit.return_value = None
         mock_observer_start.return_value = None
         mock_start_consuming.return_value = None
+        mock_create_start.return_value = None
         self.test_config_manager.start()
 
         mock_initialise_rabbit.assert_called_once()
         mock_foreach.assert_called_once()
         mock_observer_start.assert_called_once()
         mock_start_consuming.assert_called_once()
+        mock_create_start.assert_called_once()
 
         disconnect_from_rabbit(self.test_config_manager._rabbitmq)
         disconnect_from_rabbit(self.test_config_manager._heartbeat_rabbit)
 
     @mock.patch.object(ConfigsManager, "_initialise_rabbitmq", autospec=True)
+    @mock.patch.object(
+        ConfigsManager, "_create_and_start_sending_configs_thread",
+        autospec=True)
     @mock.patch.object(ConfigsManager, "foreach_config_file", autospec=True)
     @mock.patch.object(PollingObserver, "start", autospec=True)
     def test_start_after_watching(
             self, mock_observer_start: MagicMock, mock_foreach: MagicMock,
-            mock_initialise_rabbit: MagicMock
+            mock_create_and_start: MagicMock, mock_initialise_rabbit: MagicMock
     ):
         self.test_config_manager._watching = True
         mock_foreach.return_value = None
         mock_initialise_rabbit.return_value = None
         mock_observer_start.return_value = None
+        mock_create_and_start.return_value = None
         self.test_config_manager.start()
 
         mock_initialise_rabbit.assert_called_once()
+        mock_create_and_start.assert_called_once()
         mock_foreach.assert_called_once()
         mock_observer_start.assert_not_called()
 
@@ -407,14 +424,20 @@ class TestConfigsManager(unittest.TestCase):
 
     @mock.patch('sys.exit', autospec=True)
     @mock.patch.object(ConfigsManager, "disconnect_from_rabbit", autospec=True)
+    @mock.patch.object(
+        ConfigsManager,
+        "_terminate_and_stop_sending_configs_thread",
+        autospec=True)
     @mock.patch.object(PollingObserver, "stop", autospec=True)
     @mock.patch.object(PollingObserver, "join", autospec=True)
     def test__on_terminate_when_observing(
             self, mock_join: MagicMock, mock_stop: MagicMock,
+            mock_terminate_and_stop: MagicMock,
             mock_disconnect: MagicMock, mock_sys_exit: MagicMock
     ):
         mock_join.return_value = None
         mock_stop.return_value = None
+        mock_terminate_and_stop.return_value = None
         mock_disconnect.return_value = None
         mock_sys_exit.return_value = None
 
@@ -429,6 +452,7 @@ class TestConfigsManager(unittest.TestCase):
         mock_stop.assert_called_once()
         mock_join.assert_called_once()
         mock_sys_exit.assert_called_once()
+        mock_terminate_and_stop.assert_called_once()
 
     @mock.patch("os.path.join", autospec=True)
     @mock.patch("os.walk", autospec=True)
@@ -449,3 +473,13 @@ class TestConfigsManager(unittest.TestCase):
         mock_os_walk.side_effect = os_walk_fn
         mock_os_path_join.side_effect = lambda x, y: x + "/" + y
         self.test_config_manager.foreach_config_file(test_callback)
+
+    @mock.patch.object(threading, "Thread", autospec=True)
+    def test_create_and_start_sending_configs_thread_creates_thread(
+            self, mock_threading: MagicMock):
+
+        self.test_config_manager._create_and_start_sending_configs_thread()
+
+        mock_threading.assert_called_once_with(
+            target=self.test_config_manager._sending_configs_thread)
+        self.test_config_manager._current_thread.join()

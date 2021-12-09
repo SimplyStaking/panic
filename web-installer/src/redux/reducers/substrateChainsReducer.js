@@ -12,13 +12,13 @@ import {
   RESET_CHAIN_SUBSTRATE,
   ADD_REPOSITORY,
   REMOVE_REPOSITORY,
+  ADD_DOCKER,
+  REMOVE_DOCKER,
   UPDATE_REPEAT_ALERT,
   UPDATE_TIMEWINDOW_ALERT,
   UPDATE_THRESHOLD_ALERT,
   UPDATE_SEVERITY_ALERT,
   LOAD_CONFIG_SUBSTRATE,
-  LOAD_NODE_SUBSTRATE,
-  LOAD_REPOSITORY_SUBSTRATE,
   LOAD_REPEAT_ALERTS_SUBSTRATE,
   LOAD_TIMEWINDOW_ALERTS_SUBSTRATE,
   LOAD_THRESHOLD_ALERTS_SUBSTRATE,
@@ -39,6 +39,7 @@ const substrateRepeatAlerts = {
       },
       critical: {
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -55,6 +56,7 @@ const substrateRepeatAlerts = {
       },
       critical: {
         repeat: 300,
+        repeat_enabled: true,
         enabled: false,
       },
       enabled: true,
@@ -73,6 +75,7 @@ const substrateRepeatAlerts = {
       },
       critical: {
         repeat: 500,
+        repeat_enabled: true,
         enabled: false,
       },
       enabled: true,
@@ -98,6 +101,8 @@ const substrateTimeWindowAlerts = {
       critical: {
         threshold: 60,
         time_window: 3600,
+        repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -117,6 +122,8 @@ const substrateTimeWindowAlerts = {
       critical: {
         threshold: 60,
         time_window: 3600,
+        repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -142,6 +149,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 200,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -162,6 +170,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 180,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -180,6 +189,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -198,6 +208,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -216,6 +227,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -234,6 +246,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -252,6 +265,7 @@ const substrateThresholdAlerts = {
       critical: {
         threshold: 95,
         repeat: 300,
+        repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
@@ -558,11 +572,6 @@ function nodesById(state = {}, action) {
         ...state,
         [action.payload.id]: action.payload,
       };
-    case LOAD_NODE_SUBSTRATE:
-      return {
-        ...state,
-        [action.payload.node.id]: action.payload.node,
-      };
     case REMOVE_NODE_SUBSTRATE:
       return _.omit(state, action.payload.id);
     default:
@@ -574,13 +583,10 @@ function nodesById(state = {}, action) {
 function allNodes(state = [], action) {
   switch (action.type) {
     case ADD_NODE_SUBSTRATE:
-      return state.concat(action.payload.id);
-    case LOAD_NODE_SUBSTRATE:
-      if (!state.includes(action.payload.node.id)) {
-        return state.concat(action.payload.node.id);
+      if (state.includes(action.payload.id)) {
+        return state;
       }
-      return state;
-
+      return state.concat(action.payload.id);
     case REMOVE_NODE_SUBSTRATE:
       return state.filter((config) => config !== action.payload.id);
     default:
@@ -596,13 +602,17 @@ const SubstrateNodesReducer = combineReducers({
 function substrateChainsById(state = {}, action) {
   switch (action.type) {
     case ADD_CHAIN_SUBSTRATE:
+      if (state[action.payload.id] !== undefined) {
+        return state;
+      }
       return {
         ...state,
         [action.payload.id]: {
           id: action.payload.id,
           chain_name: action.payload.chain_name,
           nodes: [],
-          repositories: [],
+          githubRepositories: [],
+          dockerHubs: [],
           repeatAlerts: substrateRepeatAlerts,
           timeWindowAlerts: substrateTimeWindowAlerts,
           thresholdAlerts: substrateThresholdAlerts,
@@ -620,8 +630,8 @@ function substrateChainsById(state = {}, action) {
     case REMOVE_CHAIN_SUBSTRATE:
       return _.omit(state, action.payload.id);
     case ADD_NODE_SUBSTRATE:
-      if (!state[action.payload.parent_id].hasOwnProperty('nodes')) {
-        state[action.payload.node.parent_id].nodes = [];
+      if (state[action.payload.parent_id].nodes.includes(action.payload.id)) {
+        return state;
       }
       return {
         ...state,
@@ -630,38 +640,6 @@ function substrateChainsById(state = {}, action) {
           nodes: state[action.payload.parent_id].nodes.concat(action.payload.id),
         },
       };
-    case LOAD_NODE_SUBSTRATE:
-      if (!state.hasOwnProperty(action.payload.node.parent_id)) {
-        state[action.payload.node.parent_id] = {};
-      }
-      if (!state[action.payload.node.parent_id].hasOwnProperty('nodes')) {
-        state[action.payload.node.parent_id].nodes = [];
-        state[action.payload.node.parent_id].chain_name = action.payload.chain_name;
-        state[action.payload.node.parent_id].id = action.payload.node.parent_id;
-      }
-      if (!state[action.payload.node.parent_id].hasOwnProperty('repeatAlerts')) {
-        state[action.payload.node.parent_id].repeatAlerts = substrateRepeatAlerts;
-      }
-      if (!state[action.payload.node.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[action.payload.node.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
-      }
-      if (!state[action.payload.node.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[action.payload.node.parent_id].thresholdAlerts = substrateThresholdAlerts;
-      }
-      if (!state[action.payload.node.parent_id].hasOwnProperty('severityAlerts')) {
-        state[action.payload.node.parent_id].severityAlerts = substrateSeverityAlerts;
-      }
-      if (!state[action.payload.node.parent_id].nodes.includes(action.payload.node.id)) {
-        return {
-          ...state,
-          [action.payload.node.parent_id]: {
-            ...state[action.payload.node.parent_id],
-            nodes: state[action.payload.node.parent_id].nodes.concat(action.payload.node.id),
-          },
-        };
-      }
-      return state;
-
     case REMOVE_NODE_SUBSTRATE:
       return {
         ...state,
@@ -678,50 +656,18 @@ function substrateChainsById(state = {}, action) {
       if (state[action.payload.parent_id] === undefined) {
         return state;
       }
-      if (!state[action.payload.parent_id].hasOwnProperty('repositories')) {
-        state[action.payload.node.parent_id].repositories = [];
+      if (state[action.payload.parent_id].githubRepositories.includes(action.payload.id)) {
+        return state;
       }
       return {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          repositories: state[action.payload.parent_id].repositories.concat(action.payload.id),
+          githubRepositories: state[action.payload.parent_id].githubRepositories.concat(
+            action.payload.id,
+          ),
         },
       };
-    case LOAD_REPOSITORY_SUBSTRATE:
-      if (!state.hasOwnProperty(action.payload.repo.parent_id)) {
-        state[action.payload.repo.parent_id] = {};
-      }
-      if (!state[action.payload.repo.parent_id].hasOwnProperty('repositories')) {
-        state[action.payload.repo.parent_id].repositories = [];
-        state[action.payload.repo.parent_id].chain_name = action.payload.chain_name;
-        state[action.payload.repo.parent_id].id = action.payload.repo.parent_id;
-      }
-      if (!state[action.payload.repo.parent_id].hasOwnProperty('repeatAlerts')) {
-        state[action.payload.repo.parent_id].repeatAlerts = substrateRepeatAlerts;
-      }
-      if (!state[action.payload.repo.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[action.payload.repo.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
-      }
-      if (!state[action.payload.repo.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[action.payload.repo.parent_id].thresholdAlerts = substrateThresholdAlerts;
-      }
-      if (!state[action.payload.repo.parent_id].hasOwnProperty('severityAlerts')) {
-        state[action.payload.repo.parent_id].severityAlerts = substrateSeverityAlerts;
-      }
-      if (!state[action.payload.repo.parent_id].repositories.includes(action.payload.repo.id)) {
-        return {
-          ...state,
-          [action.payload.repo.parent_id]: {
-            ...state[action.payload.repo.parent_id],
-            repositories: state[action.payload.repo.parent_id].repositories.concat(
-              action.payload.repo.id,
-            ),
-          },
-        };
-      }
-      return state;
-
     case REMOVE_REPOSITORY:
       // Since this is common for multiple chains and general settings
       // it must be conditional. Checking if parent id exists is enough.
@@ -732,7 +678,38 @@ function substrateChainsById(state = {}, action) {
         ...state,
         [action.payload.parent_id]: {
           ...state[action.payload.parent_id],
-          repositories: state[action.payload.parent_id].repositories.filter(
+          githubRepositories: state[action.payload.parent_id].githubRepositories.filter(
+            (config) => config !== action.payload.id,
+          ),
+        },
+      };
+    case ADD_DOCKER:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parent_id] === undefined) {
+        return state;
+      }
+      if (state[action.payload.parent_id].dockerHubs.includes(action.payload.id)) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          dockerHubs: state[action.payload.parent_id].dockerHubs.concat(action.payload.id),
+        },
+      };
+    case REMOVE_DOCKER:
+      // Since this is common for multiple chains and general settings
+      // it must be conditional. Checking if parent id exists is enough.
+      if (state[action.payload.parent_id] === undefined) {
+        return state;
+      }
+      return {
+        ...state,
+        [action.payload.parent_id]: {
+          ...state[action.payload.parent_id],
+          dockerHubs: state[action.payload.parent_id].dockerHubs.filter(
             (config) => config !== action.payload.id,
           ),
         },
@@ -757,23 +734,6 @@ function substrateChainsById(state = {}, action) {
         },
       };
     case LOAD_REPEAT_ALERTS_SUBSTRATE:
-      if (!state.hasOwnProperty(action.payload.parent_id)) {
-        state[action.payload.parent_id] = {};
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
-        state[action.payload.parent_id].repeatAlerts = {};
-        state[action.payload.parent_id].chain_name = action.payload.chain_name;
-        state[action.payload.parent_id].id = action.payload.parent_id;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[action.payload.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[action.payload.parent_id].thresholdAlerts = substrateThresholdAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
-        state[action.payload.parent_id].severityAlerts = substrateSeverityAlerts;
-      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -801,23 +761,6 @@ function substrateChainsById(state = {}, action) {
         },
       };
     case LOAD_TIMEWINDOW_ALERTS_SUBSTRATE:
-      if (!state.hasOwnProperty(action.payload.parent_id)) {
-        state[action.payload.parent_id] = {};
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[action.payload.parent_id].timeWindowAlerts = {};
-        state[action.payload.parent_id].chain_name = action.payload.chain_name;
-        state[action.payload.parent_id].id = action.payload.parent_id;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
-        state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[action.payload.parent_id].thresholdAlerts = substrateThresholdAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
-        state[action.payload.parent_id].severityAlerts = substrateSeverityAlerts;
-      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -845,23 +788,6 @@ function substrateChainsById(state = {}, action) {
         },
       };
     case LOAD_THRESHOLD_ALERTS_SUBSTRATE:
-      if (!state.hasOwnProperty(action.payload.parent_id)) {
-        state[action.payload.parent_id] = {};
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[action.payload.parent_id].thresholdAlerts = {};
-        state[action.payload.parent_id].chain_name = action.payload.chain_name;
-        state[action.payload.parent_id].id = action.payload.parent_id;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
-        state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[action.payload.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
-        state[action.payload.parent_id].severityAlerts = substrateSeverityAlerts;
-      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -889,23 +815,6 @@ function substrateChainsById(state = {}, action) {
         },
       };
     case LOAD_SEVERITY_ALERTS_SUBSTRATE:
-      if (!state.hasOwnProperty(action.payload.parent_id)) {
-        state[action.payload.parent_id] = {};
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('severityAlerts')) {
-        state[action.payload.parent_id].severityAlerts = {};
-        state[action.payload.parent_id].chain_name = action.payload.chain_name;
-        state[action.payload.parent_id].id = action.payload.parent_id;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('repeatAlerts')) {
-        state[action.payload.parent_id].repeatAlerts = substrateRepeatAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('timeWindowAlerts')) {
-        state[action.payload.parent_id].timeWindowAlerts = substrateTimeWindowAlerts;
-      }
-      if (!state[action.payload.parent_id].hasOwnProperty('thresholdAlerts')) {
-        state[action.payload.parent_id].thresholdAlerts = substrateThresholdAlerts;
-      }
       return {
         ...state,
         [action.payload.parent_id]: {
@@ -921,43 +830,10 @@ function substrateChainsById(state = {}, action) {
 function allSubstrateChains(state = [], action) {
   switch (action.type) {
     case ADD_CHAIN_SUBSTRATE:
+      if (state.includes(action.payload.id)) {
+        return state;
+      }
       return state.concat(action.payload.id);
-    case LOAD_NODE_SUBSTRATE:
-      if (!state.includes(action.payload.node.parent_id)) {
-        return state.concat(action.payload.node.parent_id);
-      }
-      return state;
-
-    case LOAD_REPOSITORY_SUBSTRATE:
-      if (!state.includes(action.payload.repo.parent_id)) {
-        return state.concat(action.payload.repo.parent_id);
-      }
-      return state;
-
-    case LOAD_REPEAT_ALERTS_SUBSTRATE:
-      if (!state.includes(action.payload.parent_id)) {
-        return state.concat(action.payload.parent_id);
-      }
-      return state;
-
-    case LOAD_TIMEWINDOW_ALERTS_SUBSTRATE:
-      if (!state.includes(action.payload.parent_id)) {
-        return state.concat(action.payload.parent_id);
-      }
-      return state;
-
-    case LOAD_THRESHOLD_ALERTS_SUBSTRATE:
-      if (!state.includes(action.payload.parent_id)) {
-        return state.concat(action.payload.parent_id);
-      }
-      return state;
-
-    case LOAD_SEVERITY_ALERTS_SUBSTRATE:
-      if (!state.includes(action.payload.parent_id)) {
-        return state.concat(action.payload.parent_id);
-      }
-      return state;
-
     case REMOVE_CHAIN_SUBSTRATE:
       return state.filter((config) => config !== action.payload.id);
     default:

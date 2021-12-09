@@ -6,14 +6,16 @@ from typing import List
 
 import pika.exceptions
 
+from src.alerter.alert_severities import Severity
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerts.github_alerts import (CannotAccessGitHubPageAlert,
                                               NewGitHubReleaseAlert,
                                               GitHubPageNowAccessibleAlert)
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 GITHUB_ALERTER_INPUT_QUEUE,
-                                 GITHUB_ALERTER_INPUT_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                          GITHUB_ALERTER_INPUT_QUEUE_NAME,
+                                          GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
+                                          GITHUB_ALERT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ReceivedUnexpectedDataException)
 
@@ -22,7 +24,7 @@ class GithubAlerter(Alerter):
     def __init__(self, alerter_name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi, max_queue_size: int = 0) -> None:
         super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
-        self._cannot_access_github_page = True
+        self._cannot_access_github_page = {}
 
     def _initialise_rabbitmq(self) -> None:
         # An alerter is both a consumer and producer, therefore we need to
@@ -32,19 +34,24 @@ class GithubAlerter(Alerter):
         # Set consuming configuration
         self.logger.info("Creating '%s' exchange", ALERT_EXCHANGE)
         self.rabbitmq.exchange_declare(exchange=ALERT_EXCHANGE,
-                                       exchange_type='topic', passive=False,
+                                       exchange_type=TOPIC, passive=False,
                                        durable=True, auto_delete=False,
                                        internal=False)
-        self.logger.info("Creating queue '%s'", GITHUB_ALERTER_INPUT_QUEUE)
-        self.rabbitmq.queue_declare(GITHUB_ALERTER_INPUT_QUEUE, passive=False,
-                                    durable=True, exclusive=False,
-                                    auto_delete=False)
+        self.logger.info("Creating queue '%s'", GITHUB_ALERTER_INPUT_QUEUE_NAME)
+        self.rabbitmq.queue_declare(GITHUB_ALERTER_INPUT_QUEUE_NAME,
+                                    passive=False, durable=True,
+                                    exclusive=False, auto_delete=False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing key "
-                         "'%s'", GITHUB_ALERTER_INPUT_QUEUE, ALERT_EXCHANGE,
-                         GITHUB_ALERTER_INPUT_ROUTING_KEY)
-        self.rabbitmq.queue_bind(queue=GITHUB_ALERTER_INPUT_QUEUE,
-                                 exchange=ALERT_EXCHANGE,
-                                 routing_key=GITHUB_ALERTER_INPUT_ROUTING_KEY)
+                         "'%s'", GITHUB_ALERTER_INPUT_QUEUE_NAME,
+                         ALERT_EXCHANGE, GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
+        self.rabbitmq.queue_bind(
+            queue=GITHUB_ALERTER_INPUT_QUEUE_NAME, exchange=ALERT_EXCHANGE,
+            routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
+        self.logger.debug("Declaring consuming intentions")
+        self.rabbitmq.basic_consume(queue=GITHUB_ALERTER_INPUT_QUEUE_NAME,
+                                    on_message_callback=self._process_data,
+                                    auto_ack=False, exclusive=False,
+                                    consumer_tag=None)
 
         # Pre-fetch count is 10 times less the maximum queue size
         prefetch_count = round(self.publishing_queue.maxsize / 5)
@@ -53,22 +60,20 @@ class GithubAlerter(Alerter):
         # Set producing configuration
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
-        self.logger.debug("Declaring consuming intentions")
-        self.rabbitmq.basic_consume(queue=GITHUB_ALERTER_INPUT_QUEUE,
-                                    on_message_callback=self._process_data,
-                                    auto_ack=False,
-                                    exclusive=False,
-                                    consumer_tag=None)
         self.logger.info("Creating '%s' exchange", HEALTH_CHECK_EXCHANGE)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
+
+    def _create_state_for_github(self, github_id: str) -> None:
+        if github_id not in self._cannot_access_github_page:
+            self._cannot_access_github_page[github_id] = False
 
     def _process_data(self,
                       ch: pika.adapters.blocking_connection.BlockingChannel,
                       method: pika.spec.Basic.Deliver,
                       properties: pika.spec.BasicProperties,
                       body: bytes) -> None:
-        data_received = json.loads(body.decode())
+        data_received = json.loads(body)
         self.logger.debug("Received %s. Now processing this data.",
                           data_received)
 
@@ -79,24 +84,31 @@ class GithubAlerter(Alerter):
                 meta = data_received['result']['meta_data']
                 data = data_received['result']['data']
 
-                if self._cannot_access_github_page:
+                self._create_state_for_github(meta['repo_id'])
+
+                if self._cannot_access_github_page[meta['repo_id']]:
                     alert = GitHubPageNowAccessibleAlert(
-                        meta['repo_name'], 'INFO',
+                        meta['repo_name'], Severity.INFO.value,
                         meta['last_monitored'], meta['repo_parent_id'],
                         meta['repo_id'])
                     data_for_alerting.append(alert.alert_data)
                     self.logger.debug("Successfully classified alert %s",
                                       alert.alert_data)
-                    self._cannot_access_github_page = False
+                    self._cannot_access_github_page[meta['repo_id']] = False
 
                 current = data['no_of_releases']['current']
                 previous = data['no_of_releases']['previous']
                 if previous is not None and int(current) > int(previous):
-                    for i in range(0, current - previous):
+                    no_of_new_releases = int(current) - int(previous)
+                    for i in range(0, no_of_new_releases):
+                        # Index 0 is the latest release, thus first raise alerts
+                        # for old releases.
                         alert = NewGitHubReleaseAlert(
                             meta['repo_name'],
-                            data['releases'][str(i)]['release_name'],
-                            data['releases'][str(i)]['tag_name'], 'INFO',
+                            data['releases'][str(no_of_new_releases - i - 1)][
+                                'release_name'],
+                            data['releases'][str(no_of_new_releases - i - 1)][
+                                'tag_name'], Severity.INFO.value,
                             meta['last_monitored'], meta['repo_parent_id'],
                             meta['repo_id']
                         )
@@ -104,16 +116,26 @@ class GithubAlerter(Alerter):
                         self.logger.debug("Successfully classified alert %s",
                                           alert.alert_data)
             elif 'error' in data_received:
+                """
+                CannotAccessGithubPageAlert repeats constantly on each
+                monitoring round (DEFAULT: 1 hour). This has repeat timer as
+                it's an indication that the configuration is wrong and should
+                be fixed.
+                """
                 if int(data_received['error']['code']) == 5006:
                     meta_data = data_received['error']['meta_data']
+
+                    self._create_state_for_github(meta_data['repo_id'])
+
                     alert = CannotAccessGitHubPageAlert(
-                        meta_data['repo_name'], 'ERROR', meta_data['time'],
-                        meta_data['repo_parent_id'], meta_data['repo_id']
+                        meta_data['repo_name'], Severity.ERROR.value,
+                        meta_data['time'], meta_data['repo_parent_id'],
+                        meta_data['repo_id']
                     )
                     data_for_alerting.append(alert.alert_data)
                     self.logger.debug("Successfully classified alert %s",
                                       alert.alert_data)
-                    self._cannot_access_github_page = True
+                    self._cannot_access_github_page[meta_data['repo_id']] = True
             else:
                 raise ReceivedUnexpectedDataException("{}: _process_data"
                                                       "".format(self))
@@ -122,14 +144,12 @@ class GithubAlerter(Alerter):
             self.logger.exception(e)
             processing_error = True
 
-        self.rabbitmq.basic_ack(method.delivery_tag, False)
-
-        # Place the data on the publishing queue if there were no processing
-        # errors. This is done after acknowledging the data, so that if
-        # acknowledgement fails, the data is processed again and we do not have
-        # duplication of data in the queue
-        if not processing_error:
+        # Place the data on the publishing queue if there is something to send.
+        if len(data_for_alerting) != 0:
             self._place_latest_data_on_queue(data_for_alerting)
+
+        # If the data is processed, it can be acknowledged.
+        self.rabbitmq.basic_ack(method.delivery_tag, False)
 
         # Send any data waiting in the publisher queue, if any
         try:
@@ -159,7 +179,7 @@ class GithubAlerter(Alerter):
                 self.publishing_queue.get()
             self.publishing_queue.put({
                 'exchange': ALERT_EXCHANGE,
-                'routing_key': 'alert_router.github',
+                'routing_key': GITHUB_ALERT_ROUTING_KEY,
                 'data': copy.deepcopy(alert),
                 'properties': pika.BasicProperties(delivery_mode=2),
                 'mandatory': True})

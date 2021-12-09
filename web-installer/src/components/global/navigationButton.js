@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps } from 'airbnb-prop-types';
@@ -17,6 +18,7 @@ const NavigationButton = ({
       size="lg"
       color="primary"
       disabled={disabled}
+      fullWidth
     >
       {buttonText}
     </Button>

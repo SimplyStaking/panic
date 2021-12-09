@@ -2,37 +2,39 @@ import fnmatch
 import logging
 import os
 import sys
+import threading
 import time
 from configparser import (ConfigParser, DuplicateSectionError,
                           DuplicateOptionError, InterpolationError,
                           ParsingError)
 from datetime import datetime
 from types import FrameType
-from typing import Any, Dict, List, Optional, Callable
+from typing import List, Optional, Callable
 
 import pika
-from pika import BasicProperties
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.exceptions import AMQPChannelError, AMQPConnectionError
 from watchdog.events import FileSystemEvent
 from watchdog.observers.polling import PollingObserver
 
-from src.abstract.publisher_subscriber import PublisherSubscriberComponent
+from src.abstract.publisher_subscriber import \
+    QueuingPublisherSubscriberComponent
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.utils import env
 from src.utils import routing_key
-from src.utils.constants import (CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 RE_INITIALISE_SLEEPING_PERIOD)
+from src.utils.constants.rabbitmq import (
+    CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, CONFIGS_MANAGER_HEARTBEAT_QUEUE,
+    PING_ROUTING_KEY, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
+from src.utils.constants.starters import RE_INITIALISE_SLEEPING_PERIOD
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   ConnectionNotInitialisedException)
 from .config_update_event_handler import ConfigFileEventHandler
 from ..utils.logging import log_and_print
 
 _FIRST_RUN_EVENT = 'first run'
-_HEARTBEAT_ROUTING_KEY = 'heartbeat.worker'
-CONFIG_PING_QUEUE = "config_ping_queue"
 
 
-class ConfigsManager(PublisherSubscriberComponent):
+class ConfigsManager(QueuingPublisherSubscriberComponent):
     """
     This class reads all configurations and sends them over to the "config"
     topic in Rabbit MQ. Updated configs are sent as well
@@ -63,13 +65,15 @@ class ConfigsManager(PublisherSubscriberComponent):
         self._file_patterns = file_patterns
         self._watching = False
         self._connected_to_rabbit = False
+        self._current_thread = None
 
         logger.debug("Creating config RabbitMQ connection")
         rabbitmq = RabbitMQApi(
             logger.getChild("config_{}".format(RabbitMQApi.__name__)),
             host=rabbit_ip)
 
-        super().__init__(logger, rabbitmq)
+        super().__init__(logger, rabbitmq,
+                         env.CONFIG_PUBLISHING_QUEUE_SIZE)
 
         self._logger.debug("Creating heartbeat RabbitMQ connection")
         self._heartbeat_rabbit = RabbitMQApi(
@@ -105,7 +109,7 @@ class ConfigsManager(PublisherSubscriberComponent):
                                   "RabbitMQ channel")
 
                 self.rabbitmq.exchange_declare(
-                    CONFIG_EXCHANGE, 'topic', False, True, False, False
+                    CONFIG_EXCHANGE, TOPIC, False, True, False, False
                 )
                 self._logger.info("Declared %s exchange in Rabbit",
                                   CONFIG_EXCHANGE)
@@ -115,33 +119,35 @@ class ConfigsManager(PublisherSubscriberComponent):
                                   "RabbitMQ channel")
 
                 self._heartbeat_rabbit.exchange_declare(
-                    HEALTH_CHECK_EXCHANGE, 'topic', False, True, False, False
+                    HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False
                 )
                 self._logger.info("Declared %s exchange in Rabbit",
                                   HEALTH_CHECK_EXCHANGE)
 
                 self._logger.info(
                     "Creating and binding queue '%s' to exchange '%s' with "
-                    "routing key '%s", CONFIG_PING_QUEUE, HEALTH_CHECK_EXCHANGE,
-                    _HEARTBEAT_ROUTING_KEY)
+                    "routing key '%s", CONFIGS_MANAGER_HEARTBEAT_QUEUE,
+                    HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY)
 
-                self._heartbeat_rabbit.queue_declare(CONFIG_PING_QUEUE, False,
-                                                     True, False, False)
-                self._logger.debug("Declared '%s' queue", CONFIG_PING_QUEUE)
+                self._heartbeat_rabbit.queue_declare(
+                    CONFIGS_MANAGER_HEARTBEAT_QUEUE, False, True, False, False)
+                self._logger.debug("Declared '%s' queue",
+                                   CONFIGS_MANAGER_HEARTBEAT_QUEUE)
 
-                self._heartbeat_rabbit.queue_bind(CONFIG_PING_QUEUE,
-                                                  HEALTH_CHECK_EXCHANGE,
-                                                  'ping')
+                self._heartbeat_rabbit.queue_bind(
+                    CONFIGS_MANAGER_HEARTBEAT_QUEUE, HEALTH_CHECK_EXCHANGE,
+                    PING_ROUTING_KEY)
                 self._logger.debug("Bound queue '%s' to exchange '%s'",
-                                   CONFIG_PING_QUEUE, HEALTH_CHECK_EXCHANGE)
+                                   CONFIGS_MANAGER_HEARTBEAT_QUEUE,
+                                   HEALTH_CHECK_EXCHANGE)
 
                 # Pre-fetch count is set to 300
                 prefetch_count = round(300)
                 self._heartbeat_rabbit.basic_qos(prefetch_count=prefetch_count)
                 self._logger.debug("Declaring consuming intentions")
-                self._heartbeat_rabbit.basic_consume(CONFIG_PING_QUEUE,
-                                                     self._process_ping,
-                                                     True, False, None)
+                self._heartbeat_rabbit.basic_consume(
+                    CONFIGS_MANAGER_HEARTBEAT_QUEUE, self._process_ping, True,
+                    False, None)
                 break
             except (ConnectionNotInitialisedException,
                     AMQPConnectionError) as connection_error:
@@ -150,7 +156,7 @@ class ConfigsManager(PublisherSubscriberComponent):
                 # too.
                 self._logger.error(
                     "Something went wrong that meant a connection was not made")
-                self._logger.error(connection_error.message)
+                self._logger.error(connection_error)
                 raise connection_error
             except AMQPChannelError:
                 # This error would have already been logged by the RabbitMQ
@@ -189,9 +195,8 @@ class ConfigsManager(PublisherSubscriberComponent):
         self._logger.debug("Sending %s", data_to_send)
         self._heartbeat_rabbit.basic_publish_confirm(
             exchange=HEALTH_CHECK_EXCHANGE,
-            routing_key=_HEARTBEAT_ROUTING_KEY,
-            body=data_to_send, is_body_dict=True,
-            properties=pika.BasicProperties(delivery_mode=2),
+            routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, body=data_to_send,
+            is_body_dict=True, properties=pika.BasicProperties(delivery_mode=2),
             mandatory=True)
         self._logger.debug("Sent heartbeat to %s exchange",
                            HEALTH_CHECK_EXCHANGE)
@@ -215,51 +220,6 @@ class ConfigsManager(PublisherSubscriberComponent):
             # real-time
             self._logger.error("Error when sending heartbeat")
             self._logger.exception(e)
-
-    def _send_data(self, config: Dict[str, Any], route_key: str) -> None:
-        self._logger.debug("Sending %s with routing key %s", config, route_key)
-
-        while True:
-            try:
-                self._logger.debug(
-                    "Attempting to send config with routing key %s", route_key
-                )
-                # We need to definitely send this
-                self.rabbitmq.basic_publish_confirm(
-                    CONFIG_EXCHANGE, route_key, config, mandatory=True,
-                    is_body_dict=True,
-                    properties=BasicProperties(delivery_mode=2)
-                )
-                self._logger.info("Configuration update sent")
-                break
-            except MessageWasNotDeliveredException as mwnde:
-                self._logger.error("Config was not successfully sent with "
-                                   "routing key %s", route_key)
-                self._logger.exception(mwnde)
-                self._logger.info("Will attempt sending the config again with "
-                                  "routing key %s", route_key)
-                self.rabbitmq.connection.sleep(10)
-            except (
-                    ConnectionNotInitialisedException, AMQPConnectionError
-            ) as connection_error:
-                # If the connection is not initialised or there is a connection
-                # error, we need to restart the connection and try it again
-                self._logger.error("There has been a connection error")
-                self._logger.exception(connection_error)
-                self._logger.info("Restarting the connection")
-                self._connected_to_rabbit = False
-
-                # Wait some time before reconnecting and then retrying
-                time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
-                self._connect_to_rabbit()
-
-                self._logger.info("Connection restored, will attempt sending "
-                                  "the config with routing key %s", route_key)
-            except AMQPChannelError:
-                # This error would have already been logged by the RabbitMQ
-                # logger and handled by RabbitMQ. Since a new channel is created
-                # we need to re-initialise RabbitMQ
-                self._initialise_rabbitmq()
 
     def _on_event_thrown(self, event: FileSystemEvent) -> None:
         """
@@ -303,7 +263,7 @@ class ConfigsManager(PublisherSubscriberComponent):
         key = routing_key.get_routing_key(event.src_path, config_folder)
         self._logger.debug("Sending config %s to RabbitMQ with routing key %s",
                            config_dict, key)
-        self._send_data(config_dict, key)
+        self._push_to_queue(config_dict, CONFIG_EXCHANGE, key)
 
     @property
     def config_directory(self) -> str:
@@ -328,6 +288,12 @@ class ConfigsManager(PublisherSubscriberComponent):
 
         self._initialise_rabbitmq()
 
+        """
+        We want to start a thread that connects to rabbitmq and begins attempts
+        to send configs.
+        """
+        self._create_and_start_sending_configs_thread()
+
         def do_first_run_event(name: str) -> None:
             event = FileSystemEvent(name)
             event.event_type = _FIRST_RUN_EVENT
@@ -346,6 +312,53 @@ class ConfigsManager(PublisherSubscriberComponent):
         self._logger.debug("Config file observer started")
         self._connect_to_rabbit()
         self._listen_for_data()
+
+    def _sending_configs_thread(self) -> None:
+        while True:
+            try:
+                if not self.publishing_queue.empty():
+                    try:
+                        self._send_data()
+                    except MessageWasNotDeliveredException as e:
+                        self.logger.exception(e)
+            except (ConnectionNotInitialisedException,
+                    AMQPConnectionError) as e:
+                # If the connection is not initialised or there is a connection
+                # error, we need to restart the connection and try it again
+                self._logger.error("There has been a connection error")
+                self._logger.exception(e)
+                self._logger.info("Restarting the connection")
+                self._connected_to_rabbit = False
+
+                # Wait some time before reconnecting and then retrying
+                time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+                self._connect_to_rabbit()
+
+                self._logger.info("Connection restored, will attempt sending "
+                                  "the config.")
+            except AMQPChannelError:
+                # This error would have already been logged by the RabbitMQ
+                # logger and handled by RabbitMQ. Since a new channel is
+                # created we need to re-initialise RabbitMQ
+                self._initialise_rabbitmq()
+                raise e
+
+            self.rabbitmq.connection.sleep(10)
+
+    def _create_and_start_sending_configs_thread(self) -> None:
+        try:
+            self._current_thread = threading.Thread(
+                target=self._sending_configs_thread)
+            self._current_thread.start()
+        except Exception as e:
+            self._logger.error("Failed to start sending configs thread!")
+            self._logger.exception(e)
+            raise e
+
+    def _terminate_and_stop_sending_configs_thread(self) -> None:
+        if self._current_thread is not None:
+            self._current_thread.join()
+            self._current_thread = None
 
     def _listen_for_data(self) -> None:
         self._logger.info("Starting the config ping listener")
@@ -368,6 +381,7 @@ class ConfigsManager(PublisherSubscriberComponent):
         else:
             self._logger.info("Config file observer already stopped")
         self.disconnect_from_rabbit()
+        self._terminate_and_stop_sending_configs_thread()
         log_and_print("{} terminated.".format(self), self._logger)
         sys.exit()
 

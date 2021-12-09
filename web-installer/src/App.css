@@ -1,5 +1,10 @@
 .greyBackground{
-  background: #F8F8FB;
+  background: #e2e4e9;
+  border-radius: 15px;
+}
+
+.background-blue{
+  background-color: #263089;
 }
 
 .root{
@@ -43,4 +48,28 @@
 
 .button_float_right{
   float: right;
+}
+
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: #e2e4e9c2;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.popup-inner {
+  position: relative;
+  padding: 32px;
+  width: 100%;
+  max-width: 640px;
+  background-color: white;
+  border-radius: 1em;
+  box-shadow: 0 10px 30px rgba(black, 0.2);
+  border: 2px solid black;
 }

@@ -7,12 +7,13 @@ import {
 } from 'redux/actions/cosmosActions';
 import {
   removeRepository,
-  removeKms,
   removeTelegramChannel,
   removeTwilioChannel,
   removeEmailChannel,
   removePagerDutyChannel,
   removeOpsGenieChannel,
+  removeSlackChannel,
+  removeDockerHub,
 } from 'redux/actions/generalActions';
 import { changePage } from 'redux/actions/pageActions';
 
@@ -23,6 +24,7 @@ const mapStateToProps = (state) => ({
   emails: state.EmailsReducer,
   pagerduties: state.PagerDutyReducer,
   opsgenies: state.OpsGenieReducer,
+  slacks: state.SlacksReducer,
   config: state.CosmosChainsReducer,
 });
 
@@ -34,13 +36,14 @@ function mapDispatchToProps(dispatch) {
     removeChainDetails: (details) => dispatch(removeChainCosmos(details)),
     removeNodeDetails: (details) => dispatch(removeNodeCosmos(details)),
     removeRepositoryDetails: (details) => dispatch(removeRepository(details)),
-    removeKmsDetails: (details) => dispatch(removeKms(details)),
     loadConfigDetails: (details) => dispatch(loadConfigCosmos(details)),
     removeOpsGenieDetails: (details) => dispatch(removeOpsGenieChannel(details)),
     removePagerDutyDetails: (details) => dispatch(removePagerDutyChannel(details)),
     removeEmailDetails: (details) => dispatch(removeEmailChannel(details)),
     removeTwilioDetails: (details) => dispatch(removeTwilioChannel(details)),
     removeTelegramDetails: (details) => dispatch(removeTelegramChannel(details)),
+    removeSlackDetails: (details) => dispatch(removeSlackChannel(details)),
+    removeDockerHubDetails: (details) => dispatch(removeDockerHub(details)),
   };
 }
 

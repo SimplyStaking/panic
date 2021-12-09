@@ -1,0 +1,97 @@
+.panic-alerts-overview {
+    &__title {
+        text-align: center;
+        font-size: 25px;
+        margin: 30px 0px 20px;
+        color: var(--ion-color-primary);
+    }
+
+    &__data-table-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        margin: 7px 7px 7px 5px;
+        padding: 2px;
+        height: 50vh;
+    }
+
+    &__slots {
+        display: flex;
+        margin-bottom: 10px;
+    }
+}
+
+panic-alerts-overview {
+    svc-select {
+        &#chains-filter {
+            margin-right: 20px;
+        }
+
+        &#severity-filter {
+            margin-left: 20px;
+        }
+
+        ion-select{
+            border-bottom: 1px #a8a8a8 solid;
+            padding-right: 10px;
+
+            &::part(text){
+                text-transform: capitalize;
+                color: var(--ion-color-primary);
+            }
+
+            &::part(text-title){
+                font-weight: bold;
+                color: var(--ion-color-primary);
+                opacity: 1;
+            }
+
+            &::part(placeholder){
+                color: var(--ion-color-primary);
+                opacity: 1;
+            }
+        }
+    }
+
+    svc-data-table {
+        display: flex;
+        max-height: inherit;
+
+        svc-buttons-container{
+            display: inline-flex;
+
+            ion-buttons {
+                z-index: 0 !important;
+    
+                ion-button {
+                    width: 27px !important;
+                    height: 27px !important;
+    
+                    &::part(native) {
+                        cursor: unset;
+                    }
+    
+                    ion-icon {
+                        width: 27px;
+                        height: 27px;
+                    }
+                }
+            }
+        } 
+
+        thead {
+            z-index: 1;
+        }
+    }
+
+    svc-card {
+        height: auto;
+        border: 1px #a8a8a8 solid;
+    }
+}
+
+ion-alert {
+    div > div.alert-checkbox-label.sc-ion-alert-md {
+        text-transform: capitalize;
+    }
+}

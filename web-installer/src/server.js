@@ -14,6 +14,8 @@ const mongoClient = require('mongodb').MongoClient;
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const Web3 = require('web3');
+const parsePrometheusTextFormat = require('parse-prometheus-text-format');
 const utils = require('./server/utils');
 const errors = require('./server/errors');
 const configs = require('./server/configs');
@@ -22,10 +24,16 @@ const files = require('./server/files');
 const mongo = require('./server/mongo');
 const constants = require('./server/constants');
 
+// This disables certificate verification which is needed it a CHAINLINK node
+// doesn't have an intermediate certificate.
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+
 // Read certificates. Note, the server will not start if the certificates are
 // missing.
-const httpsKey = files.readFile(path.join(__dirname, '../../', 'certificates', 'key.pem'));
-const httpsCert = files.readFile(path.join(__dirname, '../../', 'certificates', 'cert.pem'));
+const httpsKey = files.readFile(path.join(__dirname, '../../', 'certificates',
+  'key.pem'));
+const httpsCert = files.readFile(path.join(__dirname, '../../', 'certificates',
+  'cert.pem'));
 const httpsOptions = {
   key: httpsKey,
   cert: httpsCert,
@@ -61,6 +69,9 @@ const maxAttempts = 3;
 // Store how long someone has to wait after 5 failed login attempts
 const waitTime = 300000;
 
+const timeout = (prom, time) => Promise.race(
+  [prom, new Promise((_r, rej) => setTimeout(rej, time))],
+);
 // Server configuration
 const app = express();
 app.disable('x-powered-by');
@@ -730,7 +741,7 @@ app.post('/server/twilio/test', verify, async (req, res) => {
       res.status(error.code).send(utils.errorJson(error.message));
     });
 });
-
+ 
 // ---------------------------------------- E-mail
 
 // This endpoint sends a test e-mail to the address.
@@ -769,7 +780,6 @@ app.post('/server/email/test', verify, async (req, res) => {
         }
         : undefined,
   });
-
   // If transporter valid, create and send test email
   transport.verify((err, _) => {
     if (err) {
@@ -892,9 +902,95 @@ app.post('/server/opsgenie/test', verify, async (req, res) => {
   });
 });
 
+// ---------------------------------------- Ethereum
+app.post('/server/ethereum/rpc', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { httpUrl } = req.body;
+
+  // Check if missingParamsList is missing.
+  const missingParamsList = utils.missingValues({ httpUrl });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  if (blackList.find((a) => httpUrl.includes(a))) {
+    const error = new errors.BlackListError(httpUrl);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
+  try {
+    const web3 = new Web3(new Web3.providers.HttpProvider(httpUrl));
+    await timeout(web3.eth.getBlockNumber(), 1000);
+    const msg = new msgs.MessagePong();
+    res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+  } catch (e) {
+    const msg = new msgs.ConnectionError();
+    res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+  }
+});
+
+// ---------------------------------------- Common
+
+app.post('/server/common/prometheus', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { prometheusUrl, metric } = req.body;
+
+  // Check if prometheusUrl or metric is missing.
+  const missingParamsList = utils.missingValues({ prometheusUrl, metric });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  if (blackList.find((a) => prometheusUrl.includes(a))) {
+    const error = new errors.BlackListError(prometheusUrl);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
+  const url = `${prometheusUrl}`;
+
+  axios
+    .get(url, { params: {} })
+    .then((result) => {
+      const parsed = parsePrometheusTextFormat(result.data);
+      for (let i = 0; i < parsed.length; i += 1) {
+        if (parsed[i].name === metric) {
+          const msg = new msgs.MessagePong();
+          res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+          return;
+        }
+      }
+      const msg = new msgs.MetricNotFound(metric, url);
+      res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.code === 'ECONNREFUSED') {
+        const msg = new msgs.MessageNoConnection();
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        // Connection made but error occurred (typically means node is missing
+        // or prometheus is not enabled)
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+      }
+    });
+});
+
 // ---------------------------------------- Cosmos
 
-app.post('/server/cosmos/tendermint', async (req, res) => {
+app.post('/server/cosmos/tendermint', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
   const { tendermintRpcUrl } = req.body;
 
@@ -936,12 +1032,13 @@ app.post('/server/cosmos/tendermint', async (req, res) => {
     });
 });
 
-app.post('/server/cosmos/prometheus', async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { prometheusUrl } = req.body;
+// ---------------------------------------- DockerHub Repository
 
-  // Check if prometheusUrl is missing.
-  const missingParamsList = utils.missingValues({ prometheusUrl });
+app.post('/server/dockerhub/repository', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { repository } = req.body;
+
+  const missingParamsList = utils.missingValues({ repository });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -950,61 +1047,23 @@ app.post('/server/cosmos/prometheus', async (req, res) => {
     return;
   }
 
-  if (blackList.find((a) => prometheusUrl.includes(a))) {
-    const error = new errors.BlackListError(prometheusUrl);
-    console.log(error);
-    res.status(error.code).send(utils.errorJson(error.message));
-    return;
-  }
-
-  const url = `${prometheusUrl}`;
-
   axios
-    .get(url, { params: {} })
-    .then((_) => {
-      const msg = new msgs.MessagePong();
-      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+    .get(`https://registry.hub.docker.com/v2/repositories/${repository}`, {
+      params: {},
     })
-    .catch((err) => {
-      console.error(err);
-      if (err.code === 'ECONNREFUSED') {
-        const msg = new msgs.MessageNoConnection();
-        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+    .then((response) => {
+      // We must verify if the response is something we expect from this request
+      if ('name' in response.data && 'user' in response.data) {
+        const msg = new msgs.MessagePong();
+        res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
       } else {
-        const msg = new msgs.ConnectionError();
-        // Connection made but error occurred (typically means node is missing
-        // or prometheus is not enabled)
-        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+        const err = new errors.BadParameters(
+          repository,
+          'https://registry.hub.docker.com/v2/repositories/',
+        );
+        console.error(err);
+        res.status(err.code).send(utils.errorJson(err.message));
       }
-    });
-});
-
-// ---------------------------------------- System (Node Exporter)
-
-app.post('/server/system/exporter', async (req, res) => {
-  console.log('Received POST request for %s', req.url);
-  const { exporterUrl } = req.body;
-
-  // Check if exporterUrl is missing.
-  const missingParamsList = utils.missingValues({ exporterUrl });
-
-  // If some required parameters are missing inform the user.
-  if (missingParamsList.length !== 0) {
-    const err = new errors.MissingArguments(missingParamsList);
-    res.status(err.code).send(utils.errorJson(err.message));
-    return;
-  }
-
-  if (blackList.find((a) => exporterUrl.includes(a))) {
-    const error = new errors.BlackListError(exporterUrl);
-    console.log(error);
-    res.status(error.code).send(utils.errorJson(error.message));
-    return;
-  }
-
-  axios
-    .get(exporterUrl, { params: {} })
-    .then((_) => {
       const msg = new msgs.MessagePong();
       res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     })

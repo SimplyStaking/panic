@@ -1,20 +1,25 @@
 import logging
 import time
-from typing import TypeVar, Type, Union
+from typing import TypeVar, Type, Union, List
 
 import pika.exceptions
 
+from src.configs.nodes.chainlink import ChainlinkNodeConfig
+from src.configs.nodes.node import NodeConfig
 from src.configs.repo import RepoConfig
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
+from src.monitors.contracts.chainlink import ChainlinkContractsMonitor
 from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
 from src.monitors.system import SystemMonitor
 from src.utils import env
-from src.utils.constants import (RE_INITIALISE_SLEEPING_PERIOD,
-                                 RESTART_SLEEPING_PERIOD,
-                                 SYSTEM_MONITOR_NAME_TEMPLATE,
-                                 GITHUB_MONITOR_NAME_TEMPLATE)
+from src.utils.constants.names import (SYSTEM_MONITOR_NAME_TEMPLATE,
+                                       GITHUB_MONITOR_NAME_TEMPLATE,
+                                       NODE_MONITOR_NAME_TEMPLATE,
+                                       CL_CONTRACTS_MONITOR_NAME_TEMPLATE)
+from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
+                                          RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
@@ -45,9 +50,10 @@ def _initialise_monitor_logger(monitor_display_name: str,
     return monitor_logger
 
 
-def _initialise_monitor(monitor_type: Type[T], monitor_display_name: str,
-                        monitoring_period: int,
-                        config: Union[SystemConfig, RepoConfig]) -> T:
+def _initialise_monitor(
+        monitor_type: Type[T], monitor_display_name: str,
+        monitoring_period: int,
+        config: Union[SystemConfig, RepoConfig, NodeConfig]) -> T:
     monitor_logger = _initialise_monitor_logger(monitor_display_name,
                                                 monitor_type.__name__)
 
@@ -59,6 +65,34 @@ def _initialise_monitor(monitor_type: Type[T], monitor_display_name: str,
                 host=env.RABBIT_IP)
             monitor = monitor_type(monitor_display_name, config, monitor_logger,
                                    monitoring_period, rabbitmq)
+            log_and_print("Successfully initialised {}".format(
+                monitor_display_name), monitor_logger)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(monitor_display_name, e)
+            log_and_print(msg, monitor_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return monitor
+
+
+def _initialise_chainlink_contracts_monitor(
+        monitor_display_name: str, monitoring_period: int, weiwatchers_url: str,
+        evm_nodes: List[str],
+        node_configs: List[ChainlinkNodeConfig]) -> ChainlinkContractsMonitor:
+    monitor_logger = _initialise_monitor_logger(
+        monitor_display_name, ChainlinkContractsMonitor.__name__)
+
+    # Try initialising the monitor until successful
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=monitor_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+            monitor = ChainlinkContractsMonitor(
+                monitor_display_name, weiwatchers_url, evm_nodes, node_configs,
+                monitor_logger, monitoring_period, rabbitmq)
             log_and_print("Successfully initialised {}".format(
                 monitor_display_name), monitor_logger)
             break
@@ -90,6 +124,26 @@ def start_github_monitor(repo_config: RepoConfig) -> None:
                                          env.GITHUB_MONITOR_PERIOD_SECONDS,
                                          repo_config)
     start_monitor(github_monitor)
+
+
+def start_node_monitor(node_config: NodeConfig, monitor_type: Type[T]) -> None:
+    # Monitor display name based on node
+    monitor_display_name = NODE_MONITOR_NAME_TEMPLATE.format(
+        node_config.node_name)
+    node_monitor = _initialise_monitor(monitor_type, monitor_display_name,
+                                       env.NODE_MONITOR_PERIOD_SECONDS,
+                                       node_config)
+    start_monitor(node_monitor)
+
+
+def start_chainlink_contracts_monitor(
+        weiwatchers_url: str, evm_nodes: List[str],
+        node_configs: List[ChainlinkNodeConfig], parent_id: str) -> None:
+    monitor_display_name = CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(parent_id)
+    node_monitor = _initialise_chainlink_contracts_monitor(
+        monitor_display_name, env.CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS,
+        weiwatchers_url, evm_nodes, node_configs)
+    start_monitor(node_monitor)
 
 
 def start_monitor(monitor: Monitor) -> None:

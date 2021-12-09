@@ -1,4 +1,5 @@
 import React from 'react';
+import { Box } from '@material-ui/core';
 import HelpIcon from '@material-ui/icons/Help';
 import SettingsIcon from '@material-ui/icons/Settings';
 import ComputerIcon from '@material-ui/icons/Computer';
@@ -12,11 +13,13 @@ export default function DescriptionSection() {
   const classes = useStyles();
   return (
     <div className={classes.section}>
-      <GridContainer justify="center">
-        <GridItem xs={12} sm={12} md={8}>
-          <h1 className={classes.title}>{Data.chains.subtitle_1}</h1>
-        </GridItem>
-      </GridContainer>
+      <Box pb={5}>
+        <GridContainer justifyContent="center">
+          <GridItem xs={12} sm={12} md={8}>
+            <h1 className={classes.title}>{Data.chains.subtitle_1}</h1>
+          </GridItem>
+        </GridContainer>
+      </Box>
       <div>
         <GridContainer>
           <GridItem xs={12} sm={12} md={4}>
@@ -31,7 +34,7 @@ export default function DescriptionSection() {
                 </div>
               )}
               icon={HelpIcon}
-              iconColor="#00000"
+              iconColor="#000000"
               vertical
             />
           </GridItem>
@@ -44,11 +47,12 @@ export default function DescriptionSection() {
                     <li>{Data.chains.chain_1}</li>
                     <li>{Data.chains.chain_2}</li>
                     <li>{Data.chains.chain_3}</li>
+                    <li>{Data.chains.chain_4}</li>
                   </ul>
                 </div>
               )}
               icon={ComputerIcon}
-              iconColor="#00000"
+              iconColor="#000000"
               vertical
             />
           </GridItem>
@@ -65,7 +69,7 @@ export default function DescriptionSection() {
                 </div>
               )}
               icon={SettingsIcon}
-              iconColor="#00000"
+              iconColor="#000000"
               vertical
             />
           </GridItem>

@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+import { checkChannelName } from 'utils/helpers';
 
 const PagerDutySchema = (props) => Yup.object().shape({
   channel_name: Yup.string()
@@ -7,36 +8,12 @@ const PagerDutySchema = (props) => Yup.object().shape({
       'PagerDuty config name is not unique.',
       (value) => {
         const {
-          emails, opsGenies, pagerDuties, telegrams, twilios,
+          emails, opsGenies, pagerDuties, telegrams, twilios, slacks,
         } = props;
-        for (let i = 0; i < emails.allIds.length; i += 1) {
-          if (emails.byId[emails.allIds[i]].channel_name === value) {
-            return false;
-          }
-        }
-        for (let i = 0; i < opsGenies.allIds.length; i += 1) {
-          if (opsGenies.byId[opsGenies.allIds[i]].channel_name === value) {
-            return false;
-          }
-        }
-        for (let i = 0; i < pagerDuties.allIds.length; i += 1) {
-          if (
-            pagerDuties.byId[pagerDuties.allIds[i]].channel_name === value
-          ) {
-            return false;
-          }
-        }
-        for (let i = 0; i < telegrams.allIds.length; i += 1) {
-          if (telegrams.byId[telegrams.allIds[i]].channel_name === value) {
-            return false;
-          }
-        }
-        for (let i = 0; i < twilios.allIds.length; i += 1) {
-          if (twilios.byId[twilios.allIds[i]].channel_name === value) {
-            return false;
-          }
-        }
-        return true;
+        return checkChannelName(
+          value,
+          ...[emails, opsGenies, pagerDuties, telegrams, twilios, slacks],
+        );
       },
     )
     .required('Config name is required.'),

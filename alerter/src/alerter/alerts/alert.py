@@ -1,21 +1,25 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from src.alerter.alert_code import AlertCode
-from src.alerter.metric_code import MetricCode
+from src.alerter.alert_data import AlertData
+from src.alerter.grouped_alerts_metric_code import GroupedAlertsMetricCode
 
 
 class Alert:
 
-    def __init__(self, alert_code: AlertCode, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 metric_code: MetricCode) -> None:
+    def __init__(
+            self, alert_code: AlertCode, message: str, severity: str,
+            timestamp: float, parent_id: str, origin_id: str,
+            alert_group_metric_code: GroupedAlertsMetricCode,
+            alert_data: Optional[AlertData] = None) -> None:
         self._alert_code = alert_code
         self._message = message
         self._severity = severity
         self._parent_id = parent_id
         self._origin_id = origin_id
         self._timestamp = timestamp
-        self._metric_code = metric_code
+        self._alert_group_metric_code = alert_group_metric_code
+        self._alert_data = alert_data
 
     def __str__(self) -> str:
         return self.message
@@ -45,8 +49,8 @@ class Alert:
         return self._timestamp
 
     @property
-    def metric_code(self) -> MetricCode:
-        return self._metric_code
+    def alert_group_metric_code(self) -> GroupedAlertsMetricCode:
+        return self._alert_group_metric_code
 
     @property
     def alert_data(self) -> Dict:
@@ -55,10 +59,12 @@ class Alert:
                 'name': self._alert_code.name,
                 'code': self._alert_code.value
             },
-            'metric': self._metric_code.value,
+            'metric': self._alert_group_metric_code.value,
             'message': self._message,
             'severity': self._severity,
             'parent_id': self._parent_id,
             'origin_id': self._origin_id,
-            'timestamp': self._timestamp
+            'timestamp': self._timestamp,
+            'alert_data': (None if self._alert_data is None
+                           else self._alert_data.alert_data)
         }

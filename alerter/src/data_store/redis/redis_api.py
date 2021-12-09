@@ -240,6 +240,18 @@ class RedisApi:
     def hremove(self, name: str, *keys):
         return self._safe(self.hremove_unsafe, [name, *keys], None)
 
+    def hkeys_unsafe(self, name: str):
+        name = self._add_namespace(name)
+
+        keys_list = self._redis.hkeys(name)
+        keys_list = [k.decode('utf8') for k in keys_list]
+        keys_list = [self._remove_namespace(k) for k in keys_list]
+
+        return keys_list
+
+    def hkeys(self, name: str):
+        return self._safe(self.hkeys_unsafe, [name], None)
+
     def delete_all_unsafe(self):
         return self._redis.flushdb()
 

@@ -4,6 +4,7 @@ import NodesForm from 'components/chains/cosmos/forms/nodesForm';
 import NodesTable from 'components/chains/cosmos/tables/nodesTable';
 import { addNodeCosmos, removeNodeCosmos } from 'redux/actions/cosmosActions';
 import CosmosData from 'data/cosmos';
+import { toggleDirty } from 'redux/actions/pageActions';
 import NodeSchema from '../common/schemas/nodeSchema';
 
 // This performs cosmos node name validation, by checking if the node name
@@ -11,7 +12,6 @@ import NodeSchema from '../common/schemas/nodeSchema';
 const Form = withFormik({
   mapPropsToErrors: () => ({
     name: '',
-    exporter_url: '',
   }),
   mapPropsToValues: () => ({
     name: '',
@@ -22,12 +22,16 @@ const Form = withFormik({
     prometheus_url: '',
     monitor_prometheus: false,
     exporter_url: '',
-    monitor_system: false,
+    monitor_system: true,
     is_validator: false,
     monitor_node: true,
-    is_archive_node: true,
-    use_as_data_source: true,
+    is_archive_node: false,
+    use_as_data_source: false,
   }),
+  toggleDirtyForm: (tog, { props }) => {
+    const { toggleDirtyForm } = props;
+    toggleDirtyForm(tog);
+  },
   validationSchema: (props) => NodeSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveNodeDetails, currentChain } = props;
@@ -50,6 +54,7 @@ const Form = withFormik({
     saveNodeDetails(payload);
     resetForm();
   },
+
 })(NodesForm);
 
 // ------------------------- Cosmos Based Chain Data --------------------
@@ -60,8 +65,11 @@ const mapStateToProps = (state) => ({
   chainConfig: state.CosmosChainsReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
-  reposConfig: state.RepositoryReducer,
+  chainlinkNodesConfig: state.ChainlinkNodesReducer,
+  reposConfig: state.GitHubRepositoryReducer,
   systemConfig: state.SystemsReducer,
+  dockerHubConfig: state.DockerHubReducer,
+  evmNodesConfig: state.EvmNodesReducer,
   data: CosmosData,
 });
 
@@ -69,6 +77,7 @@ const mapStateToProps = (state) => ({
 function mapDispatchToProps(dispatch) {
   return {
     saveNodeDetails: (details) => dispatch(addNodeCosmos(details)),
+    toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
   };
 }
 
@@ -81,7 +90,10 @@ function mapDispatchToPropsRemove(dispatch) {
 }
 
 // Combine cosmos state and dispatch functions to the node form
-const NodesFormContainer = connect(mapStateToProps, mapDispatchToProps)(Form);
+const NodesFormContainer = connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(Form);
 
 // Combine cosmos state and dispatch functions to the node table
 const NodesTableContainer = connect(

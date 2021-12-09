@@ -13,12 +13,15 @@ import {
   sendTestPagerDuty,
   sendTestOpsGenie,
   pingTendermint,
-  pingCosmosPrometheus,
-  pingNodeExporter,
+  pingPrometheus,
   saveAccount,
   deleteAccount,
+  pingDockerHub,
+  pingEthRPC,
 } from './data';
 import sleep from './time';
+
+const { WebClient, LogLevel } = require('@slack/web-api');
 
 // Sends test emails to every email provided in the "to" array.
 function SendTestEmailButton({
@@ -141,12 +144,53 @@ function SendTestPagerDutyButton({ disabled, apiToken, integrationKey }) {
   );
 }
 
-function SendTestAlertButton({ disabled, botChatID, botToken }) {
+function SendTestSlackButton({ disabled, botToken, botChannelId }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(
+        'Sending test alert. Make sure to check the ID of the slack channel is'
+        + ` ${botChannelId}`, 5000,
+      );
+
+      // WebClient instantiates a client that can call API methods
+      // When using Bolt, you can use either `app.client` or the `client`
+      // passed to listeners.
+      const client = new WebClient(botToken, {
+        // LogLevel can be imported and used to make debugging simpler
+        logLevel: LogLevel.DEBUG,
+      });
+
+      // Call the chat.postMessage method using the built-in WebClient
+      await client.chat.postMessage({
+        channel: botChannelId,
+        text: '*Test Alert*',
+      });
+
+      ToastsStore.success('Test alert sent successfully', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code that
+        // falls out of the range of 2xx
+        ToastsStore.error(`Could not send test alert. Error: ${e.response.data.description}`, 5000);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(`Could not send test alert. Error: ${e.message}`, 5000);
+      }
+    }
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
+    </Button>
+  );
+}
+
+function SendTestTelegramButton({ disabled, botChatID, botToken }) {
   const onClick = async () => {
     try {
       ToastsStore.info(
         'Sending test alert. Make sure to check the chat corresponding with '
-          + `chat id ${botChatID}`,
+        + `chat id ${botChatID}`,
         5000,
       );
       await fetchData(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -197,6 +241,33 @@ function PingRepoButton({ disabled, repo }) {
   return (
     <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
       Test Repo
+    </Button>
+  );
+}
+
+function PingDockerHubButton({ disabled, name }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(`Connecting with repo ${name}`, 5000);
+      await pingDockerHub(name);
+      ToastsStore.success('Successfully connected', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(
+          `Could not connect with repo ${name}. Error: ${e.response.data.message}`,
+          5000,
+        );
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(`Could not connect with repo ${name}. Error: ${e.message}`, 5000);
+      }
+    }
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test Docker
     </Button>
   );
 }
@@ -298,11 +369,43 @@ function PingTendermint({ disabled, tendermintRpcUrl }) {
   );
 }
 
-function PingPrometheus({ disabled, prometheusUrl }) {
+function PingMultiplePrometheus({ disabled, prometheusUrls, metric }) {
+  const onClick = async () => {
+    prometheusUrls.forEach(async (prometheusUrl) => {
+      try {
+        ToastsStore.info(`Connecting with Prometheus URL ${prometheusUrl}`, 5000);
+        await pingPrometheus(prometheusUrl, metric);
+        ToastsStore.success('Successfully connected', 5000);
+      } catch (e) {
+        if (e.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          ToastsStore.error(
+            `Could not connect with Prometheus URLs ${prometheusUrl}. Error: ${e.response.data.message}`,
+            5000,
+          );
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          ToastsStore.error(
+            `Could not connect with Prometheus URL ${prometheusUrl}. Error: ${e.message}`,
+            5000,
+          );
+        }
+      }
+    });
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
+    </Button>
+  );
+}
+
+function PingPrometheus({ disabled, prometheusUrl, metric }) {
   const onClick = async () => {
     try {
       ToastsStore.info(`Connecting with Prometheus URL ${prometheusUrl}`, 5000);
-      await pingCosmosPrometheus(prometheusUrl);
+      await pingPrometheus(prometheusUrl, metric);
       ToastsStore.success('Successfully connected', 5000);
     } catch (e) {
       if (e.response) {
@@ -328,30 +431,26 @@ function PingPrometheus({ disabled, prometheusUrl }) {
   );
 }
 
-function PingNodeExporter({ disabled, exporterUrl }) {
+function PingRPC({ disabled, httpUrl }) {
   const onClick = async () => {
     try {
-      ToastsStore.info(`Connecting with Node Exporter URL ${exporterUrl}`, 5000);
-      await pingNodeExporter(exporterUrl);
+      ToastsStore.info(`Connecting with Node Http URL ${httpUrl}`, 5000);
+      await pingEthRPC(httpUrl);
       ToastsStore.success('Successfully connected', 5000);
     } catch (e) {
       if (e.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
         ToastsStore.error(
-          `Could not connect with Node Exporter URL ${exporterUrl}. Error: ${e.response.data.message}`,
+          `Could not connect with RPC URL ${httpUrl}. Error: ${e.response.data.message}`,
           5000,
         );
       } else {
         // Something happened in setting up the request that triggered an Error
-        ToastsStore.error(
-          `Could not connect with Node Exporter URL ${exporterUrl}. Error: ${e.message}`,
-          5000,
-        );
+        ToastsStore.error(`Could not connect with RPC URL ${httpUrl}. Error: ${e.message}`, 5000);
       }
     }
   };
-
   return (
     <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
       Test
@@ -361,7 +460,7 @@ function PingNodeExporter({ disabled, exporterUrl }) {
 
 function SaveConfigButton({ onClick }) {
   return (
-    <Button onClick={onClick} size="lg" color="primary">
+    <Button onClick={onClick} size="lg" color="primary" fullWidth>
       Finish
     </Button>
   );
@@ -369,7 +468,7 @@ function SaveConfigButton({ onClick }) {
 
 function BackButton({ onClick }) {
   return (
-    <Button onClick={onClick} size="lg" color="primary">
+    <Button onClick={onClick} size="lg" color="primary" fullWidth>
       Back
     </Button>
   );
@@ -377,7 +476,7 @@ function BackButton({ onClick }) {
 
 function StartNewButton({ onClick }) {
   return (
-    <Button onClick={onClick} size="lg" color="primary">
+    <Button onClick={onClick} size="lg" color="primary" fullWidth>
       Start New
     </Button>
   );
@@ -385,7 +484,7 @@ function StartNewButton({ onClick }) {
 
 function LoadConfigButton({ onClick }) {
   return (
-    <Button onClick={onClick} size="lg" color="primary">
+    <Button onClick={onClick} size="lg" color="primary" fullWidth>
       Load Config
     </Button>
   );
@@ -413,7 +512,15 @@ function LoginButton({
     }
   };
   return (
-    <Button color="primary" size="lg" disabled={disabled} onClick={onClick}>
+    <Button
+      type="submit"
+      color="primary"
+      size="lg"
+      disabled={disabled}
+      onSubmit={onClick}
+      onClick={onClick}
+      fullWidth
+    >
       Get started
     </Button>
   );
@@ -449,10 +556,16 @@ TestCallButton.propTypes = forbidExtraProps({
   twilioPhoneNumbersToDialValid: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
 });
 
-SendTestAlertButton.propTypes = forbidExtraProps({
+SendTestTelegramButton.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   botToken: PropTypes.string.isRequired,
   botChatID: PropTypes.string.isRequired,
+});
+
+SendTestSlackButton.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  botToken: PropTypes.string.isRequired,
+  botChannelId: PropTypes.string.isRequired,
 });
 
 SaveConfigButton.propTypes = forbidExtraProps({
@@ -483,19 +596,31 @@ PingRepoButton.propTypes = forbidExtraProps({
   repo: PropTypes.string.isRequired,
 });
 
+PingDockerHubButton.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  name: PropTypes.string.isRequired,
+});
+
+PingRPC.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  httpUrl: PropTypes.string.isRequired,
+});
+
+PingMultiplePrometheus.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  prometheusUrls: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
+  metric: PropTypes.string.isRequired,
+});
+
 PingPrometheus.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   prometheusUrl: PropTypes.string.isRequired,
+  metric: PropTypes.string.isRequired,
 });
 
 PingTendermint.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   tendermintRpcUrl: PropTypes.string.isRequired,
-});
-
-PingNodeExporter.propTypes = forbidExtraProps({
-  disabled: PropTypes.bool.isRequired,
-  exporterUrl: PropTypes.string.isRequired,
 });
 
 AddAccount.propTypes = forbidExtraProps({
@@ -511,8 +636,9 @@ DeleteAccount.propTypes = forbidExtraProps({
 });
 
 export {
-  SendTestAlertButton,
+  SendTestTelegramButton,
   TestCallButton,
+  SendTestSlackButton,
   SendTestEmailButton,
   SendTestPagerDutyButton,
   SendTestOpsGenieButton,
@@ -520,11 +646,13 @@ export {
   PingRepoButton,
   PingTendermint,
   PingPrometheus,
-  PingNodeExporter,
   SaveConfigButton,
   LoadConfigButton,
   AddAccount,
   DeleteAccount,
   StartNewButton,
   BackButton,
+  PingDockerHubButton,
+  PingRPC,
+  PingMultiplePrometheus,
 };

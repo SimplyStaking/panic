@@ -1,12 +1,12 @@
 import json
 import logging
+import time
 import unittest
 from datetime import datetime
 from datetime import timedelta
 from unittest import mock
 from unittest.mock import call
 
-import time
 import pika
 import pika.exceptions
 from freezegun import freeze_time
@@ -18,9 +18,10 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.system import SystemStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                 SYSTEM_STORE_INPUT_QUEUE,
-                                 SYSTEM_STORE_INPUT_ROUTING_KEY)
+from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
+                                          SYSTEM_STORE_INPUT_QUEUE_NAME,
+                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
+                                          SYSTEM_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException)
 from test.utils.utils import (connect_to_rabbit,
@@ -66,18 +67,18 @@ class TestSystemStore(unittest.TestCase):
                                       self.dummy_logger,
                                       self.rabbitmq)
 
-        self.routing_key = 'heartbeat.worker'
+        self.heartbeat_routing_key = HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY
+        self._input_routing_key = 'transformed_data.system.test_system'
         self.test_queue_name = 'test queue'
 
         connect_to_rabbit(self.rabbitmq)
-        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
+        self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.rabbitmq.exchange_declare(STORE_EXCHANGE, 'direct', False,
+        self.rabbitmq.exchange_declare(STORE_EXCHANGE, TOPIC, False,
                                        True, False, False)
-        self.rabbitmq.queue_declare(SYSTEM_STORE_INPUT_QUEUE, False, True,
+        self.rabbitmq.queue_declare(SYSTEM_STORE_INPUT_QUEUE_NAME, False, True,
                                     False, False)
-        self.rabbitmq.queue_bind(SYSTEM_STORE_INPUT_QUEUE,
-                                 STORE_EXCHANGE,
+        self.rabbitmq.queue_bind(SYSTEM_STORE_INPUT_QUEUE_NAME, STORE_EXCHANGE,
                                  SYSTEM_STORE_INPUT_ROUTING_KEY)
 
         connect_to_rabbit(self.test_rabbit_manager)
@@ -85,7 +86,7 @@ class TestSystemStore(unittest.TestCase):
                                                True, False, False)
         self.test_rabbit_manager.queue_bind(self.test_queue_name,
                                             HEALTH_CHECK_EXCHANGE,
-                                            self.routing_key)
+                                            self.heartbeat_routing_key)
 
         self.test_data_str = 'test data'
         self.test_exception = PANICException('test_exception', 1)
@@ -230,7 +231,7 @@ class TestSystemStore(unittest.TestCase):
 
     def tearDown(self) -> None:
         connect_to_rabbit(self.rabbitmq)
-        delete_queue_if_exists(self.rabbitmq, SYSTEM_STORE_INPUT_QUEUE)
+        delete_queue_if_exists(self.rabbitmq, SYSTEM_STORE_INPUT_QUEUE_NAME)
         delete_exchange_if_exists(self.rabbitmq, STORE_EXCHANGE)
         delete_exchange_if_exists(self.rabbitmq, HEALTH_CHECK_EXCHANGE)
         disconnect_from_rabbit(self.rabbitmq)
@@ -247,6 +248,8 @@ class TestSystemStore(unittest.TestCase):
         self.test_rabbit_manager = None
         self.mongo.drop_collection(self.parent_id)
         self.mongo = None
+        self.test_store._mongo = None
+        self.test_store._redis = None
         self.test_store = None
 
     def test__str__returns_name_correctly(self) -> None:
@@ -296,25 +299,25 @@ class TestSystemStore(unittest.TestCase):
             self.test_store.rabbitmq.exchange_declare(
                 HEALTH_CHECK_EXCHANGE, passive=True)
 
-            # Check whether the exchange has been creating by sending messages
+            # Check whether the exchange has been created by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store.rabbitmq.basic_publish_confirm(
-                exchange=HEALTH_CHECK_EXCHANGE, routing_key=self.routing_key,
-                body=self.test_data_str, is_body_dict=False,
+                exchange=HEALTH_CHECK_EXCHANGE,
+                routing_key=self.heartbeat_routing_key, body=self.test_data_str,
+                is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
             # Check whether the exchange has been creating by sending messages
             # to it. If this fails an exception is raised, hence the test fails.
             self.test_store.rabbitmq.basic_publish_confirm(
-                exchange=STORE_EXCHANGE,
-                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY,
+                exchange=STORE_EXCHANGE, routing_key=self._input_routing_key,
                 body=self.test_data_str, is_body_dict=False,
                 properties=pika.BasicProperties(delivery_mode=2),
                 mandatory=False)
             time.sleep(1)
             # Re-declare queue to get the number of messages
             res = self.test_store.rabbitmq.queue_declare(
-                SYSTEM_STORE_INPUT_QUEUE, False, True, False, False)
+                SYSTEM_STORE_INPUT_QUEUE_NAME, False, True, False, False)
 
             self.assertEqual(1, res.method.message_count)
         except Exception as e:
@@ -490,14 +493,14 @@ class TestSystemStore(unittest.TestCase):
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+                routing_key=self._input_routing_key)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
             mock_process_mongo.assert_called_once()
             mock_ack.assert_called_once()
@@ -601,14 +604,14 @@ class TestSystemStore(unittest.TestCase):
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+                routing_key=self._input_routing_key)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.system_data_unexpected).encode()
+                json.dumps(self.system_data_unexpected)
             )
             self.assertRaises(eval(mock_error),
                               self.test_store._process_redis_store,
@@ -644,18 +647,18 @@ class TestSystemStore(unittest.TestCase):
 
             self.test_rabbit_manager.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=self.routing_key)
+                routing_key=self.heartbeat_routing_key)
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+                routing_key=self._input_routing_key)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.system_data_1).encode()
+                json.dumps(self.system_data_1)
             )
 
             res = self.test_rabbit_manager.queue_declare(
@@ -697,18 +700,18 @@ class TestSystemStore(unittest.TestCase):
 
             self.test_rabbit_manager.queue_bind(
                 queue=self.test_queue_name, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=self.routing_key)
+                routing_key=self.heartbeat_routing_key)
 
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+                routing_key=self._input_routing_key)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(self.system_data_unexpected).encode()
+                json.dumps(self.system_data_unexpected)
             )
 
             res = self.test_rabbit_manager.queue_declare(
@@ -779,7 +782,7 @@ class TestSystemStore(unittest.TestCase):
                         'disk_io_time_seconds_in_interval': str(
                             metrics['disk_io_time_seconds_in_interval']),
                         'went_down_at': str(metrics['went_down_at']),
-                        'timestamp': str(meta_data['last_monitored']),
+                        'timestamp': meta_data['last_monitored'],
                     }
                 },
                 '$inc': {'n_entries': 1},
@@ -811,14 +814,14 @@ class TestSystemStore(unittest.TestCase):
             data = eval(mock_system_data)
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+                routing_key=self._input_routing_key)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
 
             mock_process_redis_store.assert_called_once()
@@ -862,7 +865,7 @@ class TestSystemStore(unittest.TestCase):
                             'disk_io_time_seconds_in_interval': str(
                                 metrics['disk_io_time_seconds_in_interval']),
                             'went_down_at': str(metrics['went_down_at']),
-                            'timestamp': str(meta_data['last_monitored']),
+                            'timestamp': meta_data['last_monitored'],
                         }
                     },
                     '$inc': {'n_entries': 1},
@@ -892,7 +895,7 @@ class TestSystemStore(unittest.TestCase):
                 '$push': {
                     system_id: {
                         'went_down_at': str(metrics['went_down_at']),
-                        'timestamp': str(meta_data['time']),
+                        'timestamp': meta_data['time'],
                     }
                 },
                 '$inc': {'n_entries': 1},
@@ -919,14 +922,14 @@ class TestSystemStore(unittest.TestCase):
             data = self.system_data_error
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+                routing_key=self._input_routing_key)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
 
             mock_process_redis_store.assert_called_once()
@@ -945,7 +948,7 @@ class TestSystemStore(unittest.TestCase):
                     '$push': {
                         system_id: {
                             'went_down_at': str(metrics['went_down_at']),
-                            'timestamp': str(meta_data['time']),
+                            'timestamp': meta_data['time'],
                         }
                     },
                     '$inc': {'n_entries': 1},
@@ -1028,7 +1031,7 @@ class TestSystemStore(unittest.TestCase):
         expected = [
             'system',
             1,
-            str(meta_data['time']),
+            meta_data['time'],
             str(metrics['went_down_at'])
         ]
         actual = [
@@ -1062,14 +1065,14 @@ class TestSystemStore(unittest.TestCase):
             data = eval(mock_system_data)
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+                routing_key=self._input_routing_key)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
 
             mock_process_redis_store.assert_called_once()
@@ -1142,14 +1145,14 @@ class TestSystemStore(unittest.TestCase):
             data = self.system_data_error
             blocking_channel = self.test_store.rabbitmq.channel
             method_chains = pika.spec.Basic.Deliver(
-                routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+                routing_key=self._input_routing_key)
 
             properties = pika.spec.BasicProperties()
             self.test_store._process_data(
                 blocking_channel,
                 method_chains,
                 properties,
-                json.dumps(data).encode()
+                json.dumps(data)
             )
 
             mock_process_redis_store.assert_called_once()
@@ -1166,7 +1169,7 @@ class TestSystemStore(unittest.TestCase):
             expected = [
                 'system',
                 1,
-                str(meta_data['time']),
+                meta_data['time'],
                 str(metrics['went_down_at'])
             ]
             actual = [

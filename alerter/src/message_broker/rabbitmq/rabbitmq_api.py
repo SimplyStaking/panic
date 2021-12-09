@@ -8,6 +8,7 @@ import pika
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
+from src.utils.constants.rabbitmq import TOPIC
 from src.utils.exceptions import (ConnectionNotInitialisedException,
                                   MessageWasNotDeliveredException,
                                   BlankCredentialException)
@@ -49,6 +50,10 @@ class RabbitMQApi:
     @property
     def host(self) -> str:
         return self._host
+
+    @property
+    def logger(self) -> logging.Logger:
+        return self._logger
 
     @property
     def connection(self) -> Optional[pika.BlockingConnection]:
@@ -326,6 +331,14 @@ class RabbitMQApi:
         if self._connection_initialised():
             return self._safe(self.channel.basic_ack, args, -1)
 
+    def basic_nack(self, delivery_tag: int = 0, multiple: bool = False,
+                   requeue: bool = True) -> Optional[int]:
+        args = [delivery_tag, multiple, requeue]
+        # Perform operation only if a connection has been initialised, if not,
+        # this function will throw a ConnectionNotInitialised exception
+        if self._connection_initialised():
+            return self._safe(self.channel.basic_nack, args, -1)
+
     def basic_qos(self, prefetch_size: int = 0, prefetch_count: int = 0,
                   global_qos: bool = False) -> Optional[int]:
         args = [prefetch_size, prefetch_count, global_qos]
@@ -334,7 +347,7 @@ class RabbitMQApi:
         if self._connection_initialised():
             return self._safe(self.channel.basic_qos, args, -1)
 
-    def exchange_declare(self, exchange: str, exchange_type: str = 'direct',
+    def exchange_declare(self, exchange: str, exchange_type: str = TOPIC,
                          passive: bool = False, durable: bool = False,
                          auto_delete: bool = False, internal: bool = False) \
             -> Optional[int]:

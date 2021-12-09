@@ -18,6 +18,12 @@ python-dateutil = "*"
 pdpyras = "*"
 redis = "*"
 requests = "*"
+schema = "*"
 twilio = "*"
 opsgenie-sdk = "*"
 watchdog = "*"
+slack-bolt = "*"
+web3 = "*"
+
+[requires]
+python_version = "3.9.5"
