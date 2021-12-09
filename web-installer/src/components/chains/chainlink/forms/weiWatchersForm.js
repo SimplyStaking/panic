@@ -86,7 +86,7 @@ const WeiWatchersForm = ({
 
   useEffect(() => {
     fetch(
-      'https://raw.githubusercontent.com/VitalyVolozhinov/weiwatchers_mapping/main/mapping.json',
+      'https://raw.githubusercontent.com/SimplyVC/weiwatchers_mapping/main/mapping.json',
       {
         method: 'GET',
         headers: new Headers({
