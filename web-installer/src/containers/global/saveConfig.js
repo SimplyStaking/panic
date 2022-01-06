@@ -68,90 +68,77 @@ class SaveConfig extends Component {
 
     await deleteConfigs();
 
-    // Save all the channels configurations if any
-    if (emails.allIds.length !== 0) {
-      await sendConfig('channel', 'email_config.ini', '', '', emails.byId);
-    }
+    // Save all the channels configurations
+    // If none exist, create empty config files anyway
+    await sendConfig('channel', 'email_config.ini', '', '', emails.byId);
 
-    if (pagerduties.allIds.length !== 0) {
-      await sendConfig('channel', 'pagerduty_config.ini', '', '', pagerduties.byId);
-    }
+    await sendConfig('channel', 'pagerduty_config.ini', '', '', pagerduties.byId);
 
-    if (telegrams.allIds.length !== 0) {
-      await sendConfig('channel', 'telegram_config.ini', '', '', telegrams.byId);
-    }
+    await sendConfig('channel', 'telegram_config.ini', '', '', telegrams.byId);
 
-    if (twilios.allIds.length !== 0) {
-      await sendConfig('channel', 'twilio_config.ini', '', '', twilios.byId);
-    }
+    await sendConfig('channel', 'twilio_config.ini', '', '', twilios.byId);
 
-    if (opsgenies.allIds.length !== 0) {
-      await sendConfig('channel', 'opsgenie_config.ini', '', '', opsgenies.byId);
-    }
+    await sendConfig('channel', 'opsgenie_config.ini', '', '', opsgenies.byId);
 
-    if (slacks.allIds.length !== 0) {
-      await sendConfig('channel', 'slack_config.ini', '', '', slacks.byId);
-    }
+    await sendConfig('channel', 'slack_config.ini', '', '', slacks.byId);
 
     // We have to use forEach as await requires the For loop to be async
     cosmosChains.allIds.forEach(async (currentChainId) => {
       const chainConfig = cosmosChains.byId[currentChainId];
       // First we will save the nodes pertaining to the cosmos based chain
+
+      const nodesToSave = {};
       if (chainConfig.nodes.length !== 0) {
-        const nodesToSave = {};
         for (let j = 0; j < chainConfig.nodes.length; j += 1) {
           const currentId = chainConfig.nodes[j];
           nodesToSave[currentId] = cosmosNodes.byId[currentId];
         }
-
-        // Once the node details are extracted from the list of all nodes, we
-        // save it to it's own file
-        await sendConfig(
-          'chain',
-          'nodes_config.ini',
-          chainConfig.chain_name,
-          'cosmos',
-          nodesToSave,
-        );
       }
+      // Once the node details are extracted from the list of all nodes, we
+      // save it to it's own file
+      await sendConfig(
+        'chain',
+        'nodes_config.ini',
+        chainConfig.chain_name,
+        'cosmos',
+        nodesToSave,
+      );
 
       // Repeat the above process for githubRepositories
+      const reposToSave = {};
       if (chainConfig.githubRepositories.length !== 0) {
-        const reposToSave = {};
         for (let j = 0; j < chainConfig.githubRepositories.length; j += 1) {
           const currentId = chainConfig.githubRepositories[j];
           reposToSave[currentId] = githubRepositories.byId[currentId];
         }
-
-        // Once the node details are extracted from the list of all nodes, we
-        // save it to it's own file
-        await sendConfig(
-          'chain',
-          'github_repos_config.ini',
-          chainConfig.chain_name,
-          'cosmos',
-          reposToSave,
-        );
       }
+      // Once the node details are extracted from the list of all nodes, we
+      // save it to it's own file
+      await sendConfig(
+        'chain',
+        'github_repos_config.ini',
+        chainConfig.chain_name,
+        'cosmos',
+        reposToSave,
+      );
 
       // Repeat the above process for dockerHub
+      const dockerHubsToSave = {};
       if (chainConfig.dockerHubs.length !== 0) {
-        const dockerHubsToSave = {};
         for (let j = 0; j < chainConfig.dockerHubs.length; j += 1) {
           const currentId = chainConfig.dockerHubs[j];
           dockerHubsToSave[currentId] = dockerHub.byId[currentId];
         }
-
-        // Once the node details are extracted from the list of all nodes, we
-        // save it to it's own file
-        await sendConfig(
-          'chain',
-          'dockerhub_repos_config.ini',
-          chainConfig.chain_name,
-          'cosmos',
-          dockerHubsToSave,
-        );
       }
+      // Once the node details are extracted from the list of all nodes, we
+      // save it to it's own file
+      await sendConfig(
+        'chain',
+        'dockerhub_repos_config.ini',
+        chainConfig.chain_name,
+        'cosmos',
+        dockerHubsToSave,
+      );
 
       const allAlertsConfig = setAlertsData(chainConfig, currentChainId);
 
@@ -168,61 +155,61 @@ class SaveConfig extends Component {
     substrateChains.allIds.forEach(async (currentChainId) => {
       const chainConfig = substrateChains.byId[currentChainId];
       // First we will save the nodes pertaining to the substrate based chain
+
+      const nodesToSave = {};
       if (chainConfig.nodes.length !== 0) {
-        const nodesToSave = {};
         for (let j = 0; j < chainConfig.nodes.length; j += 1) {
           const currentId = chainConfig.nodes[j];
           nodesToSave[currentId] = substrateNodes.byId[currentId];
         }
-
-        // Once the node details are extracted from the list of all nodes, we
-        // save it to it's own file
-        await sendConfig(
-          'chain',
-          'nodes_config.ini',
-          chainConfig.chain_name,
-          'substrate',
-          nodesToSave,
-        );
       }
+      // Once the node details are extracted from the list of all nodes, we
+      // save it to it's own file
+      await sendConfig(
+        'chain',
+        'nodes_config.ini',
+        chainConfig.chain_name,
+        'substrate',
+        nodesToSave,
+      );
 
       // Repeat the above process for githubRepositories
+      const reposToSave = {};
       if (chainConfig.githubRepositories.length !== 0) {
-        const reposToSave = {};
         for (let j = 0; j < chainConfig.githubRepositories.length; j += 1) {
           const currentId = chainConfig.githubRepositories[j];
           reposToSave[currentId] = githubRepositories.byId[currentId];
         }
-
-        // Once the node details are extracted from the list of all nodes, we
-        // save it to it's own file
-        await sendConfig(
-          'chain',
-          'github_repos_config.ini',
-          chainConfig.chain_name,
-          'substrate',
-          reposToSave,
-        );
       }
 
+      // Once the node details are extracted from the list of all nodes, we
+      // save it to it's own file
+      await sendConfig(
+        'chain',
+        'github_repos_config.ini',
+        chainConfig.chain_name,
+        'substrate',
+        reposToSave,
+      );
+
       // Repeat the above process for docker
+      const dockerHubsToSave = {};
       if (chainConfig.dockerHubs.length !== 0) {
-        const dockerHubsToSave = {};
         for (let j = 0; j < chainConfig.dockerHubs.length; j += 1) {
           const currentId = chainConfig.dockerHubs[j];
           dockerHubsToSave[currentId] = dockerHub.byId[currentId];
         }
-
-        // Once the node details are extracted from the list of all nodes, we
-        // save it to it's own file
-        await sendConfig(
-          'chain',
-          'dockerhub_repos_config.ini',
-          chainConfig.chain_name,
-          'substrate',
-          dockerHubsToSave,
-        );
       }
+
+      // Once the node details are extracted from the list of all nodes, we
+      // save it to it's own file
+      await sendConfig(
+        'chain',
+        'dockerhub_repos_config.ini',
+        chainConfig.chain_name,
+        'substrate',
+        dockerHubsToSave,
+      );
 
       const allAlertsConfig = setAlertsData(chainConfig, currentChainId);
 
@@ -244,30 +231,29 @@ class SaveConfig extends Component {
       await sendConfig('chain', 'weiwatchers_config.ini', chainConfig.chain_name, 'chainlink', {
         weitwatchers: weiWatchers,
       });
-      if (chainConfig.evmNodes.length !== 0) {
-        const evmNodesToSave = {};
 
+      const evmNodesToSave = {};
+      if (chainConfig.evmNodes.length !== 0) {
         for (let k = 0; k < chainConfig.evmNodes.length; k += 1) {
           const currentId = chainConfig.evmNodes[k];
           evmNodesToSave[currentId] = evmNodes.byId[currentId];
           evmUrls.push(evmNodes.byId[currentId].node_http_url);
         }
-
-        // Once the node details are extracted from the list of all nodes, we
-        // save it to it's own file
-        await sendConfig(
-          'chain',
-          'evm_nodes_config.ini',
-          chainConfig.chain_name,
-          'chainlink',
-          evmNodesToSave,
-        );
       }
 
-      // First we will save the nodes pertaining to the substrate based chain
-      if (chainConfig.nodes.length !== 0) {
-        const nodesToSave = {};
+      // Once the node details are extracted from the list of all nodes, we
+      // save it to it's own file
+      await sendConfig(
+        'chain',
+        'evm_nodes_config.ini',
+        chainConfig.chain_name,
+        'chainlink',
+        evmNodesToSave,
+      );
 
+      // First we will save the nodes pertaining to the substrate based chain
+      const nodesToSave = {};
+      if (chainConfig.nodes.length !== 0) {
         for (let j = 0; j < chainConfig.nodes.length; j += 1) {
           const currentId = chainConfig.nodes[j];
           nodesToSave[currentId] = chainlinkNodes.byId[currentId];
@@ -275,74 +261,74 @@ class SaveConfig extends Component {
           nodesToSave[currentId].weiwatchers_url = weiWatchers.weiwatchers_url;
           nodesToSave[currentId].monitor_contracts = weiWatchers.monitor_contracts;
         }
-
-        // Once the node details are extracted from the list of all nodes, we
-        // save it to it's own file
-        await sendConfig(
-          'chain',
-          'nodes_config.ini',
-          chainConfig.chain_name,
-          'chainlink',
-          nodesToSave,
-        );
       }
 
+      // Once the node details are extracted from the list of all nodes, we
+      // save it to it's own file
+      await sendConfig(
+        'chain',
+        'nodes_config.ini',
+        chainConfig.chain_name,
+        'chainlink',
+        nodesToSave,
+      );
+
       // Repeat the above process for githubRepositories
+      const reposToSave = {};
       if (chainConfig.githubRepositories.length !== 0) {
-        const reposToSave = {};
         for (let j = 0; j < chainConfig.githubRepositories.length; j += 1) {
           const currentId = chainConfig.githubRepositories[j];
           reposToSave[currentId] = githubRepositories.byId[currentId];
         }
-
-        // Once the node details are extracted from the list of all nodes, we
-        // save it to it's own file
-        await sendConfig(
-          'chain',
-          'github_repos_config.ini',
-          chainConfig.chain_name,
-          'chainlink',
-          reposToSave,
-        );
       }
 
+      // Once the node details are extracted from the list of all nodes, we
+      // save it to it's own file
+      await sendConfig(
+        'chain',
+        'github_repos_config.ini',
+        chainConfig.chain_name,
+        'chainlink',
+        reposToSave,
+      );
+
       // Repeat the above process for dockerHub
+      const dockerHubsToSave = {};
       if (chainConfig.dockerHubs.length !== 0) {
-        const dockerHubsToSave = {};
         for (let j = 0; j < chainConfig.dockerHubs.length; j += 1) {
           const currentId = chainConfig.dockerHubs[j];
           dockerHubsToSave[currentId] = dockerHub.byId[currentId];
         }
-
-        // Once the node details are extracted from the list of all nodes, we
-        // save it to it's own file
-        await sendConfig(
-          'chain',
-          'dockerhub_repos_config.ini',
-          chainConfig.chain_name,
-          'chainlink',
-          dockerHubsToSave,
-        );
       }
 
+      // Once the node details are extracted from the list of all nodes, we
+      // save it to it's own file
+      await sendConfig(
+        'chain',
+        'dockerhub_repos_config.ini',
+        chainConfig.chain_name,
+        'chainlink',
+        dockerHubsToSave,
+      );
+
       // Repeat the above process for systems
+      const systemsToSave = {};
       if (chainConfig.systems.length !== 0) {
-        const systemsToSave = {};
         for (let j = 0; j < chainConfig.systems.length; j += 1) {
           const currentId = chainConfig.systems[j];
           systemsToSave[currentId] = systems.byId[currentId];
         }
-
-        // Once the node details are extracted from the list of all nodes, we
-        // save it to it's own file
-        await sendConfig(
-          'chain',
-          'systems_config.ini',
-          chainConfig.chain_name,
-          'chainlink',
-          systemsToSave,
-        );
       }
+
+      // Once the node details are extracted from the list of all nodes, we
+      // save it to it's own file
+      await sendConfig(
+        'chain',
+        'systems_config.ini',
+        chainConfig.chain_name,
+        'chainlink',
+        systemsToSave,
+      );
 
       const allAlertsConfig = setAlertsData(chainConfig, currentChainId);
 

@@ -269,35 +269,42 @@ class LoadConfig extends Component {
           if (filePath[2] === 'cosmos') {
             if (filePath[4] === 'github_repos_config.ini') {
               config = await getConfig('chain', 'github_repos_config.ini', filePath[3], 'cosmos');
-              CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
-              Object.values(config.data.result).forEach((value) => {
-                const payload = JSON.parse(JSON.stringify(value));
-                payload.monitor_repo = payload.monitor_repo === 'true';
-                addRepositoryDetails(payload);
-              });
+              if (Object.keys(config.data.result).length !== 0) {
+                CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
+                Object.values(config.data.result).forEach((value) => {
+                  const payload = JSON.parse(JSON.stringify(value));
+                  payload.monitor_repo = payload.monitor_repo === 'true';
+                  addRepositoryDetails(payload);
+                });
+              }
             } else if (filePath[4] === 'dockerhub_repos_config.ini') {
               config = await getConfig('chain', 'dockerhub_repos_config.ini', filePath[3], 'cosmos');
-              CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
-              Object.values(config.data.result).forEach((value) => {
-                const payload = JSON.parse(JSON.stringify(value));
-                payload.monitor_docker = payload.monitor_docker === 'true';
-                addDockerHubDetails(payload);
-              });
+              if (Object.keys(config.data.result).length !== 0) {
+                console.log('entered');
+                CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
+                Object.values(config.data.result).forEach((value) => {
+                  const payload = JSON.parse(JSON.stringify(value));
+                  payload.monitor_docker = payload.monitor_docker === 'true';
+                  addDockerHubDetails(payload);
+                });
+              }
             } else if (filePath[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', filePath[3], 'cosmos');
-              CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
-              Object.values(config.data.result).forEach((value) => {
-                const node = JSON.parse(JSON.stringify(value));
-                node.monitor_tendermint = node.monitor_tendermint === 'true';
-                node.monitor_rpc = node.monitor_rpc === 'true';
-                node.monitor_prometheus = node.monitor_prometheus === 'true';
-                node.monitor_system = node.monitor_system === 'true';
-                node.is_archive_node = node.is_archive_node === 'true';
-                node.is_validator = node.is_validator === 'true';
-                node.monitor_node = node.monitor_node === 'true';
-                node.use_as_data_source = node.use_as_data_source === 'true';
-                addNodeCosmosDetails(node);
-              });
+              if (Object.keys(config.data.result).length !== 0) {
+                CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
+                Object.values(config.data.result).forEach((value) => {
+                  const node = JSON.parse(JSON.stringify(value));
+                  node.monitor_tendermint = node.monitor_tendermint === 'true';
+                  node.monitor_rpc = node.monitor_rpc === 'true';
+                  node.monitor_prometheus = node.monitor_prometheus === 'true';
+                  node.monitor_system = node.monitor_system === 'true';
+                  node.is_archive_node = node.is_archive_node === 'true';
+                  node.is_validator = node.is_validator === 'true';
+                  node.monitor_node = node.monitor_node === 'true';
+                  node.use_as_data_source = node.use_as_data_source === 'true';
+                  addNodeCosmosDetails(node);
+                });
+              }
             } else if (filePath[4] === 'alerts_config.ini') {
               config = await getConfig(
                 'chain',
@@ -400,31 +407,37 @@ class LoadConfig extends Component {
           } else if (filePath[2] === 'substrate') {
             if (filePath[4] === 'github_repos_config.ini') {
               config = await getConfig('chain', 'github_repos_config.ini', filePath[3], 'substrate');
-              CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
-              Object.values(config.data.result).forEach((value) => {
-                const payload = JSON.parse(JSON.stringify(value));
-                payload.monitor_repo = payload.monitor_repo === 'true';
-                addRepositoryDetails(payload);
-              });
+              if (Object.keys(config.data.result).length !== 0) {
+                CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
+                Object.values(config.data.result).forEach((value) => {
+                  const payload = JSON.parse(JSON.stringify(value));
+                  payload.monitor_repo = payload.monitor_repo === 'true';
+                  addRepositoryDetails(payload);
+                });
+              }
             } else if (filePath[4] === 'dockerhub_repos_config.ini') {
               config = await getConfig('chain', 'dockerhub_repos_config.ini', filePath[3], 'substrate');
-              CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
-              Object.values(config.data.result).forEach((value) => {
-                const payload = JSON.parse(JSON.stringify(value));
-                payload.monitor_docker = payload.monitor_docker === 'true';
-                addDockerHubDetails(payload);
-              });
+              if (Object.keys(config.data.result).length !== 0) {
+                CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
+                Object.values(config.data.result).forEach((value) => {
+                  const payload = JSON.parse(JSON.stringify(value));
+                  payload.monitor_docker = payload.monitor_docker === 'true';
+                  addDockerHubDetails(payload);
+                });
+              }
             } else if (filePath[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', filePath[3], 'substrate');
-              CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
-              Object.values(config.data.result).forEach((value) => {
-                const node = JSON.parse(JSON.stringify(value));
-                node.is_archive_node = node.is_archive_node === 'true';
-                node.is_validator = node.is_validator === 'true';
-                node.monitor_node = node.monitor_node === 'true';
-                node.use_as_data_source = node.use_as_data_source === 'true';
-                addNodeSubstrateDetails(node);
-              });
+              if (Object.keys(config.data.result).length !== 0) {
+                CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
+                Object.values(config.data.result).forEach((value) => {
+                  const node = JSON.parse(JSON.stringify(value));
+                  node.is_archive_node = node.is_archive_node === 'true';
+                  node.is_validator = node.is_validator === 'true';
+                  node.monitor_node = node.monitor_node === 'true';
+                  node.use_as_data_source = node.use_as_data_source === 'true';
+                  addNodeSubstrateDetails(node);
+                });
+              }
             } else if (filePath[4] === 'alerts_config.ini') {
               config = await getConfig(
                 'chain',
@@ -527,61 +540,73 @@ class LoadConfig extends Component {
           } else if (filePath[2] === 'chainlink') {
             if (filePath[4] === 'github_repos_config.ini') {
               config = await getConfig('chain', 'github_repos_config.ini', filePath[3], 'chainlink');
-              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
-              Object.values(config.data.result).forEach((value) => {
-                const payload = JSON.parse(JSON.stringify(value));
-                payload.monitor_repo = payload.monitor_repo === 'true';
-                addRepositoryDetails(payload);
-              });
+              if (Object.keys(config.data.result).length !== 0) {
+                CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
+                Object.values(config.data.result).forEach((value) => {
+                  const payload = JSON.parse(JSON.stringify(value));
+                  payload.monitor_repo = payload.monitor_repo === 'true';
+                  addRepositoryDetails(payload);
+                });
+              }
             } else if (filePath[4] === 'dockerhub_repos_config.ini') {
               config = await getConfig('chain', 'dockerhub_repos_config.ini', filePath[3], 'chainlink');
-              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
-              Object.values(config.data.result).forEach((value) => {
-                const payload = JSON.parse(JSON.stringify(value));
-                payload.monitor_docker = payload.monitor_docker === 'true';
-                addDockerHubDetails(payload);
-              });
+              if (Object.keys(config.data.result).length !== 0) {
+                CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
+                Object.values(config.data.result).forEach((value) => {
+                  const payload = JSON.parse(JSON.stringify(value));
+                  payload.monitor_docker = payload.monitor_docker === 'true';
+                  addDockerHubDetails(payload);
+                });
+              }
             } else if (filePath[4] === 'nodes_config.ini') {
               config = await getConfig('chain', 'nodes_config.ini', filePath[3], 'chainlink');
-              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
-              Object.values(config.data.result).forEach((value) => {
-                const node = JSON.parse(JSON.stringify(value));
-                if (node.node_prometheus_urls.length === 0) {
-                  node.node_prometheus_urls = [];
-                } else {
-                  node.node_prometheus_urls = node.node_prometheus_urls.split(',');
-                }
-                node.monitor_prometheus = node.monitor_prometheus === 'true';
-                node.monitor_node = node.monitor_node === 'true';
-                delete node.evm_nodes_urls;
-                delete node.weiwatchers_url;
-                delete node.monitor_contracts;
-                addNodeChainlinkDetails(node);
-              });
+              if (Object.keys(config.data.result).length !== 0) {
+                CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
+                Object.values(config.data.result).forEach((value) => {
+                  const node = JSON.parse(JSON.stringify(value));
+                  if (node.node_prometheus_urls.length === 0) {
+                    node.node_prometheus_urls = [];
+                  } else {
+                    node.node_prometheus_urls = node.node_prometheus_urls.split(',');
+                  }
+                  node.monitor_prometheus = node.monitor_prometheus === 'true';
+                  node.monitor_node = node.monitor_node === 'true';
+                  delete node.evm_nodes_urls;
+                  delete node.weiwatchers_url;
+                  delete node.monitor_contracts;
+                  addNodeChainlinkDetails(node);
+                });
+              }
             } else if (filePath[4] === 'evm_nodes_config.ini') {
               config = await getConfig('chain', 'evm_nodes_config.ini', filePath[3], 'chainlink');
-              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
-              Object.values(config.data.result).forEach((value) => {
-                const node = JSON.parse(JSON.stringify(value));
-                node.monitor_node = node.monitor_node === 'true';
-                addNodeEvmDetails(node);
-              });
+              if (Object.keys(config.data.result).length !== 0) {
+                CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
+                Object.values(config.data.result).forEach((value) => {
+                  const node = JSON.parse(JSON.stringify(value));
+                  node.monitor_node = node.monitor_node === 'true';
+                  addNodeEvmDetails(node);
+                });
+              }
             } else if (filePath[4] === 'weiwatchers_config.ini') {
               config = await getConfig('chain', 'weiwatchers_config.ini', filePath[3], 'chainlink');
-              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
-              Object.values(config.data.result).forEach((value) => {
-                const node = JSON.parse(JSON.stringify(value));
-                node.monitor_contracts = node.monitor_contracts === 'true';
-                addWeiWatchersDetails(node);
-              });
+              if (Object.keys(config.data.result).length !== 0) {
+                CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
+                Object.values(config.data.result).forEach((value) => {
+                  const node = JSON.parse(JSON.stringify(value));
+                  node.monitor_contracts = node.monitor_contracts === 'true';
+                  addWeiWatchersDetails(node);
+                });
+              }
             } else if (filePath[4] === 'systems_config.ini') {
               config = await getConfig('chain', 'systems_config.ini', filePath[3], 'chainlink');
-              CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
-              Object.values(config.data.result).forEach((value) => {
-                const payload = JSON.parse(JSON.stringify(value));
-                payload.monitor_system = payload.monitor_system === 'true';
-                addSystemDetails(payload);
-              });
+              if (Object.keys(config.data.result).length !== 0) {
+                CreateChain(config.data.result, filePath[3], addChainChainlinkDetails);
+                Object.values(config.data.result).forEach((value) => {
+                  const payload = JSON.parse(JSON.stringify(value));
+                  payload.monitor_system = payload.monitor_system === 'true';
+                  addSystemDetails(payload);
+                });
+              }
             } else if (filePath[4] === 'alerts_config.ini') {
               config = await getConfig(
                 'chain',
@@ -684,120 +709,132 @@ class LoadConfig extends Component {
         } else if (filePath[1] === 'channels') {
           if (filePath[2] === 'email_config.ini') {
             config = await getConfig('channel', 'email_config.ini', '', '');
-            Object.values(config.data.result).forEach((value) => {
-              const payload = JSON.parse(JSON.stringify(value));
-              if (payload.emails_to.length === 0) {
-                payload.emails_to = [];
-              } else {
-                payload.emails_to = payload.emails_to.split(',');
-              }
-              payload.info = payload.info === 'true';
-              payload.warning = payload.warning === 'true';
-              payload.critical = payload.critical === 'true';
-              payload.error = payload.error === 'true';
-              if (payload.parent_ids.length === 0) {
-                payload.parent_ids = [];
-                payload.parent_names = [];
-              } else {
-                payload.parent_ids = payload.parent_ids.split(',');
-                payload.parent_names = payload.parent_names.split(',');
-              }
-              addEmailDetails(payload);
-            });
+            if (Object.keys(config.data.result).length !== 0) {
+              Object.values(config.data.result).forEach((value) => {
+                const payload = JSON.parse(JSON.stringify(value));
+                if (payload.emails_to.length === 0) {
+                  payload.emails_to = [];
+                } else {
+                  payload.emails_to = payload.emails_to.split(',');
+                }
+                payload.info = payload.info === 'true';
+                payload.warning = payload.warning === 'true';
+                payload.critical = payload.critical === 'true';
+                payload.error = payload.error === 'true';
+                if (payload.parent_ids.length === 0) {
+                  payload.parent_ids = [];
+                  payload.parent_names = [];
+                } else {
+                  payload.parent_ids = payload.parent_ids.split(',');
+                  payload.parent_names = payload.parent_names.split(',');
+                }
+                addEmailDetails(payload);
+              });
+            }
           } else if (filePath[2] === 'opsgenie_config.ini') {
             config = await getConfig('channel', 'opsgenie_config.ini', '', '');
-            Object.values(config.data.result).forEach((value) => {
-              const payload = JSON.parse(JSON.stringify(value));
-              payload.info = payload.info === 'true';
-              payload.warning = payload.warning === 'true';
-              payload.critical = payload.critical === 'true';
-              payload.error = payload.error === 'true';
-              payload.eu = payload.eu === 'true';
-              if (payload.parent_ids.length === 0) {
-                payload.parent_ids = [];
-                payload.parent_names = [];
-              } else {
-                payload.parent_ids = payload.parent_ids.split(',');
-                payload.parent_names = payload.parent_names.split(',');
-              }
-              addOpsGenieDetails(payload);
-            });
+            if (Object.keys(config.data.result).length !== 0) {
+              Object.values(config.data.result).forEach((value) => {
+                const payload = JSON.parse(JSON.stringify(value));
+                payload.info = payload.info === 'true';
+                payload.warning = payload.warning === 'true';
+                payload.critical = payload.critical === 'true';
+                payload.error = payload.error === 'true';
+                payload.eu = payload.eu === 'true';
+                if (payload.parent_ids.length === 0) {
+                  payload.parent_ids = [];
+                  payload.parent_names = [];
+                } else {
+                  payload.parent_ids = payload.parent_ids.split(',');
+                  payload.parent_names = payload.parent_names.split(',');
+                }
+                addOpsGenieDetails(payload);
+              });
+            }
           } else if (filePath[2] === 'pagerduty_config.ini') {
             config = await getConfig('channel', 'pagerduty_config.ini', '', '');
-            Object.values(config.data.result).forEach((value) => {
-              const payload = JSON.parse(JSON.stringify(value));
-              payload.info = payload.info === 'true';
-              payload.warning = payload.warning === 'true';
-              payload.critical = payload.critical === 'true';
-              payload.error = payload.error === 'true';
-              if (payload.parent_ids.length === 0) {
-                payload.parent_ids = [];
-                payload.parent_names = [];
-              } else {
-                payload.parent_ids = payload.parent_ids.split(',');
-                payload.parent_names = payload.parent_names.split(',');
-              }
-              addPagerDutyDetails(payload);
-            });
+            if (Object.keys(config.data.result).length !== 0) {
+              Object.values(config.data.result).forEach((value) => {
+                const payload = JSON.parse(JSON.stringify(value));
+                payload.info = payload.info === 'true';
+                payload.warning = payload.warning === 'true';
+                payload.critical = payload.critical === 'true';
+                payload.error = payload.error === 'true';
+                if (payload.parent_ids.length === 0) {
+                  payload.parent_ids = [];
+                  payload.parent_names = [];
+                } else {
+                  payload.parent_ids = payload.parent_ids.split(',');
+                  payload.parent_names = payload.parent_names.split(',');
+                }
+                addPagerDutyDetails(payload);
+              });
+            }
           } else if (filePath[2] === 'telegram_config.ini') {
             config = await getConfig('channel', 'telegram_config.ini', '', '');
-            Object.values(config.data.result).forEach((value) => {
-              const payload = JSON.parse(JSON.stringify(value));
-              payload.info = payload.info === 'true';
-              payload.warning = payload.warning === 'true';
-              payload.critical = payload.critical === 'true';
-              payload.error = payload.error === 'true';
-              payload.alerts = payload.alerts === 'true';
-              payload.commands = payload.commands === 'true';
-              if (payload.parent_ids.length === 0) {
-                payload.parent_ids = [];
-                payload.parent_names = [];
-              } else {
-                payload.parent_ids = payload.parent_ids.split(',');
-                payload.parent_names = payload.parent_names.split(',');
-              }
-              addTelegramDetails(payload);
-            });
+            if (Object.keys(config.data.result).length !== 0) {
+              Object.values(config.data.result).forEach((value) => {
+                const payload = JSON.parse(JSON.stringify(value));
+                payload.info = payload.info === 'true';
+                payload.warning = payload.warning === 'true';
+                payload.critical = payload.critical === 'true';
+                payload.error = payload.error === 'true';
+                payload.alerts = payload.alerts === 'true';
+                payload.commands = payload.commands === 'true';
+                if (payload.parent_ids.length === 0) {
+                  payload.parent_ids = [];
+                  payload.parent_names = [];
+                } else {
+                  payload.parent_ids = payload.parent_ids.split(',');
+                  payload.parent_names = payload.parent_names.split(',');
+                }
+                addTelegramDetails(payload);
+              });
+            }
           } else if (filePath[2] === 'twilio_config.ini') {
             config = await getConfig('channel', 'twilio_config.ini', '', '');
-            Object.values(config.data.result).forEach((value) => {
-              const payload = JSON.parse(JSON.stringify(value));
-              if (payload.twilio_phone_numbers_to_dial_valid.length === 0) {
-                payload.twilio_phone_numbers_to_dial_valid = [];
-              } else {
+            if (Object.keys(config.data.result).length !== 0) {
+              Object.values(config.data.result).forEach((value) => {
+                const payload = JSON.parse(JSON.stringify(value));
+                if (payload.twilio_phone_numbers_to_dial_valid.length === 0) {
+                  payload.twilio_phone_numbers_to_dial_valid = [];
+                } else {
                 // eslint-disable-next-line max-len
-                payload.twilio_phone_numbers_to_dial_valid = payload.twilio_phone_numbers_to_dial_valid.split(
-                  ',',
-                );
-              }
-              if (payload.parent_ids.length === 0) {
-                payload.parent_ids = [];
-                payload.parent_names = [];
-              } else {
-                payload.parent_ids = payload.parent_ids.split(',');
-                payload.parent_names = payload.parent_names.split(',');
-              }
-              addTwilioDetails(payload);
-            });
+                  payload.twilio_phone_numbers_to_dial_valid = payload.twilio_phone_numbers_to_dial_valid.split(
+                    ',',
+                  );
+                }
+                if (payload.parent_ids.length === 0) {
+                  payload.parent_ids = [];
+                  payload.parent_names = [];
+                } else {
+                  payload.parent_ids = payload.parent_ids.split(',');
+                  payload.parent_names = payload.parent_names.split(',');
+                }
+                addTwilioDetails(payload);
+              });
+            }
           } else if (filePath[2] === 'slack_config.ini') {
             config = await getConfig('channel', 'slack_config.ini', '', '');
-            Object.values(config.data.result).forEach((value) => {
-              const payload = JSON.parse(JSON.stringify(value));
-              payload.info = payload.info === 'true';
-              payload.warning = payload.warning === 'true';
-              payload.critical = payload.critical === 'true';
-              payload.error = payload.error === 'true';
-              payload.alerts = payload.alerts === 'true';
-              payload.commands = payload.commands === 'true';
-              if (payload.parent_ids.length === 0) {
-                payload.parent_ids = [];
-                payload.parent_names = [];
-              } else {
-                payload.parent_ids = payload.parent_ids.split(',');
-                payload.parent_names = payload.parent_names.split(',');
-              }
-              addSlackDetails(payload);
-            });
+            if (Object.keys(config.data.result).length !== 0) {
+              Object.values(config.data.result).forEach((value) => {
+                const payload = JSON.parse(JSON.stringify(value));
+                payload.info = payload.info === 'true';
+                payload.warning = payload.warning === 'true';
+                payload.critical = payload.critical === 'true';
+                payload.error = payload.error === 'true';
+                payload.alerts = payload.alerts === 'true';
+                payload.commands = payload.commands === 'true';
+                if (payload.parent_ids.length === 0) {
+                  payload.parent_ids = [];
+                  payload.parent_names = [];
+                } else {
+                  payload.parent_ids = payload.parent_ids.split(',');
+                  payload.parent_names = payload.parent_names.split(',');
+                }
+                addSlackDetails(payload);
+              });
+            }
           }
         }
       }
@@ -807,6 +844,7 @@ class LoadConfig extends Component {
         5000,
       );
     }
+    ToastsStore.success('Configuration files loaded successfully!', 5000);
     // RESET the current chain for all types so when creating a new you
     // chain config you do not attempt to load an old one.
     clearChainIdChainlink();
