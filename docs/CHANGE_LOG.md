@@ -2,6 +2,15 @@ Change the contents of this file to this:
 
 # Change Log
 
+## 0.3.1
+
+Released on 6th January 2022
+
+- Fixed bug in web-installer when loading empty configs.
+- Fixed bug in web-installer when writing empty configs.
+- Fixed bug in alerting logic for `no change in` alerts.
+- Fixed bug in alerting for downtime of EVM nodes.
+
 ## 0.3.0
 
 Released on 9th December 2021

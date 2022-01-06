@@ -120,7 +120,12 @@ class TestEVMNodeAlerter(unittest.TestCase):
             },
             'message': self.test_evm_node_is_down_exception.message,
             'code': self.test_evm_node_is_down_exception.code,
-            'data': {'went_down_at': self.test_last_monitored + 60}
+            'data': {
+                'went_down_at': {
+                    'current': self.test_last_monitored + 60,
+                    'previous': None
+                }
+            }
         }
 
         self.transformed_data_example_result = {
@@ -704,7 +709,7 @@ class TestEVMNodeAlerter(unittest.TestCase):
         )
         meta_data = self.test_node_down_error['meta_data']
         mock_downtime_alert.assert_called_once_with(
-            self.test_node_down_error['data']['went_down_at'],
+            self.test_node_down_error['data']['went_down_at']['current'],
             configs.evm_node_is_down, NodeWentDownAtAlert,
             NodeStillDownAlert, NodeBackUpAgainAlert, data_for_alerting,
             meta_data['node_parent_id'], meta_data['node_id'],

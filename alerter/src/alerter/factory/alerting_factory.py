@@ -170,6 +170,9 @@ class AlertingFactory(ABC):
                     self.alerting_state[parent_id][monitorable_id][
                         'warning_sent'][metric_name] = True
         else:
+            warning_window_timer.reset()
+            critical_window_timer.reset()
+            critical_repeat_limiter.reset()
             if warning_sent[metric_name] or critical_sent[metric_name]:
                 alert = change_alert(
                     monitorable_name, Severity.INFO.value, monitoring_timestamp,
@@ -181,9 +184,6 @@ class AlertingFactory(ABC):
                     'warning_sent'][metric_name] = False
                 self.alerting_state[parent_id][monitorable_id][
                     'critical_sent'][metric_name] = False
-                warning_window_timer.reset()
-                critical_window_timer.reset()
-                critical_repeat_limiter.reset()
 
     def classify_thresholded_time_window_alert(
             self, current: Any, config: Dict,
@@ -242,38 +242,40 @@ class AlertingFactory(ABC):
         # a decrease below warning threshold as
         # warning_threshold <= critical_threshold
 
-        if critical_sent[metric_name] and current < critical_threshold:
-            alert = decreased_below_threshold_alert(
-                monitorable_name, current, Severity.INFO.value,
-                monitoring_timestamp, Severity.CRITICAL.value, parent_id,
-                monitorable_id)
-            data_for_alerting.append(alert.alert_data)
-            self.component_logger.debug(
-                "Successfully classified alert %s", alert.alert_data)
-            self.alerting_state[parent_id][monitorable_id][
-                'critical_sent'][metric_name] = False
+        if current < critical_threshold:
             critical_window_timer.reset()
             critical_repeat_limiter.reset()
+            if critical_sent[metric_name]:
+                alert = decreased_below_threshold_alert(
+                    monitorable_name, current, Severity.INFO.value,
+                    monitoring_timestamp, Severity.CRITICAL.value, parent_id,
+                    monitorable_id)
+                data_for_alerting.append(alert.alert_data)
+                self.component_logger.debug(
+                    "Successfully classified alert %s", alert.alert_data)
+                self.alerting_state[parent_id][monitorable_id][
+                    'critical_sent'][metric_name] = False
 
-            # If this is the case we still need to raise a warning alert to
-            # show the correct metric state in the UI.
-            if warning_sent[metric_name] and current >= warning_threshold:
-                warning_window_timer.start_timer(
-                    warning_window_timer.start_time)
+                # If this is the case we still need to raise a warning alert to
+                # show the correct metric state in the UI.
+                if warning_sent[metric_name] and current >= warning_threshold:
+                    warning_window_timer.start_timer(
+                        warning_window_timer.start_time)
+                    self.alerting_state[parent_id][monitorable_id][
+                        'warning_sent'][metric_name] = False
+
+        if current < warning_threshold:
+            warning_window_timer.reset()
+            if warning_sent[metric_name]:
+                alert = decreased_below_threshold_alert(
+                    monitorable_name, current, Severity.INFO.value,
+                    monitoring_timestamp, Severity.WARNING.value, parent_id,
+                    monitorable_id)
+                data_for_alerting.append(alert.alert_data)
+                self.component_logger.debug(
+                    "Successfully classified alert %s", alert.alert_data)
                 self.alerting_state[parent_id][monitorable_id]['warning_sent'][
                     metric_name] = False
-
-        if warning_sent[metric_name] and current < warning_threshold:
-            alert = decreased_below_threshold_alert(
-                monitorable_name, current, Severity.INFO.value,
-                monitoring_timestamp, Severity.WARNING.value, parent_id,
-                monitorable_id)
-            data_for_alerting.append(alert.alert_data)
-            self.component_logger.debug(
-                "Successfully classified alert %s", alert.alert_data)
-            self.alerting_state[parent_id][monitorable_id]['warning_sent'][
-                metric_name] = False
-            warning_window_timer.reset()
 
         # Now check if any of the thresholds are surpassed. We will not generate
         # a warning alert if we are immediately in critical state.
@@ -410,25 +412,25 @@ class AlertingFactory(ABC):
         # First check for critical as it is expected that
         # warning_threshold <= critical_threshold
 
-        if (critical_sent[metric_name]
-                and critical_occurrences < critical_threshold):
-            alert = decreased_below_threshold_alert(
-                monitorable_name, critical_occurrences, Severity.INFO.value,
-                monitoring_timestamp, critical_period, Severity.CRITICAL.value,
-                parent_id, monitorable_id)
-            data_for_alerting.append(alert.alert_data)
-            self.component_logger.debug("Successfully classified alert %s",
-                                        alert.alert_data)
-            self.alerting_state[parent_id][monitorable_id][
-                'critical_sent'][metric_name] = False
+        if critical_occurrences < critical_threshold:
             critical_repeat_limiter.reset()
+            if critical_sent[metric_name]:
+                alert = decreased_below_threshold_alert(
+                    monitorable_name, critical_occurrences, Severity.INFO.value,
+                    monitoring_timestamp, critical_period,
+                    Severity.CRITICAL.value, parent_id, monitorable_id)
+                data_for_alerting.append(alert.alert_data)
+                self.component_logger.debug("Successfully classified alert %s",
+                                            alert.alert_data)
+                self.alerting_state[parent_id][monitorable_id][
+                    'critical_sent'][metric_name] = False
 
-            # If this is the case we still need to raise a warning alert to
-            # show the correct metric state in the UI.
-            if (warning_sent[metric_name]
-                    and warning_occurrences >= warning_threshold):
-                self.alerting_state[parent_id][monitorable_id]['warning_sent'][
-                    metric_name] = False
+                # If this is the case we still need to raise a warning alert to
+                # show the correct metric state in the UI.
+                if (warning_sent[metric_name]
+                        and warning_occurrences >= warning_threshold):
+                    self.alerting_state[parent_id][monitorable_id][
+                        'warning_sent'][metric_name] = False
 
         if (warning_sent[metric_name]
                 and warning_occurrences < warning_threshold):
@@ -559,23 +561,24 @@ class AlertingFactory(ABC):
         # First check for a decrease below critical threshold and then check for
         # a decrease below warning threshold as
         # warning_threshold <= critical_threshold
-        if critical_sent[metric_name] and current < critical_threshold:
-            alert = decreased_below_threshold_alert(
-                monitorable_name, current, Severity.INFO.value,
-                monitoring_timestamp, Severity.CRITICAL.value, parent_id,
-                monitorable_id)
-            data_for_alerting.append(alert.alert_data)
-            self.component_logger.debug("Successfully classified alert %s",
-                                        alert.alert_data)
-            self.alerting_state[parent_id][monitorable_id][
-                'critical_sent'][metric_name] = False
+        if current < critical_threshold:
             critical_repeat_limiter.reset()
+            if critical_sent[metric_name]:
+                alert = decreased_below_threshold_alert(
+                    monitorable_name, current, Severity.INFO.value,
+                    monitoring_timestamp, Severity.CRITICAL.value, parent_id,
+                    monitorable_id)
+                data_for_alerting.append(alert.alert_data)
+                self.component_logger.debug("Successfully classified alert %s",
+                                            alert.alert_data)
+                self.alerting_state[parent_id][monitorable_id][
+                    'critical_sent'][metric_name] = False
 
-            # If this is the case we still need to raise a warning alert to
-            # show the correct metric state in the UI.
-            if warning_sent[metric_name] and current >= warning_threshold:
-                self.alerting_state[parent_id][monitorable_id]['warning_sent'][
-                    metric_name] = False
+                # If this is the case we still need to raise a warning alert to
+                # show the correct metric state in the UI.
+                if warning_sent[metric_name] and current >= warning_threshold:
+                    self.alerting_state[parent_id][monitorable_id][
+                        'warning_sent'][metric_name] = False
 
         if warning_sent[metric_name] and current < warning_threshold:
             alert = decreased_below_threshold_alert(
@@ -838,6 +841,9 @@ class AlertingFactory(ABC):
         monitoring_datetime = datetime.fromtimestamp(monitoring_timestamp)
 
         if current_went_down is None:
+            warning_window_timer.reset()
+            critical_window_timer.reset()
+            critical_repeat_limiter.reset()
             if warning_sent[metric_name] or critical_sent[metric_name]:
                 alert = back_up_alert(
                     monitorable_name, Severity.INFO.value, monitoring_timestamp,
@@ -850,9 +856,6 @@ class AlertingFactory(ABC):
                     'warning_sent'][metric_name] = False
                 self.alerting_state[parent_id][monitorable_id][
                     'critical_sent'][metric_name] = False
-                warning_window_timer.reset()
-                critical_window_timer.reset()
-                critical_repeat_limiter.reset()
         else:
             went_down_datetime = datetime.fromtimestamp(current_went_down)
             if critical_enabled:
