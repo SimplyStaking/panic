@@ -222,11 +222,7 @@ Check if the installation was successful by checking if {NODE_IP}:{PORT}/metrics
     7. Take note of the Token generated, this is the App-Level Token.
     8. Go to the 'Install App' setting (left pane) and click `Install to Workspace`, followed by `Allow`.
     9. Go to the 'OAuth & Permissions' feature (left pane) and take note of the `Bot User OAuth Token`.
-    10. Go to the 'Slash Commands' feature and create the following commands:
-        * */start* command with *Welcome message* as the short description.
-        * */help* command with *Available Commands* as the short description.
-        * */ping* command with *Ping the Slack Commands Handler* as the short description.
-    11. Add the newly created `PANIC Notifications` app to the target channel by typing `/add` within the channel and selecting `Add apps to this channel`.
+    10. Add the newly created `PANIC Notifications` app to the target channel by typing `/add` within the channel and selecting `Add apps to this channel`.
 4. Go to the Slack client, right click the name of the target slack channel within the list of channels (left pane), click `Open channel details`, and take note of the Channel ID *(found at the bottom)*.
 
 **At the end, you should have:**

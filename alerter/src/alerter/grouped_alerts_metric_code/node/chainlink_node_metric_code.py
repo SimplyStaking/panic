@@ -2,17 +2,17 @@ from ..grouped_alerts_metric_code import GroupedAlertsMetricCode
 
 
 class GroupedChainlinkNodeAlertsMetricCode(GroupedAlertsMetricCode):
-    NoChangeInHeight = 'head_tracker_current_head'
-    NoChangeInTotalHeadersReceived = 'head_tracker_heads_received_total'
-    MaxUnconfirmedBlocksThreshold = 'max_unconfirmed_blocks'
-    ChangeInSourceNode = 'process_start_time_seconds'
-    GasBumpIncreasedOverNodeGasPriceLimit = \
-        'tx_manager_gas_bump_exceeds_limit_total'
-    NoOfUnconfirmedTxsThreshold = 'unconfirmed_transactions'
-    TotalErroredJobRunsThreshold = 'run_status_update_total'
-    EthBalanceThreshold = 'eth_balance_amount'
-    EthBalanceTopUp = 'eth_balance_amount_increase'
-    InvalidUrl = 'invalid_url'
-    MetricNotFound = 'metric_not_found'
-    NodeIsDown = 'node_is_down'
-    PrometheusSourceIsDown = 'prometheus_is_down'
+    NoChangeInHeight = 'cl_head_tracker_current_head'
+    NoChangeInTotalHeadersReceived = 'cl_head_tracker_heads_received_total'
+    MaxUnconfirmedBlocksThreshold = 'cl_max_unconfirmed_blocks'
+    ChangeInSourceNode = 'cl_process_start_time_seconds'
+    GasBumpIncreasedOverNodeGasPriceLimit = (
+        'cl_tx_manager_gas_bump_exceeds_limit_total')
+    NoOfUnconfirmedTxsThreshold = 'cl_unconfirmed_transactions'
+    TotalErroredJobRunsThreshold = 'cl_run_status_update_total'
+    EthBalanceThreshold = 'cl_eth_balance_amount'
+    EthBalanceTopUp = 'cl_eth_balance_amount_increase'
+    InvalidUrl = 'cl_invalid_url'
+    MetricNotFound = 'cl_metric_not_found'
+    NodeIsDown = 'cl_node_is_down'
+    PrometheusSourceIsDown = 'cl_prometheus_is_down'

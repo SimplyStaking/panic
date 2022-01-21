@@ -1310,19 +1310,19 @@ class TestSlackCommandHandlers(unittest.TestCase):
                     chain_name))
 
     @parameterized.expand([
-        ("/panicmute BAD_SEVERITY",),
-        ("/panicmute bad_severity INFO CRITICAL",),
-        ("/panicmute 123 bad_sev",), ("/panicmute None",), ("/panicmute  ",),
+        ("BAD_SEVERITY",),
+        ("bad_severity INFO CRITICAL",),
+        ("123 bad_sev",), ("None",),
     ])
     @mock.patch.object(SlackCommandHandlers, "_authorise")
     @mock.patch.object(Say, '__call__')
     def test_mute_callback_does_not_mute_chains_if_unrecognized_severities(
-            self, inputted_command, mock_say, mock_authorise) -> None:
+            self, inputted_text, mock_say, mock_authorise) -> None:
         # To make sure that there are no persistent keys from other tests.
         self.test_redis.delete_all_unsafe()
         mock_authorise.return_value = True
         mock_say.return_value = None
-        self.test_command = {'text': inputted_command}
+        self.test_command = {'text': inputted_text}
 
         self.test_slack_command_handlers.mute_callback(self.test_ack,
                                                        self.test_say,
@@ -1337,23 +1337,26 @@ class TestSlackCommandHandlers(unittest.TestCase):
                     chain_name))
 
     @parameterized.expand([
-        ("/panicmute INFO",), ("/panicmute CRITICAL",), ("/panicmute error",),
-        ("/panicmute WARNING",), ("/panicmute INFO WARNING",),
-        ("/panicmute ERROR critical",),
-        ("/panicmute ERROR critical INFO",),
-        ("/panicmute WARNING critical INFO",),
-        ("/panicmute ERROR critical info warning",), ("/panicmute",)
+        ("INFO",), ("CRITICAL",), ("error",),
+        ("WARNING",), ("INFO WARNING",),
+        ("ERROR critical",),
+        ("ERROR critical INFO",),
+        ("WARNING critical INFO",),
+        ("ERROR critical info warning",), ("",)
     ])
     @mock.patch.object(SlackCommandHandlers, "_authorise")
     @mock.patch.object(Say, '__call__')
     def test_mute_callback_mutes_chains_correctly_first_time(
-            self, inputted_command, mock_say, mock_authorise) -> None:
+            self, inputted_text, mock_say, mock_authorise) -> None:
         # To make sure that there are no persistent keys from other tests.
         self.test_redis.delete_all_unsafe()
         mock_say.return_value = None
         mock_authorise.return_value = True
-        self.test_command = {'text': inputted_command}
-        inputted_severities = inputted_command.split(' ')[1:]
+        self.test_command = {'text': inputted_text}
+        inputted_severities = inputted_text.split(' ')
+        inputted_severities = list(filter(
+            lambda severity: severity != '', inputted_severities)
+        )
         if not inputted_severities:
             inputted_severities_upper = ['CRITICAL', 'INFO', 'ERROR', 'WARNING']
         else:
@@ -1384,27 +1387,27 @@ class TestSlackCommandHandlers(unittest.TestCase):
                 self.fail("Expected a mute key for {}".format(chain_name))
 
     @parameterized.expand([
-        ("/panicmute INFO", "INFO",), ("/panicmute CRITICAL", "WARNING",),
-        ("/panicmute error", "CRITICAL",), ("/panicmute WARNING", "ERROR",),
-        ("/panicmute INFO WARNING", "WARNING",),
-        ("/panicmute ERROR critical", "INFO",),
-        ("/panicmute ERROR critical warning", "CRITICAL",),
-        ("/panicmute WARNING critical INFO", "ERROR",),
-        ("/panicmute ERROR critical info warning", "ERROR WARNING",),
-        ("/panicmute", "INFO CRITICAL WARNING ERROR",)
+        ("INFO", "INFO",), ("CRITICAL", "WARNING",),
+        ("error", "CRITICAL",), ("WARNING", "ERROR",),
+        ("INFO WARNING", "WARNING",),
+        ("ERROR critical", "INFO",),
+        ("ERROR critical warning", "CRITICAL",),
+        ("WARNING critical INFO", "ERROR",),
+        ("ERROR critical info warning", "ERROR WARNING",),
+        ("", "INFO CRITICAL WARNING ERROR",)
     ])
     @mock.patch.object(SlackCommandHandlers, "_authorise")
     @mock.patch.object(Say, '__call__')
     def test_mute_callback_mutes_chains_correctly_already_muted(
-            self, inputted_command, first_round_muted_severities,
+            self, inputted_text, first_round_muted_severities,
             mock_say, mock_authorise) -> None:
         # To make sure that there are no persistent keys from other tests.
         self.test_redis.delete_all_unsafe()
 
         mock_say.return_value = None
         mock_authorise.return_value = True
-        self.test_command = {'text': inputted_command}
-        inputted_severities = set(inputted_command.split(' ')[1:])
+        self.test_command = {'text': inputted_text}
+        inputted_severities = set(inputted_text.split(' '))
         if not inputted_severities:
             inputted_severities_upper = {'CRITICAL', 'INFO', 'ERROR', 'WARNING'}
         else:
@@ -1453,20 +1456,19 @@ class TestSlackCommandHandlers(unittest.TestCase):
                 self.fail("Expected a mute key for {}".format(chain_name))
 
     @parameterized.expand([
-        ("/panicmute BAD_SEVERITY", ["BAD_SEVERITY"],),
-        ("/panicmute bad_severity INFO CRITICAL", ["bad_severity"],),
-        ("/panicmute 123 bad_sev", ["123", "bad_sev"],),
-        ("/panicmute None", ["None"]),
-        ("/panicmute  ", ["", ""]),
+        ("BAD_SEVERITY", ["BAD_SEVERITY"],),
+        ("bad_severity INFO CRITICAL", ["bad_severity"],),
+        ("123 bad_sev", ["123", "bad_sev"],),
+        ("None", ["None"]),
     ])
     @mock.patch.object(SlackCommandHandlers, "_authorise")
     @mock.patch.object(Say, '__call__')
     def test_mute_callback_sends_correct_replies_if_unrecognized_severities(
-            self, inputted_command, unrecognised_severities, mock_say,
+            self, inputted_text, unrecognised_severities, mock_say,
             mock_authorise) -> None:
         mock_authorise.return_value = True
         mock_say.return_value = None
-        self.test_command = {'text': inputted_command}
+        self.test_command = {'text': inputted_text}
         chain_names = [chain_name
                        for _, chain_name in self.test_associated_chains.items()]
 
@@ -1478,6 +1480,7 @@ class TestSlackCommandHandlers(unittest.TestCase):
             "Muting Failed: Invalid severity/severities {}. Please enter a " \
             "combination of CRITICAL, WARNING, INFO or ERROR separated by " \
             "spaces after the /panicmute command. You can enter no severities " \
+            "" \
             "" \
             "" \
             "" \
@@ -1523,7 +1526,7 @@ class TestSlackCommandHandlers(unittest.TestCase):
         mock_say.return_value = None
         mock_authorise.return_value = True
         mock_hexists_unsafe.side_effect = muting_error
-        self.test_command = {'text': '/panicmute INFO'}
+        self.test_command = {'text': 'INFO'}
 
         self.test_slack_command_handlers.mute_callback(self.test_ack,
                                                        self.test_say,
@@ -1534,28 +1537,28 @@ class TestSlackCommandHandlers(unittest.TestCase):
         self.assertEqual(expected_calls, actual_calls)
 
     @parameterized.expand([
-        ("/panicmute INFO", ["INFO"],), ("/panicmute CRITICAL", ["CRITICAL"],),
-        ("/panicmute error", ["ERROR"],), ("/panicmute WARNING", ["WARNING"],),
-        ("/panicmute INFO WARNING", ["INFO", "WARNING"],),
-        ("/panicmute ERROR critical", ["ERROR", "CRITICAL"],),
-        ("/panicmute ERROR critical INFO", ["ERROR", "CRITICAL", "INFO"],),
-        ("/panicmute WARNING critical INFO", ["WARNING", "CRITICAL", "INFO"],),
-        ("/panicmute ERROR critical info warning", ["ERROR", "CRITICAL", "INFO",
-                                                    "WARNING"]),
-        ("/panicmute", ["INFO", "WARNING", "CRITICAL", "ERROR"],)
+        ("INFO", ["INFO"],), ("CRITICAL", ["CRITICAL"],),
+        ("error", ["ERROR"],), ("WARNING", ["WARNING"],),
+        ("INFO WARNING", ["INFO", "WARNING"],),
+        ("ERROR critical", ["ERROR", "CRITICAL"],),
+        ("ERROR critical INFO", ["ERROR", "CRITICAL", "INFO"],),
+        ("WARNING critical INFO", ["WARNING", "CRITICAL", "INFO"],),
+        ("ERROR critical info warning", ["ERROR", "CRITICAL", "INFO",
+                                         "WARNING"]),
+        ("", ["INFO", "WARNING", "CRITICAL", "ERROR"],)
     ])
     @mock.patch.object(RedisApi, "hset_unsafe")
     @mock.patch.object(RedisApi, "hexists_unsafe")
     @mock.patch.object(SlackCommandHandlers, "_authorise")
     @mock.patch.object(Say, '__call__')
     def test_mute_callback_sends_correct_replies_if_mute_successful(
-            self, input_command, inputted_severities, mock_say,
+            self, inputted_text, inputted_severities, mock_say,
             mock_authorise, mock_hexists_unsafe, mock_hset_unsafe) -> None:
         mock_say.return_value = None
         mock_authorise.return_value = True
         mock_hexists_unsafe.return_value = False
         mock_hset_unsafe.return_value = None
-        self.test_command = {'text': input_command}
+        self.test_command = {'text': inputted_text}
         chain_names = [chain_name
                        for _, chain_name in self.test_associated_chains.items()]
 
@@ -1791,18 +1794,18 @@ class TestSlackCommandHandlers(unittest.TestCase):
             self.fail("Did not expect a muteall key to be set.")
 
     @parameterized.expand([
-        ("/muteall BAD_SEVERITY",), ("/muteall bad_severity INFO CRITICAL",),
-        ("/muteall 123 bad_sev",), ("/muteall None",), ("/muteall  ",),
+        ("BAD_SEVERITY",), ("bad_severity INFO CRITICAL",),
+        ("123 bad_sev",), ("None",),
     ])
     @mock.patch.object(SlackCommandHandlers, "_authorise")
     @mock.patch.object(Say, '__call__')
     def test_muteall_callback_does_not_mute_all_if_unrecognised_severities(
-            self, inputted_command, mock_say, mock_authorise) -> None:
+            self, inputted_text, mock_say, mock_authorise) -> None:
         # To make sure that there are no persistent keys from other tests.
         self.test_redis.delete_all_unsafe()
         mock_authorise.return_value = True
         mock_say.return_value = None
-        self.test_command = {'text': inputted_command}
+        self.test_command = {'text': inputted_text}
 
         self.test_slack_command_handlers.muteall_callback(self.test_ack,
                                                           self.test_say,
@@ -1813,22 +1816,25 @@ class TestSlackCommandHandlers(unittest.TestCase):
             self.fail("Did not expect a muteall key to be set.")
 
     @parameterized.expand([
-        ("/muteall INFO",), ("/muteall CRITICAL",), ("/muteall error",),
-        ("/muteall WARNING",), ("/muteall INFO WARNING",),
-        ("/muteall ERROR critical",), ("/muteall ERROR critical INFO",),
-        ("/muteall WARNING critical INFO",),
-        ("/muteall ERROR critical info warning",), ("/muteall",)
+        ("INFO",), ("CRITICAL",), ("error",),
+        ("WARNING",), ("INFO WARNING",),
+        ("ERROR critical",), ("ERROR critical INFO",),
+        ("WARNING critical INFO",),
+        ("ERROR critical info warning",), ("",), (" ",)
     ])
     @mock.patch.object(SlackCommandHandlers, "_authorise")
     @mock.patch.object(Say, '__call__')
     def test_muteall_callback_mutes_all_chains_correctly_first_time(
-            self, inputted_command, mock_say, mock_authorise) -> None:
+            self, inputted_text, mock_say, mock_authorise) -> None:
         # To make sure that there are no persistent keys from other tests.
         self.test_redis.delete_all_unsafe()
         mock_say.return_value = None
         mock_authorise.return_value = True
-        self.test_command = {'text': inputted_command}
-        inputted_severities = inputted_command.split(' ')[1:]
+        self.test_command = {'text': inputted_text}
+        inputted_severities = inputted_text.split(' ')
+        inputted_severities = list(filter(
+            lambda severity: severity != '', inputted_severities)
+        )
         if not inputted_severities:
             inputted_severities_upper = ['CRITICAL', 'INFO', 'ERROR', 'WARNING']
         else:
@@ -1855,27 +1861,27 @@ class TestSlackCommandHandlers(unittest.TestCase):
             self.fail("Expected a muteall key to be set.")
 
     @parameterized.expand([
-        ("/muteall INFO", "INFO",), ("/muteall CRITICAL", "WARNING",),
-        ("/muteall error", "CRITICAL",), ("/muteall WARNING", "ERROR",),
-        ("/muteall INFO WARNING", "WARNING",),
-        ("/muteall ERROR critical", "INFO",),
-        ("/muteall ERROR critical warning", "CRITICAL",),
-        ("/muteall WARNING critical INFO", "ERROR",),
-        ("/muteall ERROR critical info warning", "ERROR WARNING",),
-        ("/muteall", "INFO CRITICAL WARNING ERROR",)
+        ("INFO", "INFO",), ("CRITICAL", "WARNING",),
+        ("error", "CRITICAL",), ("WARNING", "ERROR",),
+        ("INFO WARNING", "WARNING",),
+        ("ERROR critical", "INFO",),
+        ("ERROR critical warning", "CRITICAL",),
+        ("WARNING critical INFO", "ERROR",),
+        ("ERROR critical info warning", "ERROR WARNING",),
+        ("", "INFO CRITICAL WARNING ERROR",)
     ])
     @mock.patch.object(SlackCommandHandlers, "_authorise")
     @mock.patch.object(Say, '__call__')
     def test_muteall_callback_mutes_all_chains_correctly_already_muted(
-            self, inputted_command, first_round_muted_severities,
+            self, inputted_text, first_round_muted_severities,
             mock_say, mock_authorise) -> None:
         # To make sure that there are no persistent keys from other tests.
         self.test_redis.delete_all_unsafe()
 
         mock_say.return_value = None
         mock_authorise.return_value = True
-        self.test_command = {'text': inputted_command}
-        inputted_severities = set(inputted_command.split(' ')[1:])
+        self.test_command = {'text': inputted_text}
+        inputted_severities = set(inputted_text.split(' '))
         if not inputted_severities:
             inputted_severities_upper = {'CRITICAL', 'INFO', 'ERROR', 'WARNING'}
         else:
@@ -1918,20 +1924,19 @@ class TestSlackCommandHandlers(unittest.TestCase):
             self.fail("Expected a muteall key to be set.")
 
     @parameterized.expand([
-        ("/panicmute BAD_SEVERITY", ["BAD_SEVERITY"],),
-        ("/panicmute bad_severity INFO CRITICAL", ["bad_severity"],),
-        ("/panicmute 123 bad_sev", ["123", "bad_sev"],),
-        ("/panicmute None", ["None"]),
-        ("/panicmute  ", ["", ""]),
+        ("BAD_SEVERITY", ["BAD_SEVERITY"],),
+        ("bad_severity INFO CRITICAL", ["bad_severity"],),
+        ("123 bad_sev", ["123", "bad_sev"],),
+        ("None", ["None"]),
     ])
     @mock.patch.object(SlackCommandHandlers, "_authorise")
     @mock.patch.object(Say, '__call__')
     def test_muteall_callback_sends_correct_replies_if_unrecognized_severities(
-            self, inputted_command, unrecognised_severities, mock_say,
+            self, inputted_text, unrecognised_severities, mock_say,
             mock_authorise) -> None:
         mock_authorise.return_value = True
         mock_say.return_value = None
-        self.test_command = {'text': inputted_command}
+        self.test_command = {'text': inputted_text}
 
         self.test_slack_command_handlers.muteall_callback(self.test_ack,
                                                           self.test_say,
@@ -1980,7 +1985,7 @@ class TestSlackCommandHandlers(unittest.TestCase):
         mock_say.return_value = None
         mock_authorise.return_value = True
         mock_exists_unsafe.side_effect = muting_error
-        self.test_command = {'text': "/muteall INFO"}
+        self.test_command = {'text': "INFO"}
 
         self.test_slack_command_handlers.muteall_callback(self.test_ack,
                                                           self.test_say,
@@ -1991,28 +1996,31 @@ class TestSlackCommandHandlers(unittest.TestCase):
         self.assertEqual(expected_calls, actual_calls)
 
     @parameterized.expand([
-        ("/muteall INFO", ["INFO"],), ("/muteall CRITICAL", ["CRITICAL"],),
-        ("/muteall error", ["ERROR"],), ("/muteall WARNING", ["WARNING"],),
-        ("/muteall INFO WARNING", ["INFO", "WARNING"],),
-        ("/muteall ERROR critical", ["ERROR", "CRITICAL"],),
-        ("/muteall ERROR critical INFO", ["ERROR", "CRITICAL", "INFO"],),
-        ("/muteall WARNING critical INFO", ["WARNING", "CRITICAL", "INFO"],),
-        ("/muteall ERROR critical info warning", ["ERROR", "CRITICAL", "INFO",
-                                                  "WARNING"]),
-        ("/muteall", ["INFO", "WARNING", "CRITICAL", "ERROR"],)
+        ("INFO", ["INFO"],), ("CRITICAL", ["CRITICAL"],),
+        ("error", ["ERROR"],), ("WARNING", ["WARNING"],),
+        ("INFO WARNING", ["INFO", "WARNING"],),
+        ("ERROR critical", ["ERROR", "CRITICAL"],),
+        ("ERROR critical INFO", ["ERROR", "CRITICAL", "INFO"],),
+        ("WARNING critical INFO", ["WARNING", "CRITICAL", "INFO"],),
+        ("ERROR critical info warning", ["ERROR", "CRITICAL", "INFO",
+                                         "WARNING"]),
+        ("ERROR  critical   info    warning", ["ERROR", "CRITICAL", "INFO",
+                                               "WARNING"]),
+        ("", ["INFO", "WARNING", "CRITICAL", "ERROR"],),
+        (" ", ["INFO", "WARNING", "CRITICAL", "ERROR"],)
     ])
     @mock.patch.object(RedisApi, "set_unsafe")
     @mock.patch.object(RedisApi, "exists_unsafe")
     @mock.patch.object(SlackCommandHandlers, "_authorise")
     @mock.patch.object(Say, '__call__')
     def test_muteall_callback_sends_correct_replies_if_mute_successful(
-            self, input_command, inputted_severities, mock_say,
+            self, inputted_text, inputted_severities, mock_say,
             mock_authorise, mock_exists_unsafe, mock_set_unsafe) -> None:
         mock_say.return_value = None
         mock_authorise.return_value = True
         mock_exists_unsafe.return_value = False
         mock_set_unsafe.return_value = None
-        self.test_command = {'text': input_command}
+        self.test_command = {'text': inputted_text}
 
         self.test_slack_command_handlers.muteall_callback(self.test_ack,
                                                           self.test_say,

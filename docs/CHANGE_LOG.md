@@ -1,6 +1,13 @@
-Change the contents of this file to this:
-
 # Change Log
+
+## 0.3.2
+
+Released on 21st January 2022
+
+- Set `tx_manager_num_gas_bumps_total` and `tx_manager_gas_bump_exceeds_limit_total` as optional metrics, depending on whether they are being exposed by the Prometheus endpoint or not. This fixes the issue with `MetricNotFoundError` alerts being raised repetitively.
+- Fixed bug in slack commands when muting multiple severities.
+- ChainlinkNodeMonitor is now compatible with multi-chain nodes prometheus data. Note: It is still assumed that each chainlink node is associated to one chain for now.
+- Refactored Alert Store together with some error codes, and updated data store with missing chainlink contract alert keys.
 
 ## 0.3.1
 

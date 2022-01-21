@@ -82,7 +82,7 @@ services:
     build:
       context: './'
       dockerfile: './alerter/Tests_Dockerfile'
-    image: 'simplyvc/panic_alerter_tests:0.3.1'
+    image: 'simplyvc/panic_alerter_tests:0.3.2'
     logging:
       driver: "json-file"
       options:

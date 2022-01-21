@@ -654,15 +654,15 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
             5019, ErrorContractsNotRetrieved, ContractsNowRetrieved,
-            data_for_alerting, self.test_parent_id, '', '',
+            data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             self.test_latest_timestamp_2,
-            MetricCode.ErrorContractsNotRetrieved.value, "",
+            MetricCode.ErrorContractsNotRetrieved.value, '',
             "Chainlink contracts are now being retrieved!", None)
         call_2 = call(
             5018, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
-            data_for_alerting, self.test_parent_id, '', '',
+            data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             self.test_latest_timestamp_2,
-            MetricCode.ErrorNoSyncedDataSources.value, "",
+            MetricCode.ErrorNoSyncedDataSources.value, '',
             "Synced EVM data sources found!", None)
         self.assertTrue(call_1 in calls)
         self.assertTrue(call_2 in calls)
@@ -718,15 +718,15 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
             5018, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
-            data_for_alerting, self.test_parent_id, "",
-            "", meta_data['last_monitored'],
-            MetricCode.ErrorNoSyncedDataSources.value, "",
+            data_for_alerting, self.test_parent_id, self.test_parent_id, '',
+            meta_data['last_monitored'],
+            MetricCode.ErrorNoSyncedDataSources.value, '',
             "Synced EVM data sources found!", None)
         call_2 = call(
             5019, ErrorContractsNotRetrieved, ContractsNowRetrieved,
-            data_for_alerting, self.test_parent_id, "", "",
+            data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             meta_data['last_monitored'],
-            MetricCode.ErrorContractsNotRetrieved.value, "",
+            MetricCode.ErrorContractsNotRetrieved.value, '',
             "Chainlink contracts are now being retrieved!", None)
         self.assertTrue(call_1 in calls)
         self.assertTrue(call_2 in calls)
@@ -862,7 +862,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
             5019, ErrorContractsNotRetrieved, ContractsNowRetrieved,
-            data_for_alerting, self.test_parent_id, '', '',
+            data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             self.test_last_monitored,
             MetricCode.ErrorContractsNotRetrieved.value,
             self.test_exception.message,
@@ -870,7 +870,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
             self.test_exception.code)
         call_2 = call(
             5018, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
-            data_for_alerting, self.test_parent_id, '', '',
+            data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             self.test_last_monitored,
             MetricCode.ErrorNoSyncedDataSources.value,
             self.test_exception.message,
