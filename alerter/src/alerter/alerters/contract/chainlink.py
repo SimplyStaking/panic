@@ -150,7 +150,8 @@ class ChainlinkContractAlerter(Alerter):
                     cl_alerts.ErrorNoSyncedDataSources,
                     cl_alerts.SyncedDataSourcesFound,
                     data_for_alerting, meta_data['node_parent_id'],
-                    "", "", meta_data['last_monitored'],
+                    meta_data['node_parent_id'], "",
+                    meta_data['last_monitored'],
                     MetricCode.ErrorNoSyncedDataSources.value,
                     "", "Synced EVM data sources found!", None
                 )
@@ -160,7 +161,8 @@ class ChainlinkContractAlerter(Alerter):
                     cl_alerts.ErrorContractsNotRetrieved,
                     cl_alerts.ContractsNowRetrieved,
                     data_for_alerting, meta_data['node_parent_id'],
-                    "", "", meta_data['last_monitored'],
+                    meta_data['node_parent_id'], "",
+                    meta_data['last_monitored'],
                     MetricCode.ErrorContractsNotRetrieved.value,
                     "", "Chainlink contracts are now being retrieved!", None
                 )
@@ -212,7 +214,7 @@ class ChainlinkContractAlerter(Alerter):
                 if (str_to_bool(configs.price_feed_not_observed['enabled'])
                         and current_missed_observations is not None):
                     sub_config = configs.price_feed_not_observed
-                    self.alerting_factory.\
+                    self.alerting_factory. \
                         classify_thresholded_and_conditional_alert(
                         current_missed_observations, sub_config,
                         cl_alerts.
@@ -240,7 +242,7 @@ class ChainlinkContractAlerter(Alerter):
                         'deviation']
 
                     if current_deviation is not None:
-                        self.alerting_factory.\
+                        self.alerting_factory. \
                             classify_thresholded_alert_contract(
                             current_deviation, sub_config,
                             cl_alerts.PriceFeedDeviationInreasedAboveThreshold,
@@ -305,9 +307,8 @@ class ChainlinkContractAlerter(Alerter):
                 cl_alerts.ErrorContractsNotRetrieved,
                 cl_alerts.ContractsNowRetrieved,
                 data_for_alerting, meta_data['node_parent_id'],
-                "", "", meta_data['time'],
-                MetricCode.ErrorContractsNotRetrieved.value,
-                data['message'],
+                meta_data['node_parent_id'], "", meta_data['time'],
+                MetricCode.ErrorContractsNotRetrieved.value, data['message'],
                 "Chainlink contracts are now being retrieved!", data['code']
             )
 
@@ -316,7 +317,7 @@ class ChainlinkContractAlerter(Alerter):
                 cl_alerts.ErrorNoSyncedDataSources,
                 cl_alerts.SyncedDataSourcesFound,
                 data_for_alerting, meta_data['node_parent_id'],
-                "", "", meta_data['time'],
+                meta_data['node_parent_id'], "", meta_data['time'],
                 MetricCode.ErrorNoSyncedDataSources.value,
                 data['message'], "Synced EVM data sources found!", data['code']
             )

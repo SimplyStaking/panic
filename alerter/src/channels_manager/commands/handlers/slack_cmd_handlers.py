@@ -513,7 +513,10 @@ class SlackCommandHandlers(CommandHandler):
         say("Performing mute...")
 
         # Expected: /panicmute or /panicmute List[<severity>]
-        inputted_severities = command.get('text', '').split(' ')[1:]
+        inputted_severities = command.get('text', '').split(' ')
+        inputted_severities = list(filter(
+            lambda severity: severity != '', inputted_severities)
+        )
         unrecognized_severities = []
         recognized_severities = []
 
@@ -608,7 +611,10 @@ class SlackCommandHandlers(CommandHandler):
         say("Performing muteall...")
 
         # Expected: /muteall or /muteall List[<severity>]
-        inputted_severities = command.get('text', '').split(' ')[1:]
+        inputted_severities = command.get('text', '').split(' ')
+        inputted_severities = list(filter(
+            lambda severity: severity != '', inputted_severities)
+        )
         unrecognized_severities = []
         recognized_severities = []
 

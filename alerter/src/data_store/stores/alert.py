@@ -17,10 +17,8 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants.data import (EXPIRE_METRICS,
-                                      CHAINLINK_METRICS_TO_STORE,
-                                      SYSTEM_METRICS_TO_STORE,
                                       CHAINLINK_CONTRACT_METRICS_TO_STORE,
-                                      EVM_METRICS_TO_STORE)
+                                      CHAIN_SOURCED_METRICS)
 from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           ALERT_STORE_INPUT_QUEUE_NAME,
                                           ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
@@ -243,42 +241,33 @@ class AlertStore(Store):
                            'message': alert['message'],
                            'timestamp': alert['timestamp'],
                            'expiry': None}
-            key = alert['origin_id']
+            origin_id = alert['origin_id']
+            metric = alert['metric']
 
             # Check if this metric cannot be overwritten and has to be deleted
-            if alert['metric'] in EXPIRE_METRICS:
+            if metric in EXPIRE_METRICS:
                 metric_data['expiry'] = alert['timestamp'] + 600
 
-            if alert['metric'] in CHAINLINK_METRICS_TO_STORE:
-                self.redis.hset(
-                    Keys.get_hash_parent(alert['parent_id']),
-                    eval('Keys.get_alert_cl_{}(key)'.format(alert['metric'])),
-                    json.dumps(metric_data)
-                )
-            elif alert['metric'] in SYSTEM_METRICS_TO_STORE:
-                self.redis.hset(
-                    Keys.get_hash_parent(alert['parent_id']),
-                    eval('Keys.get_alert_{}(key)'.format(alert['metric'])),
-                    json.dumps(metric_data)
-                )
-            elif alert['metric'] in EVM_METRICS_TO_STORE:
-                self.redis.hset(
-                    Keys.get_hash_parent(alert['parent_id']),
-                    eval('Keys.get_alert_evm_{}(key)'.format(alert['metric'])),
-                    json.dumps(metric_data)
-                )
-            elif alert['metric'] in CHAINLINK_CONTRACT_METRICS_TO_STORE:
-                contract_proxy_address = alert['alert_data'][
-                    'contract_proxy_address']
-                self.redis.hset(
-                    Keys.get_hash_parent(alert['parent_id']),
-                    eval('Keys.get_alert_cl_contract_{}(key, '
-                         'contract_proxy_address)'.format(alert['metric'])),
-                    json.dumps(metric_data)
-                )
+            if metric in CHAINLINK_CONTRACT_METRICS_TO_STORE:
+                if metric in CHAIN_SOURCED_METRICS:
+                    self.redis.hset(
+                        Keys.get_hash_parent(alert['parent_id']),
+                        eval('Keys.get_alert_{}()'.format(
+                            metric)),
+                        json.dumps(metric_data)
+                    )
+                else:
+                    contract_proxy_address = alert['alert_data'][
+                        'contract_proxy_address']
+                    self.redis.hset(
+                        Keys.get_hash_parent(alert['parent_id']),
+                        eval('Keys.get_alert_{}(origin_id, '
+                             'contract_proxy_address)'.format(metric)),
+                        json.dumps(metric_data)
+                    )
             else:
                 self.redis.hset(
                     Keys.get_hash_parent(alert['parent_id']),
-                    eval('Keys.get_alert_{}(key)'.format(alert['metric'])),
+                    eval('Keys.get_alert_{}(origin_id)'.format(metric)),
                     json.dumps(metric_data)
                 )

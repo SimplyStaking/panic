@@ -73,64 +73,76 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             'head_tracker_heads_received_total': 'strict',
             'max_unconfirmed_blocks': 'strict',
             'process_start_time_seconds': 'strict',
-            'tx_manager_num_gas_bumps_total': 'strict',
-            'tx_manager_gas_bump_exceeds_limit_total': 'strict',
+            'tx_manager_num_gas_bumps_total': 'optional',
+            'tx_manager_gas_bump_exceeds_limit_total': 'optional',
             'unconfirmed_transactions': 'strict',
             'gas_updater_set_gas_price': 'optional',
             'eth_balance': 'strict',
             'run_status_update_total': 'optional',
         }
         self.retrieved_prometheus_data_example = {
-            'eth_balance': {'{"account": "eth_add_1"}': 26.043292035081947},
-            'gas_updater_set_gas_price': {
-                '{"percentile": "20%"}': 5000000000.0
+            'eth_balance': {
+                '{"account": "eth_add_1", "evmChainID": "56"}':
+                    26.043292035081947
             },
-            'head_tracker_current_head': 6924314.0,
-            'head_tracker_heads_received_total': 26392.0,
-            'max_unconfirmed_blocks': 0.0,
+            'gas_updater_set_gas_price': {
+                '{"percentile": "20%", "evmChainID": "56"}': 5000000000.0
+            },
+            'head_tracker_current_head': {'{"evmChainID": "56"}': 6924314.0},
+            'head_tracker_heads_received_total': {
+                '{"evmChainID": "56"}': 26392.0
+            },
+            'max_unconfirmed_blocks': {'{"evmChainID": "56"}': 0.0},
             'process_start_time_seconds': 1619431240.24,
             'run_status_update_total': {
-                '{"from_status": "", "job_spec_id": '
+                '{"evmChainID": "56", "from_status": "", "job_spec_id": '
                 '"03ba2f182d5e4245b8492e7f8672482e", '
                 '"status": "in_progress"}': 129.0,
-                '{"from_status": "", "job_spec_id": '
+                '{"evmChainID": "56", "from_status": "", "job_spec_id": '
                 '"0b7dd91f5e8a40d8b0493fc0799fe5d3", '
                 '"status": "in_progress"}': 189.0,
-                '{"from_status": "in_progress", "job_spec_id": '
-                '"03ba2f182d5e4245b8492e7f8672482e", '
+                '{"evmChainID": "56", "from_status": "in_progress", '
+                '"job_spec_id": "03ba2f182d5e4245b8492e7f8672482e", '
                 '"status": "completed"}': 389.0,
-                '{"from_status": "in_progress", "job_spec_id": '
-                '"03ba2f182d5e4245b8492e7f8672482e", "status": '
+                '{"evmChainID": "56", "from_status": "in_progress", '
+                '"job_spec_id": "03ba2f182d5e4245b8492e7f8672482e", "status": '
                 '"pending_outgoing_confirmations"}': 1898.0,
-                '{"from_status": "in_progress", "job_spec_id": '
-                '"0b7dd91f5e8a40d8b0493fc0799fe5d3", '
+                '{"evmChainID": "56", "from_status": "in_progress", '
+                '"job_spec_id": "0b7dd91f5e8a40d8b0493fc0799fe5d3", '
                 '"status": "completed"}': 569.0,
-                '{"from_status": "in_progress", "job_spec_id": '
-                '"0b7dd91f5e8a40d8b0493fc0799fe5d3", '
+                '{"evmChainID": "56", "from_status": "in_progress", '
+                '"job_spec_id": "0b7dd91f5e8a40d8b0493fc0799fe5d3", '
                 '"status": "pending_outgoing_confirmations"}': 2780.0,
-                '{"from_status": "in_progress", "job_spec_id": '
-                '"2aacf8ce6827410dae6ff2ce68938edb", "status": "errored"}': 1.0,
-                '{"from_status": "in_progress", "job_spec_id": '
-                '"3cc0a79b77f8404fa193c1e56b3f29bf", '
+                '{"evmChainID": "56", "from_status": "in_progress", '
+                '"job_spec_id": "2aacf8ce6827410dae6ff2ce68938edb", '
+                '"status": "errored"}': 1.0,
+                '{"evmChainID": "56", "from_status": "in_progress", '
+                '"job_spec_id": "3cc0a79b77f8404fa193c1e56b3f29bf", '
                 '"status": "errored"}': 90.0,
-                '{"from_status": "in_progress", '
+                '{"evmChainID": "56", "from_status": "in_progress", '
                 '"job_spec_id": "4ae35b033a294c3db78a45db9ada9a57", '
                 '"status": "errored"}': 1.0,
-                '{"from_status": "in_progress", "job_spec_id": '
-                '"7594586a567d4700b1a794f3363569e1", "status": "errored"}': 1.0,
-                '{"from_status": "in_progress", "job_spec_id": '
-                '"834275814b3b46de83aa7770dbc90912", "status": "errored"}': 4.0,
-                '{"from_status": "in_progress", "job_spec_id": '
-                '"8d2cde397b17415486bbd79de84c901e", '
+                '{"evmChainID": "56", "from_status": "in_progress", '
+                '"job_spec_id": "7594586a567d4700b1a794f3363569e1", '
+                '"status": "errored"}': 1.0,
+                '{"evmChainID": "56", "from_status": "in_progress", '
+                '"job_spec_id": "834275814b3b46de83aa7770dbc90912", '
+                '"status": "errored"}': 4.0,
+                '{"evmChainID": "56", "from_status": "in_progress", '
+                '"job_spec_id": "8d2cde397b17415486bbd79de84c901e", '
                 '"status": "errored"}': 112.0,
-                '{"from_status": "in_progress", "job_spec_id": '
-                '"d0dd062c26794ff1a9b9460cd5d529f6", "status": "errored"}': 2.0,
-                '{"from_status": "in_progress", "job_spec_id": '
-                '"f2e35bcb37b04198a9241121cd936572", "status": "errored"}': 4.0,
+                '{"evmChainID": "56", "from_status": "in_progress", '
+                '"job_spec_id": "d0dd062c26794ff1a9b9460cd5d529f6", '
+                '"status": "errored"}': 2.0,
+                '{"evmChainID": "56", "from_status": "in_progress", '
+                '"job_spec_id": "f2e35bcb37b04198a9241121cd936572", '
+                '"status": "errored"}': 4.0,
             },
-            'tx_manager_gas_bump_exceeds_limit_total': 0.0,
-            'tx_manager_num_gas_bumps_total': 2031.0,
-            'unconfirmed_transactions': 1.0
+            'tx_manager_gas_bump_exceeds_limit_total': {
+                '{"evmChainID": "56"}': 0.0
+            },
+            'tx_manager_num_gas_bumps_total': {'{"evmChainID": "56"}': 2031.0},
+            'unconfirmed_transactions': {'{"evmChainID": "56"}': 1.0}
         }
         self.retrieved_prometheus_data_example_optionals_none = copy.deepcopy(
             self.retrieved_prometheus_data_example)
@@ -138,6 +150,10 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             'gas_updater_set_gas_price'] = None
         self.retrieved_prometheus_data_example_optionals_none[
             'run_status_update_total'] = None
+        self.retrieved_prometheus_data_example_optionals_none[
+            'tx_manager_gas_bump_exceeds_limit_total'] = None
+        self.retrieved_prometheus_data_example_optionals_none[
+            'tx_manager_num_gas_bumps_total'] = None
         self.processed_prometheus_data_example = {
             'head_tracker_current_head': 6924314.0,
             'head_tracker_heads_received_total': 26392.0,
@@ -162,6 +178,10 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             'gas_updater_set_gas_price'] = None
         self.processed_prometheus_data_example_optionals_none[
             'run_status_update_total_errors'] = 0
+        self.processed_prometheus_data_example_optionals_none[
+            'tx_manager_gas_bump_exceeds_limit_total'] = None
+        self.processed_prometheus_data_example_optionals_none[
+            'tx_manager_num_gas_bumps_total'] = None
         self.test_exception = PANICException('test_exception', 1)
         self.node_config = ChainlinkNodeConfig(
             self.node_id, self.parent_id, self.node_name, self.monitor_node,

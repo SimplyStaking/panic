@@ -350,7 +350,7 @@ class TestConfigStore(unittest.TestCase):
                 "auth_token": "test_auth_token",
                 "twilio_phone_no": "test_phone_number",
                 "twilio_phone_numbers_to_dial_valid":
-                "test_phone_numbers_to_dial_valid",
+                    "test_phone_numbers_to_dial_valid",
                 "parent_ids":
                     "chain_name_7f4bc842-21b1-4bcb-8ab9-d86e08149548,"
                     "chain_name_94aafe04-8287-463a-8416-0401852b3ca2,GENERAL",

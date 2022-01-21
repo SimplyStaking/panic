@@ -36,8 +36,8 @@ class ChainlinkNodeMonitor(Monitor):
             'head_tracker_heads_received_total': 'strict',
             'max_unconfirmed_blocks': 'strict',
             'process_start_time_seconds': 'strict',
-            'tx_manager_num_gas_bumps_total': 'strict',
-            'tx_manager_gas_bump_exceeds_limit_total': 'strict',
+            'tx_manager_num_gas_bumps_total': 'optional',
+            'tx_manager_gas_bump_exceeds_limit_total': 'optional',
             'unconfirmed_transactions': 'strict',
             'gas_updater_set_gas_price': 'optional',
             'eth_balance': 'strict',
@@ -205,50 +205,71 @@ class ChainlinkNodeMonitor(Monitor):
             }
         }
 
-        multiple_value_metrics = {
-            'gas_updater_set_gas_price',
-            'eth_balance',
-            'run_status_update_total'
+        # The Chainlink team is pushing towards having multi-chain chainlink
+        # nodes. Although this change is not being suggested to node operators
+        # yet, the prometheus endpoint already supports multi-chains. From our
+        # side for now we will still assume that each node supports only one
+        # chain, thus for each metric we will consider the first value we find.
+
+        # These are metrics with one value which are multi-node compatible
+        one_value_multi_node_compatible_metrics = {
+            'head_tracker_current_head',
+            'head_tracker_heads_received_total',
+            'max_unconfirmed_blocks',
+            'tx_manager_num_gas_bumps_total',
+            'tx_manager_gas_bump_exceeds_limit_total',
+            'unconfirmed_transactions',
         }
-        one_value_metrics = {
-            key for key in data_copy if key not in multiple_value_metrics
-        }
-        # Add each one value metric and its value to the processed data
+        for metric in one_value_multi_node_compatible_metrics:
+            processed_data['result']['data'][metric] = (
+                None if data_copy[metric] is None
+                else data_copy[metric][list(data_copy[metric])[0]]
+            )
+            self.logger.debug("%s %s: %s", self.node_config, metric,
+                              processed_data['result']['data'][metric])
+
+        # These are metrics with one value which are not multi-node compatible
+        one_value_metrics = {'process_start_time_seconds'}
         for metric in one_value_metrics:
-            value = data_copy[metric]
-            self.logger.debug("%s %s: %s", self.node_config, metric, value)
-            processed_data['result']['data'][metric] = value
+            self.logger.debug("%s %s: %s", self.node_config, metric,
+                              data_copy[metric])
+            processed_data['result']['data'][metric] = data_copy[metric]
 
         # Add gas_updater_set_gas_price info to the processed data. Note we will
-        # process the first percentile object we find. It is very unlikely to
-        # find multiple.
+        # process the first percentile object we find.
         processed_data['result']['data']['gas_updater_set_gas_price'] = {}
         set_gas_price_dict = processed_data['result']['data'][
             'gas_updater_set_gas_price']
         if data_copy['gas_updater_set_gas_price'] is not None:
             for _, data_subset in enumerate(
                     data_copy['gas_updater_set_gas_price']):
-                if "percentile" in json.loads(data_subset):
-                    set_gas_price_dict["percentile"] = json.loads(data_subset)[
+                data_subset_json = json.loads(data_subset)
+                if "percentile" in data_subset_json:
+                    set_gas_price_dict["percentile"] = data_subset_json[
                         "percentile"]
                     set_gas_price_dict["price"] = data_copy[
                         'gas_updater_set_gas_price'][data_subset]
                     break
         else:
             processed_data['result']['data']['gas_updater_set_gas_price'] = None
+        self.logger.debug("%s gas_updater_set_gas_price: %s", self.node_config,
+                          processed_data['result']['data'][
+                              'gas_updater_set_gas_price'])
 
         # Add the ethereum balance to the processed data. We will monitor the
-        # first account we find. Note, it is very unlikely that a node is mapped
-        # to multiple addresses.
+        # first account we find.
         processed_data['result']['data']['eth_balance'] = {}
         ethereum_balance_dict = processed_data['result']['data']['eth_balance']
         for _, data_subset in enumerate(data_copy['eth_balance']):
-            if "account" in json.loads(data_subset):
-                eth_address = json.loads(data_subset)['account']
+            data_subset_json = json.loads(data_subset)
+            if "account" in data_subset_json:
+                eth_address = data_subset_json['account']
                 ethereum_balance_dict['address'] = eth_address
                 ethereum_balance_dict['balance'] = data_copy['eth_balance'][
                     data_subset]
                 break
+        self.logger.debug("%s eth_balance: %s", self.node_config,
+                          processed_data['result']['data']['eth_balance'])
 
         # Add the number of error job runs to the processed data
         no_of_error_job_runs = 0
@@ -256,7 +277,9 @@ class ChainlinkNodeMonitor(Monitor):
         if data_copy['run_status_update_total'] is not None:
             for _, data_subset in enumerate(
                     data_copy['run_status_update_total']):
-                if json.loads(data_subset)['status'] == 'errored':
+                data_subset_json = json.loads(data_subset)
+                if ('status' in data_subset_json
+                        and data_subset_json['status'] == 'errored'):
                     no_of_error_job_runs += 1
 
         self.logger.debug("%s run_status_update_total_errors: %s",

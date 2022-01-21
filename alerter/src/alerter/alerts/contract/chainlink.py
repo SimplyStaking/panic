@@ -2,7 +2,7 @@ from src.alerter.alert_code.contract.chainlink_alert_code import (
     ChainlinkContractAlertCode)
 from src.alerter.alert_data import ChainlinkContractAlertData
 from src.alerter.alerts.alert import Alert
-from src.alerter.grouped_alerts_metric_code.contract.\
+from src.alerter.grouped_alerts_metric_code.contract. \
     chainlink_contract_metric_code \
     import GroupedChainlinkContractAlertsMetricCode as MetricCode
 
@@ -81,7 +81,7 @@ class ConsensusFailure(Alert):
             "The Chainlink Node observing the price feed is {}."
                 .format(proxy_address, origin_name),
             severity, timestamp, parent_id, origin_id,
-            MetricCode.ConsensusFailure)
+            MetricCode.ConsensusFailure, alert_data)
 
 
 class ErrorContractsNotRetrieved(Alert):

@@ -1,6 +1,3 @@
-_metadata:
-  major_version: 1
-  minor_version: 1
 display_information:
   name: PANIC Notifications
 features:
@@ -12,24 +9,27 @@ features:
       description: Gives a live status of PANIC's components
       should_escape: false
     - command: /unmuteall
-      description: Unmutes all alert severities on all channels for all chains being
-        monitored.
+      description: Unmutes all alert severities on all channels for all chains being monitored.
       should_escape: false
     - command: /muteall
-      description: Mutes List(<severity>) on all channels for every chain being
-        monitored. If the list of severities is not given, all alerts for all
-        chains are muted on all channels.
+      description: Mutes List(<severity>) on all channels for every chain being monitored. If the list of severities is not given, all alerts for all chains are muted on all channels.
       usage_hint: severity1 severity2
       should_escape: false
     - command: /unmute
-      description: Unmutes all alert severities on all channels for chains Kusama,
-        binance smart chain.
+      description: Unmutes all alert severities on all channels for chains linked to this slack channel.
       should_escape: false
     - command: /panicmute
-      description: Mutes List(<severity>) on all channels for chains Kusama, binance
-        smart chain. If the list of severities is not given, all alerts for
-        chains Kusama, binance smart chain are muted on all channels.
+      description: Mutes List(<severity>) on all channels for chains linked to this slack channel. If the list of severities is not given, all alerts for chains linked to this slack channel are muted on all channels.
       usage_hint: severity1 severity2
+      should_escape: false
+    - command: /start
+      description: Welcome message
+      should_escape: false
+    - command: /help
+      description: Available Commands
+      should_escape: false
+    - command: /ping
+      description: Ping the Slack Commands Handler
       should_escape: false
 oauth_config:
   scopes:

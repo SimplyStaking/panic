@@ -1,3 +1,10 @@
+from src.alerter.grouped_alerts_metric_code.contract. \
+    chainlink_contract_metric_code import (
+        GroupedChainlinkContractAlertsMetricCode
+    )
+from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
+    import GroupedChainlinkNodeAlertsMetricCode
+
 VALID_CHAINLINK_SOURCES = ['prometheus']
 RAW_TO_TRANSFORMED_CHAINLINK_METRICS = {
     'head_tracker_current_head': 'current_height',
@@ -16,30 +23,19 @@ INT_CHAINLINK_METRICS = ['current_height',
                          'max_pending_tx_delay', 'total_gas_bumps',
                          'total_gas_bumps_exceeds_limit',
                          'no_of_unconfirmed_txs', 'total_errored_job_runs']
-EXPIRE_METRICS = ['process_start_time_seconds',
-                  'tx_manager_gas_bump_exceeds_limit_total',
-                  'eth_balance_amount_increase']
-CHAINLINK_METRICS_TO_STORE = ['head_tracker_current_head',
-                              'head_tracker_heads_received_total',
-                              'max_unconfirmed_blocks',
-                              'process_start_time_seconds',
-                              'tx_manager_gas_bump_exceeds_limit_total',
-                              'unconfirmed_transactions',
-                              'run_status_update_total',
-                              'eth_balance_amount',
-                              'eth_balance_amount_increase',
-                              'invalid_url',
-                              'metric_not_found',
-                              'node_is_down',
-                              'prometheus_is_down']
-SYSTEM_METRICS_TO_STORE = ['open_file_descriptors',
-                           'system_cpu_usage',
-                           'system_storage_usage',
-                           'system_ram_usage',
-                           'system_is_down']
-CHAINLINK_CONTRACT_METRICS_TO_STORE = ['price_feed_not_observed',
-                                       'price_feed_deviation',
-                                       'consensus_failure']
-EVM_METRICS_TO_STORE = ['evm_node_is_down',
-                        'evm_block_syncing_block_height_difference',
-                        'evm_block_syncing_no_change_in_block_height']
+EXPIRE_METRICS = [
+    GroupedChainlinkNodeAlertsMetricCode.ChangeInSourceNode,
+    GroupedChainlinkNodeAlertsMetricCode.GasBumpIncreasedOverNodeGasPriceLimit,
+    GroupedChainlinkNodeAlertsMetricCode.EthBalanceTopUp
+]
+CHAINLINK_CONTRACT_METRICS_TO_STORE = [
+    GroupedChainlinkContractAlertsMetricCode.PriceFeedNotObserved,
+    GroupedChainlinkContractAlertsMetricCode.PriceFeedDeviation,
+    GroupedChainlinkContractAlertsMetricCode.ConsensusFailure,
+    GroupedChainlinkContractAlertsMetricCode.ErrorContractsNotRetrieved,
+    GroupedChainlinkContractAlertsMetricCode.ErrorNoSyncedDataSources
+]
+CHAIN_SOURCED_METRICS = [
+    GroupedChainlinkContractAlertsMetricCode.ErrorContractsNotRetrieved,
+    GroupedChainlinkContractAlertsMetricCode.ErrorNoSyncedDataSources
+]
