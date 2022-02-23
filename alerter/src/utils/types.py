@@ -119,6 +119,8 @@ BackUpAlert = Union[NodeBackUpAgainAlert]
 ChainlinkAlertsConfigs = Union[Type[ChainlinkNodeAlertsConfig],
                                Type[ChainlinkContractAlertsConfig]]
 
+MUTABLE_TYPES = (dict, list, set)
+
 
 class OpsgenieSeverities(Enum):
     CRITICAL = 'P1'
@@ -186,3 +188,7 @@ def convert_none_to_bool(value: Union[str, bool], default_return: bool) -> bool:
 
 def str_to_bool(string: str) -> bool:
     return string.lower() in ['true', 'yes']
+
+
+def is_mutable(data: Any) -> bool:
+    return isinstance(data, MUTABLE_TYPES)

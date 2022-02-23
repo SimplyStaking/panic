@@ -24,7 +24,8 @@ from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   NodeIsDownException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import Monitorable, convert_to_float, convert_to_int
+from src.utils.types import (Monitorable, convert_to_float, convert_to_int,
+                             is_mutable)
 
 
 class ChainlinkNodeDataTransformer(DataTransformer):
@@ -329,7 +330,10 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             ignore_metrics = ['went_down_at']
             for metric in pd_data:
                 if metric not in ignore_metrics:
-                    pd_data[metric]['previous'] = eval('node.' + metric)
+                    metric_value = eval('node.' + metric)
+                    pd_data[metric]['previous'] = (copy.deepcopy(metric_value)
+                                                   if is_mutable(metric_value)
+                                                   else metric_value)
 
             # Add previous for went_down_at because it cannot be generalised
             pd_data['went_down_at']['previous'] = node.went_down_at_prometheus

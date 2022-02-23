@@ -331,7 +331,7 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                 processed_data_metrics[proxy_address]['answeredInRound'][
                     'previous'] = cl_contract.answered_in_round
                 processed_data_metrics[proxy_address]['historicalRounds'][
-                    'previous'] = cl_contract.historical_rounds
+                    'previous'] = copy.deepcopy(cl_contract.historical_rounds)
                 processed_data_metrics[proxy_address]['lastRoundObserved'][
                     'previous'] = cl_contract.last_round_observed
 
