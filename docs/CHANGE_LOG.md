@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.3.3
+
+Released on 23rd February 2022
+
+- Fixed bug in data transformers for mutable values in previous state.
+
 ## 0.3.2
 
 Released on 21st January 2022
