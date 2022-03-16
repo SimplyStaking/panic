@@ -112,26 +112,34 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         self.contract_address_2 = '0x12A6B73A568f8DC3D24DA1654079343f18f69236'
         self.contract_address_3 = '0x01A1F73b1f4726EB6EB189FFA5CBB91AF8E14025'
         self.contract_address_4 = '0x02F878A94a1AE1B15705aCD65b5519A46fe3517e'
+        self.contract_description_1 = '1INCH / USD'
+        self.contract_description_2 = 'DAI / USD'
+        self.contract_description_3 = 'JPY / USD'
+        self.contract_description_4 = 'EUR / USD'
         self.retrieved_contracts_example = [
             {
                 'contractAddress': self.contract_address_1,
                 'proxyAddress': self.proxy_address_1,
                 'contractVersion': 3,
+                'description': self.contract_description_1
             },
             {
                 'contractAddress': self.contract_address_2,
                 'proxyAddress': self.proxy_address_2,
                 'contractVersion': 3,
+                'description': self.contract_description_2
             },
             {
                 'contractAddress': self.contract_address_3,
                 'proxyAddress': self.proxy_address_3,
                 'contractVersion': 4,
+                'description': self.contract_description_3
             },
             {
                 'contractAddress': self.contract_address_4,
                 'proxyAddress': self.proxy_address_4,
                 'contractVersion': 4,
+                'description': self.contract_description_4
             }
         ]
         self.contract_1_oracles = [
@@ -178,7 +186,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         self.test_monitor = ChainlinkContractsMonitor(
             self.monitor_name, self.weiwatchers_url, self.evm_nodes,
             [self.node_config_1, self.node_config_2], self.dummy_logger,
-            self.monitoring_period, self.rabbitmq)
+            self.monitoring_period, self.rabbitmq, self.parent_id_1)
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
@@ -265,21 +273,21 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             ComponentNotGivenEnoughDataSourcesException,
             ChainlinkContractsMonitor, self.monitor_name, self.weiwatchers_url,
             [], [self.node_config_1, self.node_config_2], self.dummy_logger,
-            self.monitoring_period, self.rabbitmq)
+            self.monitoring_period, self.rabbitmq, self.parent_id_1)
 
         # If the list of node configs is empty
         self.assertRaises(
             ComponentNotGivenEnoughDataSourcesException,
             ChainlinkContractsMonitor, self.monitor_name, self.weiwatchers_url,
             self.evm_nodes, [], self.dummy_logger, self.monitoring_period,
-            self.rabbitmq)
+            self.rabbitmq, self.parent_id_1)
 
     def test_ChainlinkContractsMonitor_init_creates_w3_interfaces_correctly(
             self) -> None:
         test_monitor = ChainlinkContractsMonitor(
             self.monitor_name, self.weiwatchers_url, self.evm_nodes,
             [self.node_config_1, self.node_config_2], self.dummy_logger,
-            self.monitoring_period, self.rabbitmq)
+            self.monitoring_period, self.rabbitmq, self.parent_id_1)
 
         for evm_node_url in self.evm_nodes:
             self.assertTrue(evm_node_url in test_monitor.evm_node_w3_interface)
@@ -615,11 +623,11 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            self.contract_address_1, [
+            self.contract_address_1, self.contract_description_1, [
                 self.current_block, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.withdrawable_payment,
-            self.contract_address_2, [
+            self.contract_address_2, self.contract_description_2, [
                 self.current_block, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.withdrawable_payment,
@@ -662,11 +670,11 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            self.contract_address_1, [
+            self.contract_address_1, self.contract_description_1, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.withdrawable_payment,
-            self.contract_address_2, [
+            self.contract_address_2, self.contract_description_2, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.withdrawable_payment,
@@ -701,11 +709,11 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            self.contract_address_1, [
+            self.contract_address_1, self.contract_description_1, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.withdrawable_payment,
-            self.contract_address_2, [
+            self.contract_address_2, self.contract_description_2, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.withdrawable_payment,
@@ -720,6 +728,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_1: {
                 'contractVersion': 3,
                 'aggregatorAddress': self.contract_address_1,
+                'description': self.contract_description_1,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -730,6 +739,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_2: {
                 'contractVersion': 3,
                 'aggregatorAddress': self.contract_address_2,
+                'description': self.contract_description_2,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -769,7 +779,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             }
         ])
         mock_call.side_effect = [
-            self.contract_address_1, [
+            self.contract_address_1, self.contract_description_1, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.withdrawable_payment,
@@ -777,7 +787,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
              self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 2],
-            self.contract_address_2, [
+            self.contract_address_2, self.contract_description_2, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.withdrawable_payment,
@@ -796,6 +806,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_1: {
                 'contractVersion': 3,
                 'aggregatorAddress': self.contract_address_1,
+                'description': self.contract_description_1,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -821,6 +832,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_2: {
                 'contractVersion': 3,
                 'aggregatorAddress': self.contract_address_2,
+                'description': self.contract_description_2,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -870,11 +882,11 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             },
         ])
         mock_call.side_effect = [
-            self.contract_address_1, [
+            self.contract_address_1, self.contract_description_1, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.withdrawable_payment, ContractLogicError('test'),
-            self.contract_address_2, [
+            self.contract_address_2, self.contract_description_2, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.withdrawable_payment, ContractLogicError('test'),
@@ -889,6 +901,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_1: {
                 'contractVersion': 3,
                 'aggregatorAddress': self.contract_address_1,
+                'description': self.contract_description_1,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -907,6 +920,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_2: {
                 'contractVersion': 3,
                 'aggregatorAddress': self.contract_address_2,
+                'description': self.contract_description_2,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -959,11 +973,11 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            self.contract_address_3, [
+            self.contract_address_3, self.contract_description_3, [
                 self.current_block, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_3_transmitters, self.withdrawable_payment,
-            self.contract_address_4, [
+            self.contract_address_4, self.contract_description_4, [
                 self.current_block, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_4_transmitters, self.withdrawable_payment,
@@ -1004,11 +1018,11 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            self.contract_address_3, [
+            self.contract_address_3, self.contract_description_3, [
                 self.current_block, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_3_transmitters, self.withdrawable_payment,
-            self.contract_address_4, [
+            self.contract_address_4, self.contract_description_4, [
                 self.current_block, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_4_transmitters, self.withdrawable_payment,
@@ -1041,11 +1055,11 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            self.contract_address_3, [
+            self.contract_address_3, self.contract_description_3, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_3_transmitters, self.withdrawable_payment,
-            self.contract_address_4, [
+            self.contract_address_4, self.contract_description_4, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_4_transmitters, self.withdrawable_payment,
@@ -1060,6 +1074,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_3: {
                 'contractVersion': 4,
                 'aggregatorAddress': self.contract_address_3,
+                'description': self.contract_description_3,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1070,6 +1085,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_4: {
                 'contractVersion': 4,
                 'aggregatorAddress': self.contract_address_4,
+                'description': self.contract_description_4,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1096,11 +1112,11 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
-            self.contract_address_3, [
+            self.contract_address_3, self.contract_description_3, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_3_transmitters,
-            self.contract_address_4, [
+            self.contract_address_4, self.contract_description_4, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_4_transmitters, self.withdrawable_payment,
@@ -1115,6 +1131,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_4: {
                 'contractVersion': 4,
                 'aggregatorAddress': self.contract_address_4,
+                'description': self.contract_description_4,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1157,7 +1174,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             }
         ])
         mock_call.side_effect = [
-            self.contract_address_3, [
+            self.contract_address_3, self.contract_description_3, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_3_transmitters, self.withdrawable_payment,
@@ -1165,7 +1182,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
              self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 2],
-            self.contract_address_4, [
+            self.contract_address_4, self.contract_description_4, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_4_transmitters, self.withdrawable_payment,
@@ -1184,6 +1201,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_3: {
                 'contractVersion': 4,
                 'aggregatorAddress': self.contract_address_3,
+                'description': self.contract_description_3,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1213,6 +1231,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_4: {
                 'contractVersion': 4,
                 'aggregatorAddress': self.contract_address_4,
+                'description': self.contract_description_4,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1274,7 +1293,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             }
         ])
         mock_call.side_effect = [
-            self.contract_address_3, [
+            self.contract_address_3, self.contract_description_3, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_3_transmitters, self.withdrawable_payment,
@@ -1282,7 +1301,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
              self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 2],
-            self.contract_address_4, [
+            self.contract_address_4, self.contract_description_4, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_4_transmitters, self.withdrawable_payment,
@@ -1301,6 +1320,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_3: {
                 'contractVersion': 4,
                 'aggregatorAddress': self.contract_address_3,
+                'description': self.contract_description_3,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,
@@ -1330,6 +1350,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_4: {
                 'contractVersion': 4,
                 'aggregatorAddress': self.contract_address_4,
+                'description': self.contract_description_4,
                 'latestRound': self.current_round,
                 'latestAnswer': self.answer,
                 'latestTimestamp': self.updated_at,

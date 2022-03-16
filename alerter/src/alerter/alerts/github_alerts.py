@@ -10,8 +10,8 @@ class NewGitHubReleaseAlert(Alert):
         super().__init__(
             GithubAlertCode.NewGitHubReleaseAlert,
             "Repo: {} has a new release {} tagged {}.".format(
-                origin_name, release_name, tag_name), severity,
-            timestamp, parent_id, origin_id,
+                origin_name, release_name, tag_name),
+            severity, timestamp, parent_id, origin_id,
             GroupedGithubAlertsMetricCode.GithubRelease)
 
 
@@ -20,8 +20,8 @@ class CannotAccessGitHubPageAlert(Alert):
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             GithubAlertCode.CannotAccessGitHubPageAlert,
-            "Github page inaccessible {}.".format(origin_name), severity,
-            timestamp, parent_id, origin_id,
+            "Github page inaccessible {}.".format(origin_name),
+            severity, timestamp, parent_id, origin_id,
             GroupedGithubAlertsMetricCode.CannotAccessGithub)
 
 
@@ -30,6 +30,6 @@ class GitHubPageNowAccessibleAlert(Alert):
                  parent_id: str, origin_id: str) -> None:
         super().__init__(
             GithubAlertCode.GitHubPageNowAccessibleAlert,
-            "Github page accessible {}.".format(origin_name), severity,
-            timestamp, parent_id, origin_id,
+            "Github page accessible {}.".format(origin_name),
+            severity, timestamp, parent_id, origin_id,
             GroupedGithubAlertsMetricCode.CannotAccessGithub)

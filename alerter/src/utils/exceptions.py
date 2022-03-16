@@ -38,8 +38,8 @@ class NoMetricsGivenException(PANICException):
 
 class MetricNotFoundException(PANICException):
     def __init__(self, metric, endpoint) -> None:
-        message = "Could not find metric {} at endpoint {}" \
-            .format(metric, endpoint)
+        message = "Could not find metric {} at endpoint {}".format(metric,
+                                                                   endpoint)
         code = 5003
         super().__init__(message, code)
 

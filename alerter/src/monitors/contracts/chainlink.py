@@ -42,7 +42,7 @@ class ChainlinkContractsMonitor(Monitor):
     def __init__(self, monitor_name: str, weiwatchers_url: str,
                  evm_nodes: List[str], node_configs: List[ChainlinkNodeConfig],
                  logger: logging.Logger, monitor_period: int,
-                 rabbitmq: RabbitMQApi) -> None:
+                 rabbitmq: RabbitMQApi, parent_id: str) -> None:
         # An exception is raised if the monitor is not given enough data
         # sources. The callee must also make sure that the given node_configs
         # have valid prometheus urls, and that prometheus and contracts
@@ -55,6 +55,7 @@ class ChainlinkContractsMonitor(Monitor):
         super().__init__(monitor_name, logger, monitor_period, rabbitmq)
         self._node_configs = node_configs
         self._contracts_url = weiwatchers_url
+        self._parent_id = parent_id
 
         # Construct the Web3 interfaces. DISCLAIMER: There might be an issue
         # with open connections not being closed.
@@ -250,8 +251,8 @@ class ChainlinkContractsMonitor(Monitor):
                 elif contract_version == 4:
                     aggregator_contract = w3_interface.eth.contract(
                         address=aggregator_address, abi=V4_AGGREGATOR)
-                    transmitters = aggregator_contract.functions.transmitters() \
-                        .call()
+                    transmitters = (
+                        aggregator_contract.functions.transmitters().call())
                     if transformed_eth_address in transmitters:
                         v4_participating_contracts.append(proxy_address)
 
@@ -282,7 +283,8 @@ class ChainlinkContractsMonitor(Monitor):
         {
             <v3_proxy_contract_address>: {
                 'contractVersion': 3,
-                'aggregatorAddress': str
+                'aggregatorAddress': str,
+                'description': str,
                 'latestRound': int,
                 'latestAnswer': int,
                 'latestTimestamp': float,
@@ -316,6 +318,7 @@ class ChainlinkContractsMonitor(Monitor):
             proxy_contract = w3_interface.eth.contract(address=proxy_address,
                                                        abi=V3_PROXY)
             aggregator_address = proxy_contract.functions.aggregator().call()
+            description = proxy_contract.functions.description().call()
             aggregator_contract = w3_interface.eth.contract(
                 address=aggregator_address, abi=V3_AGGREGATOR)
             transformed_eth_address = w3_interface.toChecksumAddress(
@@ -336,13 +339,14 @@ class ChainlinkContractsMonitor(Monitor):
                     toBlock=current_block_height,
                     argument_filters={'oracle': transformed_eth_address})
             events = event_filter.get_all_entries()
-            latest_round_data = aggregator_contract.functions.latestRoundData() \
-                .call()
+            latest_round_data = (
+                aggregator_contract.functions.latestRoundData().call())
 
             # Construct the latest round data
             data[proxy_address] = {
                 'contractVersion': 3,
                 'aggregatorAddress': aggregator_address,
+                'description': description,
                 'latestRound': latest_round_data[0],
                 'latestAnswer': latest_round_data[1],
                 'latestTimestamp': latest_round_data[3],
@@ -417,6 +421,7 @@ class ChainlinkContractsMonitor(Monitor):
             <v4_contract_address>: {
                 'contractVersion': 4,
                 'aggregatorAddress': str,
+                'description': str,
                 'latestRound': int,
                 'latestAnswer': int,
                 'latestTimestamp': float,
@@ -449,6 +454,7 @@ class ChainlinkContractsMonitor(Monitor):
             proxy_contract = w3_interface.eth.contract(address=proxy_address,
                                                        abi=V4_PROXY)
             aggregator_address = proxy_contract.functions.aggregator().call()
+            description = proxy_contract.functions.description().call()
             aggregator_contract = w3_interface.eth.contract(
                 address=aggregator_address, abi=V4_AGGREGATOR)
             transformed_eth_address = w3_interface.toChecksumAddress(
@@ -490,6 +496,7 @@ class ChainlinkContractsMonitor(Monitor):
             data[proxy_address] = {
                 'contractVersion': 4,
                 'aggregatorAddress': aggregator_address,
+                'description': description,
                 'latestRound': latest_round_data[0],
                 'latestAnswer': latest_round_data[1],
                 'latestTimestamp': latest_round_data[3],

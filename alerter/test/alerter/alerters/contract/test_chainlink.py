@@ -14,7 +14,7 @@ from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerts.contract.chainlink import (
     PriceFeedObservedAgain,
     PriceFeedObservationsMissedIncreasedAboveThreshold,
-    PriceFeedDeviationInreasedAboveThreshold,
+    PriceFeedDeviationIncreasedAboveThreshold,
     PriceFeedDeviationDecreasedBelowThreshold,
     ConsensusFailure, ErrorContractsNotRetrieved,
     ContractsNowRetrieved, ErrorNoSyncedDataSources, SyncedDataSourcesFound)
@@ -49,6 +49,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
             connection_check_time_interval=self.connection_check_time_interval)
         self.test_queue_size = 5
         self.test_parent_id = 'test_parent_id'
+        self.test_monitor_name = 'test_monitor'
         self.test_queue_name = 'Test Queue'
         self.test_data_str = 'test_data_str'
         self.test_configs_routing_key = 'chains.chainlink.bsc.alerts_config'
@@ -103,6 +104,8 @@ class TestChainlinkContractAlerter(unittest.TestCase):
 
         self.test_aggregator_address_1 = 'test_aggregator_address_1'
         self.test_aggregator_address_2 = 'test_aggregator_address_2'
+        self.test_contract_description_1 = 'test_contract_description_1'
+        self.test_contract_description_2 = 'test_contract_description_2'
         self.test_latest_round_1 = 40
         self.test_latest_answer_1 = 34534534563464
         self.test_latest_timestamp_1 = self.test_last_monitored
@@ -162,6 +165,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         ]
 
         meta_data_for_alerting_result_v4 = {
+            'monitor_name': self.test_monitor_name,
             'node_name': self.test_node_name_1,
             'node_id': self.test_node_id_1,
             'node_parent_id': self.test_parent_id,
@@ -169,6 +173,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         }
 
         meta_data_for_alerting_result_v3 = {
+            'monitor_name': self.test_monitor_name,
             'node_name': self.test_node_name_2,
             'node_id': self.test_node_id_2,
             'node_parent_id': self.test_parent_id,
@@ -211,6 +216,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
                         },
                         'contractVersion': 4,
                         'aggregatorAddress': self.test_aggregator_address_1,
+                        'description': self.test_contract_description_1
                     }
                 }
             }
@@ -252,6 +258,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
                         },
                         'contractVersion': 3,
                         'aggregatorAddress': self.test_aggregator_address_2,
+                        'description': self.test_contract_description_2
                     }
                 }
             }
@@ -657,13 +664,15 @@ class TestChainlinkContractAlerter(unittest.TestCase):
             data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             self.test_latest_timestamp_2,
             MetricCode.ErrorContractsNotRetrieved.value, '',
-            "Chainlink contracts are now being retrieved!", None)
+            "{} is now retrieving chainlink contracts!".format(
+                self.test_monitor_name), None)
         call_2 = call(
             5018, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
             data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             self.test_latest_timestamp_2,
             MetricCode.ErrorNoSyncedDataSources.value, '',
-            "Synced EVM data sources found!", None)
+            "{} found synced EVM data sources!".format(
+                self.test_monitor_name), None)
         self.assertTrue(call_1 in calls)
         self.assertTrue(call_2 in calls)
 
@@ -710,6 +719,8 @@ class TestChainlinkContractAlerter(unittest.TestCase):
 
         result_data = eval(mock_result_data)
         meta_data = result_data['result']['meta_data']
+        contract_description = result_data['result']['data'][next(iter(
+            result_data['result']['data']))]['description']
         data_for_alerting = []
         self.test_contract_alerter._process_result(
             result_data['result'], data_for_alerting)
@@ -721,13 +732,15 @@ class TestChainlinkContractAlerter(unittest.TestCase):
             data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             meta_data['last_monitored'],
             MetricCode.ErrorNoSyncedDataSources.value, '',
-            "Synced EVM data sources found!", None)
+            "{} found synced EVM data sources!".format(
+                meta_data['monitor_name']), None)
         call_2 = call(
             5019, ErrorContractsNotRetrieved, ContractsNowRetrieved,
             data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             meta_data['last_monitored'],
             MetricCode.ErrorContractsNotRetrieved.value, '',
-            "Chainlink contracts are now being retrieved!", None)
+            "{} is now retrieving chainlink contracts!".format(
+                meta_data['monitor_name']), None)
         self.assertTrue(call_1 in calls)
         self.assertTrue(call_2 in calls)
 
@@ -742,7 +755,8 @@ class TestChainlinkContractAlerter(unittest.TestCase):
                 meta_data['last_monitored'],
                 meta_data['node_parent_id'],
                 meta_data['node_id'],
-                eval(mock_proxy)],
+                eval(mock_proxy),
+                contract_description],
             data_for_alerting)
         self.assertTrue(call_1 in calls)
 
@@ -756,7 +770,8 @@ class TestChainlinkContractAlerter(unittest.TestCase):
                 eval(mock_observed), 0],
             data_for_alerting, self.test_parent_id, meta_data['node_id'],
             eval(mock_proxy), MetricCode.PriceFeedNotObserved.value,
-            meta_data['node_name'], meta_data['last_monitored'])
+            meta_data['node_name'], meta_data['last_monitored'],
+            contract_description)
         self.assertTrue(call_1 in calls)
 
         mock_thresh_alert.assert_not_called()
@@ -810,6 +825,8 @@ class TestChainlinkContractAlerter(unittest.TestCase):
 
         result_data = eval(mock_result_data)
         meta_data = result_data['result']['meta_data']
+        contract_description = result_data['result']['data'][next(iter(
+            result_data['result']['data']))]['description']
 
         # Convert data here for alert triggers
         result_data['result']['data'][eval(mock_proxy)]['historicalRounds'][
@@ -828,11 +845,11 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         calls = mock_thresh_alert.call_args_list
         call_1 = call(
             mock_deviation, configs.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationIncreasedAboveThreshold,
             PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
             self.test_parent_id, meta_data['node_id'], eval(mock_proxy),
             MetricCode.PriceFeedDeviation.value, meta_data['node_name'],
-            meta_data['last_monitored']
+            meta_data['last_monitored'], contract_description
         )
         self.assertEqual(call_count, mock_thresh_alert.call_count)
 

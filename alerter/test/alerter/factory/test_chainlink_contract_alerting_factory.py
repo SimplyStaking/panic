@@ -10,7 +10,7 @@ from parameterized import parameterized
 
 from src.alerter.alerts.contract.chainlink import (
     PriceFeedObservationsMissedIncreasedAboveThreshold, PriceFeedObservedAgain,
-    PriceFeedDeviationInreasedAboveThreshold,
+    PriceFeedDeviationIncreasedAboveThreshold,
     PriceFeedDeviationDecreasedBelowThreshold, ErrorContractsNotRetrieved,
     ContractsNowRetrieved, ErrorNoSyncedDataSources, SyncedDataSourcesFound)
 from src.alerter.factory.chainlink_contract_alerting_factory import \
@@ -36,8 +36,10 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.test_dummy_node_id1 = 'dummy_node_id1'
         self.test_dummy_node_id2 = 'dummy_node_id2'
         self.test_dummy_state = 'dummy_state'
-        self.proxy_1 = '0x567cC5F1A7c2B3240cb76E2aA1BF0F1bE7035897'
-        self.proxy_2 = '0x3FcbE808D1f1A46764AB839B722Beb16c48A80cB'
+        self.test_proxy_1 = '0x567cC5F1A7c2B3240cb76E2aA1BF0F1bE7035897'
+        self.test_proxy_2 = '0x3FcbE808D1f1A46764AB839B722Beb16c48A80cB'
+        self.test_contract_name1 = 'test_contract_name1'
+        self.test_contract_name2 = 'test_contract_name2'
         self.error_sent = {
             MetricCode.ErrorContractsNotRetrieved.value: False,
             MetricCode.ErrorNoSyncedDataSources.value: False,
@@ -119,12 +121,12 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory._alerting_state = {
             self.test_parent_id: {
                 self.test_dummy_node_id1: {
-                    self.proxy_1: self.test_dummy_state
+                    self.test_proxy_1: self.test_dummy_state
                 },
             },
             self.test_dummy_parent_id1: {
                 self.test_dummy_node_id2: {
-                    self.proxy_2: self.test_dummy_state
+                    self.test_proxy_2: self.test_dummy_state
                 },
             }
         }
@@ -159,7 +161,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         expected_state = {
             self.test_parent_id: {
                 self.test_node_id: {
-                    self.proxy_1: {
+                    self.test_proxy_1: {
                         'warning_sent': warning_sent,
                         'critical_sent': critical_sent,
                         'critical_repeat_timer': critical_repeat_timer,
@@ -169,18 +171,18 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
                     'error_sent': self.error_sent
                 },
                 self.test_dummy_node_id1: {
-                    self.proxy_1: self.test_dummy_state
+                    self.test_proxy_1: self.test_dummy_state
                 },
             },
             self.test_dummy_parent_id1: {
                 self.test_dummy_node_id2: {
-                    self.proxy_2: self.test_dummy_state
+                    self.test_proxy_2: self.test_dummy_state
                 },
             }
         }
 
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
 
         self.assertDictEqual(
@@ -196,10 +198,10 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory._alerting_state = {
             self.test_parent_id: {
                 self.test_node_id: {
-                    self.proxy_1: self.test_dummy_state,
+                    self.test_proxy_1: self.test_dummy_state,
                 },
                 self.test_dummy_node_id1: {
-                    self.proxy_1: self.test_dummy_state,
+                    self.test_proxy_1: self.test_dummy_state,
                 },
                 'chain_errors': {
                     'error_sent': self.error_sent,
@@ -207,7 +209,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             },
             self.test_dummy_parent_id1: {
                 self.test_dummy_node_id2: {
-                    self.proxy_2: self.test_dummy_state,
+                    self.test_proxy_2: self.test_dummy_state,
                 },
                 'chain_errors': {
                     'error_sent': self.error_sent,
@@ -218,7 +220,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             self.chainlink_contract_alerting_factory.alerting_state)
 
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
 
         self.assertEqual(
@@ -304,7 +306,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         of the severities is enabled.
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         self.cl_contract_alerts_config.price_feed_not_observed[
             'warning_enabled'] = 'False'
@@ -319,10 +321,10 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             current, self.cl_contract_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
             PriceFeedObservedAgain, self._equal_condition_function,
-            [current, 0], data_for_alerting,
-            self.test_parent_id, self.test_node_id, self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
-            self.test_node_name, self.last_timestamp
+            [current, 0], data_for_alerting, self.test_parent_id,
+            self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedNotObserved.value, self.test_node_name,
+            self.last_timestamp, self.test_contract_name1
         )
 
         self.assertEqual([], data_for_alerting)
@@ -340,7 +342,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         threshold.
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         data_for_alerting = []
 
@@ -350,15 +352,16 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             classify_thresholded_and_conditional_alert(
             current, self.cl_contract_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
-            self._equal_condition_function, [current, 0], data_for_alerting,
-            self.test_parent_id, self.test_node_id, self.proxy_1,
-            MetricCode.PriceFeedNotObserved.value,
-            self.test_node_name, self.last_timestamp
+            PriceFeedObservedAgain, self._equal_condition_function,
+            [current, 0], data_for_alerting, self.test_parent_id,
+            self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedNotObserved.value, self.test_node_name,
+            self.last_timestamp, self.test_contract_name1
         )
         expected_alert = PriceFeedObservationsMissedIncreasedAboveThreshold(
             self.test_node_name, current, severity, self.last_timestamp,
-            severity, self.test_parent_id, self.test_node_id, self.proxy_1)
+            severity, self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            self.test_contract_name1)
         self.assertEqual(1, len(data_for_alerting))
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
@@ -370,7 +373,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         alert has already been sent
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         data_for_alerting = []
 
@@ -384,8 +387,8 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             PriceFeedObservedAgain,
             self._equal_condition_function, [current, 0],
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
-            self.test_node_name, self.last_timestamp
+            self.test_proxy_1, MetricCode.PriceFeedNotObserved.value,
+            self.test_node_name, self.last_timestamp, self.test_contract_name1
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -395,11 +398,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             .classify_thresholded_and_conditional_alert(
             current, self.cl_contract_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
-            self._equal_condition_function, [current, 0],
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
-            self.test_node_name, self.last_timestamp + 1
+            PriceFeedObservedAgain, self._equal_condition_function,
+            [current, 0], data_for_alerting, self.test_parent_id,
+            self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedNotObserved.value, self.test_node_name,
+            self.last_timestamp + 1, self.test_contract_name1
         )
         self.assertEqual([], data_for_alerting)
 
@@ -413,7 +416,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         re-raised.
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         data_for_alerting = []
 
@@ -424,11 +427,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             .classify_thresholded_and_conditional_alert(
             current, self.cl_contract_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
-            self._equal_condition_function, [current, 0],
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
-            self.test_node_name, datetime.now().timestamp()
+            PriceFeedObservedAgain, self._equal_condition_function,
+            [current, 0], data_for_alerting, self.test_parent_id,
+            self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedNotObserved.value, self.test_node_name,
+            datetime.now().timestamp(), self.test_contract_name1
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -442,11 +445,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             .classify_thresholded_and_conditional_alert(
             current, self.cl_contract_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
-            self._equal_condition_function, [current, 0],
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
-            self.test_node_name, alert_timestamp
+            PriceFeedObservedAgain, self._equal_condition_function,
+            [current, 0], data_for_alerting, self.test_parent_id,
+            self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedNotObserved.value, self.test_node_name,
+            alert_timestamp, self.test_contract_name1
         )
         self.assertEqual([], data_for_alerting)
 
@@ -459,15 +462,16 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             .classify_thresholded_and_conditional_alert(
             current, self.cl_contract_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
-            self._equal_condition_function, [current, 0],
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
-            self.test_node_name, alert_timestamp
+            PriceFeedObservedAgain, self._equal_condition_function,
+            [current, 0], data_for_alerting, self.test_parent_id,
+            self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedNotObserved.value, self.test_node_name,
+            alert_timestamp, self.test_contract_name1
         )
         expected_alert = PriceFeedObservationsMissedIncreasedAboveThreshold(
             self.test_node_name, current, "CRITICAL", alert_timestamp,
-            "CRITICAL", self.test_parent_id, self.test_node_id, self.proxy_1)
+            "CRITICAL", self.test_parent_id, self.test_node_id,
+            self.test_proxy_1, self.test_contract_name1)
         self.assertEqual(1, len(data_for_alerting))
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
@@ -479,7 +483,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         increase above critical alert is not re-raised.
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         self.cl_contract_alerts_config.price_feed_not_observed[
             'critical_repeat_enabled'] = "False"
@@ -492,11 +496,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             .classify_thresholded_and_conditional_alert(
             current, self.cl_contract_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
-            self._equal_condition_function, [current, 0],
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
-            self.test_node_name, datetime.now().timestamp()
+            PriceFeedObservedAgain, self._equal_condition_function,
+            [current, 0], data_for_alerting, self.test_parent_id,
+            self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedNotObserved.value, self.test_node_name,
+            datetime.now().timestamp(), self.test_contract_name1
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -510,11 +514,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             .classify_thresholded_and_conditional_alert(
             current, self.cl_contract_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
-            self._equal_condition_function, [current, 0],
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
-            self.test_node_name, alert_timestamp
+            PriceFeedObservedAgain, self._equal_condition_function,
+            [current, 0], data_for_alerting, self.test_parent_id,
+            self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedNotObserved.value, self.test_node_name,
+            alert_timestamp, self.test_contract_name1
         )
         self.assertEqual([], data_for_alerting)
 
@@ -531,7 +535,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         perform this test for both warning and critical.
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         data_for_alerting = []
 
@@ -542,11 +546,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             .classify_thresholded_and_conditional_alert(
             current, self.cl_contract_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
-            self._equal_condition_function, [current, 0],
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
-            self.test_node_name, datetime.now().timestamp()
+            PriceFeedObservedAgain, self._equal_condition_function,
+            [current, 0], data_for_alerting, self.test_parent_id,
+            self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedNotObserved.value, self.test_node_name,
+            datetime.now().timestamp(), self.test_contract_name1
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -558,15 +562,16 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             .classify_thresholded_and_conditional_alert(
             current, self.cl_contract_alerts_config.price_feed_not_observed,
             PriceFeedObservationsMissedIncreasedAboveThreshold,
-            PriceFeedObservedAgain,
-            self._equal_condition_function, [current, 0],
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedNotObserved.value,
-            self.test_node_name, alert_timestamp
+            PriceFeedObservedAgain, self._equal_condition_function,
+            [current, 0], data_for_alerting, self.test_parent_id,
+            self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedNotObserved.value, self.test_node_name,
+            alert_timestamp, self.test_contract_name1
         )
         expected_alert = PriceFeedObservedAgain(
             self.test_node_name, 'INFO', alert_timestamp,
-            self.test_parent_id, self.test_node_id, self.proxy_1)
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            self.test_contract_name1)
         self.assertEqual(1, len(data_for_alerting))
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
@@ -580,7 +585,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         of the severities is enabled.
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         self.cl_contract_alerts_config.price_feed_deviation[
             'warning_enabled'] = 'False'
@@ -593,11 +598,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeviationDecreasedBelowThreshold,
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, datetime.now().timestamp()
+            PriceFeedDeviationIncreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedDeviation.value, self.test_node_name,
+            datetime.now().timestamp(), self.test_contract_name1
         )
 
         self.assertEqual([], data_for_alerting)
@@ -615,7 +620,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         threshold.
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         data_for_alerting = []
 
@@ -625,15 +630,16 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeviationDecreasedBelowThreshold,
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, datetime.now().timestamp()
+            PriceFeedDeviationIncreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedDeviation.value, self.test_node_name,
+            datetime.now().timestamp(), self.test_contract_name1
         )
-        expected_alert = PriceFeedDeviationInreasedAboveThreshold(
+        expected_alert = PriceFeedDeviationIncreasedAboveThreshold(
             self.test_node_name, current, severity, datetime.now().timestamp(),
-            severity, self.test_parent_id, self.test_node_id, self.proxy_1)
+            severity, self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            self.test_contract_name1)
         self.assertEqual(1, len(data_for_alerting))
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
@@ -645,7 +651,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         alert has already been sent
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         data_for_alerting = []
 
@@ -656,11 +662,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeviationDecreasedBelowThreshold,
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, datetime.now().timestamp()
+            PriceFeedDeviationIncreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedDeviation.value, self.test_node_name,
+            datetime.now().timestamp(), self.test_contract_name1
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -669,11 +675,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeviationDecreasedBelowThreshold,
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, datetime.now().timestamp() + 1
+            PriceFeedDeviationIncreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedDeviation.value, self.test_node_name,
+            datetime.now().timestamp() + 1, self.test_contract_name1
         )
         self.assertEqual([], data_for_alerting)
 
@@ -687,7 +693,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         re-raised.
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         data_for_alerting = []
 
@@ -698,11 +704,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeviationDecreasedBelowThreshold,
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, datetime.now().timestamp()
+            PriceFeedDeviationIncreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedDeviation.value, self.test_node_name,
+            datetime.now().timestamp(), self.test_contract_name1
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -715,11 +721,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeviationDecreasedBelowThreshold,
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, alert_timestamp
+            PriceFeedDeviationIncreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedDeviation.value, self.test_node_name,
+            alert_timestamp, self.test_contract_name1
         )
         self.assertEqual([], data_for_alerting)
 
@@ -731,15 +737,16 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeviationDecreasedBelowThreshold,
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, alert_timestamp
+            PriceFeedDeviationIncreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedDeviation.value, self.test_node_name,
+            alert_timestamp, self.test_contract_name1
         )
-        expected_alert = PriceFeedDeviationInreasedAboveThreshold(
+        expected_alert = PriceFeedDeviationIncreasedAboveThreshold(
             self.test_node_name, current, "CRITICAL", alert_timestamp,
-            "CRITICAL", self.test_parent_id, self.test_node_id, self.proxy_1)
+            "CRITICAL", self.test_parent_id, self.test_node_id,
+            self.test_proxy_1, self.test_contract_name1)
         self.assertEqual(1, len(data_for_alerting))
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
@@ -751,7 +758,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         increase above critical alert is not re-raised.
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         self.cl_contract_alerts_config.price_feed_deviation[
             'critical_repeat_enabled'] = "False"
@@ -763,11 +770,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeviationDecreasedBelowThreshold,
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, datetime.now().timestamp()
+            PriceFeedDeviationIncreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedDeviation.value, self.test_node_name,
+            datetime.now().timestamp(), self.test_contract_name1
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -780,11 +787,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeviationDecreasedBelowThreshold,
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, alert_timestamp
+            PriceFeedDeviationIncreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedDeviation.value, self.test_node_name,
+            alert_timestamp, self.test_contract_name1
         )
         self.assertEqual([], data_for_alerting)
 
@@ -801,7 +808,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         perform this test for both warning and critical.
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         data_for_alerting = []
 
@@ -812,11 +819,12 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationIncreasedAboveThreshold,
             PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, datetime.now().timestamp()
+            self.test_proxy_1, MetricCode.PriceFeedDeviation.value,
+            self.test_node_name, datetime.now().timestamp(),
+            self.test_contract_name1
         )
         self.assertEqual(1, len(data_for_alerting))
         data_for_alerting.clear()
@@ -830,16 +838,16 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
+            PriceFeedDeviationIncreasedAboveThreshold,
             PriceFeedDeviationDecreasedBelowThreshold,
             data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, alert_timestamp
+            self.test_proxy_1, MetricCode.PriceFeedDeviation.value,
+            self.test_node_name, alert_timestamp, self.test_contract_name1
         )
         expected_alert = PriceFeedDeviationDecreasedBelowThreshold(
             self.test_node_name, current, 'INFO', alert_timestamp,
             threshold_severity, self.test_parent_id, self.test_node_id,
-            self.proxy_1)
+            self.test_proxy_1, self.test_contract_name1)
         self.assertEqual(1, len(data_for_alerting))
         self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
 
@@ -855,7 +863,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         obvious.
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         data_for_alerting = []
 
@@ -865,11 +873,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeviationDecreasedBelowThreshold,
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, datetime.now().timestamp()
+            PriceFeedDeviationIncreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedDeviation.value, self.test_node_name,
+            datetime.now().timestamp(), self.test_contract_name1
         )
         self.assertEqual(1, len(data_for_alerting))
 
@@ -879,12 +887,11 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeviationDecreasedBelowThreshold,
-            data_for_alerting,
-            self.test_parent_id, self.test_node_id, self.proxy_1,
-            MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, datetime.now().timestamp()
+            PriceFeedDeviationIncreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedDeviation.value, self.test_node_name,
+            datetime.now().timestamp(), self.test_contract_name1
         )
         self.assertEqual(2, len(data_for_alerting))
         data_for_alerting.clear()
@@ -896,19 +903,21 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         self.chainlink_contract_alerting_factory \
             .classify_thresholded_alert_contract(
             current, self.cl_contract_alerts_config.price_feed_deviation,
-            PriceFeedDeviationInreasedAboveThreshold,
-            PriceFeedDeviationDecreasedBelowThreshold,
-            data_for_alerting, self.test_parent_id, self.test_node_id,
-            self.proxy_1, MetricCode.PriceFeedDeviation.value,
-            self.test_node_name, alert_timestamp
+            PriceFeedDeviationIncreasedAboveThreshold,
+            PriceFeedDeviationDecreasedBelowThreshold, data_for_alerting,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
+            MetricCode.PriceFeedDeviation.value, self.test_node_name,
+            alert_timestamp, self.test_contract_name1
         )
 
         expected_alert_1 = PriceFeedDeviationDecreasedBelowThreshold(
             self.test_node_name, current, 'INFO', alert_timestamp,
-            'CRITICAL', self.test_parent_id, self.test_node_id, self.proxy_1)
-        expected_alert_2 = PriceFeedDeviationInreasedAboveThreshold(
+            'CRITICAL', self.test_parent_id, self.test_node_id,
+            self.test_proxy_1, self.test_contract_name1)
+        expected_alert_2 = PriceFeedDeviationIncreasedAboveThreshold(
             self.test_node_name, current, 'WARNING', alert_timestamp,
-            'WARNING', self.test_parent_id, self.test_node_id, self.proxy_1)
+            'WARNING', self.test_parent_id, self.test_node_id,
+            self.test_proxy_1, self.test_contract_name1)
         self.assertEqual(2, len(data_for_alerting))
         self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
         self.assertEqual(expected_alert_2.alert_data, data_for_alerting[1])
@@ -917,7 +926,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
     def test_classify_error_alert_raises_error_alert_if_matched_error_codes(
             self) -> None:
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         test_err_1 = CouldNotRetrieveContractsException(self.test_node_id,
                                                         self.test_parent_id)
@@ -954,7 +963,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
     def test_classify_error_alert_does_nothing_if_no_err_received_and_no_raised(
             self) -> None:
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         test_err_1 = CouldNotRetrieveContractsException(self.test_node_id,
                                                         self.test_parent_id)
@@ -992,7 +1001,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
         different error
         """
         self.chainlink_contract_alerting_factory.create_alerting_state(
-            self.test_parent_id, self.test_node_id, self.proxy_1,
+            self.test_parent_id, self.test_node_id, self.test_proxy_1,
             self.cl_contract_alerts_config)
         test_err_1 = CouldNotRetrieveContractsException(self.test_node_id,
                                                         self.test_parent_id)

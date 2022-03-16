@@ -11,7 +11,8 @@ import src.alerter.alerts.contract.chainlink as cl_alerts
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.factory.chainlink_contract_alerting_factory import \
     ChainlinkContractAlertingFactory
-from src.alerter.grouped_alerts_metric_code.contract.chainlink_contract_metric_code \
+from src.alerter.grouped_alerts_metric_code.contract.\
+    chainlink_contract_metric_code \
     import GroupedChainlinkContractAlertsMetricCode as MetricCode
 from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.configs.factory.node.chainlink_alerts import \
@@ -153,7 +154,8 @@ class ChainlinkContractAlerter(Alerter):
                     meta_data['node_parent_id'], "",
                     meta_data['last_monitored'],
                     MetricCode.ErrorNoSyncedDataSources.value,
-                    "", "Synced EVM data sources found!", None
+                    "", "{} found synced EVM data sources!".format(
+                        meta_data['monitor_name']), None
                 )
 
                 self.alerting_factory.classify_error_alert(
@@ -164,7 +166,8 @@ class ChainlinkContractAlerter(Alerter):
                     meta_data['node_parent_id'], "",
                     meta_data['last_monitored'],
                     MetricCode.ErrorContractsNotRetrieved.value,
-                    "", "Chainlink contracts are now being retrieved!", None
+                    "", "{} is now retrieving chainlink contracts!".format(
+                        meta_data['monitor_name']), None
                 )
 
                 current_historical_rounds = contract_data['historicalRounds'][
@@ -225,7 +228,8 @@ class ChainlinkContractAlerter(Alerter):
                         data_for_alerting, meta_data['node_parent_id'],
                         meta_data['node_id'], proxy_address,
                         MetricCode.PriceFeedNotObserved.value,
-                        meta_data['node_name'], meta_data['last_monitored']
+                        meta_data['node_name'], meta_data['last_monitored'],
+                        contract_data['description']
                     )
 
                 """
@@ -245,7 +249,7 @@ class ChainlinkContractAlerter(Alerter):
                         self.alerting_factory. \
                             classify_thresholded_alert_contract(
                             current_deviation, sub_config,
-                            cl_alerts.PriceFeedDeviationInreasedAboveThreshold,
+                            cl_alerts.PriceFeedDeviationIncreasedAboveThreshold,
                             cl_alerts.PriceFeedDeviationDecreasedBelowThreshold,
                             data_for_alerting,
                             meta_data['node_parent_id'],
@@ -253,7 +257,8 @@ class ChainlinkContractAlerter(Alerter):
                             proxy_address,
                             MetricCode.PriceFeedDeviation.value,
                             meta_data['node_name'],
-                            meta_data['last_monitored']
+                            meta_data['last_monitored'],
+                            contract_data['description']
                         )
 
                 """
@@ -284,7 +289,8 @@ class ChainlinkContractAlerter(Alerter):
                                 meta_data['last_monitored'],
                                 meta_data['node_parent_id'],
                                 meta_data['node_id'],
-                                proxy_address
+                                proxy_address,
+                                contract_data['description']
                             ], data_for_alerting,
                         )
 
@@ -379,7 +385,7 @@ class ChainlinkContractAlerter(Alerter):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
 
-        self.logger.info("Received configs %s", sent_configs)
+        self.logger.debug("Received configs %s", sent_configs)
 
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
