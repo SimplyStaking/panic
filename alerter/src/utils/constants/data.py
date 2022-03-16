@@ -1,7 +1,7 @@
 from src.alerter.grouped_alerts_metric_code.contract. \
     chainlink_contract_metric_code import (
-        GroupedChainlinkContractAlertsMetricCode
-    )
+    GroupedChainlinkContractAlertsMetricCode
+)
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
 

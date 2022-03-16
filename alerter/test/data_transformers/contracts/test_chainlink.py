@@ -76,6 +76,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         # Test contract credentials
         self.test_proxy_address_1 = 'test_proxy_address_1'
         self.test_aggregator_address_1 = 'test_aggregator_address_1'
+        self.test_contract_description_1 = 'test_contract_description_1'
         self.test_latest_round_1 = 40
         self.test_latest_answer_1 = 34534534563464
         self.test_latest_timestamp_1 = self.test_last_monitored + 30
@@ -104,6 +105,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         self.test_historical_rounds_1_transformed[1]['deviation'] = 100.0
         self.test_proxy_address_2 = 'test_proxy_address_2'
         self.test_aggregator_address_2 = 'test_aggregator_address_2'
+        self.test_contract_description_2 = 'test_contract_description_2'
         self.test_latest_round_2 = 50
         self.test_latest_answer_2 = 3453453456
         self.test_latest_timestamp_2 = self.test_last_monitored + 30
@@ -193,6 +195,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                     self.test_proxy_address_1: {
                         'contractVersion': 3,
                         'aggregatorAddress': self.test_aggregator_address_1,
+                        'description': self.test_contract_description_1,
                         'latestRound': self.test_latest_round_1,
                         'latestAnswer': self.test_latest_answer_1,
                         'latestTimestamp': self.test_latest_timestamp_1,
@@ -203,6 +206,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                     self.test_proxy_address_2: {
                         'contractVersion': 3,
                         'aggregatorAddress': self.test_aggregator_address_2,
+                        'description': self.test_contract_description_2,
                         'latestRound': self.test_latest_round_2,
                         'latestAnswer': self.test_latest_answer_2,
                         'latestTimestamp': self.test_latest_timestamp_2,
@@ -226,6 +230,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                     self.test_proxy_address_1: {
                         'contractVersion': 4,
                         'aggregatorAddress': self.test_aggregator_address_1,
+                        'description': self.test_contract_description_1,
                         'latestRound': self.test_latest_round_1,
                         'latestAnswer': self.test_latest_answer_1,
                         'latestTimestamp': self.test_latest_timestamp_1,
@@ -236,6 +241,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                     self.test_proxy_address_2: {
                         'contractVersion': 4,
                         'aggregatorAddress': self.test_aggregator_address_2,
+                        'description': self.test_contract_description_2,
                         'latestRound': self.test_latest_round_2,
                         'latestAnswer': self.test_latest_answer_2,
                         'latestTimestamp': self.test_latest_timestamp_2,
@@ -262,6 +268,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         self.transformed_data_example_result_v3 = {
             'result': {
                 'meta_data': {
+                    'monitor_name': self.test_monitor_name,
                     'node_name': self.test_node_name_1,
                     'node_id': self.test_node_id_1,
                     'node_parent_id': self.test_parent_id_1,
@@ -271,24 +278,26 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                     self.test_proxy_address_1: {
                         'contractVersion': 3,
                         'aggregatorAddress': self.test_aggregator_address_1,
+                        'description': self.test_contract_description_1,
                         'latestRound': self.test_latest_round_1,
                         'latestAnswer': self.test_latest_answer_1,
                         'latestTimestamp': self.test_latest_timestamp_1,
                         'answeredInRound': self.test_answered_in_round_1,
                         'withdrawablePayment': self.test_withdrawable_payment_1,
                         'historicalRounds':
-                            self.test_historical_rounds_1_transformed
+                            self.test_historical_rounds_1_transformed,
                     },
                     self.test_proxy_address_2: {
                         'contractVersion': 3,
                         'aggregatorAddress': self.test_aggregator_address_2,
+                        'description': self.test_contract_description_2,
                         'latestRound': self.test_latest_round_2,
                         'latestAnswer': self.test_latest_answer_2,
                         'latestTimestamp': self.test_latest_timestamp_2,
                         'answeredInRound': self.test_answered_in_round_2,
                         'withdrawablePayment': self.test_withdrawable_payment_2,
                         'historicalRounds':
-                            self.test_historical_rounds_2_transformed
+                            self.test_historical_rounds_2_transformed,
                     },
                 },
             }
@@ -305,6 +314,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         self.transformed_data_example_result_v4 = {
             'result': {
                 'meta_data': {
+                    'monitor_name': self.test_monitor_name,
                     'node_name': self.test_node_name_1,
                     'node_id': self.test_node_id_1,
                     'node_parent_id': self.test_parent_id_1,
@@ -314,24 +324,26 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                     self.test_proxy_address_1: {
                         'contractVersion': 4,
                         'aggregatorAddress': self.test_aggregator_address_1,
+                        'description': self.test_contract_description_1,
                         'latestRound': self.test_latest_round_1,
                         'latestAnswer': self.test_latest_answer_1,
                         'latestTimestamp': self.test_latest_timestamp_1,
                         'answeredInRound': self.test_answered_in_round_1,
                         'owedPayment': self.test_owed_payment_1,
                         'historicalRounds':
-                            self.test_historical_rounds_3_transformed
+                            self.test_historical_rounds_3_transformed,
                     },
                     self.test_proxy_address_2: {
                         'contractVersion': 4,
                         'aggregatorAddress': self.test_aggregator_address_2,
+                        'description': self.test_contract_description_2,
                         'latestRound': self.test_latest_round_2,
                         'latestAnswer': self.test_latest_answer_2,
                         'latestTimestamp': self.test_latest_timestamp_2,
                         'answeredInRound': self.test_answered_in_round_2,
                         'owedPayment': self.test_owed_payment_2,
                         'historicalRounds':
-                            self.test_historical_rounds_4_transformed
+                            self.test_historical_rounds_4_transformed,
                     },
                 },
             }
@@ -346,8 +358,9 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         self.transformed_data_example_error = {
             'error': {
                 'meta_data': {
+                    'monitor_name': self.test_monitor_name,
                     'node_parent_id': self.test_parent_id_1,
-                    'time': self.test_last_monitored + 60
+                    'time': self.test_last_monitored + 60,
                 },
                 'message': self.test_exception.message,
                 'code': self.test_exception.code,
@@ -504,6 +517,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         },
                         'contractVersion': 3,
                         'aggregatorAddress': self.test_aggregator_address_1,
+                        'description': self.test_contract_description_1
                     },
                     self.test_proxy_address_2: {
                         'latestRound': {
@@ -537,6 +551,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         },
                         'contractVersion': 3,
                         'aggregatorAddress': self.test_aggregator_address_2,
+                        'description': self.test_contract_description_2
                     },
                 }
             }
@@ -579,6 +594,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         },
                         'contractVersion': 4,
                         'aggregatorAddress': self.test_aggregator_address_1,
+                        'description': self.test_contract_description_1
                     },
                     self.test_proxy_address_2: {
                         'latestRound': {
@@ -612,6 +628,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         },
                         'contractVersion': 4,
                         'aggregatorAddress': self.test_aggregator_address_2,
+                        'description': self.test_contract_description_2
                     },
                 }
             }

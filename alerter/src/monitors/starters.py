@@ -79,8 +79,8 @@ def _initialise_monitor(
 
 def _initialise_chainlink_contracts_monitor(
         monitor_display_name: str, monitoring_period: int, weiwatchers_url: str,
-        evm_nodes: List[str],
-        node_configs: List[ChainlinkNodeConfig]) -> ChainlinkContractsMonitor:
+        evm_nodes: List[str], node_configs: List[ChainlinkNodeConfig],
+        parent_id: str) -> ChainlinkContractsMonitor:
     monitor_logger = _initialise_monitor_logger(
         monitor_display_name, ChainlinkContractsMonitor.__name__)
 
@@ -92,7 +92,7 @@ def _initialise_chainlink_contracts_monitor(
                 host=env.RABBIT_IP)
             monitor = ChainlinkContractsMonitor(
                 monitor_display_name, weiwatchers_url, evm_nodes, node_configs,
-                monitor_logger, monitoring_period, rabbitmq)
+                monitor_logger, monitoring_period, rabbitmq, parent_id)
             log_and_print("Successfully initialised {}".format(
                 monitor_display_name), monitor_logger)
             break
@@ -138,11 +138,12 @@ def start_node_monitor(node_config: NodeConfig, monitor_type: Type[T]) -> None:
 
 def start_chainlink_contracts_monitor(
         weiwatchers_url: str, evm_nodes: List[str],
-        node_configs: List[ChainlinkNodeConfig], parent_id: str) -> None:
-    monitor_display_name = CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(parent_id)
+        node_configs: List[ChainlinkNodeConfig], sub_chain: str,
+        parent_id: str) -> None:
     node_monitor = _initialise_chainlink_contracts_monitor(
-        monitor_display_name, env.CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS,
-        weiwatchers_url, evm_nodes, node_configs)
+        CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(sub_chain),
+        env.CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS, weiwatchers_url,
+        evm_nodes, node_configs, parent_id)
     start_monitor(node_monitor)
 
 

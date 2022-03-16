@@ -58,6 +58,8 @@ class TestContractMonitorsManager(unittest.TestCase):
 
         # Some configuration examples
         self.chain_1 = 'chainlink binance smart chain'
+        self.base_chain_1 = 'chainlink'
+        self.sub_chain_1 = 'binance smart chain'
         self.parent_id_1 = 'parent_id_1'
         self.weiwatchers_url_1 = 'weiwatchers_url_1'
         self.evm_nodes_1 = ['url1', 'url2', 'url3']
@@ -85,6 +87,8 @@ class TestContractMonitorsManager(unittest.TestCase):
                                          self.chainlink_node_config_2]
 
         self.chain_2 = 'chainlink xdai'
+        self.base_chain_2 = 'chainlink'
+        self.sub_chain_2 = 'xdai'
         self.parent_id_2 = 'parent_id_2'
         self.weiwatchers_url_2 = 'weiwatchers_url_2'
         self.evm_nodes_2 = ['url4', 'url5', 'url6']
@@ -116,13 +120,15 @@ class TestContractMonitorsManager(unittest.TestCase):
         self.config_process_dict_example = {
             self.chain_1: {
                 'component_name': CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
-                    self.parent_id_1),
+                    self.sub_chain_1),
                 'process': self.dummy_process1,
                 'weiwatchers_url': self.weiwatchers_url_1,
                 'evm_nodes': self.evm_nodes_1,
                 'node_configs': self.chainlink_node_configs_1,
                 'parent_id': self.parent_id_1,
                 'chain_name': self.chain_1,
+                'base_chain': self.base_chain_1,
+                'sub_chain': self.sub_chain_1,
             }
         }
         self.contract_configs_example = {
@@ -283,7 +289,8 @@ class TestContractMonitorsManager(unittest.TestCase):
             self, mock_basic_consume) -> None:
         mock_basic_consume.return_value = None
 
-        # To make sure that there is no connection/channel already established
+        # To make sure that there is no connection/channel already
+        # established
         self.assertIsNone(self.rabbitmq.connection)
         self.assertIsNone(self.rabbitmq.channel)
 
@@ -385,29 +392,33 @@ class TestContractMonitorsManager(unittest.TestCase):
         expected_state = {
             self.chain_1: {
                 'component_name': CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
-                    self.parent_id_1),
+                    self.sub_chain_1),
                 'process': self.dummy_process1,
                 'weiwatchers_url': self.weiwatchers_url_1,
                 'evm_nodes': self.evm_nodes_1,
                 'node_configs': self.chainlink_node_configs_1,
                 'parent_id': self.parent_id_1,
                 'chain_name': self.chain_1,
+                'base_chain': self.base_chain_1,
+                'sub_chain': self.sub_chain_1,
             },
             self.chain_2: {
                 'component_name': CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
-                    self.parent_id_2),
+                    self.sub_chain_2),
                 'process': self.dummy_process2,
                 'weiwatchers_url': self.weiwatchers_url_2,
                 'evm_nodes': self.evm_nodes_2,
                 'node_configs': self.chainlink_node_configs_2,
                 'parent_id': self.parent_id_2,
-                'chain_name': self.chain_2,
+                'base_chain': self.base_chain_2,
+                'sub_chain': self.sub_chain_2,
             }
         }
 
         self.test_manager._create_and_start_chainlink_contracts_monitor_process(
             self.weiwatchers_url_2, self.evm_nodes_2,
-            self.chainlink_node_configs_2, self.parent_id_2, self.chain_2)
+            self.chainlink_node_configs_2, self.parent_id_2, self.chain_2,
+            self.base_chain_2, self.sub_chain_2)
 
         self.assertEqual(expected_state, self.test_manager.config_process_dict)
 
@@ -418,17 +429,19 @@ class TestContractMonitorsManager(unittest.TestCase):
 
         self.test_manager._create_and_start_chainlink_contracts_monitor_process(
             self.weiwatchers_url_2, self.evm_nodes_2,
-            self.chainlink_node_configs_2, self.parent_id_2, self.chain_2)
+            self.chainlink_node_configs_2, self.parent_id_2, self.chain_2,
+            self.base_chain_2, self.sub_chain_2)
 
         new_entry = self.test_manager.config_process_dict[self.chain_2]
         new_entry_process = new_entry['process']
         self.assertTrue(new_entry_process.daemon)
-        self.assertEqual(4, len(new_entry_process._args))
+        self.assertEqual(5, len(new_entry_process._args))
         self.assertEqual(self.weiwatchers_url_2, new_entry_process._args[0])
         self.assertEqual(self.evm_nodes_2, new_entry_process._args[1])
         self.assertEqual(self.chainlink_node_configs_2,
                          new_entry_process._args[2])
-        self.assertEqual(self.parent_id_2, new_entry_process._args[3])
+        self.assertEqual(self.sub_chain_2, new_entry_process._args[3])
+        self.assertEqual(self.parent_id_2, new_entry_process._args[4])
         self.assertEqual(start_chainlink_contracts_monitor,
                          new_entry_process._target)
 
@@ -437,7 +450,8 @@ class TestContractMonitorsManager(unittest.TestCase):
             self, mock_start) -> None:
         self.test_manager._create_and_start_chainlink_contracts_monitor_process(
             self.weiwatchers_url_2, self.evm_nodes_2,
-            self.chainlink_node_configs_2, self.parent_id_2, self.chain_2)
+            self.chainlink_node_configs_2, self.parent_id_2, self.chain_2,
+            self.base_chain_2, self.sub_chain_2)
         mock_start.assert_called_once()
 
     @mock.patch.object(ContractMonitorsManager,
@@ -460,11 +474,13 @@ class TestContractMonitorsManager(unittest.TestCase):
         }
 
         actual_confs = self.test_manager._process_chainlink_node_configs(
-            self.sent_configs_example, {}, self.chain_1)
+            self.sent_configs_example, {}, self.chain_1, self.base_chain_1,
+            self.sub_chain_1)
 
         mock_create_and_start.assert_called_once_with(
             self.weiwatchers_url_1, self.evm_nodes_1,
-            self.chainlink_node_configs_1, self.parent_id_1, self.chain_1)
+            self.chainlink_node_configs_1, self.parent_id_1, self.chain_1,
+            self.base_chain_1, self.sub_chain_1)
         self.assertEqual(expected_confs, actual_confs)
 
     @mock.patch.object(multiprocessing.Process, "terminate")
@@ -502,13 +518,14 @@ class TestContractMonitorsManager(unittest.TestCase):
 
         actual_confs = self.test_manager._process_chainlink_node_configs(
             self.sent_configs_example, current_confgs[self.chain_1],
-            self.chain_1)
+            self.chain_1, self.base_chain_1, self.sub_chain_1)
 
         mock_terminate.assert_called_once()
         mock_join.assert_called_once()
         mock_create_and_start.assert_called_once_with(
             self.weiwatchers_url_1, self.evm_nodes_1,
-            self.chainlink_node_configs_1, self.parent_id_1, self.chain_1)
+            self.chainlink_node_configs_1, self.parent_id_1, self.chain_1,
+            self.base_chain_1, self.sub_chain_1)
         self.assertEqual(expected_confs, actual_confs)
 
     @mock.patch.object(multiprocessing.Process, "terminate")
@@ -539,7 +556,8 @@ class TestContractMonitorsManager(unittest.TestCase):
             self.config_process_dict_example
 
         actual_confs = self.test_manager._process_chainlink_node_configs(
-            {}, current_confgs[self.chain_1], self.chain_1)
+            {}, current_confgs[self.chain_1], self.chain_1, self.base_chain_1,
+            self.sub_chain_1)
 
         mock_terminate.assert_called_once()
         mock_join.assert_called_once()
@@ -576,7 +594,7 @@ class TestContractMonitorsManager(unittest.TestCase):
 
         actual_confs = self.test_manager._process_chainlink_node_configs(
             self.sent_configs_example, current_confgs[self.chain_1],
-            self.chain_1)
+            self.chain_1, self.base_chain_1, self.sub_chain_1)
 
         mock_terminate.assert_not_called()
         mock_join.assert_not_called()
@@ -610,7 +628,9 @@ class TestContractMonitorsManager(unittest.TestCase):
         configs_to_be_processed = copy.deepcopy(self.sent_configs_example)
         del configs_to_be_processed['DEFAULT']
         mock_process_cl_confs.assert_called_once_with(configs_to_be_processed,
-                                                      {}, self.chain_1)
+                                                      {}, self.chain_1,
+                                                      self.base_chain_1,
+                                                      self.sub_chain_1)
         mock_basic_ack.assert_called_once()
 
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -637,7 +657,9 @@ class TestContractMonitorsManager(unittest.TestCase):
         self.test_manager._process_configs(blocking_channel, method, properties,
                                            body)
         mock_process_cl_confs.assert_called_once_with(self.sent_configs_example,
-                                                      {}, self.chain_1)
+                                                      {}, self.chain_1,
+                                                      self.base_chain_1,
+                                                      self.sub_chain_1)
         mock_basic_ack.assert_called_once()
         mock_process_cl_confs.reset_mock()
         mock_basic_ack.reset_mock()
@@ -649,7 +671,8 @@ class TestContractMonitorsManager(unittest.TestCase):
                                            body)
         mock_process_cl_confs.assert_called_once_with(
             self.sent_configs_example,
-            self.contract_configs_example[self.chain_1], self.chain_1)
+            self.contract_configs_example[self.chain_1], self.chain_1,
+            self.base_chain_1, self.sub_chain_1)
         mock_basic_ack.assert_called_once()
 
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -729,13 +752,15 @@ class TestContractMonitorsManager(unittest.TestCase):
         dead_configs_eval = list(map(eval, dead_configs))
         self.config_process_dict_example[self.chain_2] = {
             'component_name': CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
-                self.parent_id_2),
+                self.sub_chain_2),
             'process': self.dummy_process2,
             'weiwatchers_url': self.weiwatchers_url_2,
             'evm_nodes': self.evm_nodes_2,
             'node_configs': self.chainlink_node_configs_2,
             'parent_id': self.parent_id_2,
             'chain_name': self.chain_2,
+            'base_chain': self.base_chain_2,
+            'sub_chain': self.sub_chain_2
         }
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
@@ -788,13 +813,15 @@ class TestContractMonitorsManager(unittest.TestCase):
         dead_configs_eval = list(map(eval, dead_configs))
         self.config_process_dict_example[self.chain_2] = {
             'component_name': CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
-                self.parent_id_2),
+                self.sub_chain_2),
             'process': self.dummy_process2,
             'weiwatchers_url': self.weiwatchers_url_2,
             'evm_nodes': self.evm_nodes_2,
             'node_configs': self.chainlink_node_configs_2,
             'parent_id': self.parent_id_2,
             'chain_name': self.chain_2,
+            'base_chain': self.base_chain_2,
+            'sub_chain': self.sub_chain_2
         }
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
@@ -811,14 +838,16 @@ class TestContractMonitorsManager(unittest.TestCase):
                                         body)
 
         expected_calls = [
-            call(self.config_process_dict_example[chain_name][
+            call(self.config_process_dict_example[chain][
                      'weiwatchers_url'],
-                 self.config_process_dict_example[chain_name]['evm_nodes'],
-                 self.config_process_dict_example[chain_name]['node_configs'],
-                 self.config_process_dict_example[chain_name]['parent_id'],
-                 self.config_process_dict_example[chain_name]['chain_name'])
-            for chain_name in self.config_process_dict_example
-            if chain_name in dead_configs_eval
+                 self.config_process_dict_example[chain]['evm_nodes'],
+                 self.config_process_dict_example[chain]['node_configs'],
+                 self.config_process_dict_example[chain]['parent_id'],
+                 self.config_process_dict_example[chain]['chain_name'],
+                 self.config_process_dict_example[chain]['base_chain'],
+                 self.config_process_dict_example[chain]['sub_chain'])
+            for chain in self.config_process_dict_example
+            if chain in dead_configs_eval
         ]
         actual_calls = mock_create_and_start.call_args_list
         self.assertEqual(expected_calls, actual_calls)

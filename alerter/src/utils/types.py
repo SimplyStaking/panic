@@ -5,7 +5,7 @@ from src.alerter.alerts.contract.chainlink import (
     ErrorNoSyncedDataSources, SyncedDataSourcesFound,
     ErrorContractsNotRetrieved, ContractsNowRetrieved,
     PriceFeedObservationsMissedIncreasedAboveThreshold, PriceFeedObservedAgain,
-    PriceFeedDeviationInreasedAboveThreshold,
+    PriceFeedDeviationIncreasedAboveThreshold,
     PriceFeedDeviationDecreasedBelowThreshold, ConsensusFailure)
 from src.alerter.alerts.node.chainlink import (
     NoChangeInHeightAlert, BlockHeightUpdatedAlert,
@@ -80,7 +80,7 @@ IncreasedAboveThresholdChainlinkNodeAlert = Union[
     TotalErroredJobRunsIncreasedAboveThresholdAlert,
     EthBalanceIncreasedAboveThresholdAlert,
     PriceFeedObservationsMissedIncreasedAboveThreshold,
-    PriceFeedDeviationInreasedAboveThreshold,
+    PriceFeedDeviationIncreasedAboveThreshold,
     BlockHeightDifferenceIncreasedAboveThresholdAlert
 ]
 DecreasedBelowThresholdChainlinkNodeAlert = Union[

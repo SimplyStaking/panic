@@ -102,6 +102,7 @@ class TestMonitorStarters(unittest.TestCase):
 
         # Chainlink Contracts Monitor
         self.cl_contracts_monitor_name = 'chainlink_contracts_monitor'
+        self.cl_contracts_parent_id = 'test_cl_contracts_parent_id'
         self.weiwatchers_url = 'weiwatchers_url'
         self.evm_nodes = ['url1', 'url2', 'url3']
         self.node_configs = [self.chainlink_node_config]
@@ -110,7 +111,8 @@ class TestMonitorStarters(unittest.TestCase):
         self.test_chainlink_contracts_monitor = ChainlinkContractsMonitor(
             self.cl_contracts_monitor_name, self.weiwatchers_url,
             self.evm_nodes, self.node_configs, self.dummy_logger,
-            self.chainlink_contracts_monitoring_period, self.rabbitmq)
+            self.chainlink_contracts_monitoring_period, self.rabbitmq,
+            self.cl_contracts_parent_id)
 
     def tearDown(self) -> None:
         self.dummy_logger = None
@@ -170,7 +172,7 @@ class TestMonitorStarters(unittest.TestCase):
         _initialise_chainlink_contracts_monitor(
             self.cl_contracts_monitor_name,
             self.chainlink_contracts_monitoring_period, self.weiwatchers_url,
-            self.evm_nodes, self.node_configs)
+            self.evm_nodes, self.node_configs, self.cl_contracts_parent_id)
 
         mock_init_logger.assert_called_once_with(
             self.cl_contracts_monitor_name, ChainlinkContractsMonitor.__name__
@@ -219,7 +221,7 @@ class TestMonitorStarters(unittest.TestCase):
         actual_output = _initialise_chainlink_contracts_monitor(
             self.cl_contracts_monitor_name,
             self.chainlink_contracts_monitoring_period, self.weiwatchers_url,
-            self.evm_nodes, self.node_configs)
+            self.evm_nodes, self.node_configs, self.cl_contracts_parent_id)
         self.assertEqual(self.test_chainlink_contracts_monitor, actual_output)
 
     @mock.patch("src.monitors.starters._initialise_monitor")
@@ -286,17 +288,20 @@ class TestMonitorStarters(unittest.TestCase):
         mock_start_monitor.return_value = None
         mock_initialise_cl_contracts_monitor.return_value = \
             self.test_chainlink_contracts_monitor
-        test_parent_id = 'test_parent_id'
+        test_sub_chain = 'test_sub_chain'
         monitor_display_name = CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
-            test_parent_id)
+            test_sub_chain)
 
         start_chainlink_contracts_monitor(self.weiwatchers_url, self.evm_nodes,
-                                          self.node_configs, test_parent_id)
+                                          self.node_configs,
+                                          test_sub_chain,
+                                          self.cl_contracts_parent_id)
 
         mock_start_monitor.assert_called_once_with(
             self.test_chainlink_contracts_monitor)
         mock_initialise_cl_contracts_monitor.assert_called_once_with(
             monitor_display_name,
             env.CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS,
-            self.weiwatchers_url, self.evm_nodes, self.node_configs
+            self.weiwatchers_url, self.evm_nodes, self.node_configs,
+            self.cl_contracts_parent_id
         )

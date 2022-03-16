@@ -278,62 +278,62 @@ class Keys:
     def get_cl_contract_version(cl_node_id: str,
                                 contract_proxy_address: str) -> str:
         return Keys._as_prefix(_key_cl_contract_version) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_cl_contract_aggregator_address(cl_node_id: str,
                                            contract_proxy_address: str) -> str:
         return Keys._as_prefix(_key_cl_contract_aggregator_address) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_cl_contract_latest_round(cl_node_id: str,
                                      contract_proxy_address: str) -> str:
         return Keys._as_prefix(_key_cl_contract_latest_round) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_cl_contract_latest_answer(cl_node_id: str,
                                       contract_proxy_address: str) -> str:
         return Keys._as_prefix(_key_cl_contract_latest_answer) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_cl_contract_latest_timestamp(cl_node_id: str,
                                          contract_proxy_address: str) -> str:
         return Keys._as_prefix(_key_cl_contract_latest_timestamp) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_cl_contract_answered_in_round(cl_node_id: str,
                                           contract_proxy_address: str) -> str:
         return Keys._as_prefix(_key_cl_contract_answered_in_round) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_cl_contract_withdrawable_payment(cl_node_id: str,
                                              contract_proxy_address: str
                                              ) -> str:
         return Keys._as_prefix(_key_cl_contract_withdrawable_payment) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_cl_contract_owed_payment(cl_node_id: str,
                                      contract_proxy_address: str) -> str:
         return Keys._as_prefix(_key_cl_contract_owed_payment) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_cl_contract_last_monitored(cl_node_id: str,
                                        contract_proxy_address: str) -> str:
         return Keys._as_prefix(_key_cl_contract_last_monitored) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_cl_contract_last_round_observed(
             cl_node_id: str, contract_proxy_address: str) -> str:
         return Keys._as_prefix(_key_cl_contract_last_round_observed) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_cl_contract_historical_rounds(cl_node_id: str,
@@ -365,7 +365,7 @@ class Keys:
     @staticmethod
     def get_alert_system_open_file_descriptors(origin_id: str) -> str:
         return Keys._as_prefix(_key_alert_system_open_file_descriptors) + (
-               origin_id)
+            origin_id)
 
     @staticmethod
     def get_alert_system_cpu_usage(origin_id: str) -> str:
@@ -465,19 +465,19 @@ class Keys:
             cl_node_id: str, contract_proxy_address: str) -> str:
         return Keys._as_prefix(
             _key_alert_cl_contract_price_feed_not_observed) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_alert_cl_contract_price_feed_deviation(
             cl_node_id: str, contract_proxy_address: str) -> str:
         return Keys._as_prefix(_key_alert_cl_contract_price_feed_deviation) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_alert_cl_contract_consensus_failure(
             cl_node_id: str, contract_proxy_address: str) -> str:
         return Keys._as_prefix(_key_alert_cl_contract_consensus_failure) + (
-               Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_alert_cl_contract_contracts_not_retrieved() -> str:
@@ -502,7 +502,7 @@ class Keys:
             evm_node_id: str) -> str:
         return Keys._as_prefix(
             _key_alert_evm_block_syncing_no_change_in_block_height) + (
-               evm_node_id)
+            evm_node_id)
 
     @staticmethod
     def get_alert_evm_invalid_url(

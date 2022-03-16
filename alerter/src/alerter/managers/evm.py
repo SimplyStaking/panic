@@ -173,7 +173,7 @@ class EVMNodeAlerterManager(AlertersManager):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
 
-        self.logger.info("Received configs %s", sent_configs)
+        self.logger.debug("Received configs %s", sent_configs)
 
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']

@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.3.4
+
+Released on 16th March 2022
+
+- Updated Chainlink Contracts Monitor/Alerts to use chain names and contract names.
+
 ## 0.3.3
 
 Released on 23rd February 2022

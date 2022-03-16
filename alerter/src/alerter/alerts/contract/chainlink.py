@@ -10,45 +10,48 @@ from src.alerter.grouped_alerts_metric_code.contract. \
 class PriceFeedObservationsMissedIncreasedAboveThreshold(Alert):
     def __init__(self, origin_name: str, missed_observations: int,
                  severity: str, timestamp: float, threshold_severity: str,
-                 parent_id: str, origin_id: str, proxy_address: str) -> None:
+                 parent_id: str, origin_id: str, proxy_address: str,
+                 contract_description: str) -> None:
         alert_data = ChainlinkContractAlertData()
         alert_data.set_alert_data(proxy_address)
         super().__init__(
-            ChainlinkContractAlertCode.PriceFeedNotObservedIncreaseAboveThreshold,
+            ChainlinkContractAlertCode
+                .PriceFeedNotObservedIncreaseAboveThreshold,
             "The Chainlink {} node's missed observations have increased above "
             "{} threshold to {} missed observations for price feed {}.".format(
                 origin_name, threshold_severity, missed_observations,
-                proxy_address),
+                contract_description),
             severity, timestamp, parent_id, origin_id,
             MetricCode.PriceFeedNotObserved, alert_data)
 
 
 class PriceFeedObservedAgain(Alert):
     def __init__(self, origin_name: str, severity: str, timestamp: float,
-                 parent_id: str, origin_id: str, proxy_address: str) -> None:
+                 parent_id: str, origin_id: str, proxy_address: str,
+                 contract_description: str) -> None:
         alert_data = ChainlinkContractAlertData()
         alert_data.set_alert_data(proxy_address)
         super().__init__(
             ChainlinkContractAlertCode.PriceFeedObservedAgain,
             "The Chainlink {} node is no longer missing observations for "
-            "price feed {}.".format(
-                origin_name, proxy_address),
+            "price feed {}.".format(origin_name, contract_description),
             severity, timestamp, parent_id, origin_id,
             MetricCode.PriceFeedNotObserved, alert_data)
 
 
-class PriceFeedDeviationInreasedAboveThreshold(Alert):
+class PriceFeedDeviationIncreasedAboveThreshold(Alert):
     def __init__(self, origin_name: str, deviation: float, severity: str,
-                 timestamp: float, threshold_severity: str,
-                 parent_id: str, origin_id: str, proxy_address: str) -> None:
+                 timestamp: float, threshold_severity: str, parent_id: str,
+                 origin_id: str, proxy_address: str,
+                 contract_description: str) -> None:
         alert_data = ChainlinkContractAlertData()
         alert_data.set_alert_data(proxy_address)
         super().__init__(
-            ChainlinkContractAlertCode.PriceFeedDeviationInreasedAboveThreshold,
+            ChainlinkContractAlertCode
+                .PriceFeedDeviationIncreasedAboveThreshold,
             "The Chainlink {} node's submission has increased above {} "
             "threshold to {}% deviation for the price feed {}.".format(
-                origin_name, threshold_severity, deviation,
-                proxy_address),
+                origin_name, threshold_severity, deviation, contract_description),
             severity, timestamp, parent_id, origin_id,
             MetricCode.PriceFeedDeviation, alert_data)
 
@@ -56,69 +59,67 @@ class PriceFeedDeviationInreasedAboveThreshold(Alert):
 class PriceFeedDeviationDecreasedBelowThreshold(Alert):
     def __init__(self, origin_name: str, deviation: float, severity: str,
                  timestamp: float, threshold_severity: str, parent_id: str,
-                 origin_id: str, proxy_address: str) -> None:
+                 origin_id: str, proxy_address: str,
+                 contract_description: str) -> None:
         alert_data = ChainlinkContractAlertData()
         alert_data.set_alert_data(proxy_address)
         super().__init__(
-            ChainlinkContractAlertCode.PriceFeedDeviationDecreasedBelowThreshold,
+            ChainlinkContractAlertCode
+                .PriceFeedDeviationDecreasedBelowThreshold,
             "The Chainlink {} node's submission has decreased below {} "
             "threshold to {}% deviation for the price feed {}.".format(
                 origin_name, threshold_severity, deviation,
-                proxy_address),
+                contract_description),
             severity, timestamp, parent_id, origin_id,
             MetricCode.PriceFeedDeviation, alert_data)
 
 
 class ConsensusFailure(Alert):
-    def __init__(self, origin_name: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 proxy_address: str) -> None:
+    def __init__(self, origin_name: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str, proxy_address: str,
+                 contract_description: str) -> None:
         alert_data = ChainlinkContractAlertData()
         alert_data.set_alert_data(proxy_address)
         super().__init__(
             ChainlinkContractAlertCode.ConsensusNotReached,
             "The Price Feed {} has a Consensus failure."
-            "The Chainlink Node observing the price feed is {}."
-                .format(proxy_address, origin_name),
+            "The Chainlink Node observing the price feed is {}.".format(
+                contract_description, origin_name),
             severity, timestamp, parent_id, origin_id,
             MetricCode.ConsensusFailure, alert_data)
 
 
 class ErrorContractsNotRetrieved(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str) -> None:
+    def __init__(self, _: str, message: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str) -> None:
         super().__init__(
             ChainlinkContractAlertCode.ErrorContractsNotRetrieved,
-            "{}: {}".format(parent_id, message), severity, timestamp,
-            parent_id, origin_id,
+            message, severity, timestamp, parent_id, origin_id,
             MetricCode.ErrorContractsNotRetrieved)
 
 
 class ContractsNowRetrieved(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str) -> None:
+    def __init__(self, _: str, message: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str) -> None:
         super().__init__(
             ChainlinkContractAlertCode.ContractsNowRetrieved,
-            "{}: {}".format(parent_id, message), severity, timestamp,
-            parent_id, origin_id,
+            message, severity, timestamp, parent_id, origin_id,
             MetricCode.ErrorContractsNotRetrieved)
 
 
 class ErrorNoSyncedDataSources(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str) -> None:
+    def __init__(self, _: str, message: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str) -> None:
         super().__init__(
             ChainlinkContractAlertCode.ErrorNoSyncedDataSources,
-            "{}: {}".format(parent_id, message), severity, timestamp,
-            parent_id, origin_id,
+            message, severity, timestamp, parent_id, origin_id,
             MetricCode.ErrorNoSyncedDataSources)
 
 
 class SyncedDataSourcesFound(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str) -> None:
+    def __init__(self, _: str, message: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str) -> None:
         super().__init__(
             ChainlinkContractAlertCode.SyncedDataSourcesFound,
-            "{}: {}".format(parent_id, message), severity, timestamp,
-            parent_id, origin_id,
+            message, severity, timestamp, parent_id, origin_id,
             MetricCode.ErrorNoSyncedDataSources)

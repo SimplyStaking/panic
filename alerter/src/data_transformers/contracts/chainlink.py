@@ -271,7 +271,8 @@ class ChainlinkContractsDataTransformer(DataTransformer):
             }
             processed_data_metrics = processed_data['result']['data']
             node_id = td_meta_data['node_id']
-            ignore_metrics = ['contractVersion', 'aggregatorAddress']
+            ignore_metrics = ['contractVersion', 'aggregatorAddress',
+                              'description']
 
             for proxy_address, contract_data in td_metrics.items():
                 cl_contract = self.state[node_id][proxy_address]
@@ -279,8 +280,8 @@ class ChainlinkContractsDataTransformer(DataTransformer):
 
                 # Reformat the data in such a way that both the previous and
                 # current states are sent to the alerter. We will not record
-                # previous values for contractVersion and aggregatorAddress as
-                # this data is not used for alerting.
+                # previous values for contractVersion, aggregatorAddress,
+                # and description as this data is not used for alerting.
                 for metric, value in contract_data.items():
                     if metric not in ignore_metrics:
                         processed_data_metrics[proxy_address][metric] = {}
@@ -314,12 +315,10 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                 processed_data_metrics[proxy_address][
                     'lastRoundObserved']['current'] = last_round_observed
                 # Add the current value of the ignored metrics
-                processed_data_metrics[proxy_address][
-                    'contractVersion'] = td_metrics[proxy_address][
-                    'contractVersion']
-                processed_data_metrics[proxy_address][
-                    'aggregatorAddress'] = td_metrics[proxy_address][
-                    'aggregatorAddress']
+                for ignored_metric in ignore_metrics:
+                    processed_data_metrics[proxy_address][
+                        ignored_metric] = td_metrics[proxy_address][
+                        ignored_metric]
 
                 # Add the previous value
                 processed_data_metrics[proxy_address]['latestRound'][
@@ -361,9 +360,8 @@ class ChainlinkContractsDataTransformer(DataTransformer):
             td_meta_data = transformed_data['result']['meta_data']
             td_metrics = transformed_data['result']['data']
 
-            # Transform the meta_data by deleting the monitor_name and changing
-            # the time key to last_monitored key.
-            del td_meta_data['monitor_name']
+            # Transform the meta_data by changing the time key to
+            # last_monitored key.
             del td_meta_data['time']
             td_meta_data['last_monitored'] = meta_data['time']
 
@@ -384,9 +382,7 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                              round_answer) * 100), None)
                 td_metrics[proxy_address]['historicalRounds'] = temp_rounds
         elif 'error' in data:
-            # In case of errors only remove the monitor_name from the meta data
             transformed_data = copy.deepcopy(data)
-            del transformed_data['error']['meta_data']['monitor_name']
         else:
             raise ReceivedUnexpectedDataException(
                 "{}: _transform_data".format(self))

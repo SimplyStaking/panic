@@ -153,7 +153,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
             condition_function: Callable, condition_fn_args: List[Any],
             data_for_alerting: List, parent_id: str, monitorable_id: str,
             contract_proxy_address: str, metric_name: str,
-            monitorable_name: str, monitoring_timestamp: float
+            monitorable_name: str, monitoring_timestamp: float,
+            contract_description: str
     ) -> None:
         """
         This function raises a critical/warning increase above threshold alert
@@ -172,12 +173,18 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
         :param config: The metric's configuration to obtain the thresholds
         :param increased_above_threshold_alert: The alert to be raised if the
         current value is no longer smaller than a threshold
+        :param condition_true_alert: The alert to be raised if conditional
+        function returns true
+        :param condition_function: The conditional function to be checked
+        :param condition_fn_args: The arguments for the conditional function
         :param data_for_alerting: The list to be appended with alerts
         :param parent_id: The id of the base chain
         :param monitorable_id: The id of the monitorable
+        :param contract_proxy_address: The contract's proxy address
         :param metric_name: The name of the metric
         :param monitorable_name: The name of the monitorable
         :param monitoring_timestamp: The data timestamp
+        :param contract_description: The contract's description
         :return: None
         """
         # Parse warning thresholds and limiters
@@ -204,7 +211,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
                 condition_function(*condition_fn_args)):
             alert = condition_true_alert(
                 monitorable_name, Severity.INFO.value, monitoring_timestamp,
-                parent_id, monitorable_id, contract_proxy_address)
+                parent_id, monitorable_id, contract_proxy_address,
+                contract_description)
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
@@ -219,7 +227,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
                 alert = increased_above_threshold_alert(
                     monitorable_name, current, Severity.CRITICAL.value,
                     monitoring_timestamp, Severity.CRITICAL.value, parent_id,
-                    monitorable_id, contract_proxy_address)
+                    monitorable_id, contract_proxy_address, contract_description
+                )
                 data_for_alerting.append(alert.alert_data)
                 self.component_logger.debug("Successfully classified alert %s",
                                             alert.alert_data)
@@ -233,7 +242,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
                 alert = increased_above_threshold_alert(
                     monitorable_name, current, Severity.CRITICAL.value,
                     monitoring_timestamp, Severity.CRITICAL.value, parent_id,
-                    monitorable_id, contract_proxy_address)
+                    monitorable_id, contract_proxy_address, contract_description
+                )
                 data_for_alerting.append(alert.alert_data)
                 self.component_logger.debug("Successfully classified alert %s",
                                             alert.alert_data)
@@ -245,7 +255,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
                 alert = increased_above_threshold_alert(
                     monitorable_name, current, Severity.WARNING.value,
                     monitoring_timestamp, Severity.WARNING.value, parent_id,
-                    monitorable_id, contract_proxy_address)
+                    monitorable_id, contract_proxy_address, contract_description
+                )
                 data_for_alerting.append(alert.alert_data)
                 self.component_logger.debug("Successfully classified alert %s",
                                             alert.alert_data)
@@ -258,7 +269,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
             decreased_below_threshold_alert: Type[DecreasedBelowThresholdAlert],
             data_for_alerting: List, parent_id: str, monitorable_id: str,
             contract_proxy_address: str, metric_name: str,
-            monitorable_name: str, monitoring_timestamp: float
+            monitorable_name: str, monitoring_timestamp: float,
+            contract_description: str
     ) -> None:
         """
         We are overwriting `classify_thresholded_alert` of the
@@ -281,9 +293,11 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
         :param data_for_alerting: The list to be appended with alerts
         :param parent_id: The id of the base chain
         :param monitorable_id: The id of the monitorable
+        :param contract_proxy_address: The contract's proxy address
         :param metric_name: The name of the metric
         :param monitorable_name: The name of the monitorable
         :param monitoring_timestamp: The data timestamp
+        :param contract_description: The contract's description
         :return: None
         """
         # Parse warning thresholds and limiters
@@ -313,7 +327,7 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
             alert = decreased_below_threshold_alert(
                 monitorable_name, current, Severity.INFO.value,
                 monitoring_timestamp, Severity.CRITICAL.value, parent_id,
-                monitorable_id, contract_proxy_address)
+                monitorable_id, contract_proxy_address, contract_description)
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
@@ -331,7 +345,7 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
             alert = decreased_below_threshold_alert(
                 monitorable_name, current, Severity.INFO.value,
                 monitoring_timestamp, Severity.WARNING.value, parent_id,
-                monitorable_id, contract_proxy_address)
+                monitorable_id, contract_proxy_address, contract_description)
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
@@ -346,7 +360,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
                 alert = increased_above_threshold_alert(
                     monitorable_name, current, Severity.CRITICAL.value,
                     monitoring_timestamp, Severity.CRITICAL.value, parent_id,
-                    monitorable_id, contract_proxy_address)
+                    monitorable_id, contract_proxy_address, contract_description
+                )
                 data_for_alerting.append(alert.alert_data)
                 self.component_logger.debug("Successfully classified alert %s",
                                             alert.alert_data)
@@ -359,7 +374,8 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
                 alert = increased_above_threshold_alert(
                     monitorable_name, current, Severity.CRITICAL.value,
                     monitoring_timestamp, Severity.CRITICAL.value, parent_id,
-                    monitorable_id, contract_proxy_address)
+                    monitorable_id, contract_proxy_address, contract_description
+                )
                 data_for_alerting.append(alert.alert_data)
                 self.component_logger.debug("Successfully classified alert %s",
                                             alert.alert_data)
@@ -373,7 +389,7 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
             alert = increased_above_threshold_alert(
                 monitorable_name, current, Severity.WARNING.value,
                 monitoring_timestamp, Severity.WARNING.value, parent_id,
-                monitorable_id, contract_proxy_address)
+                monitorable_id, contract_proxy_address, contract_description)
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
@@ -394,8 +410,6 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
         'received_error_code' if 'received_error_code' = 'error_code_to_detect',
         and raises an info alert that the error has been resolved otherwise,
         provided that an error alert has already been sent.
-        :param received_error_code: The code associated with the received error
-        if any. If no errors are received this should be set to None.
         :param error_code_to_detect: The error code to detect in order to raise
         the error alert
         :param error_alert: The error alert to be raised if detected
@@ -403,11 +417,13 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
         :param data_for_alerting: The list to be appended with alerts
         :param parent_id: The id of the base chain
         :param monitorable_id: The id of the monitorable
-        :param metric_name: The name of the metric
         :param monitorable_name: The name of the monitorable
         :param monitoring_timestamp: The data timestamp
+        :param metric_name: The name of the metric
         :param error_message: The alert's message when an error is raised
         :param resolved_message: The alert's message when an error is resolved
+        :param received_error_code: The code associated with the received error
+        if any. If no errors are received this should be set to None.
         :return: None
         """
 

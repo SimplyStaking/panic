@@ -181,7 +181,7 @@ class ContractMonitorsManager(MonitorsManager):
     def _create_and_start_chainlink_contracts_monitor_process(
             self, weiwatchers_url: str, evm_nodes: List[str],
             node_configs: List[ChainlinkNodeConfig], parent_id: str,
-            chain_name: str) -> None:
+            full_chain_name: str, base_chain: str, sub_chain: str) -> None:
         """
         This function creates and starts a Chainlink contracts monitor process
         for a particular chain
@@ -191,32 +191,37 @@ class ContractMonitorsManager(MonitorsManager):
         :param node_configs: The configurations of the nodes whose contract
                            : metrics should be retrieved for
         :param parent_id: The ID of the chain
-        :param chain_name: The name of the chain
-        :return:
+        :param full_chain_name: The full name of the chain
+        :param base_chain: The name of the base chain
+        :param sub_chain: The name of the sub chain
         """
         log_and_print("Creating a new process for the Chainlink contracts "
-                      "monitor of {}".format(chain_name), self.logger)
+                      "monitor of {}".format(full_chain_name), self.logger)
         process = multiprocessing.Process(
             target=start_chainlink_contracts_monitor,
-            args=(weiwatchers_url, evm_nodes, node_configs, parent_id,))
+            args=(weiwatchers_url, evm_nodes, node_configs, sub_chain,
+                  parent_id,))
 
         # Kills children if parent is killed
         process.daemon = True
         process.start()
-        self._config_process_dict[chain_name] = {}
-        self._config_process_dict[chain_name]['component_name'] = \
-            CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(parent_id)
-        self._config_process_dict[chain_name]['process'] = process
-        self._config_process_dict[chain_name][
+        self._config_process_dict[full_chain_name] = {}
+        self._config_process_dict[full_chain_name][
+            'component_name'] = CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
+            sub_chain)
+        self._config_process_dict[full_chain_name]['process'] = process
+        self._config_process_dict[full_chain_name][
             'weiwatchers_url'] = weiwatchers_url
-        self._config_process_dict[chain_name]['evm_nodes'] = evm_nodes
-        self._config_process_dict[chain_name]['node_configs'] = node_configs
-        self._config_process_dict[chain_name]['parent_id'] = parent_id
-        self._config_process_dict[chain_name]['chain_name'] = chain_name
+        self._config_process_dict[full_chain_name]['evm_nodes'] = evm_nodes
+        self._config_process_dict[full_chain_name][
+            'node_configs'] = node_configs
+        self._config_process_dict[full_chain_name]['parent_id'] = parent_id
+        self._config_process_dict[full_chain_name]['base_chain'] = base_chain
+        self._config_process_dict[full_chain_name]['sub_chain'] = sub_chain
 
     def _process_chainlink_node_configs(
             self, sent_configs: Dict, current_configs: Dict,
-            chain_name: str) -> Dict:
+            full_chain_name: str, base_chain: str, sub_chain: str) -> Dict:
         correct_configs = copy.deepcopy(current_configs)
         try:
             parent_id, weiwatchers_url, evm_nodes_urls, cl_node_configs = \
@@ -235,14 +240,14 @@ class ContractMonitorsManager(MonitorsManager):
                 # first terminate the monitor, if no it means that we can return
                 # as the current state is the correct one
                 if potential_configs != current_configs:
-                    previous_process = self.config_process_dict[chain_name][
+                    previous_process = self.config_process_dict[full_chain_name][
                         'process']
                     previous_process.terminate()
                     previous_process.join()
-                    del self.config_process_dict[chain_name]
+                    del self.config_process_dict[full_chain_name]
                     correct_configs = {}
                     log_and_print("Killed the Chainlink Contracts monitor of "
-                                  "{}".format(chain_name), self.logger)
+                                  "{}".format(full_chain_name), self.logger)
                 else:
                     # This case may occur if config keys which are irrelevant
                     # for contract monitoring are modified
@@ -255,7 +260,7 @@ class ContractMonitorsManager(MonitorsManager):
                             cl_node_configs]:
                 self._create_and_start_chainlink_contracts_monitor_process(
                     weiwatchers_url, evm_nodes_urls, cl_node_configs,
-                    parent_id, chain_name
+                    parent_id, full_chain_name, base_chain, sub_chain
                 )
                 correct_configs = potential_configs
 
@@ -273,13 +278,15 @@ class ContractMonitorsManager(MonitorsManager):
             properties: pika.spec.BasicProperties, body: bytes) -> None:
         sent_configs = json.loads(body)
 
-        self.logger.info("Received configs %s. Now processing.", sent_configs)
+        self.logger.debug("Received configs %s. Now processing.", sent_configs)
 
         if 'DEFAULT' in sent_configs:
             del sent_configs['DEFAULT']
 
         parsed_routing_key = method.routing_key.split('.')
         chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        base_chain = parsed_routing_key[1]
+        sub_chain = parsed_routing_key[2]
         if chain in self.contracts_configs:
             current_configs = self.contracts_configs[chain]
         else:
@@ -288,7 +295,7 @@ class ContractMonitorsManager(MonitorsManager):
         updated_configs = {}
         if parsed_routing_key[1].lower() == 'chainlink':
             updated_configs = self._process_chainlink_node_configs(
-                sent_configs, current_configs, chain)
+                sent_configs, current_configs, chain, base_chain, sub_chain)
 
         self._contracts_configs[chain] = updated_configs
 
@@ -305,7 +312,7 @@ class ContractMonitorsManager(MonitorsManager):
             heartbeat['component_name'] = self.name
             heartbeat['running_processes'] = []
             heartbeat['dead_processes'] = []
-            for chain_name, process_details in self.config_process_dict.items():
+            for chain, process_details in self.config_process_dict.items():
                 process = process_details['process']
                 component_name = process_details['component_name']
                 if process.is_alive():
@@ -319,10 +326,11 @@ class ContractMonitorsManager(MonitorsManager):
                     evm_nodes = process_details['evm_nodes']
                     node_configs = process_details['node_configs']
                     parent_id = process_details['parent_id']
+                    base_chain = process_details['base_chain']
+                    sub_chain = process_details['sub_chain']
                     self._create_and_start_chainlink_contracts_monitor_process(
                         weiwatchers_url, evm_nodes, node_configs, parent_id,
-                        chain_name
-                    )
+                        chain, base_chain, sub_chain)
             heartbeat['timestamp'] = datetime.now().timestamp()
         except Exception as e:
             # If we encounter an error during processing log the error and

@@ -44,8 +44,8 @@ class NoChangeInTotalHeadersReceivedAlert(Alert):
             "headers received in total.".format(
                 origin_name, strfdelta(timedelta(seconds=duration),
                                        "{hours}h, {minutes}m, {seconds}s"),
-                current_headers_received), severity, timestamp, parent_id,
-            origin_id,
+                current_headers_received),
+            severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived)
 
 
@@ -56,8 +56,8 @@ class ReceivedANewHeaderAlert(Alert):
         super().__init__(
             ChainlinkNodeAlertCode.ReceivedANewHeaderAlert,
             "{} received a new block header. {} headers received in "
-            "total.".format(origin_name, current_headers_received), severity,
-            timestamp, parent_id, origin_id,
+            "total.".format(origin_name, current_headers_received),
+            severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived)
 
 
@@ -138,8 +138,8 @@ class NoOfUnconfirmedTxsDecreasedBelowThresholdAlert(Alert):
                 .NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
             "{} number of unconfirmed transactions have DECREASED below {} "
             "threshold. Current value: {}.".format(
-                origin_name, threshold_severity, current_value), severity,
-            timestamp, parent_id, origin_id,
+                origin_name, threshold_severity, current_value),
+            severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.NoOfUnconfirmedTxsThreshold)
 
 
@@ -248,8 +248,8 @@ class PrometheusSourceBackUpAgainAlert(Alert):
             ChainlinkNodeAlertCode.PrometheusSourceBackUpAgainAlert,
             "The prometheus source of node {} is accessible again, last "
             "successful monitor at: {}.".format(
-                origin_name, datetime.fromtimestamp(timestamp)), severity,
-            timestamp, parent_id, origin_id,
+                origin_name, datetime.fromtimestamp(timestamp)),
+            severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown)
 
 
@@ -292,8 +292,8 @@ class MetricNotFoundErrorAlert(Alert):
                  timestamp: float, parent_id: str, origin_id: str) -> None:
         super().__init__(
             ChainlinkNodeAlertCode.MetricNotFoundErrorAlert,
-            "{}: {}".format(origin_name, message), severity, timestamp,
-            parent_id, origin_id,
+            "{}: {}".format(origin_name, message),
+            severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.MetricNotFound)
 
 
@@ -302,6 +302,6 @@ class MetricFoundAlert(Alert):
                  timestamp: float, parent_id: str, origin_id: str) -> None:
         super().__init__(
             ChainlinkNodeAlertCode.MetricFoundAlert,
-            "{}: {}".format(origin_name, message), severity, timestamp,
-            parent_id, origin_id,
+            "{}: {}".format(origin_name, message),
+            severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.MetricNotFound)
