@@ -1,23 +1,26 @@
-import { Alert } from "../interfaces/alerts";
-import { Chain } from "../interfaces/chains";
-import { Severity } from "../interfaces/severity";
-import { apiURL, maxNumberOfAlerts } from "./constants";
-import { UnknownAlertSeverityError } from "./errors";
+import {Alert, AlertsCount} from "../interfaces/alerts";
+import {SubChain} from "../interfaces/chains";
+import {FilterStateV2} from "../interfaces/filterState";
+import {ChainsAPI} from "./chains";
+import {API_URL, MAX_ALERTS, Severity} from "./constants";
+import {UnknownAlertSeverityError} from "./errors";
+import {HelperAPI} from "./helpers";
+import {SeverityAPI} from "./severity";
 
 export const AlertsAPI = {
-    getAlerts: getAlerts
+    getAlerts: getAlerts,
+    getAlertsCount: getAlertsCount
 }
 
 /**
- * Gets the alerts of chains.
- * @param chains chains to be checked.
- * @param activeSeverities only alerts with these severities are required.
- * @param minTimestamp only alerts which occurred after this timestamp are required.
- * @param maxTimestamp only alerts which occurred before this timestamp are required.
+ * Gets and parses the alerts of chains. Wrapper around
+ * {@link getChainAlerts} and {@link parseAlerts} functions.
+ * @param chains array of chains to be checked.
+ * @param filterState only alerts which fall under these filters are required.
  * @returns alerts extracted from API.
  */
-async function getAlerts(chains: Chain[], activeSeverities: Severity[], minTimestamp: number, maxTimestamp: number): Promise<Alert[]> {
-    const data: any = await getChainAlerts(chains, activeSeverities, minTimestamp, maxTimestamp);
+async function getAlerts(chains: SubChain[], filterState: FilterStateV2): Promise<Alert[]> {
+    const data: any = await getChainAlerts(chains, filterState);
     let alerts: Alert[] = [];
 
     if (data.result['alerts']) {
@@ -28,33 +31,32 @@ async function getAlerts(chains: Chain[], activeSeverities: Severity[], minTimes
 }
 
 /**
- * Gets the alerts of chains.
- * @param chains chains to be checked.
- * @param activeSeverities only alerts with these severities are required.
- * @param minTimestamp only alerts which occurred after this timestamp are required.
- * @param maxTimestamp only alerts which occurred before this timestamp are required.
+ * Gets the alerts of chains given a filter state.
+ * @param chains array of chains to be checked.
+ * @param filterState only chains and alerts which fall under these filters are
+ * required.
  * @returns alerts data as a JSON object.
  */
-async function getChainAlerts(chains: Chain[], activeSeverities: Severity[], minTimestamp: number, maxTimestamp: number): Promise<any> {
+async function getChainAlerts(chains: SubChain[], filterState: FilterStateV2): Promise<any> {
     let alertsBody = {
         chains: [],
-        severities: activeSeverities,
-        sources: [],
-        minTimestamp: minTimestamp,
-        maxTimestamp: maxTimestamp,
-        noOfAlerts: maxNumberOfAlerts
+        severities: filterState.selectedSeverities.length > 0 ? filterState.selectedSeverities : SeverityAPI.getAllSeverityValues(),
+        sources: filterState.selectedSources.length > 0 ? filterState.selectedSources : ChainsAPI.activeChainsSourcesIDs(chains, filterState.selectedSubChains),
+        minTimestamp: filterState.fromDateTime !== '' ? HelperAPI.dateTimeStringToTimestamp(filterState.fromDateTime) : 0,
+        maxTimestamp: filterState.toDateTime !== '' ? HelperAPI.dateTimeStringToTimestamp(filterState.toDateTime) : HelperAPI.getCurrentTimestamp(),
+        noOfAlerts: MAX_ALERTS
     };
 
+    const noFilter: boolean = filterState.selectedSubChains.length === 0;
+
     for (const chain of chains) {
-        if (chain.active) {
+        if (noFilter || filterState.selectedSubChains.includes(chain.name)) {
             alertsBody.chains.push(chain.id);
-            alertsBody.sources.push.apply(alertsBody.sources, chain.systems);
-            alertsBody.sources.push.apply(alertsBody.sources, chain.repos);
         }
     }
 
     try {
-        const alerts = await fetch(`${apiURL}mongo/alerts`,
+        const alerts = await fetch(`${API_URL}mongo/alerts`,
             {
                 method: 'POST',
                 headers: {
@@ -63,22 +65,28 @@ async function getChainAlerts(chains: Chain[], activeSeverities: Severity[], min
                 body: JSON.stringify(alertsBody)
             });
 
-        return await alerts.json();
+        if (!alerts.ok) {
+            const result = await alerts.json();
+            HelperAPI.logFetchError(result, 'Chain Alerts from Mongo');
+            return {result: {}};
+        }
+
+        return alerts.json();
     } catch (error: any) {
-        console.log('Error getting Chain Alerts from Mongo -', error);
-        return { result: {} };
+        console.log(`Error getting Chain Alerts from Mongo - ${error}`);
+        return {result: {}};
     }
 }
 
 /**
- * Parses the alerts JSON object from alerts API call to a list of alerts.
- * @param alertsList list of JSON objects.
- * @returns list of alerts.
+ * Parses the alerts JSON object from alerts API call to an array of alerts.
+ * @param alertsArray array of JSON objects.
+ * @returns array of alerts.
  */
-function parseAlerts(alertsList: any): Alert[] {
+function parseAlerts(alertsArray: any[]): Alert[] {
     const alerts: Alert[] = []
 
-    for (const alert of alertsList) {
+    for (const alert of alertsArray) {
         if (alert.severity in Severity) {
             alerts.push({
                 severity: alert.severity as Severity,
@@ -92,4 +100,43 @@ function parseAlerts(alertsList: any): Alert[] {
     }
 
     return alerts;
+}
+
+/**
+ * Gets the number of alerts within chains.
+ * @param chains array of chains to be checked.
+ * @returns {@link AlertsCount} object with updated alert counts.
+ */
+function getAlertsCount(chains: SubChain[]): AlertsCount {
+    const alertsCount: AlertsCount = {
+        critical: 0,
+        warning: 0,
+        error: 0,
+        info: 0
+    };
+
+    for (const chain of chains) {
+        for (const alert of chain.alerts) {
+            switch (Severity[alert.severity]) {
+                case Severity.CRITICAL: {
+                    alertsCount.critical++;
+                    break;
+                }
+                case Severity.WARNING: {
+                    alertsCount.warning++;
+                    break;
+                }
+                case Severity.ERROR: {
+                    alertsCount.error++;
+                    break;
+                }
+                case Severity.INFO: {
+                    alertsCount.info++;
+                    break;
+                }
+            }
+        }
+    }
+
+    return alertsCount;
 }

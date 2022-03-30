@@ -9,16 +9,15 @@ import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.abstract.publisher_subscriber import PublisherSubscriberComponent
-from src.data_store.starters import (start_system_store, start_github_store,
-                                     start_alert_store, start_config_store,
-                                     start_chainlink_node_store,
-                                     start_evm_node_store,
-                                     start_cl_contract_store)
+from src.data_store.starters import (
+    start_system_store, start_github_store, start_dockerhub_store,
+    start_alert_store, start_chainlink_node_store, start_evm_node_store,
+    start_cl_contract_store, start_monitorable_store)
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants.names import (SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
-                                       ALERT_STORE_NAME, CONFIG_STORE_NAME,
-                                       CL_NODE_STORE_NAME, EVM_NODE_STORE_NAME,
-                                       CL_CONTRACT_STORE_NAME)
+from src.utils.constants.names import (
+    SYSTEM_STORE_NAME, GITHUB_STORE_NAME, DOCKERHUB_STORE_NAME,
+    ALERT_STORE_NAME, CL_NODE_STORE_NAME, EVM_NODE_STORE_NAME,
+    CL_CONTRACT_STORE_NAME, MONITORABLE_STORE_NAME)
 from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
                                           HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
@@ -128,8 +127,9 @@ class StoreManager(PublisherSubscriberComponent):
         configuration = {
             SYSTEM_STORE_NAME: start_system_store,
             GITHUB_STORE_NAME: start_github_store,
+            DOCKERHUB_STORE_NAME: start_dockerhub_store,
             ALERT_STORE_NAME: start_alert_store,
-            CONFIG_STORE_NAME: start_config_store,
+            MONITORABLE_STORE_NAME: start_monitorable_store,
             CL_NODE_STORE_NAME: start_chainlink_node_store,
             EVM_NODE_STORE_NAME: start_evm_node_store,
             CL_CONTRACT_STORE_NAME: start_cl_contract_store,

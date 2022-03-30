@@ -1,3 +1,4 @@
+import copy
 import datetime
 import json
 import logging
@@ -42,6 +43,7 @@ class TestGithubAlerter(unittest.TestCase):
         self.repo_id = 'test_repo_id'
         self.parent_id = 'test_parent_id'
         self.github_name = 'test_github'
+        self.error_message = 'error message'
         self.last_monitored = 1611619200
         self.publishing_queue = Queue(ALERTER_PUBLISHING_QUEUE_SIZE)
         self.test_routing_key = 'test_alert.github'
@@ -122,6 +124,10 @@ class TestGithubAlerter(unittest.TestCase):
             }
         }
         self.github_json_error = json.dumps(self.github_data_error)
+
+        self.github_api_error = copy.deepcopy(self.github_data_error)
+        self.github_api_error['error']['code'] = '5007'
+        self.github_api_error['error']['message'] = self.error_message
 
         # Alert used for rabbitMQ testing
         self.alert = NewGitHubReleaseAlert(
@@ -390,6 +396,49 @@ class TestGithubAlerter(unittest.TestCase):
             )
 
             self.assertEqual(2, mock_basic_publish_confirm.call_count)
+        except Exception as e:
+            self.fail("Test failed: {}".format(e))
+
+    @mock.patch(
+        "src.alerter.alerters.alerter.RabbitMQApi.basic_publish_confirm",
+        autospec=True)
+    @mock.patch("src.alerter.alerters.alerter.RabbitMQApi.basic_ack",
+                autospec=True)
+    @mock.patch("src.alerter.alerters.github.GitHubAPICallErrorAlert",
+                autospec=True)
+    def test_github_api_call_error_alert(
+            self, mock_github_api_call_error_alert, mock_ack,
+            mock_basic_publish_confirm):
+        self.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(ALERT_EXCHANGE, "topic", False, True,
+                                       False, False)
+
+        type(mock_github_api_call_error_alert.return_value
+             ).alert_data = mock.PropertyMock(return_value={})
+        mock_ack.return_value = self.none
+        try:
+            self.test_github_alerter._initialise_rabbitmq()
+            blocking_channel = self.test_github_alerter.rabbitmq.channel
+
+            method_chains = pika.spec.Basic.Deliver(
+                routing_key=GITHUB_TRANSFORMED_DATA_ROUTING_KEY)
+
+            properties = pika.spec.BasicProperties()
+            self.test_github_alerter._process_data(
+                blocking_channel,
+                method_chains,
+                properties,
+                json.dumps(self.github_api_error)
+            )
+
+            mock_github_api_call_error_alert.assert_called_once_with(
+                self.repo_name, self.error, self.last_monitored,
+                self.parent_id, self.repo_id, self.error_message
+            )
+
+            self.assertEqual(2, mock_basic_publish_confirm.call_count)
+            self.assertEqual({self.repo_id: True},
+                             self.test_github_alerter._api_call_error)
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 

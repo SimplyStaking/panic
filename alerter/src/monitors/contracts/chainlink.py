@@ -86,6 +86,13 @@ class ChainlinkContractsMonitor(Monitor):
         # {<node_id>: {<proxy_contract_address>: <last_block_monitored>}}
         self._last_block_monitored = {}
 
+        # This dict stores the last round observed for a node and contract pair.
+        # This will serve as a helper for alerting on missed observations. This
+        # cannot be computed in the data transformer due to possible monitor
+        # restarts. The dict should have the following structure:
+        # {<node_id>: {<proxy_contract_address>: <last_round_observed>}}
+        self._last_round_observed = {}
+
         # Data retrieval limiters
         self._wei_watchers_retrieval_limiter = TimedTaskLimiter(
             timedelta(seconds=float(_WEI_WATCHERS_RETRIEVAL_TIME_PERIOD)))
@@ -119,6 +126,10 @@ class ChainlinkContractsMonitor(Monitor):
     @property
     def last_block_monitored(self) -> Dict:
         return self._last_block_monitored
+
+    @property
+    def last_round_observed(self) -> Dict:
+        return self._last_round_observed
 
     @property
     def wei_watchers_retrieval_limiter(self) -> TimedTaskLimiter:
@@ -290,6 +301,9 @@ class ChainlinkContractsMonitor(Monitor):
                 'latestTimestamp': float,
                 'answeredInRound': int
                 'withdrawablePayment': int,
+                'lastRoundObserved': int/None (if no submission has been
+                                               detected yet, therefore we don't
+                                               know the last round observed),
                 'historicalRounds': [{
                     'roundId': int,
                     'roundAnswer': int/None (if round consensus not reached
@@ -312,6 +326,10 @@ class ChainlinkContractsMonitor(Monitor):
         if node_id not in self.last_block_monitored:
             self._last_block_monitored[node_id] = {}
 
+        # This is the case for the first monitoring round
+        if node_id not in self.last_round_observed:
+            self._last_round_observed[node_id] = {}
+
         data = {}
         v3_contracts = self.node_contracts[node_id]['v3']
         for proxy_address in v3_contracts:
@@ -333,6 +351,10 @@ class ChainlinkContractsMonitor(Monitor):
                                          proxy_address] + 1 \
                 if proxy_address in self.last_block_monitored[node_id] \
                 else current_block_height
+
+            if first_block_to_monitor > current_block_height:
+                first_block_to_monitor = current_block_height
+
             event_filter = \
                 aggregator_contract.events.SubmissionReceived.createFilter(
                     fromBlock=first_block_to_monitor,
@@ -359,12 +381,17 @@ class ChainlinkContractsMonitor(Monitor):
 
             # Construct the historical data
             historical_rounds = data[proxy_address]['historicalRounds']
+            last_round_observed = (
+                self.last_round_observed[node_id][proxy_address]
+                if proxy_address in self.last_round_observed[node_id] else None
+            )
             for event in events:
                 round_id = event['args']['round']
                 round_answer = None
                 round_timestamp = None
                 answered_in_round = None
                 consensus_reached = True
+                last_round_observed = round_id
 
                 # In v3 contracts we may encounter a scenario where a node
                 # submitted their answer but consensus is not reached yet on
@@ -405,6 +432,11 @@ class ChainlinkContractsMonitor(Monitor):
             self._last_block_monitored[node_id][
                 proxy_address] = current_block_height
 
+            # Store and send the last round observed
+            data[proxy_address]['lastRoundObserved'] = last_round_observed
+            self._last_round_observed[node_id][
+                proxy_address] = last_round_observed
+
         return data
 
     def _get_v4_data(self, w3_interface: Web3, node_eth_address: str,
@@ -427,6 +459,9 @@ class ChainlinkContractsMonitor(Monitor):
                 'latestTimestamp': float,
                 'answeredInRound': int
                 'owedPayment': int,
+                'lastRoundObserved': int/None (if no submission has been
+                                               detected yet, therefore we don't
+                                               know the last round observed),
                 'historicalRounds': [{
                     'roundId': int,
                     'roundAnswer': int,
@@ -447,6 +482,10 @@ class ChainlinkContractsMonitor(Monitor):
         # This is the case for the first monitoring round
         if node_id not in self.last_block_monitored:
             self._last_block_monitored[node_id] = {}
+
+        # This is the case for the first monitoring round
+        if node_id not in self.last_round_observed:
+            self._last_round_observed[node_id] = {}
 
         data = {}
         v4_contracts = self.node_contracts[node_id]['v4']
@@ -508,6 +547,10 @@ class ChainlinkContractsMonitor(Monitor):
 
             # Construct the historical data
             historical_rounds = data[proxy_address]['historicalRounds']
+            last_round_observed = (
+                self.last_round_observed[node_id][proxy_address]
+                if proxy_address in self.last_round_observed[node_id] else None
+            )
             for event in events:
                 round_id = event['args']['aggregatorRoundId']
                 round_data = aggregator_contract.functions.getRoundData(
@@ -518,6 +561,7 @@ class ChainlinkContractsMonitor(Monitor):
                     answer_index = observers_list.index(node_transmitter_index)
                     node_submission = event['args']['observations'][
                         answer_index]
+                    last_round_observed = round_id
                 except ValueError:
                     self.logger.warning("Node %s did not send an answer in "
                                         "round %s for contract %s", node_id,
@@ -536,6 +580,11 @@ class ChainlinkContractsMonitor(Monitor):
 
             self._last_block_monitored[node_id][
                 proxy_address] = current_block_height
+
+            # Store and send the last round observed
+            data[proxy_address]['lastRoundObserved'] = last_round_observed
+            self._last_round_observed[node_id][
+                proxy_address] = last_round_observed
 
         return data
 
@@ -688,10 +737,14 @@ class ChainlinkContractsMonitor(Monitor):
                 if re_filter:
                     # If contracts or eth addresses were retrieved in this
                     # round, then we must do the re-filtering.
-                    node_contracts = self._filter_contracts_by_node(
-                        selected_node_url)
-                    self._store_node_contracts(node_contracts)
-
+                    try:
+                        node_contracts = self._filter_contracts_by_node(
+                            selected_node_url)
+                        self._store_node_contracts(node_contracts)
+                    except Exception as e:
+                        self.logger.error("Could not filter contracts by node "
+                                          "using %s", selected_node_url)
+                        self.logger.exception(e)
                 w3_interface = self.evm_node_w3_interface[selected_node_url]
                 for node_id, node_eth_address in self.node_eth_address.items():
                     try:
@@ -720,7 +773,7 @@ class ChainlinkContractsMonitor(Monitor):
 
                     self._send_data(processed_data)
 
-                    self.logger.info(self._display_data(processed_data))
+                    self.logger.debug(self._display_data(processed_data))
         else:
             # If an error occurred before retrieving any metrics, process the
             # error and send it. Here we are assuming that all nodes have the

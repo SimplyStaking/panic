@@ -8,13 +8,14 @@ from typing import Dict
 import pika.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.configs.repo import RepoConfig
+from src.configs.repo import GitHubRepoConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_github_monitor
 from src.utils import env
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
+from src.utils.constants.monitorables import MonitorableType
 from src.utils.constants.names import GITHUB_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (CONFIG_EXCHANGE,
                                           HEALTH_CHECK_EXCHANGE,
@@ -86,8 +87,9 @@ class GitHubMonitorsManager(MonitorsManager):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 
-    def _create_and_start_monitor_process(self, repo_config: RepoConfig,
-                                          config_id: str, chain: str) -> None:
+    def _create_and_start_monitor_process(
+            self, repo_config: GitHubRepoConfig, config_id: str, chain: str,
+            base_chain: str, sub_chain: str) -> None:
         log_and_print("Creating a new process for the monitor of {}"
                       .format(repo_config.repo_name), self.logger)
         process = multiprocessing.Process(target=start_github_monitor,
@@ -96,11 +98,17 @@ class GitHubMonitorsManager(MonitorsManager):
         process.daemon = True
         process.start()
         self._config_process_dict[config_id] = {}
-        self._config_process_dict[config_id]['component_name'] = \
+        self._config_process_dict[config_id]['component_name'] = (
             GITHUB_MONITOR_NAME_TEMPLATE.format(
-                repo_config.repo_name.replace('/', ' ')[:-1])
+                repo_config.repo_name.replace('/', ' ')[:-1]))
         self._config_process_dict[config_id]['process'] = process
         self._config_process_dict[config_id]['chain'] = chain
+        self._config_process_dict[config_id]['parent_id'] = (
+            repo_config.parent_id)
+        self._config_process_dict[config_id]['source_name'] = (
+            repo_config.repo_name[:-1])
+        self._config_process_dict[config_id]['base_chain'] = base_chain
+        self._config_process_dict[config_id]['sub_chain'] = sub_chain
 
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -118,9 +126,13 @@ class GitHubMonitorsManager(MonitorsManager):
             else:
                 current_configs = {}
             chain = 'general'
+            base_chain = 'general'
+            sub_chain = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+            base_chain = parsed_routing_key[1]
+            sub_chain = parsed_routing_key[2]
             if chain in self.github_repos_configs:
                 current_configs = self.github_repos_configs[chain]
             else:
@@ -150,10 +162,11 @@ class GitHubMonitorsManager(MonitorsManager):
                 if not monitor_repo:
                     continue
 
-                repo_config = RepoConfig(repo_id, parent_id, repo_name,
-                                         monitor_repo, releases_page)
+                repo_config = GitHubRepoConfig(repo_id, parent_id, repo_name,
+                                               monitor_repo, releases_page)
                 self._create_and_start_monitor_process(repo_config, config_id,
-                                                       chain)
+                                                       chain, base_chain,
+                                                       sub_chain)
                 correct_github_repos_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
@@ -170,8 +183,8 @@ class GitHubMonitorsManager(MonitorsManager):
 
                 monitor_repo = str_to_bool(config['monitor_repo'])
                 releases_page = env.GITHUB_RELEASES_TEMPLATE.format(repo_name)
-                repo_config = RepoConfig(repo_id, parent_id, repo_name,
-                                         monitor_repo, releases_page)
+                repo_config = GitHubRepoConfig(repo_id, parent_id, repo_name,
+                                               monitor_repo, releases_page)
                 previous_process = self.config_process_dict[config_id][
                     'process']
                 previous_process.terminate()
@@ -196,7 +209,8 @@ class GitHubMonitorsManager(MonitorsManager):
                     "the latest configuration will be started.".format(
                         old_repo_name), self.logger)
                 self._create_and_start_monitor_process(repo_config, config_id,
-                                                       chain)
+                                                       chain, base_chain,
+                                                       sub_chain)
                 correct_github_repos_configs[config_id] = config
 
             removed_configs = get_removed_configs(sent_configs,
@@ -231,7 +245,15 @@ class GitHubMonitorsManager(MonitorsManager):
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
             self._github_repos_configs[chain] = correct_github_repos_configs
 
+        self.process_and_send_monitorable_data(base_chain,
+                                               MonitorableType.GITHUB_REPOS)
+
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+    def process_and_send_monitorable_data(
+            self, base_chain: str, monitorable_type: MonitorableType) -> None:
+        self.process_and_send_monitorable_data_generic(
+            base_chain, monitorable_type)
 
     def _process_ping(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -258,6 +280,8 @@ class GitHubMonitorsManager(MonitorsManager):
                     config = self.github_repos_configs[chain][config_id]
                     repo_id = config['id']
                     parent_id = config['parent_id']
+                    base_chain = process_details['base_chain']
+                    sub_chain = process_details['sub_chain']
 
                     repo_name = config['repo_name']
                     if not repo_name.endswith('/'):
@@ -266,10 +290,11 @@ class GitHubMonitorsManager(MonitorsManager):
                     monitor_repo = str_to_bool(config['monitor_repo'])
                     releases_page = env.GITHUB_RELEASES_TEMPLATE.format(
                         repo_name)
-                    repo_config = RepoConfig(repo_id, parent_id, repo_name,
-                                             monitor_repo, releases_page)
-                    self._create_and_start_monitor_process(repo_config,
-                                                           config_id, chain)
+                    repo_config = GitHubRepoConfig(repo_id, parent_id,
+                                                   repo_name,
+                                                   monitor_repo, releases_page)
+                    self._create_and_start_monitor_process(
+                        repo_config, config_id, chain, base_chain, sub_chain)
             heartbeat['timestamp'] = datetime.now().timestamp()
         except Exception as e:
             # If we encounter an error during processing log the error and

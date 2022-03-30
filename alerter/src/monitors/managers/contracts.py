@@ -12,6 +12,7 @@ from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_chainlink_contracts_monitor
+from src.utils.constants.monitorables import MonitorableType
 from src.utils.constants.names import CL_CONTRACTS_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY, CONFIG_EXCHANGE,
@@ -107,7 +108,8 @@ class ContractMonitorsManager(MonitorsManager):
 
         # Extract parent_id from configs. Return None if not all parent_ids are
         # equal.
-        parent_ids_list = [config['parent_id'] for _, config in configs.items()]
+        parent_ids_list = [config['parent_id']
+                           for _, config in configs.items()]
         parent_ids_set = set(parent_ids_list)
         if len(parent_ids_set) == 1:
             parent_id = parent_ids_list[0]
@@ -240,8 +242,9 @@ class ContractMonitorsManager(MonitorsManager):
                 # first terminate the monitor, if no it means that we can return
                 # as the current state is the correct one
                 if potential_configs != current_configs:
-                    previous_process = self.config_process_dict[full_chain_name][
-                        'process']
+                    previous_process = \
+                        self.config_process_dict[full_chain_name][
+                            'process']
                     previous_process.terminate()
                     previous_process.join()
                     del self.config_process_dict[full_chain_name]
@@ -270,6 +273,8 @@ class ContractMonitorsManager(MonitorsManager):
             # from the queue.
             self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
+
+        self.process_and_send_monitorable_data(base_chain)
 
         return correct_configs
 
@@ -300,6 +305,47 @@ class ContractMonitorsManager(MonitorsManager):
         self._contracts_configs[chain] = updated_configs
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+    def process_and_send_monitorable_data(
+            self, base_chain: str, _: MonitorableType = None) -> None:
+        self.process_and_send_contracts_monitorable_data(base_chain)
+
+    def process_and_send_contracts_monitorable_data(
+            self, base_chain: str):
+        """
+        This function processes the required contracts monitorable data which
+        is then sent to RabbitMQ. This is done by using the config process
+        dict and formed based on the base chain. This function overrides the
+        send_monitorable_data function found in the MonitorsManager (parent).
+        :param base_chain: The name of the base chain that has monitorable data
+        """
+        monitorable_data_nodes = {'manager_name': self._name, 'sources': []}
+        monitorable_data_chains = {'manager_name': self._name, 'sources': []}
+        for chain, source_data in self.config_process_dict.items():
+            if base_chain == source_data['base_chain']:
+                for node_config in source_data['node_configs']:
+                    monitorable_data_nodes['sources'].append({
+                        'chain_id': source_data['parent_id'],
+                        'chain_name': source_data['sub_chain'],
+                        'source_id': node_config.node_id,
+                        'source_name': node_config.node_name
+                    })
+
+                monitorable_data_chains['sources'].append({
+                    'chain_id': source_data['parent_id'],
+                    'chain_name': source_data['sub_chain'],
+                    'source_id': source_data['parent_id'],
+                    'source_name': chain
+                })
+
+        routing_key_nodes = '{}.{}'.format(base_chain,
+                                           MonitorableType.NODES.value)
+        routing_key_chains = '{}.{}'.format(base_chain,
+                                            MonitorableType.CHAINS.value)
+        self.send_monitorable_data(routing_key_nodes,
+                                   monitorable_data_nodes)
+        self.send_monitorable_data(routing_key_chains,
+                                   monitorable_data_chains)
 
     def _process_ping(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,

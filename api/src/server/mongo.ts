@@ -7,6 +7,8 @@ import {
     MSG_MONGO_DISCONNECTED
 } from "./msgs";
 
+export const MonitorablesCollection = 'monitorables';
+
 export class MongoInterface {
     private readonly url: string;
     private readonly options: MongoClient.MongoClientOptions;

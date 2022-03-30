@@ -6,20 +6,24 @@
   - [Alerting Channels](#alerting-channels)
   - [Telegram and Slack Commands](#telegram-and-slack-commands)
   - [List of Alerts](#list-of-alerts)
-  - [Chainlink Alerts](#chainlink-node-alerts)
   - [System Alerts](#system-alerts)
   - [GitHub Repository Alerts](#github-repository-alerts)
+  - [DockerHub Repository Alerts](#dockerhub-repository-alerts)
+  - [Chainlink Node Alerts](#chainlink-node-alerts)
+  - [Chainlink Contract Alerts](#chainlink-contract-alerts)
+  - [EVM Node Alerts](#evm-node-alerts)
 
 ## High-Level Design
 
 The PANIC alerter can alert a node operator on the following sources: 
-- The host systems that the Cosmos-SDK/Substrate/Chainlink nodes are running on based on system metrics obtained from the node via [Node Exporter](https://github.com/prometheus/node_exporter)
+- The host systems that the Cosmos-SDK/Substrate/Chainlink nodes are running on based on system metrics obtained from the node via [Node Exporter](https://github.com/prometheus/node_exporter).
 - GitHub repository releases using the [GitHub Releases API](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#releases).
+- DockerHub repository releases using the [Docker HUB API](https://docs.docker.com/docker-hub/api/latest).
 - Chainlink nodes will be monitored through their prometheus metrics.
 - Chainlink contracts are monitored through the use of EVM nodes and Chainlink node addresses.
 - EVM nodes will be monitored through the RPC endpoint.
 
-Given the above, system monitoring and GitHub repository monitoring were developed as general as possible to give the node operator the option to monitor any system and/or any GitHub repository (Don't have to be Substrate/Cosmos-SDK/Chainlink based nodes/repositories).
+Given the above, systems monitoring and GitHub/DockerHub repositories monitoring were developed as general as possible to give the node operator the option to monitor any system and/or any repository (Don't have to be Substrate/Cosmos-SDK/Chainlink based nodes/repositories).
 
 The diagram below depicts the different components which constitute PANIC and how they interact with each other and the node operator.
 
@@ -38,7 +42,7 @@ For system monitoring and alerting, PANIC operates as follows:
 - When a **Channel Handler** receives an alert via **RabbitMQ**, it simply forwards it to the channel it handles and the **Node Operator** would be notified via this channel.
 - If the user sets-up a **Telegram** or **Slack** Channel with **Commands** enabled, the user would be able to control and query PANIC via Telegram Bot/Slack App Commands. A list of available commands is given [here](#telegram-and-slack-commands).
 
-For the EVM Node and GitHub repository monitoring and alerting, PANIC operates similarly to the above but the data flows through GitHub repository dedicated processes and the EVM node dedicated processes respectively.
+For the EVM Node and GitHub/DockerHub repositories monitoring and alerting, PANIC operates similarly to the above but the data flows through GitHub/DockerHub repositories dedicated processes and the EVM node dedicated processes respectively.
 
 For Chainlink node monitoring and alerting, PANIC operates as follows:
 - When the **Monitors** **Manager Process** receives the configurations, it starts as many **Chainlink Node Monitors** as there are Chainlink configurations to be monitored. A Chainlink configuration could have multiple prometheus data points setup as a node operator would have multiple Chainlink nodes setup but one running. If one Chainlink node goes down another would start operating to ensure fully functional operations. The node monitor is built to consider this and checks all prometheus data points to find the active one, if none are found an appropriate response is passed on.
@@ -83,9 +87,9 @@ PANIC supports multiple alerting channels. By default, only the console and logg
 PANIC supports the following alerting channels:
 
 | Channel     | Severities Supported                   | Configurable Severities | Description                                                                                                                                                                           |
-| ----------- | -------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-------------|----------------------------------------|-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `Console`   | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All                     | Alerts printed to standard output (`stdout`) of the alerter's Docker container.                                                                                                       |
-| `Log`       | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All                     | Alerts logged to an alerts log (`alerter/logs/alerts/alerts.log`).                                                                                                                            |
+| `Log`       | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All                     | Alerts logged to an alerts log (`alerter/logs/alerts/alerts.log`).                                                                                                                    |
 | `Telegram`  | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All                     | Alerts delivered to a Telegram chat via a Telegram bot in the form of a text message.                                                                                                 |
 | `Slack`     | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All                     | Alerts delivered to a Slack channel via a Slack app in the form of a text message.                                                                                                    |
 | `E-mail`    | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All                     | Alerts sent as emails using an SMTP server, with option for authentication.                                                                                                           |
@@ -107,7 +111,7 @@ Telegram bots and Slack apps in PANIC serve two purposes. As mentioned above, th
 PANIC supports the following commands:
 
 | Command                                         | Parameters                                                | Description                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| ----------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-------------------------------------------------|-----------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `/start`                                        | None                                                      | A welcome message is returned.                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `/ping`                                         | None                                                      | Pings the Telegram/Slack Commands Handler associated with the Telegram Chat/Slack Channel and returns `PONG!`. The user can use this command to check that the associated Telegram/Slack Commands Handler is running.                                                                                                                                                                                                                       |
 | `/help`                                         | None                                                      | Returns a guide of acceptable commands and their description.                                                                                                                                                                                                                                                                                                                                                                               |
@@ -122,6 +126,7 @@ PANIC supports the following commands:
 A complete list of alerts will now be presented. These are grouped into:
 + [System Alerts](#system-alerts)
 + [GitHub Repository Alerts](#github-repository-alerts)
++ [DockerHub Repository Alerts](#dockerhub-repository-alerts)
 + [Chainlink Node Alerts](#chainlink-node-alerts)
 + [Chainlink Contract Alerts](#chainlink-contract-alerts)
 + [EVM Node Alerts](#evm-node-alerts)
@@ -135,7 +140,7 @@ In the lists below we will show which alerts have severity thresholds and which 
 ## System Alerts
 
 | Alert Class                                       | Severity Thresholds   | Severity | Configurable | Enabled/Disabled | Description                                                                                                                                                                                                                                                                                                                                       |
-| ------------------------------------------------- | --------------------- | -------- | :----------: | :--------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|---------------------------------------------------|-----------------------|----------|:------------:|:----------------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `SystemWentDownAtAlert`                           | `WARNING`, `CRITICAL` |          |      ✓       |        ✓         | A `WARNING`/`CRITICAL` alert is raised if `warning_threshold`/`critical_threshold` seconds pass after a system is down respectively.                                                                                                                                                                                                              |
 | `SystemBackUpAgainAlert`                          |                       | `INFO`   |      ✗       |        ✗         | This alert is raised if the the system was down and is back up again. This alert can only be enabled/disabled if the downtime alert is enabled/disabled respectively.                                                                                                                                                                             |
 | `SystemStillDownAlert`                            | `CRITICAL`            |          |      ✓       |        ✓         | This alert is raised periodically every `critical_repeat` seconds if a `SystemWentDownAt` alert has already been raised.                                                                                                                                                                                                                          |
@@ -158,68 +163,82 @@ In the lists below we will show which alerts have severity thresholds and which 
 
 ## GitHub Repository Alerts
 
-| Alert Class                   | Severity | Configurable | Enabled/Disabled | Description                                                                                                                                                                                                                      |
-| ----------------------------- | -------- | :----------: | :--------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NewGitHubReleaseAlert`       | `INFO`   |      ✗       |        ✗         | This alert is raised whenever a new release is published for a GitHub repository. Some release details are also given. Note, this alert cannot be enabled/disabled unless the operator decides to not monitor a repo altogether. |
-| `CannotAccessGitHubPageAlert` | `ERROR`  |      ✗       |        ✗         | This alert is raised when the alerter cannot access the GitHub repository's Releases API Page.                                                                                                                                   |
-| `GitHubPageNowAccessibleAlert`| `INFO`   |      ✗       |        ✗         | This alert is raised when the alerter is able to access the GitHub repository's Releases API Page after a `CannotAccessGitHubPageAlert` is raised.                                                                               |
+| Alert Class                       | Severity | Configurable | Enabled/Disabled | Description                                                                                                                                                                                                                      |
+|-----------------------------------|----------|:------------:|:----------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `NewGitHubReleaseAlert`           | `INFO`   |      ✗       |        ✗         | This alert is raised whenever a new release is published for a GitHub repository. Some release details are also given. Note, this alert cannot be enabled/disabled unless the operator decides to not monitor a repo altogether. |
+| `CannotAccessGitHubPageAlert`     | `ERROR`  |      ✗       |        ✗         | This alert is raised when the alerter cannot access the GitHub repository's Releases API Page.                                                                                                                                   |
+| `GitHubPageNowAccessibleAlert`    | `INFO`   |      ✗       |        ✗         | This alert is raised when the alerter is able to access the GitHub repository's Releases API Page after a `CannotAccessGitHubPageAlert` is raised.                                                                               |
+| `GitHubAPICallErrorAlert`         | `ERROR`  |      ✗       |        ✗         | This alert is raised when the GitHub releases API call fails.                                                                                                                                                                    |
+| `GitHubAPICallErrorResolvedAlert` | `INFO`   |      ✗       |        ✗         | This alert is raised whenever the alerter no longer detects errors related to the GitHub API call.                                                                                                                               |
+
+## DockerHub Repository Alerts
+
+| Alert Class                              | Severity | Configurable | Enabled/Disabled | Description                                                                                                                                                                                                                   |
+|------------------------------------------|----------|:------------:|:----------------:|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DockerHubNewTagAlert`                   | `INFO`   |      ✗       |        ✗         | This alert is raised whenever a new tag is published for a DockerHub repository. The new tag is also given. Note, this alert cannot be enabled/disabled unless the operator decides to not monitor a repo altogether.         |
+| `DockerHubUpdatedTagAlert`               | `INFO`   |      ✗       |        ✗         | This alert is raised whenever an existing tag for a DockerHub repository is updated. The updated tag is also given. Note, this alert cannot be enabled/disabled unless the operator decides to not monitor a repo altogether. |
+| `DockerHubDeletedTagAlert`               | `INFO`   |      ✗       |        ✗         | This alert is raised whenever an existing tag for a DockerHub repository is deleted. The deleted tag is also given. Note, this alert cannot be enabled/disabled unless the operator decides to not monitor a repo altogether. |
+| `CannotAccessDockerHubPageAlert`         | `ERROR`  |      ✗       |        ✗         | This alert is raised when the alerter cannot access the DockerHub API.                                                                                                                                                        |
+| `DockerHubPageNowAccessibleAlert`        | `INFO`   |      ✗       |        ✗         | This alert is raised when the alerter is able to access the DockerHub API after a `CannotAccessDockerHubPageAlert` is raised.                                                                                                 |
+| `DockerHubTagsAPICallErrorAlert`         | `ERROR`  |      ✗       |        ✗         | This alert is raised when the DockerHub Tags API call fails.                                                                                                                                                                  |
+| `DockerHubTagsAPICallErrorResolvedAlert` | `INFO`   |      ✗       |        ✗         | This alert is raised whenever the alerter no longer detects errors related to the DockerHub Tags API call.                                                                                                                    |
 
 ## Chainlink Node Alerts
 
-| Alert Class | Severity Thresholds | Severity | Configurable | Enabled/Disabled | Description |
-|---|---|---|:-:|:-:|---|
-|`NoChangeInHeightAlert`|`WARNING`,`CRITICAL`|| ✓|✓|Raised after there is no change in height for `warning` and `critical` time thresholds.|
-|`BlockHeightUpdatedAlert`||`INFO`|✗|Depends on `NoChangeInHeightAlert`|Raised when there is a change in height after `warning` or `critical` alerts of type `NoChangeInHeightAlert` have been raised.|
-|`NoChangeInTotalHeadersReceivedAlert`|`WARNING`,`CRITICAL`|| ✓|✓|Raised after there is no change in total headers received for `warning` and `critical` time thresholds.|
-|`ReceivedANewHeaderAlert`||`INFO`|✗|Depends on `NoChangeInTotalHeadersReceivedAlert`|Raised when there is a change in total headers received after `warning` or `critical` alerts of type `NoChangeInTotalHeadersReceivedAlert` have been raised.|
-|`MaxUnconfirmedBlocksIncreasedAboveThresholdAlert`|`WARNING`,`CRITICAL`|| ✓|✓|Raised after the number of max unconfirmed blocks passed `warning` or `critical` block amounts threholds.|
-|`MaxUnconfirmedBlocksDecreasedBelowThresholdAlert`||`INFO`|✗|Depends on `MaxUnconfirmedBlocksDecreasedBelowThresholdAlert`|Raised when the amount of max unconfirmed blocks which were previously above `warning` or `critical` thresholds are now below them.|
-|`ChangeInSourceNodeAlert`||`WARNING`| ✓|✓|Raised when a node goes down and another node takes it's place and begins operating.|
-|`GasBumpIncreasedOverNodeGasPriceLimitAlert`||`CRITICAL`| ✓|✓|This alert happens every time the gas bump increases over the node gas price limit. This alert doesn't repeat and only alerts once per instance of increase.|
-|`NoOfUnconfirmedTxsIncreasedAboveThresholdAlert`|`WARNING`,`CRITICAL`|| ✓|✓|Raised if the number of unconfirmed transactions being sent by the node have surpassed `warning` or `critical` thresholds.|
-|`NoOfUnconfirmedTxsDecreasedBelowThresholdAlert`||`INFO`|✗|Depends on `NoOfUnconfirmedTxsIncreasedAboveThresholdAlert`|Raised when the number of unconfirmed transactions have decreased below `warning` or `critical` thresholds.|
-|`TotalErroredJobRunsIncreasedAboveThresholdAlert`|`WARNING`,`CRITICAL`|| ✓|✓|Raised when the number of total errored job runs increased above `warning` or `critical` thresholds.|
-|`TotalErroredJobRunsDecreasedBelowThresholdAlert`||`INFO`|✗|Depends on `TotalErroredJobRunsIncreasedAboveThresholdAlert`| Raised when the number of total errored jobs run decreases below `warning` or `critical` thresholds.|
-|`EthBalanceIncreasedAboveThresholdAlert`||`INFO`| ✓|Depends on `EthBalanceDecreasedBelowThresholdAlert`| Raised when the Ethereum balance increases above `warning` or `critical` thresholds.|
-|`EthBalanceDecreasedBelowThresholdAlert`|`WARNING`,`CRITICAL`|| ✓|✓|Raised when the Ethereum balance decreases below `warning` or `critical` thresholds`.|
-|`EthBalanceToppedUpAlert`||`INFO`| ✓|✓|Whenever the Ethereum balance is topped up this alert is raised.|
-|`InvalidUrlAlert`||`ERROR`|✗|✗|Raised when the URL is unreachable most likely due to an invalid configuration.|
-|`ValidUrlAlert`||`INFO`|✗|✗|Raised when the monitors manage to connect to a valid URL.|
-|`PrometheusSourceIsDownAlert`||`WARNING`|✗|✗|The URL given for the prometheus endpoint is unreachable.|
-|`PrometheusSourceBackUpAgainAlert`||`INFO`|✗|✗|The URL given for the prometheus endpoint is now reachable after being unreachable.|
-|`NodeWentDownAtAlert`|`WARNING`,`CRITICAL`|| ✓|✓|All endpoints of a node are unreachable, classifying the node as down.|
-|`NodeBackUpAgainAlert`||`INFO`|✗|Depends on `NodeWentDownAtAlert`|Valid endpoints have been found meaning that the node is now reachable.|
-|`NodeStillDownAlert`||`CRITICAL`|✗|Depends on `NodeWentDownAtAlert`|If a node has been classified as down for sometime this alert will keep repeating for a period until it is back up again.|
-|`MetricNotFoundErrorAlert`||`ERROR`|✗|✗|The endpoint had it's prometheus data changed therefore PANIC cannot find the correct metrics to read. Either th wrong endpoint was given or PANIC needs updating.|
-|`MetricFoundAlert`||`INFO`|✗|✗|This is raised when the `MetricNotFoundErrorAlert` was raised for whatever reason and now PANIC has managed to locate the metric at the prometheus endpoint.|
+| Alert Class                                        | Severity Thresholds  | Severity   | Configurable |                       Enabled/Disabled                        | Description                                                                                                                                                        |
+|----------------------------------------------------|----------------------|------------|:------------:|:-------------------------------------------------------------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `NoChangeInHeightAlert`                            | `WARNING`,`CRITICAL` |            |      ✓       |                               ✓                               | Raised after there is no change in height for `warning` and `critical` time thresholds.                                                                            |
+| `BlockHeightUpdatedAlert`                          |                      | `INFO`     |      ✗       |              Depends on `NoChangeInHeightAlert`               | Raised when there is a change in height after `warning` or `critical` alerts of type `NoChangeInHeightAlert` have been raised.                                     |
+| `NoChangeInTotalHeadersReceivedAlert`              | `WARNING`,`CRITICAL` |            |      ✓       |                               ✓                               | Raised after there is no change in total headers received for `warning` and `critical` time thresholds.                                                            |
+| `ReceivedANewHeaderAlert`                          |                      | `INFO`     |      ✗       |       Depends on `NoChangeInTotalHeadersReceivedAlert`        | Raised when there is a change in total headers received after `warning` or `critical` alerts of type `NoChangeInTotalHeadersReceivedAlert` have been raised.       |
+| `MaxUnconfirmedBlocksIncreasedAboveThresholdAlert` | `WARNING`,`CRITICAL` |            |      ✓       |                               ✓                               | Raised after the number of max unconfirmed blocks passed `warning` or `critical` block amounts threholds.                                                          |
+| `MaxUnconfirmedBlocksDecreasedBelowThresholdAlert` |                      | `INFO`     |      ✗       | Depends on `MaxUnconfirmedBlocksDecreasedBelowThresholdAlert` | Raised when the amount of max unconfirmed blocks which were previously above `warning` or `critical` thresholds are now below them.                                |
+| `ChangeInSourceNodeAlert`                          |                      | `WARNING`  |      ✓       |                               ✓                               | Raised when a node goes down and another node takes it's place and begins operating.                                                                               |
+| `GasBumpIncreasedOverNodeGasPriceLimitAlert`       |                      | `CRITICAL` |      ✓       |                               ✓                               | This alert happens every time the gas bump increases over the node gas price limit. This alert doesn't repeat and only alerts once per instance of increase.       |
+| `NoOfUnconfirmedTxsIncreasedAboveThresholdAlert`   | `WARNING`,`CRITICAL` |            |      ✓       |                               ✓                               | Raised if the number of unconfirmed transactions being sent by the node have surpassed `warning` or `critical` thresholds.                                         |
+| `NoOfUnconfirmedTxsDecreasedBelowThresholdAlert`   |                      | `INFO`     |      ✗       |  Depends on `NoOfUnconfirmedTxsIncreasedAboveThresholdAlert`  | Raised when the number of unconfirmed transactions have decreased below `warning` or `critical` thresholds.                                                        |
+| `TotalErroredJobRunsIncreasedAboveThresholdAlert`  | `WARNING`,`CRITICAL` |            |      ✓       |                               ✓                               | Raised when the number of total errored job runs increased above `warning` or `critical` thresholds.                                                               |
+| `TotalErroredJobRunsDecreasedBelowThresholdAlert`  |                      | `INFO`     |      ✗       | Depends on `TotalErroredJobRunsIncreasedAboveThresholdAlert`  | Raised when the number of total errored jobs run decreases below `warning` or `critical` thresholds.                                                               |
+| `EthBalanceIncreasedAboveThresholdAlert`           |                      | `INFO`     |      ✓       |      Depends on `EthBalanceDecreasedBelowThresholdAlert`      | Raised when the Ethereum balance increases above `warning` or `critical` thresholds.                                                                               |
+| `EthBalanceDecreasedBelowThresholdAlert`           | `WARNING`,`CRITICAL` |            |      ✓       |                               ✓                               | Raised when the Ethereum balance decreases below `warning` or `critical` thresholds`.                                                                              |
+| `EthBalanceToppedUpAlert`                          |                      | `INFO`     |      ✓       |                               ✓                               | Whenever the Ethereum balance is topped up this alert is raised.                                                                                                   |
+| `InvalidUrlAlert`                                  |                      | `ERROR`    |      ✗       |                               ✗                               | Raised when the URL is unreachable most likely due to an invalid configuration.                                                                                    |
+| `ValidUrlAlert`                                    |                      | `INFO`     |      ✗       |                               ✗                               | Raised when the monitors manage to connect to a valid URL.                                                                                                         |
+| `PrometheusSourceIsDownAlert`                      |                      | `WARNING`  |      ✗       |                               ✗                               | The URL given for the prometheus endpoint is unreachable.                                                                                                          |
+| `PrometheusSourceBackUpAgainAlert`                 |                      | `INFO`     |      ✗       |                               ✗                               | The URL given for the prometheus endpoint is now reachable after being unreachable.                                                                                |
+| `NodeWentDownAtAlert`                              | `WARNING`,`CRITICAL` |            |      ✓       |                               ✓                               | All endpoints of a node are unreachable, classifying the node as down.                                                                                             |
+| `NodeBackUpAgainAlert`                             |                      | `INFO`     |      ✗       |               Depends on `NodeWentDownAtAlert`                | Valid endpoints have been found meaning that the node is now reachable.                                                                                            |
+| `NodeStillDownAlert`                               |                      | `CRITICAL` |      ✗       |               Depends on `NodeWentDownAtAlert`                | If a node has been classified as down for sometime this alert will keep repeating for a period until it is back up again.                                          |
+| `MetricNotFoundErrorAlert`                         |                      | `ERROR`    |      ✗       |                               ✗                               | The endpoint had it's prometheus data changed therefore PANIC cannot find the correct metrics to read. Either th wrong endpoint was given or PANIC needs updating. |
+| `MetricFoundAlert`                                 |                      | `INFO`     |      ✗       |                               ✗                               | This is raised when the `MetricNotFoundErrorAlert` was raised for whatever reason and now PANIC has managed to locate the metric at the prometheus endpoint.       |
 
 ## Chainlink Contract Alerts
 
-| Alert Class | Severity Thresholds | Severity | Configurable | Enabled/Disabled | Description |
-|---|---|---|:-:|:-:|---|
-|`PriceFeedObservationsMissedIncreasedAboveThreshold`|`WARNING`,`CRITICAL`|| ✓|✓| Raised when the number of missed price feed observations increased above thresholds. |
-|`PriceFeedObservedAgain`|`INFO`|| ✗| Depends on `PriceFeedObservationsMissedIncreasedAboveThreshold` |Raised after a Chainlink node start to observe price feeds again. |
-|`PriceFeedDeviationInreasedAboveThreshold`|`WARNING`,`CRITICAL`|| ✓|✓| Raised when the price feed observation submitted deviates from the consensus above thresholds. |
-|`PriceFeedDeviationDecreasedBelowThreshold`|`INFO`|| ✗| Depends on `PriceFeedDeviationInreasedAboveThreshold` | Raised when the Chainlink node's price feed submissions are no longer deviating from consensus. |
-|`ConsensusFailure`||`WARNING`| ✗| ✓ | Raised when the price feed our Chainlink node submits to doesn't reach a consensus. |
-|`ErrorContractsNotRetrieved`||`ERROR`| ✗ | ✗ | This is raised when weiwatchers isn't available therefore contracts cannot be retrieved. |
-|`ContractsNowRetrieved`||`INFO`| ✗ | ✗ | This is raised when weiwatchers is available again therefore contracts can be retrieved. |
-|`ErrorNoSyncedDataSources`||`ERROR`| ✗ | ✗ | This is raised when no EVM nodes are available to retrieve data from. |
-|`SyncedDataSourcesFound`||`INFO`| ✗ | ✗ | This is raised when synced EVM nodes are found and  contract data can be retrieved again. |
+| Alert Class                                          | Severity Thresholds  | Severity  | Configurable |                        Enabled/Disabled                         | Description                                                                                     |
+|------------------------------------------------------|----------------------|-----------|:------------:|:---------------------------------------------------------------:|-------------------------------------------------------------------------------------------------|
+| `PriceFeedObservationsMissedIncreasedAboveThreshold` | `WARNING`,`CRITICAL` |           |      ✓       |                                ✓                                | Raised when the number of missed price feed observations increased above thresholds.            |
+| `PriceFeedObservedAgain`                             | `INFO`               |           |      ✗       | Depends on `PriceFeedObservationsMissedIncreasedAboveThreshold` | Raised after a Chainlink node start to observe price feeds again.                               |
+| `PriceFeedDeviationInreasedAboveThreshold`           | `WARNING`,`CRITICAL` |           |      ✓       |                                ✓                                | Raised when the price feed observation submitted deviates from the consensus above thresholds.  |
+| `PriceFeedDeviationDecreasedBelowThreshold`          | `INFO`               |           |      ✗       |      Depends on `PriceFeedDeviationInreasedAboveThreshold`      | Raised when the Chainlink node's price feed submissions are no longer deviating from consensus. |
+| `ConsensusFailure`                                   |                      | `WARNING` |      ✗       |                                ✓                                | Raised when the price feed our Chainlink node submits to doesn't reach a consensus.             |
+| `ErrorContractsNotRetrieved`                         |                      | `ERROR`   |      ✗       |                                ✗                                | This is raised when weiwatchers isn't available therefore contracts cannot be retrieved.        |
+| `ContractsNowRetrieved`                              |                      | `INFO`    |      ✗       |                                ✗                                | This is raised when weiwatchers is available again therefore contracts can be retrieved.        |
+| `ErrorNoSyncedDataSources`                           |                      | `ERROR`   |      ✗       |                                ✗                                | This is raised when no EVM nodes are available to retrieve data from.                           |
+| `SyncedDataSourcesFound`                             |                      | `INFO`    |      ✗       |                                ✗                                | This is raised when synced EVM nodes are found and  contract data can be retrieved again.       |
 
 ## EVM Node Alerts
 
-| Alert Class | Severity Thresholds | Severity | Configurable | Enabled/Disabled | Description |
-|---|---|---|:-:|:-:|---|
-|`NoChangeInBlockHeight`|`WARNING`,`CRITICAL`|| ✓|✓| Raised when there hasn't been a change in node block height over a period of time. |
-|`BlockHeightUpdatedAlert`|`INFO`|| ✗| Depends on `NoChangeInBlockHeight` | Raised after an EVM node starts to update it's block height. |
-|`BlockHeightDifferenceIncreasedAboveThresholdAlert`|`WARNING`,`CRITICAL`|| ✓|✓| Raised when the block height difference between multiple EVM nodes has exceed thresholds. |
-|`BlockHeightDifferenceDecreasedBelowThresholdAlert`|`INFO`|| ✗| Depends on `BlockHeightDifferenceIncreasedAboveThresholdAlert` | Raised after the difference between EVM node's block heights has decreased below thresholds. |
-|`InvalidUrlAlert`||`ERROR`| ✗ | ✗ | Raised when the EVM node URL is invalid. |
-|`ValidUrlAlert`||`INFO`| ✗ | ✗ | Raised when the EVM node URL is found after being invalid. |
-|`NodeWentDownAtAlert`|`WARNING`,`CRITICAL`|| ✓ | ✓ | Raised when the EVM node is unreachable. |
-|`NodeBackUpAgainAlert`|`INFO`|| ✗ | Depends on `NodeWentDownAtAlert` | Raised when the EVM node is back up again. |
-|`NodeStillDownAlert`|`CRITICAL`|| ✗ | Depends on `NodeWentDownAtAlert` | Raised when the EVM node is still detected as down after a period of time.  |
+| Alert Class                                         | Severity Thresholds  | Severity | Configurable |                        Enabled/Disabled                        | Description                                                                                  |
+|-----------------------------------------------------|----------------------|----------|:------------:|:--------------------------------------------------------------:|----------------------------------------------------------------------------------------------|
+| `NoChangeInBlockHeight`                             | `WARNING`,`CRITICAL` |          |      ✓       |                               ✓                                | Raised when there hasn't been a change in node block height over a period of time.           |
+| `BlockHeightUpdatedAlert`                           | `INFO`               |          |      ✗       |               Depends on `NoChangeInBlockHeight`               | Raised after an EVM node starts to update it's block height.                                 |
+| `BlockHeightDifferenceIncreasedAboveThresholdAlert` | `WARNING`,`CRITICAL` |          |      ✓       |                               ✓                                | Raised when the block height difference between multiple EVM nodes has exceed thresholds.    |
+| `BlockHeightDifferenceDecreasedBelowThresholdAlert` | `INFO`               |          |      ✗       | Depends on `BlockHeightDifferenceIncreasedAboveThresholdAlert` | Raised after the difference between EVM node's block heights has decreased below thresholds. |
+| `InvalidUrlAlert`                                   |                      | `ERROR`  |      ✗       |                               ✗                                | Raised when the EVM node URL is invalid.                                                     |
+| `ValidUrlAlert`                                     |                      | `INFO`   |      ✗       |                               ✗                                | Raised when the EVM node URL is found after being invalid.                                   |
+| `NodeWentDownAtAlert`                               | `WARNING`,`CRITICAL` |          |      ✓       |                               ✓                                | Raised when the EVM node is unreachable.                                                     |
+| `NodeBackUpAgainAlert`                              | `INFO`               |          |      ✗       |                Depends on `NodeWentDownAtAlert`                | Raised when the EVM node is back up again.                                                   |
+| `NodeStillDownAlert`                                | `CRITICAL`           |          |      ✗       |                Depends on `NodeWentDownAtAlert`                | Raised when the EVM node is still detected as down after a period of time.                   |
 
 
 ---

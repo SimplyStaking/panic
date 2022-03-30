@@ -21,6 +21,7 @@ from watchdog.observers.polling import PollingObserver
 from src.config_manager import ConfigsManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
+from src.utils.constants.configs import IGNORE_FILE_PATTERNS
 from src.utils.constants.rabbitmq import (CONFIG_EXCHANGE,
                                           HEALTH_CHECK_EXCHANGE,
                                           CONFIGS_MANAGER_HEARTBEAT_QUEUE,
@@ -39,12 +40,12 @@ class TestConfigsManager(unittest.TestCase):
         self.rabbit_logger = logging.getLogger("test_rabbit")
         self.rabbit_logger.disabled = True
         self.config_directory = "config"
-        file_patterns = ["*.ini"]
         rabbit_ip = env.RABBIT_IP
 
         self.test_config_manager = ConfigsManager(
             self.CONFIG_MANAGER_NAME, self.config_manager_logger,
-            self.config_directory, rabbit_ip, file_patterns=file_patterns
+            self.config_directory, rabbit_ip,
+            ignore_file_patterns=IGNORE_FILE_PATTERNS
         )
 
         self.rabbitmq = RabbitMQApi(
@@ -400,7 +401,8 @@ class TestConfigsManager(unittest.TestCase):
 
         mock_initialise_rabbit.assert_called_once()
         mock_create_and_start.assert_called_once()
-        mock_foreach.assert_called_once()
+        # foreach_config_file should not be called when already watching
+        mock_foreach.assert_not_called()
         mock_observer_start.assert_not_called()
 
         disconnect_from_rabbit(self.test_config_manager._rabbitmq)
@@ -426,7 +428,7 @@ class TestConfigsManager(unittest.TestCase):
     @mock.patch.object(ConfigsManager, "disconnect_from_rabbit", autospec=True)
     @mock.patch.object(
         ConfigsManager,
-        "_terminate_and_stop_sending_configs_thread",
+        "terminate_and_stop_sending_configs_thread",
         autospec=True)
     @mock.patch.object(PollingObserver, "stop", autospec=True)
     @mock.patch.object(PollingObserver, "join", autospec=True)

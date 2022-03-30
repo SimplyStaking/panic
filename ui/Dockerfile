@@ -1,15 +1,27 @@
 FROM node:14
 
+# Pass args from docker-compose since ENV variables are required in build step.
+ARG API_PORT
+ARG UI_DASHBOARD_PORT
+ENV API_PORT=$API_PORT
+ENV UI_DASHBOARD_PORT=$UI_DASHBOARD_PORT
+
 # Create app directory
 WORKDIR /opt/panic
 
-# Change directory, and copy all installer contents from the host to the
-# container.
+# Change directory, and copy all installer contents from the host to the container.
 WORKDIR ./ui
 COPY ./ui ./
 
-# RUN npm install
-RUN npm install
+# Clean any old build directories
+RUN rm -rf www
+
+# Install dependencies
+RUN npm ci
+RUN npm install -g serve
+
+# Build project
+RUN npm run build
 
 # Expose port
 EXPOSE 3333
@@ -18,4 +30,5 @@ EXPOSE 3333
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.2.1/wait /wait
 RUN chmod +x /wait
 
-CMD /wait && bash run_ui_server.sh
+# Serve production build output (/www)
+CMD /wait && serve -s www -l 3333 --ssl-cert ../certificates/cert.pem --ssl-key ../certificates/key.pem

@@ -1,3 +1,4 @@
+import copy
 import json
 from time import sleep
 from typing import Union
@@ -7,13 +8,15 @@ import pika.exceptions
 
 from src.alerter.alert_code import AlertCode
 from src.data_store.redis import RedisApi, Keys
+from src.data_store.stores.monitorable import MonitorableStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.contracts.chainlink.v3 import V3ChainlinkContract
 from src.monitorables.contracts.chainlink.v4 import V4ChainlinkContract
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
 from src.monitorables.nodes.evm_node import EVMNode
-from src.monitorables.repo import GitHubRepo
+from src.monitorables.repo import (GitHubRepo, DockerHubRepo)
 from src.monitorables.system import System
+from src.utils.constants.monitorables import EMPTY_MONITORABLE_DATA
 
 
 def infinite_fn() -> None:
@@ -172,6 +175,18 @@ def save_github_repo_to_redis(redis: RedisApi, github_repo: GitHubRepo) -> None:
     })
 
 
+def save_dockerhub_repo_to_redis(redis: RedisApi,
+                                 dockerhub_repo: DockerHubRepo) -> None:
+    redis_hash = Keys.get_hash_parent(dockerhub_repo.parent_id)
+    repo_id = dockerhub_repo.repo_id
+    redis.hset_multiple(redis_hash, {
+        Keys.get_dockerhub_last_tags(repo_id):
+            json.dumps(dockerhub_repo.tags),
+        Keys.get_dockerhub_last_monitored(repo_id):
+            str(dockerhub_repo.last_monitored),
+    })
+
+
 def save_chainlink_node_to_redis(redis: RedisApi,
                                  cl_node: ChainlinkNode) -> None:
     redis_hash = Keys.get_hash_parent(cl_node.parent_id)
@@ -248,3 +263,38 @@ def save_chainlink_contract_to_redis(
         Keys.get_cl_contract_last_round_observed(node_id, proxy_address):
             str(cl_contract.last_round_observed)
     })
+
+
+def process_monitorable_data(monitorableStore: MonitorableStore,
+                             routing_key: str, received_data: dict) -> (str,
+                                                                        dict):
+    base_chain_data = {}
+    base_chain, monitorable_type = monitorableStore._process_routing_key(
+        routing_key)
+
+    manager_name = received_data['manager_name']
+    for source in received_data['sources']:
+        chain_id = source['chain_id']
+        chain_name = source['chain_name']
+        if chain_id not in base_chain_data:
+            base_chain_data[chain_id] = copy.deepcopy(
+                EMPTY_MONITORABLE_DATA)
+            base_chain_data[chain_id]['chain_name'] = chain_name
+
+        # Check sources/manager names and add if not found
+        source_id = source['source_id']
+        source_name = source['source_name']
+        if source_id not in (
+                base_chain_data[chain_id][monitorable_type.value]):
+            base_chain_data[chain_id][monitorable_type.value][
+                source_id] = {'name': source_name,
+                              'manager_names': [manager_name]}
+        else:
+            if manager_name not in (
+                    base_chain_data[chain_id][monitorable_type.value][
+                        source_id]['manager_names']):
+                base_chain_data[chain_id][
+                    monitorable_type.value][source_id][
+                    'manager_names'].append(manager_name)
+
+    return base_chain, base_chain_data

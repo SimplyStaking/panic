@@ -660,14 +660,14 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
-            5019, ErrorContractsNotRetrieved, ContractsNowRetrieved,
+            5018, ErrorContractsNotRetrieved, ContractsNowRetrieved,
             data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             self.test_latest_timestamp_2,
             MetricCode.ErrorContractsNotRetrieved.value, '',
             "{} is now retrieving chainlink contracts!".format(
                 self.test_monitor_name), None)
         call_2 = call(
-            5018, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
+            5019, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
             data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             self.test_latest_timestamp_2,
             MetricCode.ErrorNoSyncedDataSources.value, '',
@@ -728,14 +728,14 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
-            5018, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
+            5019, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
             data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             meta_data['last_monitored'],
             MetricCode.ErrorNoSyncedDataSources.value, '',
             "{} found synced EVM data sources!".format(
                 meta_data['monitor_name']), None)
         call_2 = call(
-            5019, ErrorContractsNotRetrieved, ContractsNowRetrieved,
+            5018, ErrorContractsNotRetrieved, ContractsNowRetrieved,
             data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             meta_data['last_monitored'],
             MetricCode.ErrorContractsNotRetrieved.value, '',
@@ -878,7 +878,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
         calls = mock_error_alert.call_args_list
         self.assertEqual(2, mock_error_alert.call_count)
         call_1 = call(
-            5019, ErrorContractsNotRetrieved, ContractsNowRetrieved,
+            5018, ErrorContractsNotRetrieved, ContractsNowRetrieved,
             data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             self.test_last_monitored,
             MetricCode.ErrorContractsNotRetrieved.value,
@@ -886,7 +886,7 @@ class TestChainlinkContractAlerter(unittest.TestCase):
             "Chainlink contracts are now being retrieved!",
             self.test_exception.code)
         call_2 = call(
-            5018, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
+            5019, ErrorNoSyncedDataSources, SyncedDataSourcesFound,
             data_for_alerting, self.test_parent_id, self.test_parent_id, '',
             self.test_last_monitored,
             MetricCode.ErrorNoSyncedDataSources.value,

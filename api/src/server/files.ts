@@ -6,7 +6,7 @@ export const readFile = (filePath: string): Buffer => {
     let file: Buffer;
     try {
         file = readFileSync(filePath);
-    } catch (err) {
+    } catch (err: any) {
         if (err.code === 'ENOENT') {
             throw new MissingFile(filePath);
         } else {
@@ -28,7 +28,7 @@ export const getFilesInDir = async (dir: string): Promise<string[]> => {
                     module.exports.getFiles(res) : res;
             }),
         );
-    } catch (err) {
+    } catch (err: any) {
         if (err.code === 'ENOENT') {
             throw new MissingFile(dir);
         } else {

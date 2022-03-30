@@ -10,6 +10,7 @@ import pika.exceptions
 
 from src.alert_router.alert_router import AlertRouter
 from src.alerter.managers.chainlink import ChainlinkAlertersManager
+from src.alerter.managers.dockerhub import DockerhubAlerterManager
 from src.alerter.managers.evm import EVMNodeAlerterManager
 from src.alerter.managers.github import GithubAlerterManager
 from src.alerter.managers.manager import AlertersManager
@@ -20,14 +21,17 @@ from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.contracts import ContractMonitorsManager
+from src.monitors.managers.dockerhub import DockerHubMonitorsManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.managers.node import NodeMonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
 from src.utils import env
+from src.utils.constants.configs import IGNORE_FILE_PATTERNS
 from src.utils.constants.names import (
     SYSTEM_ALERTERS_MANAGER_NAME, GITHUB_ALERTER_MANAGER_NAME,
-    SYSTEM_MONITORS_MANAGER_NAME, GITHUB_MONITORS_MANAGER_NAME,
+    DOCKERHUB_ALERTER_MANAGER_NAME, SYSTEM_MONITORS_MANAGER_NAME,
+    GITHUB_MONITORS_MANAGER_NAME, DOCKERHUB_MONITORS_MANAGER_NAME,
     DATA_TRANSFORMERS_MANAGER_NAME, CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME,
     CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME, NODE_MONITORS_MANAGER_NAME,
     CONTRACT_MONITORS_MANAGER_NAME, EVM_NODE_ALERTER_MANAGER_NAME,
@@ -36,20 +40,23 @@ from src.utils.constants.rabbitmq import (
     ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
     SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
     CHANNELS_MANAGER_CONFIGS_QUEUE_NAME, GH_MON_MAN_CONFIGS_QUEUE_NAME,
-    SYS_MON_MAN_CONFIGS_QUEUE_NAME, CONFIGS_STORE_INPUT_QUEUE_NAME,
+    DH_MON_MAN_CONFIGS_QUEUE_NAME, SYS_MON_MAN_CONFIGS_QUEUE_NAME,
     NODE_MON_MAN_CONFIGS_QUEUE_NAME, EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS,
     NODES_CONFIGS_ROUTING_KEY_CHAINS, GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
-    GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+    GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN, DH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+    DH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN, ALERTS_CONFIGS_ROUTING_KEY_CHAIN,
     ALERTS_CONFIGS_ROUTING_KEY_GEN, ALERT_ROUTER_CONFIGS_ROUTING_KEY,
-    CONFIGS_STORE_INPUT_ROUTING_KEY, CHANNELS_MANAGER_CONFIGS_ROUTING_KEY,
+    CHANNELS_MANAGER_CONFIGS_ROUTING_KEY,
     TOPIC, CL_ALERTERS_MAN_CONFIGS_QUEUE_NAME, CL_ALERTS_CONFIGS_ROUTING_KEY,
     CL_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
     EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
     EVM_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
-    CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME)
+    CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+    MONITORABLE_STORE_INPUT_QUEUE_NAME, MONITORABLE_EXCHANGE,
+    MONITORABLE_STORE_INPUT_ROUTING_KEY)
 from src.utils.constants.starters import (
     RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD,
 )
@@ -119,7 +126,7 @@ def _initialise_github_alerter_manager() -> GithubAlerterManager:
         env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
-    # Attempt to initialise the system alerters manager
+    # Attempt to initialise the Github alerters manager
     while True:
         try:
             rabbitmq = RabbitMQApi(
@@ -138,6 +145,35 @@ def _initialise_github_alerter_manager() -> GithubAlerterManager:
             time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return github_alerter_manager
+
+
+def _initialise_dockerhub_alerter_manager() -> DockerhubAlerterManager:
+    manager_display_name = DOCKERHUB_ALERTER_MANAGER_NAME
+
+    dockerhub_alerter_manager_logger = _initialise_logger(
+        manager_display_name, DockerhubAlerterManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialise the Dockerhub alerters manager
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=dockerhub_alerter_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=env.RABBIT_IP)
+            dockerhub_alerter_manager = DockerhubAlerterManager(
+                dockerhub_alerter_manager_logger, manager_display_name,
+                rabbitmq)
+            break
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), dockerhub_alerter_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          dockerhub_alerter_manager_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return dockerhub_alerter_manager
 
 
 def _initialise_chainlink_alerters_manager() -> ChainlinkAlertersManager:
@@ -253,6 +289,36 @@ def _initialise_github_monitors_manager() -> GitHubMonitorsManager:
             time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return github_monitors_manager
+
+
+def _initialise_dockerhub_monitors_manager() -> DockerHubMonitorsManager:
+    manager_display_name = DOCKERHUB_MONITORS_MANAGER_NAME
+
+    dockerhub_monitors_manager_logger = _initialise_logger(
+        manager_display_name, DockerHubMonitorsManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialise the Dockerhub monitors manager
+    while True:
+        try:
+            rabbit_ip = env.RABBIT_IP
+            rabbitmq = RabbitMQApi(
+                logger=dockerhub_monitors_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=rabbit_ip)
+            dockerhub_monitors_manager = DockerHubMonitorsManager(
+                dockerhub_monitors_manager_logger, manager_display_name,
+                rabbitmq)
+            break
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), dockerhub_monitors_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          dockerhub_monitors_manager_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return dockerhub_monitors_manager
 
 
 def _initialise_node_monitors_manager() -> NodeMonitorsManager:
@@ -426,8 +492,10 @@ def _initialise_config_manager() -> Tuple[ConfigsManager, logging.Logger]:
     rabbit_ip = env.RABBIT_IP
     while True:
         try:
-            config_manager = ConfigsManager(display_name, config_manager_logger,
-                                            '../config', rabbit_ip)
+            config_manager = ConfigsManager(
+                display_name, config_manager_logger, '../config', rabbit_ip,
+                ignore_file_patterns=IGNORE_FILE_PATTERNS
+            )
             return config_manager, config_manager_logger
         except Exception as e:
             # This is already logged, we need to try again. This exception
@@ -502,6 +570,11 @@ def run_github_monitors_manager() -> None:
     run_monitors_manager(github_monitors_manager)
 
 
+def run_dockerhub_monitors_manager() -> None:
+    dockerhub_monitors_manager = _initialise_dockerhub_monitors_manager()
+    run_monitors_manager(dockerhub_monitors_manager)
+
+
 def run_node_monitors_manager() -> None:
     node_monitors_manager = _initialise_node_monitors_manager()
     run_monitors_manager(node_monitors_manager)
@@ -520,6 +593,11 @@ def run_system_alerters_manager() -> None:
 def run_github_alerters_manager() -> None:
     github_alerter_manager = _initialise_github_alerter_manager()
     run_alerters_manager(github_alerter_manager)
+
+
+def run_dockerhub_alerters_manager() -> None:
+    dockerhub_alerter_manager = _initialise_dockerhub_alerter_manager()
+    run_alerters_manager(dockerhub_alerter_manager)
 
 
 def run_chainlink_alerters_manager() -> None:
@@ -625,9 +703,12 @@ def run_config_manager() -> None:
                 pika.exceptions.AMQPChannelError):
             # Error would have already been logged by RabbitMQ logger.
             # Since we have to re-initialise just break the loop.
+            config_manager.terminate_and_stop_sending_configs_thread()
+            config_manager.disconnect_from_rabbit()
             log_and_print(get_stopped_message(config_manager),
                           config_manager_logger)
         except Exception:
+            config_manager.terminate_and_stop_sending_configs_thread()
             config_manager.disconnect_from_rabbit()
             log_and_print(get_stopped_message(config_manager),
                           config_manager_logger)
@@ -684,6 +765,9 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     terminate_and_join_process(contract_monitors_manager_process,
                                CONTRACT_MONITORS_MANAGER_NAME)
 
+    terminate_and_join_process(dockerhub_monitors_manager_process,
+                               DOCKERHUB_MONITORS_MANAGER_NAME)
+
     terminate_and_join_process(data_transformers_manager_process,
                                DATA_TRANSFORMERS_MANAGER_NAME)
 
@@ -698,6 +782,9 @@ def on_terminate(signum: int, stack: FrameType) -> None:
 
     terminate_and_join_process(evm_node_alerter_manager_process,
                                EVM_NODE_ALERTER_MANAGER_NAME)
+
+    terminate_and_join_process(dockerhub_alerter_manager_process,
+                               DOCKERHUB_ALERTER_MANAGER_NAME)
 
     terminate_and_join_process(data_store_process,
                                DATA_STORE_MANAGER_NAME)
@@ -882,6 +969,26 @@ def _initialise_and_declare_config_queues() -> None:
             rabbitmq.queue_bind(GH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
                                 GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
 
+            # DockerHub Monitors Manager queues
+            log_and_print("Creating queue '{}'".format(
+                DH_MON_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(DH_MON_MAN_CONFIGS_QUEUE_NAME, False, True,
+                                   False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(DH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                 DH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS),
+                dummy_logger)
+            rabbitmq.queue_bind(DH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                DH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(DH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                 DH_MON_MAN_CONFIGS_ROUTING_KEY_GEN),
+                dummy_logger)
+            rabbitmq.queue_bind(DH_MON_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                                DH_MON_MAN_CONFIGS_ROUTING_KEY_GEN)
+
             # System Monitors Manager queues
             log_and_print("Creating queue '{}'".format(
                 SYS_MON_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
@@ -951,19 +1058,6 @@ def _initialise_and_declare_config_queues() -> None:
                                 CONFIG_EXCHANGE,
                                 NODES_CONFIGS_ROUTING_KEY_CHAINS)
 
-            # Config Store queues
-            log_and_print("Creating queue '{}'".format(
-                CONFIGS_STORE_INPUT_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(CONFIGS_STORE_INPUT_QUEUE_NAME, False, True,
-                                   False, False)
-            log_and_print(
-                "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(CONFIGS_STORE_INPUT_QUEUE_NAME,
-                                 CONFIG_EXCHANGE,
-                                 CONFIGS_STORE_INPUT_ROUTING_KEY), dummy_logger)
-            rabbitmq.queue_bind(CONFIGS_STORE_INPUT_QUEUE_NAME, CONFIG_EXCHANGE,
-                                CONFIGS_STORE_INPUT_ROUTING_KEY)
-
             ret = rabbitmq.disconnect()
             if ret == -1:
                 log_and_print(
@@ -1000,10 +1094,91 @@ def _initialise_and_declare_config_queues() -> None:
             time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
 
+def _initialise_and_declare_monitorable_queues() -> None:
+    dummy_logger = logging.getLogger('Dummy')
+
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(dummy_logger, env.RABBIT_IP)
+            log_and_print("Connecting with RabbitMQ to create and bind "
+                          "monitorable queues.", dummy_logger)
+            ret = rabbitmq.connect()
+            if ret == -1:
+                log_and_print(
+                    "RabbitMQ is temporarily unavailable. Re-trying in {} "
+                    "seconds.".format(RE_INITIALISE_SLEEPING_PERIOD),
+                    dummy_logger)
+                time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+                continue
+
+            # Monitorable exchange declaration
+            log_and_print("Creating {} exchange.".format(MONITORABLE_EXCHANGE),
+                          dummy_logger)
+            rabbitmq.exchange_declare(
+                MONITORABLE_EXCHANGE, TOPIC, False, True, False, False
+            )
+
+            # Monitorable Store queues
+            log_and_print("Creating queue '{}'".format(
+                MONITORABLE_STORE_INPUT_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(MONITORABLE_STORE_INPUT_QUEUE_NAME, False,
+                                   True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(MONITORABLE_STORE_INPUT_QUEUE_NAME,
+                                 MONITORABLE_EXCHANGE,
+                                 MONITORABLE_STORE_INPUT_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(MONITORABLE_STORE_INPUT_QUEUE_NAME,
+                                MONITORABLE_EXCHANGE,
+                                MONITORABLE_STORE_INPUT_ROUTING_KEY)
+
+            ret = rabbitmq.disconnect()
+            if ret == -1:
+                log_and_print(
+                    "RabbitMQ is temporarily unavailable. Re-trying in {} "
+                    "seconds.".format(RE_INITIALISE_SLEEPING_PERIOD),
+                    dummy_logger)
+                time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+                continue
+
+            log_and_print("Monitorable queues initialisation procedure has "
+                          "completed successfully. Disconnecting with "
+                          "RabbitMQ.", dummy_logger)
+            break
+        except pika.exceptions.AMQPChannelError as e:
+            log_and_print("Channel error while initialising the monitorable "
+                          "queues: {}. Re-trying in {} "
+                          "seconds.".format(repr(e),
+                                            RE_INITIALISE_SLEEPING_PERIOD),
+                          dummy_logger)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+        except pika.exceptions.AMQPConnectionError as e:
+            log_and_print("RabbitMQ connection error while initialising the "
+                          "monitorable queues: {}. Re-trying in {} "
+                          "seconds.".format(repr(e),
+                                            RE_INITIALISE_SLEEPING_PERIOD),
+                          dummy_logger)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+        except Exception as e:
+            log_and_print("Unexpected exception while initialising the "
+                          "monitorable queues: {}. Re-trying in {} "
+                          "seconds.".format(repr(e),
+                                            RE_INITIALISE_SLEEPING_PERIOD),
+                          dummy_logger)
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+
 if __name__ == '__main__':
     # First initialise the config queues so that no config is lost when sending
     # the configs and the components are not ready yet.
     _initialise_and_declare_config_queues()
+
+    # First initialise the monitorable queues so that no monitorable data is
+    # lost when receiving the monitorables from the monitors managers. While
+    # this might not happen since the monitors managers are queueing publisher
+    # subscriber, this is still done as a precaution.
+    _initialise_and_declare_monitorable_queues()
 
     # Start the configs manager so that the configurations are read first. We
     # need to wait a bit first until the configs are read
@@ -1057,6 +1232,10 @@ if __name__ == '__main__':
         target=run_evm_node_alerter_manager, args=())
     evm_node_alerter_manager_process.start()
 
+    dockerhub_alerter_manager_process = multiprocessing.Process(
+        target=run_dockerhub_alerters_manager, args=())
+    dockerhub_alerter_manager_process.start()
+
     # Start the monitor managers in a separate process
     system_monitors_manager_process = multiprocessing.Process(
         target=run_system_monitors_manager, args=())
@@ -1065,6 +1244,10 @@ if __name__ == '__main__':
     github_monitors_manager_process = multiprocessing.Process(
         target=run_github_monitors_manager, args=())
     github_monitors_manager_process.start()
+
+    dockerhub_monitors_manager_process = multiprocessing.Process(
+        target=run_dockerhub_monitors_manager, args=())
+    dockerhub_monitors_manager_process.start()
 
     node_monitors_manager_process = multiprocessing.Process(
         target=run_node_monitors_manager, args=())
@@ -1082,6 +1265,7 @@ if __name__ == '__main__':
     # exit
     config_manager_runner_process.join()
     github_monitors_manager_process.join()
+    dockerhub_monitors_manager_process.join()
     node_monitors_manager_process.join()
     system_monitors_manager_process.join()
     contract_monitors_manager_process.join()
@@ -1089,6 +1273,7 @@ if __name__ == '__main__':
     github_alerter_manager_process.join()
     chainlink_alerters_manager_process.join()
     evm_node_alerter_manager_process.join()
+    dockerhub_alerter_manager_process.join()
     data_transformers_manager_process.join()
     data_store_process.join()
     alert_router_process.join()

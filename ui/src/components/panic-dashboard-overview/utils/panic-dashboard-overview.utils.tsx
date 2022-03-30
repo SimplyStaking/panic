@@ -1,42 +1,50 @@
-import { h } from '@stencil/core';
-import { Alert } from '../../../interfaces/alerts';
-import { BaseChain } from '../../../interfaces/chains';
-import { FilterState } from '../../../interfaces/filterState';
-import { Severity } from '../../../interfaces/severity';
-import { DataTableRecordType } from '../../../lib/types/types/datatable';
-import { SelectOptionType } from '../../../lib/types/types/select';
-import { SeverityAPI } from '../../../utils/severity';
+import {h} from '@stencil/core';
+import {Alert, AlertsCount} from '../../../interfaces/alerts';
+import {BaseChain} from '../../../interfaces/chains';
+import {FilterState} from '../../../interfaces/filterState';
+import {
+    DataTableHeaderType,
+    DataTableRecordType
+} from "@simply-vc/uikit/dist/types/types/datatable";
+import {SelectOptionType} from '@simply-vc/uikit/dist/types/types/select';
+import {AlertsAPI} from '../../../utils/alerts';
+import {ChartColumnType} from '@simply-vc/uikit/dist/types/types/piechart';
+import {SeverityAPI} from '../../../utils/severity';
+import {ALERTS_DATA_TABLE_HEADER, Severity} from "../../../utils/constants";
 
 export const DashboardOverviewAPI = {
     getChainFilterOptionsFromBaseChain: getChainFilterOptionsFromBaseChain,
     getPieChartJSX: getPieChartJSX,
-    getDataTableJSX: getDataTableJSX
+    getDataTableJSX: getDataTableJSX,
+    getCollapsedCardJSX: getCollapsedCardJSX
 }
 
 /**
- * Formats base chain to SelectOptionType type.
+ * Formats base chain to {@link SelectOptionType}.
  * @param baseChain base chain to be converted.
- * @returns populated list of required object type.
+ * @returns populated {@link SelectOptionType} object.
  */
 function getChainFilterOptionsFromBaseChain(baseChain: BaseChain): SelectOptionType {
-    return baseChain.chains.map(chain => ({ label: chain.name, value: chain.name }))
+    return baseChain.subChains.map(chain => ({
+        label: chain.name,
+        value: chain.name
+    }))
 }
 
 /**
  * Gets the JSX for the pie chart.
- * @param chainName the respective chain's name.
- * @param criticalAlerts number of critical alerts.
- * @param warningAlerts number of warning alerts.
- * @param errorAlerts number of error alerts.
- * @returns populated pie chart JSX.
+ * @param baseChain base chain.
+ * @param selectedChains active (selected) chains as an array of strings.
+ * @returns populated pie chart {@link JSX.Element}.
  */
-function getPieChartJSX(baseChain: BaseChain): JSX.Element {
+function getPieChartJSX(baseChain: BaseChain, selectedChains: string[]): JSX.Element {
     let criticalAlerts: number = 0;
     let warningAlerts: number = 0;
     let errorAlerts: number = 0;
+    const noFilter: boolean = selectedChains.length === 0;
 
-    for (const chain of baseChain.chains) {
-        if (chain.active) {
+    for (const chain of baseChain.subChains) {
+        if (noFilter || selectedChains.includes(chain.name)) {
             criticalAlerts += chain.alerts.filter(alert => Severity[alert.severity] === Severity.CRITICAL).length;
             warningAlerts += chain.alerts.filter(alert => Severity[alert.severity] === Severity.WARNING).length;
             errorAlerts += chain.alerts.filter(alert => Severity[alert.severity] === Severity.ERROR).length;
@@ -45,9 +53,12 @@ function getPieChartJSX(baseChain: BaseChain): JSX.Element {
 
     const hasAlerts: boolean = criticalAlerts + warningAlerts + errorAlerts > 0;
     // PieChart config with alerts
-    const cols = [{ title: 'Alert', type: 'string' }, { title: 'Amount', type: 'number' }];
-    const rows = [['Critical', criticalAlerts], ['Warning', warningAlerts], ['Error', errorAlerts]];
-    const alertsColors: string[] = ['#a39293', '#f4dd77', '#f7797b'];
+    const cols: ChartColumnType[] = [{
+        title: 'Alert',
+        type: 'string'
+    }, {title: 'Amount', type: 'number'}];
+    const rows: any[][] = [['Critical', criticalAlerts], ['Warning', warningAlerts], ['Error', errorAlerts]];
+    const alertsColors: string[] = ['#f7797b', '#f4dd77', '#a39293'];
     // PieChart config without alerts
     const noAlertsRows = [['', 1]];
     const noAlertsColors: string[] = ['#b0ea8f'];
@@ -64,20 +75,22 @@ function getPieChartJSX(baseChain: BaseChain): JSX.Element {
 
 /**
  * Gets the JSX for the data table.
- * @param alerts list of alerts to be displayed.
- * @returns populated data table JSX.
+ * @param baseChain base chain object which contains various chains with alerts.
+ * @param filterState the filter state of the base chain passed.
+ * @returns @returns populated data table as {@link JSX.Element}.
  */
 function getDataTableJSX(baseChain: BaseChain, filterState: FilterState): JSX.Element {
     let alerts: Alert[] = [];
+    const noChainFilterSelected: boolean = filterState.selectedSubChains.length === 0;
 
-    for (const chain of baseChain.chains) {
-        if (chain.active) {
+    for (const chain of baseChain.subChains) {
+        if (noChainFilterSelected || filterState.selectedSubChains.includes(chain.name)) {
             alerts.push.apply(alerts, chain.alerts);
         }
     }
 
     const hasAlerts = alerts.length > 0;
-    const cols: string[] = ['Severity', 'Time Stamp', 'Message'];
+    const cols: DataTableHeaderType[] = ALERTS_DATA_TABLE_HEADER;
     const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, filterState.selectedSeverities) : [];
 
     return <svc-data-table
@@ -85,27 +98,66 @@ function getDataTableJSX(baseChain: BaseChain, filterState: FilterState): JSX.El
         key={hasAlerts ? `${baseChain.name}-data-table-no-alerts` : `${baseChain.name}-data-table-alerts`}
         cols={cols}
         rows={rows}
-        ordering={filterState.ordering}
-        last-clicked-column-index={filterState.lastClickedColumnIndex}
+        ordering={'descending'}
+        last-clicked-column-index={1}
         no-records-message="There are no alerts to display at this time"
     />
 }
 
 /**
- * Filters alerts which do not have an active severity and formats alerts to DataTableRecordType type.
- * @param alerts list of alerts.
- * @param activeSeverities list of active severities.
- * @returns populated list of lists of required object type.
+ * Filters alerts which do not have an active (selected) severity and
+ * formats alerts to {@link DataTableRecordType}.
+ * @param alerts array of alerts.
+ * @param activeSeverities array of active (selected) severities.
+ * @returns populated {@link DataTableRecordType} object.
  */
 function getDataTableRecordTypeFromAlerts(alerts: Alert[], activeSeverities: Severity[]): DataTableRecordType {
+    const noSeverityFilterSelected: boolean = activeSeverities.length === 0;
+
     // Filter alerts.
     const filteredAlerts = alerts.filter(function (alert) {
-        return activeSeverities.includes(alert.severity);
+        return noSeverityFilterSelected || activeSeverities.includes(alert.severity);
     });
 
     // Format filtered alerts into DataTableRecordType type.
     return filteredAlerts.map(alert => [
-        { label: SeverityAPI.getSeverityIcon(alert.severity), value: alert.severity },
-        { label: new Date(alert.timestamp * 1000).toLocaleString(), value: new Date(alert.timestamp * 1000) },
-        { label: alert.message, value: alert.message }]);
+        {
+            label: SeverityAPI.getSeverityIcon(alert.severity),
+            value: alert.severity
+        },
+        {
+            label: new Date(alert.timestamp * 1000).toLocaleString(),
+            value: new Date(alert.timestamp * 1000)
+        },
+        {label: alert.message, value: alert.message}]);
+}
+
+/**
+ * Gets the JSX for the collapsed card.
+ * @param baseChain base chain object which contains various chains with alerts.
+ * @returns populated collapsed card as {@link JSX.Element}.
+ */
+function getCollapsedCardJSX(baseChain: BaseChain): JSX.Element {
+    if (baseChain.subChains.every(chain => chain.alerts.length === 0)) {
+        return <svc-label color="success">No issues here! The network is running
+            smoothly...</svc-label>
+    } else {
+        const alertsCount: AlertsCount = AlertsAPI.getAlertsCount(baseChain.subChains);
+
+        return <svc-buttons-container>
+            <svc-button
+                icon-name="warning" icon-position="icon-only" color="warning"
+                badge={alertsCount.warning}
+            />
+            <svc-button
+                icon-name="alert-circle" icon-position="icon-only"
+                color="danger"
+                badge={alertsCount.error}
+            />
+            <svc-button
+                icon-name="skull" icon-position="icon-only" color="dark"
+                badge={alertsCount.critical}
+            />
+        </svc-buttons-container>
+    }
 }

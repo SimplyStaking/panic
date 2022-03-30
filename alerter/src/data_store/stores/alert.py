@@ -8,6 +8,7 @@ import pika.exceptions
 from src.alerter.alert_code import InternalAlertCode
 from src.alerter.alert_severities import Severity
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
+from src.alerter.alerters.dockerhub import DockerhubAlerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
@@ -27,6 +28,7 @@ from src.utils.exceptions import (MessageWasNotDeliveredException)
 _LIST_OF_ALERTERS = [SystemAlerter.__name__,
                      ChainlinkNodeAlerter.__name__,
                      GithubAlerter.__name__,
+                     DockerhubAlerter.__name__,
                      EVMNodeAlerter.__name__,
                      ChainlinkContractAlerter.__name__]
 
@@ -176,28 +178,39 @@ class AlertStore(Store):
                 configuration = {
                     SystemAlerter.__name__: {
                         'metrics_type': 'system',
-                        'redis_key_index': 'alert_system'
+                        'redis_key_index': 'alert_system',
+                        'ignore_metrics': []
                     },
                     ChainlinkNodeAlerter.__name__: {
                         'metrics_type': 'chainlink node metrics',
-                        'redis_key_index': 'alert_cl_node'
+                        'redis_key_index': 'alert_cl_node',
+                        'ignore_metrics': []
                     },
                     GithubAlerter.__name__: {
                         'metrics_type': 'github',
-                        'redis_key_index': 'alert_github2'
+                        'redis_key_index': 'alert_github',
+                        'ignore_metrics': ['alert_github1']
+                    },
+                    DockerhubAlerter.__name__: {
+                        'metrics_type': 'dockerhub',
+                        'redis_key_index': 'alert_dockerhub',
+                        'ignore_metrics': []
                     },
                     EVMNodeAlerter.__name__: {
                         'metrics_type': 'evm node metrics',
-                        'redis_key_index': 'alert_evm_node'
+                        'redis_key_index': 'alert_evm_node',
+                        'ignore_metrics': []
                     },
                     ChainlinkContractAlerter.__name__: {
                         'metrics_type': 'chainlink contract',
-                        'redis_key_index': 'alert_cl_contract'
+                        'redis_key_index': 'alert_cl_contract',
+                        'ignore_metrics': []
                     }
                 }
                 alerter_type = alert['origin_id']
                 metrics_type = configuration[alerter_type]['metrics_type']
                 redis_key_index = configuration[alerter_type]['redis_key_index']
+                ignore_metrics = configuration[alerter_type]['ignore_metrics']
                 if alert['parent_id'] is None:
                     self.logger.debug("Resetting the %s metrics for all "
                                       "chains.", metrics_type)
@@ -211,10 +224,15 @@ class AlertStore(Store):
                         # delete the ones that match the pattern `alert_system*`
                         # or `alert_cl_node*`, depending on the alerter_type.
                         # Note, REDIS doesn't support this natively
-                        for key in self.redis.hkeys(chain):
+                        chain_keys = self.redis.hkeys(chain)
+                        for key in chain_keys:
+                            ignore_metric = False
+                            for ignored_metric in ignore_metrics:
+                                if ignored_metric in key:
+                                    ignore_metric = True
+                                    break
                             # We only want to delete alert keys
-                            if redis_key_index in key and self.redis.hexists(
-                                    chain, key):
+                            if redis_key_index in key and not ignore_metric:
                                 self.redis.hremove(chain, key)
                 else:
                     self.logger.debug("Resetting %s metrics for chain %s.",
@@ -226,10 +244,15 @@ class AlertStore(Store):
                     Note, REDIS doesn't support this natively.
                     """
                     chain_hash = Keys.get_hash_parent(alert['parent_id'])
-                    for key in self.redis.hkeys(chain_hash):
+                    chain_keys = self.redis.hkeys(chain_hash)
+                    for key in chain_keys:
+                        ignore_metric = False
+                        for ignored_metric in ignore_metrics:
+                            if ignored_metric in key:
+                                ignore_metric = True
+                                break
                         # We only want to delete alert keys
-                        if redis_key_index in key and self.redis.hexists(
-                                chain_hash, key):
+                        if redis_key_index in key and not ignore_metric:
                             self.redis.hremove(chain_hash, key)
         else:
             """
@@ -239,6 +262,7 @@ class AlertStore(Store):
             self.logger.debug("Saving alert in REDIS: %s.", alert)
             metric_data = {'severity': alert['severity'],
                            'message': alert['message'],
+                           'metric': alert['metric'],
                            'timestamp': alert['timestamp'],
                            'expiry': None}
             origin_id = alert['origin_id']

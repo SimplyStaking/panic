@@ -11,9 +11,9 @@ import src.alerter.alerts.contract.chainlink as cl_alerts
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.factory.chainlink_contract_alerting_factory import \
     ChainlinkContractAlertingFactory
-from src.alerter.grouped_alerts_metric_code.contract.\
-    chainlink_contract_metric_code \
-    import GroupedChainlinkContractAlertsMetricCode as MetricCode
+from src.alerter.grouped_alerts_metric_code.contract. \
+    chainlink_contract_metric_code import \
+    GroupedChainlinkContractAlertsMetricCode as MetricCode
 from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.configs.factory.node.chainlink_alerts import \
     ChainlinkContractAlertsConfigsFactory
@@ -24,7 +24,9 @@ from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, CL_CONTRACT_ALERT_ROUTING_KEY,
     CL_ALERTS_CONFIGS_ROUTING_KEY)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
-                                  ReceivedUnexpectedDataException)
+                                  ReceivedUnexpectedDataException,
+                                  CouldNotRetrieveContractsException,
+                                  NoSyncedDataSourceWasAccessibleException)
 from src.utils.types import str_to_bool
 
 
@@ -137,38 +139,40 @@ class ChainlinkContractAlerter(Alerter):
         chain_name = self.alerts_configs_factory.get_chain_name(
             meta_data['node_parent_id'], ChainlinkContractAlertsConfig)
         if chain_name is not None:
+            self.alerting_factory.create_parent_alerting_state(
+                meta_data['node_parent_id'])
             configs = self.alerts_configs_factory.configs[chain_name]
+
+            # Check if some errors have been resolved
+            self.alerting_factory.classify_error_alert(
+                NoSyncedDataSourceWasAccessibleException.code,
+                cl_alerts.ErrorNoSyncedDataSources,
+                cl_alerts.SyncedDataSourcesFound,
+                data_for_alerting, meta_data['node_parent_id'],
+                meta_data['node_parent_id'], "",
+                meta_data['last_monitored'],
+                MetricCode.ErrorNoSyncedDataSources.value,
+                "", "{} found synced EVM data sources!".format(
+                    meta_data['monitor_name']), None
+            )
+
+            self.alerting_factory.classify_error_alert(
+                CouldNotRetrieveContractsException.code,
+                cl_alerts.ErrorContractsNotRetrieved,
+                cl_alerts.ContractsNowRetrieved,
+                data_for_alerting, meta_data['node_parent_id'],
+                meta_data['node_parent_id'], "",
+                meta_data['last_monitored'],
+                MetricCode.ErrorContractsNotRetrieved.value,
+                "", "{} is now retrieving chainlink contracts!".format(
+                    meta_data['monitor_name']), None
+            )
 
             # Create an alert state for each node/contract pair
             for proxy_address, contract_data in data.items():
                 self.alerting_factory.create_alerting_state(
                     meta_data['node_parent_id'], meta_data['node_id'],
                     proxy_address, configs)
-
-                # Check if some errors have been resolved
-                self.alerting_factory.classify_error_alert(
-                    5018,
-                    cl_alerts.ErrorNoSyncedDataSources,
-                    cl_alerts.SyncedDataSourcesFound,
-                    data_for_alerting, meta_data['node_parent_id'],
-                    meta_data['node_parent_id'], "",
-                    meta_data['last_monitored'],
-                    MetricCode.ErrorNoSyncedDataSources.value,
-                    "", "{} found synced EVM data sources!".format(
-                        meta_data['monitor_name']), None
-                )
-
-                self.alerting_factory.classify_error_alert(
-                    5019,
-                    cl_alerts.ErrorContractsNotRetrieved,
-                    cl_alerts.ContractsNowRetrieved,
-                    data_for_alerting, meta_data['node_parent_id'],
-                    meta_data['node_parent_id'], "",
-                    meta_data['last_monitored'],
-                    MetricCode.ErrorContractsNotRetrieved.value,
-                    "", "{} is now retrieving chainlink contracts!".format(
-                        meta_data['monitor_name']), None
-                )
 
                 current_historical_rounds = contract_data['historicalRounds'][
                     'current']
@@ -200,13 +204,11 @@ class ChainlinkContractAlerter(Alerter):
                     sorted_historical_rounds = None
 
                 curr_latest_round = contract_data['latestRound']['current']
-                prev_latest_round = contract_data['latestRound']['previous']
-
                 last_round_observed = contract_data['lastRoundObserved'][
                     'current']
-                # This data is re-used in other alerts so it needs to be
+
+                # This data is re-used in other alerts, so it needs to be
                 # calculated beforehand
-                current_missed_observations = 0
                 if None not in [curr_latest_round, last_round_observed]:
                     current_missed_observations = curr_latest_round - \
                                                   last_round_observed
@@ -301,15 +303,13 @@ class ChainlinkContractAlerter(Alerter):
         chain_name = self.alerts_configs_factory.get_chain_name(
             meta_data['node_parent_id'], ChainlinkContractAlertsConfig)
         if chain_name is not None:
-            configs = self.alerts_configs_factory.configs[chain_name]
-
             self.alerting_factory.create_parent_alerting_state(
-                meta_data['node_parent_id'], configs)
+                meta_data['node_parent_id'])
 
             # Detect whether some errors need to be raised, or have been
             # resolved.
             self.alerting_factory.classify_error_alert(
-                5019,
+                CouldNotRetrieveContractsException.code,
                 cl_alerts.ErrorContractsNotRetrieved,
                 cl_alerts.ContractsNowRetrieved,
                 data_for_alerting, meta_data['node_parent_id'],
@@ -319,7 +319,7 @@ class ChainlinkContractAlerter(Alerter):
             )
 
             self.alerting_factory.classify_error_alert(
-                5018,
+                NoSyncedDataSourceWasAccessibleException.code,
                 cl_alerts.ErrorNoSyncedDataSources,
                 cl_alerts.SyncedDataSourcesFound,
                 data_for_alerting, meta_data['node_parent_id'],

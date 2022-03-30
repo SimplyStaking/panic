@@ -1,126 +1,153 @@
 .panic-dashboard-overview {
-    &__title {
-        text-align: center;
-        font-size: 25px;
-        margin: 10px 0px 20px;
-        color: var(--ion-color-primary);
-    }
+  &__title {
+    text-align: center;
+    font-size: 25px;
+    margin: 10px 0 20px;
+    color: var(--ion-color-primary);
+  }
 
-    &__chain-card {
-        margin-bottom: 10px;
-    }
+  &__chain-card {
+    margin-bottom: 10px;
+  }
 
-    &__chain-name {
-        margin-top: 10px;
-        margin-left: 10px;
-    }
+  &__chain-name {
+    margin-top: 10px;
+    margin-left: 10px;
+  }
 
-    &__info-message {
-        margin-left: 10px;
-    }
+  &__info-message {
+    margin-left: 10px;
+  }
 
-    &__chain-filter {
-        margin-right: 9px;
-    }
+  &__chain-filter {
+    margin-right: 9px;
+  }
 
-    &__data-table-container {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        margin: 7px 7px 7px 5px;
-        padding: 2px;
-    }
-
-    &__pie-chart {
-        display: flex;
-        justify-content: center;
-        width: fit-content;
-        margin: 7px 0 7px 7px;
-        padding: 2px;
-    }
-
-    &__slots {
-        display: flex;
-    }
-}
-
-#expanded {
+  &__data-table-container {
+    display: flex;
     flex-direction: column;
+    width: 100%;
+    margin: 7px 7px 7px 5px;
+    padding: 2px;
+  }
 
-    & > div > div.panic-dashboard-overview__data-table-container > div {
-        & > svc-data-table{
-            border-radius: var(--svc-card-border-radius);
-        }
+  &__pie-chart {
+    display: flex;
+    justify-content: center;
+    width: fit-content;
+    margin: 7px 0 7px 7px;
+    padding: 2px;
+  }
 
-        border: 1px #a8a8a8 solid;
-        border-radius: var(--svc-card-border-radius);
+  &__slots {
+    display: flex;
+  }
+
+  &__collapsed-card {
+    svc-label {
+      padding: 15px 0 0 15px;
+      font-size: 19px;
     }
+
+    svc-buttons-container ion-buttons svc-button {
+      ion-button::part(native) {
+        cursor: default;
+      }
+
+      ion-badge {
+        cursor: default;
+      }
+    }
+  }
 }
 
 panic-dashboard-overview {
-    div {
-        &.svc-surface__label {
-            text-transform: capitalize;
+  svc-select {
+    ion-select {
+      border-bottom: 1px #a8a8a8 solid;
+      padding-right: 10px;
+
+      &::part(text) {
+        text-transform: capitalize;
+        color: var(--ion-color-secondary);
+      }
+
+      &::part(text-title) {
+        font-weight: bold;
+        color: var(--ion-color-primary);
+        opacity: 1;
+      }
+
+      &::part(placeholder) {
+        color: var(--ion-color-secondary);
+        opacity: 1;
+      }
+    }
+  }
+
+  svc-data-table {
+    display: flex;
+
+    svc-buttons-container {
+      display: inline-flex;
+
+      ion-buttons {
+        z-index: 0 !important;
+
+        ion-button {
+          width: 27px !important;
+          height: 27px !important;
+
+          &::part(native) {
+            cursor: unset;
+          }
+
+          ion-icon {
+            width: 27px;
+            height: 27px;
+          }
         }
+      }
     }
 
-    svc-select {
-        ion-select{
-            border-bottom: 1px #a8a8a8 solid;
-            padding-right: 10px;
+    thead {
+      z-index: 1;
+    }
+  }
 
-            &::part(text){
-                text-transform: capitalize;
-                color: var(--ion-color-primary);
-            }
+  svc-surface {
+    div.svc-surface__label {
+      text-transform: capitalize;
+      font-size: 20px;
+    }
 
-            &::part(text-title){
-                font-weight: bold;
-                color: var(--ion-color-primary);
-                opacity: 1;
-            }
+    & > svc-card {
+      border: 1px #a8a8a8 solid;
 
-            &::part(placeholder){
-                color: var(--ion-color-primary);
-                opacity: 1;
-            }
+      & > div {
+        flex-direction: column;
+
+        & div div.panic-dashboard-overview__data-table-container > div {
+          & > svc-data-table {
+            border-radius: var(--svc-card-border-radius);
+          }
+
+          border: 1px #a8a8a8 solid;
+          border-radius: var(--svc-card-border-radius);
         }
+      }
     }
-
-    svc-data-table {
-        display: flex;
-        max-height: 258px;
-
-        svc-buttons-container{
-            display: inline-flex;
-
-            ion-buttons {
-                z-index: 0 !important;
-    
-                ion-button {
-                    width: 27px !important;
-                    height: 27px !important;
-    
-                    &::part(native) {
-                        cursor: unset;
-                    }
-    
-                    ion-icon {
-                        width: 27px;
-                        height: 27px;
-                    }
-                }
-            }
-        } 
-    }
-
-    svc-card {
-        border: 1px #a8a8a8 solid;
-    }
+  }
 }
 
 ion-alert {
-    div > div.alert-checkbox-label.sc-ion-alert-md {
-        text-transform: capitalize;
+  .alert-wrapper {
+    min-width: 400px !important;
+  }
+  div > div.alert-checkbox-label {
+    white-space: normal !important;
+    .sc-ion-alert-md {
+      text-transform: capitalize;
     }
+  }
 }

@@ -182,29 +182,16 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                     contract_data['answeredInRound'])
                 cl_contract.set_historical_rounds(
                     contract_data['historicalRounds'])
+                cl_contract.set_last_round_observed(
+                    contract_data['lastRoundObserved'])
 
-                if contract_data['historicalRounds']:
-                    sorted_historical_rounds = sorted(
-                        contract_data['historicalRounds'],
-                        key=lambda k: k['roundId'],
-                        reverse=True)
-                    if cl_contract.version == 3:
-                        cl_contract.set_last_round_observed(
-                            int(sorted_historical_rounds[0]['roundId']))
-                    elif cl_contract.version == 4:
-                        round_data = next((
-                            item for item in
-                            sorted_historical_rounds if
-                            item['nodeSubmission'] is not None), None)
-                        if round_data:
-                            cl_contract.set_last_round_observed(
-                                int(round_data['roundId']))
-
+                # Set payment details depending on the version of the contract
                 if cl_contract.version == 3:
                     cl_contract.set_withdrawable_payment(
                         contract_data['withdrawablePayment'])
                 elif cl_contract.version == 4:
                     cl_contract.set_owed_payment(contract_data['owedPayment'])
+
                 cl_contract.set_last_monitored(meta_data['last_monitored'])
         elif 'error' in transformed_data:
             pass
@@ -218,35 +205,7 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                                              transformed_data: Dict) -> Dict:
         self.logger.debug("Performing further processing for storage ...")
 
-        if 'result' in transformed_data:
-            processed_data = copy.deepcopy(transformed_data)
-            td_metrics = transformed_data['result']['data']
-
-            for proxy_address, contract_data in td_metrics.items():
-
-                last_round_observed = None
-                # Get the current value of the last round the price feed was
-                # observed.
-                if contract_data['historicalRounds']:
-                    sorted_historical_rounds = sorted(
-                        contract_data['historicalRounds'],
-                        key=lambda k: k['roundId'],
-                        reverse=True)
-                    if int(contract_data['contractVersion']) == 3:
-                        last_round_observed = int(sorted_historical_rounds[0][
-                                                      'roundId'])
-                    elif int(contract_data['contractVersion']) == 4:
-                        round_data = next((
-                            item for item in
-                            sorted_historical_rounds if
-                            item['nodeSubmission'] is not None), None)
-                        if round_data:
-                            last_round_observed = int(round_data['roundId'])
-
-                processed_data['result']['data'][proxy_address][
-                    'lastRoundObserved'] = last_round_observed
-
-        elif 'error' in transformed_data:
+        if 'result' in transformed_data or 'error' in transformed_data:
             processed_data = copy.deepcopy(transformed_data)
         else:
             raise ReceivedUnexpectedDataException(
@@ -288,32 +247,6 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                         processed_data_metrics[proxy_address][metric][
                             'current'] = value
 
-                last_round_observed = None
-                # Get the current value of the last round the price feed was
-                # observed.
-                if contract_data['historicalRounds']:
-                    sorted_historical_rounds = sorted(
-                        contract_data['historicalRounds'],
-                        key=lambda k: k['roundId'],
-                        reverse=True)
-                    if int(contract_data['contractVersion']) == 3:
-                        last_round_observed = int(sorted_historical_rounds[0][
-                                                      'roundId'])
-                    elif int(contract_data['contractVersion']) == 4:
-                        round_data = next((
-                            item for item in
-                            sorted_historical_rounds if
-                            item['nodeSubmission'] is not None), None)
-                        if round_data:
-                            last_round_observed = int(round_data['roundId'])
-
-                if last_round_observed is None:
-                    last_round_observed = cl_contract.last_round_observed
-
-                # Add the key to the dictionary
-                processed_data_metrics[proxy_address]['lastRoundObserved'] = {}
-                processed_data_metrics[proxy_address][
-                    'lastRoundObserved']['current'] = last_round_observed
                 # Add the current value of the ignored metrics
                 for ignored_metric in ignore_metrics:
                     processed_data_metrics[proxy_address][

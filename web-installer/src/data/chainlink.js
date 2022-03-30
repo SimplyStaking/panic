@@ -5,7 +5,7 @@ import {
   REPOSITORIES_STEP,
   CHAINS_STEP,
   ALERTS_STEP,
-  // DOCKER_STEP,
+  DOCKER_STEP,
 } from 'constants/constants';
 
 export default {
@@ -105,7 +105,7 @@ export default {
       have to enter smartcontractkit/chainlink/.`,
     monitorTip: 'Set True if you want to monitor this repository.',
     backStep: NODES_STEP,
-    nextStep: CHANNELS_STEP,
+    nextStep: DOCKER_STEP,
   },
   systemForm: {
     title: 'Systems Setup',
@@ -129,9 +129,10 @@ export default {
       whenever there is a new release for the monitored repo. The default
       monitoring period for the DockerHub API is 1 hour.`,
     nameHolder: 'simplyvc/panic',
-    nameTip: `This is the path of the repository that will be monitored. E.g:
-      If the full URL is https://hub.docker.com/r/simplyvc/panic
-      then you have to enter simplyvc/panic .`,
+    nameTip: `The input should be in the form {repo-namespace}/{repo-name}, where
+      repo-namespace is normally the username which owns the repo. In the case that
+      a repo-namespace is not given, the input will be defaulted to library/{repo-name}.
+      For example entering 'panic' will default to library/panic.`,
     monitorTip: 'Set True if you want to monitor this repository.',
     backStep: REPOSITORIES_STEP,
     nextStep: CHANNELS_STEP,

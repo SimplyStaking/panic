@@ -1,15 +1,15 @@
 {
-  "name": "ui",
+  "name": "panic-ui",
   "private": true,
   "version": "1.0.0",
-  "description": "PANIC UI dashboard app.",
-  "types": "src/lib/custom-elements/index.d.ts",
+  "description": "PANIC UI",
   "author": "Simply-VC",
   "scripts": {
     "build": "stencil build",
     "start": "stencil build --serve --watch",
     "test": "stencil test --spec --e2e",
     "test.spec": "stencil test --spec --verbose",
+    "test.e2e": "stencil test --e2e --verbose",
     "test.watch": "stencil test --spec --e2e --watchAll",
     "generate": "stencil generate"
   },
@@ -17,17 +17,19 @@
     "@stencil/core": "^2.0.0",
     "@stencil/router": "^1.0.1",
     "@stencil/sass": "^1.4.1",
-    "@types/jest": "^26.0.21",
-    "@types/puppeteer": "^5.4.3",
+    "@types/jest": "^27.0.3",
     "@types/react": "^17.0.20",
     "@types/swiper": "^5.4.3",
     "dotenv": "^10.0.0",
-    "jest": "^26.6.3",
+    "jest": "^27.4.2",
     "jest-cli": "^26.6.3",
     "jest-fetch-mock": "^3.0.3",
-    "puppeteer": "^5.5.0",
-    "stencil-router-v2": "^0.6.0"
+    "puppeteer": "^13.0.0",
+    "stencil-router-v2": "^0.6.0",
+    "ts-jest": "^27.0.7"
   },
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {
+    "@simply-vc/uikit": "~1.2.0"
+  }
 }

@@ -1,7 +1,9 @@
-from datetime import timedelta
+import datetime
+
+import dateutil.parser
 
 
-def strfdelta(delta: timedelta, fmt: str) -> str:
+def strfdelta(delta: datetime.timedelta, fmt: str) -> str:
     # Get hours, minutes, seconds
     d = {}
     d['hours'], rem = divmod(delta.seconds, 3600)
@@ -14,3 +16,8 @@ def strfdelta(delta: timedelta, fmt: str) -> str:
         d['hours'] += delta.days * 24
 
     return fmt.format(**d)
+
+
+def json_to_unix_time(time: str) -> float:
+    datetime_object = dateutil.parser.parse(time)
+    return datetime.datetime.timestamp(datetime_object)

@@ -17,13 +17,8 @@ class ChainlinkContract(ABC):
         self._latest_timestamp = None
         self._answered_in_round = None
         self._historical_rounds = []
-
-        """
-        _last_round_observed: This is a custom metric extrapolated from
-        historical rounds. This is used to aid in alerting on missed price
-        feed observations.
-        """
         self._last_round_observed = None
+
         # This stores the timestamp of the last successful monitoring round.
         self._last_monitored = None
 

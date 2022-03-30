@@ -24,7 +24,7 @@ from src.utils.constants.rabbitmq import (
     SYS_MON_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
     NODES_CONFIGS_ROUTING_KEY_CHAINS, SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
+    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, MONITORABLE_EXCHANGE, TOPIC)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import (infinite_fn, connect_to_rabbit,
                               delete_queue_if_exists, delete_exchange_if_exists,
@@ -68,6 +68,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.monitor_system_1 = True
         self.node_exporter_url_1 = 'dummy_url1'
         self.chain_1 = 'Substrate Polkadot'
+        self.base_chain_1 = 'Substrate'
+        self.sub_chain_1 = 'Polkadot'
         self.system_config_1 = SystemConfig(self.system_id_1, self.parent_id_1,
                                             self.system_name_1,
                                             self.monitor_system_1,
@@ -78,6 +80,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.monitor_system_2 = True
         self.node_exporter_url_2 = 'dummy_url2'
         self.chain_2 = 'general'
+        self.base_chain_2 = 'general'
+        self.sub_chain_2 = 'general'
         self.system_config_2 = SystemConfig(self.system_id_2, self.parent_id_2,
                                             self.system_name_2,
                                             self.monitor_system_2,
@@ -88,6 +92,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.monitor_system_3 = True
         self.node_exporter_url_3 = 'dummy_url3'
         self.chain_3 = 'Substrate Polkadot'
+        self.base_chain_3 = 'Substrate'
+        self.sub_chain_3 = 'Polkadot'
         self.system_config_3 = SystemConfig(self.system_id_3, self.parent_id_3,
                                             self.system_name_3,
                                             self.monitor_system_3,
@@ -98,6 +104,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.monitor_system_4 = True
         self.node_exporter_url_4 = 'dummy_url4'
         self.chain_4 = 'Chainlink chainlink'
+        self.base_chain_4 = 'Chainlink'
+        self.sub_chain_4 = 'chainlink'
         self.system_config_4 = SystemConfig(self.system_id_4, self.parent_id_4,
                                             self.system_name_4,
                                             self.monitor_system_4,
@@ -110,19 +118,31 @@ class TestSystemMonitorsManager(unittest.TestCase):
                 'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
                     self.system_name_1),
                 'process': self.dummy_process1,
-                'chain': self.chain_1
+                'chain': self.chain_1,
+                'parent_id': self.parent_id_1,
+                'source_name': self.system_name_1,
+                'base_chain': self.base_chain_1,
+                'sub_chain': self.sub_chain_1,
             },
             self.system_id_2: {
                 'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
                     self.system_name_2),
                 'process': self.dummy_process2,
-                'chain': self.chain_2
+                'chain': self.chain_2,
+                'parent_id': self.parent_id_2,
+                'source_name': self.system_name_2,
+                'base_chain': self.base_chain_2,
+                'sub_chain': self.sub_chain_2,
             },
             self.system_id_4: {
                 'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
                     self.system_name_4),
                 'process': self.dummy_process4,
-                'chain': self.chain_4
+                'chain': self.chain_4,
+                'parent_id': self.parent_id_4,
+                'source_name': self.system_name_4,
+                'base_chain': self.base_chain_4,
+                'sub_chain': self.sub_chain_4,
             },
         }
         self.systems_configs_example = {
@@ -203,6 +223,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
         delete_exchange_if_exists(self.test_manager.rabbitmq,
                                   HEALTH_CHECK_EXCHANGE)
         delete_exchange_if_exists(self.test_manager.rabbitmq, CONFIG_EXCHANGE)
+        delete_exchange_if_exists(self.test_manager.rabbitmq,
+                                  MONITORABLE_EXCHANGE)
         disconnect_from_rabbit(self.test_manager.rabbitmq)
 
         self.dummy_logger = None
@@ -345,35 +367,20 @@ class TestSystemMonitorsManager(unittest.TestCase):
         mock_init.return_value = self.dummy_process3
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
-        expected_output = {
-            self.system_id_1: {
-                'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
-                    self.system_name_1),
-                'process': self.dummy_process1,
-                'chain': self.chain_1
-            },
-            self.system_id_2: {
-                'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
-                    self.system_name_2),
-                'process': self.dummy_process2,
-                'chain': self.chain_2
-            },
-            self.system_id_3: {
-                'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
-                    self.system_name_3),
-                'process': self.dummy_process3,
-                'chain': self.chain_3
-            },
-            self.system_id_4: {
-                'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
-                    self.system_name_4),
-                'process': self.dummy_process4,
-                'chain': self.chain_4
-            }
+        expected_output = self.test_manager._config_process_dict
+        expected_output[self.system_id_3] = {
+            'component_name': SYSTEM_MONITOR_NAME_TEMPLATE.format(
+                self.system_name_3),
+            'process': self.dummy_process3,
+            'chain': self.chain_3,
+            'chain_id': self.parent_id_3,
+            'source_name': self.system_name_3,
+            'base_chain': self.base_chain_3,
+            'sub_chain': self.sub_chain_3,
         }
-
         self.test_manager._create_and_start_monitor_process(
-            self.system_config_3, self.system_id_3, self.chain_3)
+            self.system_config_3, self.system_id_3, self.chain_3,
+            self.base_chain_3, self.sub_chain_3)
 
         self.assertEqual(expected_output, self.test_manager.config_process_dict)
 
@@ -383,7 +390,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
         mock_start.return_value = None
 
         self.test_manager._create_and_start_monitor_process(
-            self.system_config_3, self.system_id_3, self.chain_3)
+            self.system_config_3, self.system_id_3, self.chain_3,
+            self.base_chain_3, self.sub_chain_3)
 
         new_entry = self.test_manager.config_process_dict[self.system_id_3]
         new_entry_process = new_entry['process']
@@ -396,7 +404,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
     def test_create_and_start_monitor_process_starts_the_process(
             self, mock_start) -> None:
         self.test_manager._create_and_start_monitor_process(
-            self.system_config_3, self.system_id_3, self.chain_3)
+            self.system_config_3, self.system_id_3, self.chain_3,
+            self.base_chain_3, self.sub_chain_3)
         mock_start.assert_called_once()
 
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -436,6 +445,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
         method_chains_nodes = pika.spec.Basic.Deliver(
             routing_key=self.chains_routing_key_nodes)
@@ -582,6 +593,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
         }
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -693,6 +706,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
         }
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
         method_chains_nodes = pika.spec.Basic.Deliver(
             routing_key=self.chains_routing_key_nodes)
@@ -778,6 +793,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
         method_chains_sys = pika.spec.Basic.Deliver(
             routing_key=self.chains_routing_key_sys)
@@ -899,6 +916,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
         }
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -919,7 +938,10 @@ class TestSystemMonitorsManager(unittest.TestCase):
                                            method_chains_nodes, properties,
                                            body_new_configs_chain_nodes)
         startup_mock.assert_called_once_with(self.system_config_3,
-                                             self.system_id_3, self.chain_3)
+                                             self.system_id_3,
+                                             self.chain_3,
+                                             self.base_chain_3,
+                                             self.sub_chain_3)
 
         self.test_manager._process_configs(blocking_channel,
                                            method_chains_sys, properties,
@@ -1024,6 +1046,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
         }
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
         method_chains_nodes = pika.spec.Basic.Deliver(
             routing_key=self.chains_routing_key_nodes)
@@ -1048,7 +1072,10 @@ class TestSystemMonitorsManager(unittest.TestCase):
                                            body_chain_nodes_mon_true)
         self.system_config_1.set_system_name('new_system_name_chain')
         mock_startup.assert_called_once_with(self.system_config_1,
-                                             self.system_id_1, self.chain_1)
+                                             self.system_id_1,
+                                             self.chain_1,
+                                             self.base_chain_1,
+                                             self.sub_chain_1)
         mock_terminate.assert_called_once()
         mock_join.assert_called_once()
 
@@ -1118,6 +1145,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
         method_chains_sys = pika.spec.Basic.Deliver(
             routing_key=self.chains_routing_key_sys)
@@ -1194,6 +1223,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -1278,6 +1309,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -1418,7 +1451,9 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         expected_calls = [
             call(system_ids_configs_dict[config_id], config_id,
-                 self.config_process_dict_example[config_id]['chain'])
+                 self.config_process_dict_example[config_id]['chain'],
+                 self.config_process_dict_example[config_id]['base_chain'],
+                 self.config_process_dict_example[config_id]['sub_chain'])
             for config_id in self.config_process_dict_example
             if config_id in dead_configs_eval
         ]

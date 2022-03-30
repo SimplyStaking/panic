@@ -50,17 +50,16 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
     def __init__(self, component_logger: logging.Logger) -> None:
         super().__init__(component_logger)
 
-    def create_parent_alerting_state(
-            self, parent_id: str,
-            cl_contract_alerts_config: ChainlinkContractAlertsConfig) -> None:
+    def create_parent_alerting_state(self, parent_id: str) -> None:
         """
-        During the Chainlink monitoring process it may be found that the
-        contracts are unreadable or weiwatchers is un-reachable, in this case
-        error data will be generated containing only the parent identifier of
-        the blockchain. Therefore we cannot create state for nodes and contracts
-        but can create the error state for the parent chain.
+        If no state is already stored, this function will create a new alerting
+        state for a chain. Moreover, during the Chainlink monitoring process
+        it may be found that the contracts are unreadable or weiwatchers is
+        un-reachable, in this case error data will be generated containing
+        only the parent identifier of the blockchain. Therefore we cannot
+        create state for nodes and contracts but can create the error state
+        for the parent chain.
         :param parent_id: The id of the chain
-        :param cl_contract_alerts_config: The alerts configuration
         :return: None
         """
         if parent_id not in self.alerting_state:
@@ -89,17 +88,7 @@ class ChainlinkContractAlertingFactory(AlertingFactory):
         :return: None
         """
 
-        if parent_id not in self.alerting_state:
-            self.alerting_state[parent_id] = {}
-
-        if 'chain_errors' not in self.alerting_state[parent_id]:
-            error_sent = {
-                AlertsMetricCode.ErrorContractsNotRetrieved.value: False,
-                AlertsMetricCode.ErrorNoSyncedDataSources.value: False,
-            }
-            self.alerting_state[parent_id]['chain_errors'] = {
-                'error_sent': error_sent
-            }
+        self.create_parent_alerting_state(parent_id)
 
         if node_id not in self.alerting_state[parent_id]:
             self.alerting_state[parent_id][node_id] = {}

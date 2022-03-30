@@ -191,10 +191,12 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         connect_to_rabbit(self.test_monitor.rabbitmq)
-        delete_queue_if_exists(self.test_monitor.rabbitmq, self.test_queue_name)
+        delete_queue_if_exists(
+            self.test_monitor.rabbitmq, self.test_queue_name)
         delete_exchange_if_exists(self.test_monitor.rabbitmq,
                                   HEALTH_CHECK_EXCHANGE)
-        delete_exchange_if_exists(self.test_monitor.rabbitmq, RAW_DATA_EXCHANGE)
+        delete_exchange_if_exists(
+            self.test_monitor.rabbitmq, RAW_DATA_EXCHANGE)
         disconnect_from_rabbit(self.test_monitor.rabbitmq)
 
         self.dummy_logger = None
@@ -246,6 +248,11 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         self.test_monitor._last_block_monitored = self.test_data_dict
         self.assertEqual(self.test_data_dict,
                          self.test_monitor.last_block_monitored)
+
+    def test_last_round_observed_returns_last_round_observed(self) -> None:
+        self.test_monitor._last_round_observed = self.test_data_dict
+        self.assertEqual(self.test_data_dict,
+                         self.test_monitor.last_round_observed)
 
     def test_wei_watchers_retrieval_limiter_returns_weiwatchers_limiter(
             self) -> None:
@@ -589,7 +596,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
     def test_store_node_contracts_stores_node_contracts(self) -> None:
         self.assertEqual({}, self.test_monitor.node_contracts)
-        self.test_monitor._store_node_contracts(self.filtered_contracts_example)
+        self.test_monitor._store_node_contracts(
+            self.filtered_contracts_example)
         self.assertEqual(self.filtered_contracts_example,
                          self.test_monitor.node_contracts)
 
@@ -734,7 +742,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                 'latestTimestamp': self.updated_at,
                 'answeredInRound': self.answered_in_round,
                 'withdrawablePayment': self.withdrawable_payment,
-                'historicalRounds': []
+                'historicalRounds': [],
+                'lastRoundObserved': None
             },
             self.proxy_address_2: {
                 'contractVersion': 3,
@@ -745,7 +754,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                 'latestTimestamp': self.updated_at,
                 'answeredInRound': self.answered_in_round,
                 'withdrawablePayment': self.withdrawable_payment,
-                'historicalRounds': []
+                'historicalRounds': [],
+                'lastRoundObserved': None
             }
         }
         self.assertEqual(expected_return, actual_return)
@@ -767,14 +777,14 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         mock_create_filter.return_value = TestEventsClass([
             {
                 'args': {
-                    'round': self.current_round - 1,
-                    'submission': self.answer - 10
+                    'round': self.current_round - 2,
+                    'submission': self.answer - 20
                 }
             },
             {
                 'args': {
-                    'round': self.current_round - 2,
-                    'submission': self.answer - 20
+                    'round': self.current_round - 1,
+                    'submission': self.answer - 10
                 }
             }
         ])
@@ -783,18 +793,18 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.withdrawable_payment,
-            [self.current_round - 1, self.answer, self.started_at,
-             self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 2],
+            [self.current_round - 1, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 1],
             self.contract_address_2, self.contract_description_2, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.withdrawable_payment,
-            [self.current_round - 1, self.answer, self.started_at,
-             self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 2],
+            [self.current_round - 1, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 1],
         ]
         self.test_monitor._node_contracts = self.filtered_contracts_example
         selected_node = self.evm_nodes[0]
@@ -814,20 +824,21 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                 'withdrawablePayment': self.withdrawable_payment,
                 'historicalRounds': [
                     {
+                        'roundId': self.current_round - 2,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 2,
+                        'nodeSubmission': self.answer - 20
+                    },
+                    {
                         'roundId': self.current_round - 1,
                         'roundAnswer': self.answer,
                         'roundTimestamp': self.updated_at,
                         'answeredInRound': self.answered_in_round - 1,
                         'nodeSubmission': self.answer - 10
                     },
-                    {
-                        'roundId': self.current_round - 2,
-                        'roundAnswer': self.answer,
-                        'roundTimestamp': self.updated_at,
-                        'answeredInRound': self.answered_in_round - 2,
-                        'nodeSubmission': self.answer - 20
-                    }
-                ]
+                ],
+                'lastRoundObserved': self.current_round - 1
             },
             self.proxy_address_2: {
                 'contractVersion': 3,
@@ -840,20 +851,21 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                 'withdrawablePayment': self.withdrawable_payment,
                 'historicalRounds': [
                     {
+                        'roundId': self.current_round - 2,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 2,
+                        'nodeSubmission': self.answer - 20
+                    },
+                    {
                         'roundId': self.current_round - 1,
                         'roundAnswer': self.answer,
                         'roundTimestamp': self.updated_at,
                         'answeredInRound': self.answered_in_round - 1,
                         'nodeSubmission': self.answer - 10
                     },
-                    {
-                        'roundId': self.current_round - 2,
-                        'roundAnswer': self.answer,
-                        'roundTimestamp': self.updated_at,
-                        'answeredInRound': self.answered_in_round - 2,
-                        'nodeSubmission': self.answer - 20
-                    }
-                ]
+                ],
+                'lastRoundObserved': self.current_round - 1
             }
         }
         self.assertEqual(expected_return, actual_return)
@@ -915,7 +927,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                         'answeredInRound': None,
                         'nodeSubmission': self.answer - 10
                     },
-                ]
+                ],
+                'lastRoundObserved': self.current_round,
             },
             self.proxy_address_2: {
                 'contractVersion': 3,
@@ -934,7 +947,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                         'answeredInRound': None,
                         'nodeSubmission': self.answer - 10
                     },
-                ]
+                ],
+                'lastRoundObserved': self.current_round,
             }
         }
         self.assertEqual(expected_return, actual_return)
@@ -1080,7 +1094,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                 'latestTimestamp': self.updated_at,
                 'answeredInRound': self.answered_in_round,
                 'owedPayment': self.withdrawable_payment,
-                'historicalRounds': []
+                'historicalRounds': [],
+                'lastRoundObserved': None,
             },
             self.proxy_address_4: {
                 'contractVersion': 4,
@@ -1091,7 +1106,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                 'latestTimestamp': self.updated_at,
                 'answeredInRound': self.answered_in_round,
                 'owedPayment': self.withdrawable_payment,
-                'historicalRounds': []
+                'historicalRounds': [],
+                'lastRoundObserved': None,
             }
         }
         self.assertEqual(expected_return, actual_return)
@@ -1137,7 +1153,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                 'latestTimestamp': self.updated_at,
                 'answeredInRound': self.answered_in_round,
                 'owedPayment': self.withdrawable_payment,
-                'historicalRounds': []
+                'historicalRounds': [],
+                'lastRoundObserved': None
             }
         }
         self.assertEqual(expected_return, actual_return)
@@ -1158,38 +1175,38 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         mock_create_filter.return_value = TestEventsClass([
             {
                 'args': {
+                    'aggregatorRoundId': self.current_round - 2,
+                    'observers': b'\x02\x03\x04\x00',
+                    'observations': [self.answer - 1, self.answer - 2,
+                                     self.answer - 3, self.answer - 20]
+                }
+            },
+            {
+                'args': {
                     'aggregatorRoundId': self.current_round - 1,
                     'observers': b'\x02\x03\x04\x00',
                     'observations': [self.answer - 1, self.answer - 2,
                                      self.answer - 3, self.answer - 10]
                 }
             },
-            {
-                'args': {
-                    'aggregatorRoundId': self.current_round - 2,
-                    'observers': b'\x02\x03\x04\x00',
-                    'observations': [self.answer - 1, self.answer - 2,
-                                     self.answer - 3, self.answer - 20]
-                }
-            }
         ])
         mock_call.side_effect = [
             self.contract_address_3, self.contract_description_3, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_3_transmitters, self.withdrawable_payment,
-            [self.current_round - 1, self.answer, self.started_at,
-             self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 2],
+            [self.current_round - 1, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 1],
             self.contract_address_4, self.contract_description_4, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_4_transmitters, self.withdrawable_payment,
-            [self.current_round - 1, self.answer, self.started_at,
-             self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 2],
+            [self.current_round - 1, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 1],
         ]
         self.test_monitor._node_contracts = self.filtered_contracts_example
         selected_node = self.evm_nodes[0]
@@ -1209,6 +1226,15 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                 'owedPayment': self.withdrawable_payment,
                 'historicalRounds': [
                     {
+                        'roundId': self.current_round - 2,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 2,
+                        'nodeSubmission': self.answer - 20,
+                        'noOfObservations': 4,
+                        'noOfTransmitters': 4,
+                    },
+                    {
                         'roundId': self.current_round - 1,
                         'roundAnswer': self.answer,
                         'roundTimestamp': self.updated_at,
@@ -1217,16 +1243,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                         'noOfObservations': 4,
                         'noOfTransmitters': 4,
                     },
-                    {
-                        'roundId': self.current_round - 2,
-                        'roundAnswer': self.answer,
-                        'roundTimestamp': self.updated_at,
-                        'answeredInRound': self.answered_in_round - 2,
-                        'nodeSubmission': self.answer - 20,
-                        'noOfObservations': 4,
-                        'noOfTransmitters': 4,
-                    }
-                ]
+                ],
+                'lastRoundObserved': self.current_round - 1
             },
             self.proxy_address_4: {
                 'contractVersion': 4,
@@ -1239,6 +1257,15 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                 'owedPayment': self.withdrawable_payment,
                 'historicalRounds': [
                     {
+                        'roundId': self.current_round - 2,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 2,
+                        'nodeSubmission': self.answer - 20,
+                        'noOfObservations': 4,
+                        'noOfTransmitters': 3,
+                    },
+                    {
                         'roundId': self.current_round - 1,
                         'roundAnswer': self.answer,
                         'roundTimestamp': self.updated_at,
@@ -1247,16 +1274,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                         'noOfObservations': 4,
                         'noOfTransmitters': 3,
                     },
-                    {
-                        'roundId': self.current_round - 2,
-                        'roundAnswer': self.answer,
-                        'roundTimestamp': self.updated_at,
-                        'answeredInRound': self.answered_in_round - 2,
-                        'nodeSubmission': self.answer - 20,
-                        'noOfObservations': 4,
-                        'noOfTransmitters': 3,
-                    }
-                ]
+                ],
+                'lastRoundObserved': self.current_round - 1
             }
         }
         self.assertEqual(expected_return, actual_return)
@@ -1277,38 +1296,38 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         mock_create_filter.return_value = TestEventsClass([
             {
                 'args': {
+                    'aggregatorRoundId': self.current_round - 2,
+                    'observers': b'\x02\x03\x04\x01',
+                    'observations': [self.answer - 1, self.answer - 2,
+                                     self.answer - 3, self.answer - 20]
+                }
+            },
+            {
+                'args': {
                     'aggregatorRoundId': self.current_round - 1,
                     'observers': b'\x02\x03\x04\x01',
                     'observations': [self.answer - 1, self.answer - 2,
                                      self.answer - 3, self.answer - 10]
                 }
             },
-            {
-                'args': {
-                    'aggregatorRoundId': self.current_round - 2,
-                    'observers': b'\x02\x03\x04\x01',
-                    'observations': [self.answer - 1, self.answer - 2,
-                                     self.answer - 3, self.answer - 20]
-                }
-            }
         ])
         mock_call.side_effect = [
             self.contract_address_3, self.contract_description_3, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_3_transmitters, self.withdrawable_payment,
-            [self.current_round - 1, self.answer, self.started_at,
-             self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 2],
+            [self.current_round - 1, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 1],
             self.contract_address_4, self.contract_description_4, [
                 self.current_round, self.answer, self.started_at,
                 self.updated_at, self.answered_in_round],
             self.contract_4_transmitters, self.withdrawable_payment,
-            [self.current_round - 1, self.answer, self.started_at,
-             self.updated_at, self.answered_in_round - 1],
             [self.current_round - 2, self.answer, self.started_at,
              self.updated_at, self.answered_in_round - 2],
+            [self.current_round - 1, self.answer, self.started_at,
+             self.updated_at, self.answered_in_round - 1],
         ]
         self.test_monitor._node_contracts = self.filtered_contracts_example
         selected_node = self.evm_nodes[0]
@@ -1328,15 +1347,6 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                 'owedPayment': self.withdrawable_payment,
                 'historicalRounds': [
                     {
-                        'roundId': self.current_round - 1,
-                        'roundAnswer': self.answer,
-                        'roundTimestamp': self.updated_at,
-                        'answeredInRound': self.answered_in_round - 1,
-                        'nodeSubmission': None,
-                        'noOfObservations': 4,
-                        'noOfTransmitters': 4,
-                    },
-                    {
                         'roundId': self.current_round - 2,
                         'roundAnswer': self.answer,
                         'roundTimestamp': self.updated_at,
@@ -1344,8 +1354,18 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                         'nodeSubmission': None,
                         'noOfObservations': 4,
                         'noOfTransmitters': 4,
+                    },
+                    {
+                        'roundId': self.current_round - 1,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 1,
+                        'nodeSubmission': None,
+                        'noOfObservations': 4,
+                        'noOfTransmitters': 4,
                     }
-                ]
+                ],
+                'lastRoundObserved': None
             },
             self.proxy_address_4: {
                 'contractVersion': 4,
@@ -1358,6 +1378,15 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                 'owedPayment': self.withdrawable_payment,
                 'historicalRounds': [
                     {
+                        'roundId': self.current_round - 2,
+                        'roundAnswer': self.answer,
+                        'roundTimestamp': self.updated_at,
+                        'answeredInRound': self.answered_in_round - 2,
+                        'nodeSubmission': None,
+                        'noOfObservations': 4,
+                        'noOfTransmitters': 3,
+                    },
+                    {
                         'roundId': self.current_round - 1,
                         'roundAnswer': self.answer,
                         'roundTimestamp': self.updated_at,
@@ -1366,16 +1395,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                         'noOfObservations': 4,
                         'noOfTransmitters': 3,
                     },
-                    {
-                        'roundId': self.current_round - 2,
-                        'roundAnswer': self.answer,
-                        'roundTimestamp': self.updated_at,
-                        'answeredInRound': self.answered_in_round - 2,
-                        'nodeSubmission': None,
-                        'noOfObservations': 4,
-                        'noOfTransmitters': 3,
-                    }
-                ]
+                ],
+                'lastRoundObserved': None
             }
         }
         self.assertEqual(expected_return, actual_return)

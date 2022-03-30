@@ -1,10 +1,9 @@
-
 panic-root > svc-app {
-    & > div{
-        background-color: var(--background-color);
-    }
-    
-    svc-surface {
-        background-color: var(--surface-background);
-    }
-} 
+  & > div {
+    background-color: var(--background-color);
+  }
+
+  svc-surface {
+    background-color: var(--surface-background);
+  }
+}

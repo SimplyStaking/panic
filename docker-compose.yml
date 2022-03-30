@@ -18,7 +18,7 @@ services:
     build:
       context: './'
       dockerfile: './web-installer/Dockerfile'
-    image: 'simplyvc/panic_installer:0.3.4'
+    image: 'simplyvc/panic_installer:1.0.0'
     logging:
       driver: "json-file"
       options:
@@ -101,6 +101,7 @@ services:
       - 'GITHUB_RELEASES_TEMPLATE=${GITHUB_RELEASES_TEMPLATE}'
       - 'SYSTEM_MONITOR_PERIOD_SECONDS=${SYSTEM_MONITOR_PERIOD_SECONDS}'
       - 'GITHUB_MONITOR_PERIOD_SECONDS=${GITHUB_MONITOR_PERIOD_SECONDS}'
+      - 'DOCKERHUB_MONITOR_PERIOD_SECONDS=${DOCKERHUB_MONITOR_PERIOD_SECONDS}'
       - 'DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE=${DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE}'
       - 'ALERTER_PUBLISHING_QUEUE_SIZE=${ALERTER_PUBLISHING_QUEUE_SIZE}'
       - 'ENABLE_CONSOLE_ALERTS=${ENABLE_CONSOLE_ALERTS}'
@@ -113,11 +114,12 @@ services:
       - 'HEALTH_CHECKER_LOG_FILE_TEMPLATE=${HEALTH_CHECKER_LOG_FILE_TEMPLATE}'
       - 'NODE_MONITOR_PERIOD_SECONDS=${NODE_MONITOR_PERIOD_SECONDS}'
       - 'CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS=${CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS}'
+      - 'DOCKERHUB_TAGS_TEMPLATE=${DOCKERHUB_TAGS_TEMPLATE}'
       - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}, ${RABBIT_IP}:${RABBIT_PORT}'
     build:
       context: './'
       dockerfile: './alerter/Alerter_Dockerfile'
-    image: 'simplyvc/panic_alerter:0.3.4'
+    image: 'simplyvc/panic_alerter:1.0.0'
     logging:
       driver: "json-file"
       options:
@@ -159,6 +161,7 @@ services:
       - 'GITHUB_RELEASES_TEMPLATE=${GITHUB_RELEASES_TEMPLATE}'
       - 'SYSTEM_MONITOR_PERIOD_SECONDS=${SYSTEM_MONITOR_PERIOD_SECONDS}'
       - 'GITHUB_MONITOR_PERIOD_SECONDS=${GITHUB_MONITOR_PERIOD_SECONDS}'
+      - 'DOCKERHUB_MONITOR_PERIOD_SECONDS=${DOCKERHUB_MONITOR_PERIOD_SECONDS}'
       - 'DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE=${DATA_TRANSFORMER_PUBLISHING_QUEUE_SIZE}'
       - 'ALERTER_PUBLISHING_QUEUE_SIZE=${ALERTER_PUBLISHING_QUEUE_SIZE}'
       - 'ENABLE_CONSOLE_ALERTS=${ENABLE_CONSOLE_ALERTS}'
@@ -171,11 +174,12 @@ services:
       - 'HEALTH_CHECKER_LOG_FILE_TEMPLATE=${HEALTH_CHECKER_LOG_FILE_TEMPLATE}'
       - 'NODE_MONITOR_PERIOD_SECONDS=${NODE_MONITOR_PERIOD_SECONDS}'
       - 'CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS=${CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS}'
+      - 'DOCKERHUB_TAGS_TEMPLATE=${DOCKERHUB_TAGS_TEMPLATE}'
       - 'WAIT_HOSTS=${RABBIT_IP}:${RABBIT_PORT}'
     build:
       context: './'
       dockerfile: './alerter/Health_Checker_Dockerfile'
-    image: 'simplyvc/alerter_health_checker:0.3.4'
+    image: 'simplyvc/alerter_health_checker:1.0.0'
     logging:
       driver: "json-file"
       options:
@@ -191,57 +195,55 @@ services:
       - alerter
       - rabbitmq
 
-  # api:
-  #   environment:
-  #     - 'API_PORT=${API_PORT}'
-  #     - 'REDIS_IP=${REDIS_IP}'
-  #     - 'REDIS_PORT=${REDIS_PORT}'
-  #     - 'REDIS_DB=${REDIS_DB}'
-  #     - 'UNIQUE_ALERTER_IDENTIFIER=${UNIQUE_ALERTER_IDENTIFIER}'
-  #     - 'DB_IP=${DB_IP}'
-  #     - 'DB_PORT=${DB_PORT}'
-  #     - 'DB_NAME=${DB_NAME}'
-  #     - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}'
-  #     - 'UI_DASHBOARD_IP=${UI_DASHBOARD_IP}'
-  #     - 'UI_DASHBOARD_PORT=${UI_DASHBOARD_PORT}'
-  #   build:
-  #     context: './'
-  #     dockerfile: './api/Dockerfile'
-  #   image: 'simplyvc/panic_api:1.0.0'
-  #   volumes:
-  #     - './config:/opt/panic/config'
-  #     - './certificates:/opt/panic/certificates'
-  #   ports:
-  #     - '${API_PORT}:9000'
-  #   restart: always
-  #   networks:
-  #     panic_net:
-  #       ipv4_address: '${API_IP}'
-  #   depends_on:
-  #     - redis
-  #     - mongo
+  api:
+    environment:
+      - 'API_PORT=${API_PORT}'
+      - 'REDIS_IP=${REDIS_IP}'
+      - 'REDIS_PORT=${REDIS_PORT}'
+      - 'REDIS_DB=${REDIS_DB}'
+      - 'UNIQUE_ALERTER_IDENTIFIER=${UNIQUE_ALERTER_IDENTIFIER}'
+      - 'DB_IP=${DB_IP}'
+      - 'DB_PORT=${DB_PORT}'
+      - 'DB_NAME=${DB_NAME}'
+      - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}'
+      - 'UI_DASHBOARD_PORT=${UI_DASHBOARD_PORT}'
+      - 'DEV_MODE=${DEV_MODE}'
+      - 'UI_ACCESS_IP=${UI_ACCESS_IP}'
+    build:
+      context: './'
+      dockerfile: './api/Dockerfile'
+    image: 'simplyvc/panic_api:1.0.0'
+    volumes:
+      - './config:/opt/panic/config'
+      - './certificates:/opt/panic/certificates'
+    ports:
+      - '${API_PORT}:9000'
+    restart: always
+    networks:
+      panic_net:
+        ipv4_address: '${API_IP}'
+    depends_on:
+      - redis
+      - mongo
 
-  # ui:
-  #   environment:
-  #     - 'UI_DASHBOARD_PORT=${UI_DASHBOARD_PORT}'
-  #     - 'API_IP=${API_IP}'
-  #     - 'API_PORT=${API_PORT}'
-  #   build:
-  #     context: './'
-  #     dockerfile: './ui/Dockerfile'
-  #   image: 'simplyvc/panic_ui:1.0.0'
-  #   volumes:
-  #     - './config:/opt/panic/config'
-  #     - './certificates:/opt/panic/certificates'
-  #     - './ui:/opt/panic/ui'
-  #   ports:
-  #     - '${UI_DASHBOARD_PORT}:3333'
-  #   restart: always
-  #   networks:
-  #     panic_net:
-  #       ipv4_address: '${UI_DASHBOARD_IP}'
-  #   depends_on:
-  #     - api
+  ui:
+    build:
+      context: './'
+      dockerfile: './ui/Dockerfile'
+      args:
+        - API_PORT
+        - UI_DASHBOARD_PORT
+    image: 'simplyvc/panic_ui:1.0.0'
+    volumes:
+      - './certificates:/opt/panic/certificates'
+    ports:
+      - '${UI_DASHBOARD_PORT}:3333'
+    restart: always
+    networks:
+      panic_net:
+        ipv4_address: '${UI_DASHBOARD_IP}'
+    depends_on:
+      - api
 
 networks:
   panic_net:

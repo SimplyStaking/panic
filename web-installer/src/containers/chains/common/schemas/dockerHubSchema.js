@@ -1,32 +1,19 @@
 import * as Yup from 'yup';
-import { checkSourceName } from 'utils/helpers';
+import { checkDockerHubRepoExists } from 'utils/helpers';
 
 const DockerHubSchema = (props) => Yup.object().shape({
   name: Yup.string()
-    .test('unique-dockerHub-name', 'Name already exists.', (value) => {
+    .test('unique-dockerHub-name', 'DockerHub repo already exists.', (value) => {
       const {
-        systemConfig,
-        substrateNodesConfig,
-        cosmosNodesConfig,
-        reposConfig,
         dockerHubConfig,
-        chainlinkNodesConfig,
-        evmNodesConfig,
       } = props;
 
-      return checkSourceName(
+      return checkDockerHubRepoExists(
         value,
-        ...[
-          evmNodesConfig,
-          chainlinkNodesConfig,
-          cosmosNodesConfig,
-          substrateNodesConfig,
-          systemConfig,
-          reposConfig,
-          dockerHubConfig,
-        ],
+        dockerHubConfig,
       );
     })
+    .matches('^[a-z0-9]+\\/[a-z0-9]+$|^[a-z0-9]+$', 'Name must be in the form \'simplyvc/panic\' or \'panic\'.')
     .required('DockerHub name is required.'),
 });
 

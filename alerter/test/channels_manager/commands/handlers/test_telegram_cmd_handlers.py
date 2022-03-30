@@ -24,8 +24,9 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (
     SYSTEM_MONITORS_MANAGER_NAME, GITHUB_MONITORS_MANAGER_NAME,
-    DATA_TRANSFORMERS_MANAGER_NAME, SYSTEM_ALERTERS_MANAGER_NAME,
-    GITHUB_ALERTER_MANAGER_NAME, CL_ALERTERS_MANAGER_NAME,
+    DOCKERHUB_MONITORS_MANAGER_NAME, DATA_TRANSFORMERS_MANAGER_NAME,
+    SYSTEM_ALERTERS_MANAGER_NAME, GITHUB_ALERTER_MANAGER_NAME,
+    DOCKERHUB_ALERTER_MANAGER_NAME, CL_ALERTERS_MANAGER_NAME,
     DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME,
     CHANNELS_MANAGER_NAME, PING_PUBLISHER_NAME, HEARTBEAT_HANDLER_NAME,
     NODE_MONITORS_MANAGER_NAME, CONTRACT_MONITORS_MANAGER_NAME,
@@ -752,11 +753,13 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                 {
                     SYSTEM_MONITORS_MANAGER_NAME: False,
                     GITHUB_MONITORS_MANAGER_NAME: False,
+                    DOCKERHUB_MONITORS_MANAGER_NAME: False,
                     NODE_MONITORS_MANAGER_NAME: False,
                     CONTRACT_MONITORS_MANAGER_NAME: False,
                     DATA_TRANSFORMERS_MANAGER_NAME: False,
                     SYSTEM_ALERTERS_MANAGER_NAME: False,
                     GITHUB_ALERTER_MANAGER_NAME: False,
+                    DOCKERHUB_ALERTER_MANAGER_NAME: False,
                     CL_ALERTERS_MANAGER_NAME: False,
                     EVM_NODE_ALERTER_MANAGER_NAME: False,
                     DATA_STORE_MANAGER_NAME: False,
@@ -769,11 +772,13 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                 {
                     SYSTEM_MONITORS_MANAGER_NAME: False,
                     GITHUB_MONITORS_MANAGER_NAME: False,
+                    DOCKERHUB_MONITORS_MANAGER_NAME: False,
                     NODE_MONITORS_MANAGER_NAME: False,
                     CONTRACT_MONITORS_MANAGER_NAME: True,
                     DATA_TRANSFORMERS_MANAGER_NAME: False,
                     SYSTEM_ALERTERS_MANAGER_NAME: False,
                     GITHUB_ALERTER_MANAGER_NAME: True,
+                    DOCKERHUB_ALERTER_MANAGER_NAME: True,
                     CL_ALERTERS_MANAGER_NAME: True,
                     EVM_NODE_ALERTER_MANAGER_NAME: False,
                     DATA_STORE_MANAGER_NAME: True,
@@ -828,6 +833,10 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': False,
                     },
+                    DOCKERHUB_MONITORS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
                     NODE_MONITORS_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
@@ -845,6 +854,10 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_ok': False,
                     },
                     GITHUB_ALERTER_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    DOCKERHUB_ALERTER_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
                     },
@@ -884,6 +897,10 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': False,
                     },
+                    DOCKERHUB_MONITORS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
                     NODE_MONITORS_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
@@ -901,6 +918,10 @@ class TestTelegramCommandHandlers(unittest.TestCase):
                         'hb_ok': False,
                     },
                     GITHUB_ALERTER_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': True,
+                    },
+                    DOCKERHUB_ALERTER_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': True,
                     },
@@ -953,11 +974,13 @@ class TestTelegramCommandHandlers(unittest.TestCase):
         ]
         manager_components = [SYSTEM_MONITORS_MANAGER_NAME,
                               GITHUB_MONITORS_MANAGER_NAME,
+                              DOCKERHUB_MONITORS_MANAGER_NAME,
                               NODE_MONITORS_MANAGER_NAME,
                               CONTRACT_MONITORS_MANAGER_NAME,
                               DATA_TRANSFORMERS_MANAGER_NAME,
                               SYSTEM_ALERTERS_MANAGER_NAME,
                               GITHUB_ALERTER_MANAGER_NAME,
+                              DOCKERHUB_ALERTER_MANAGER_NAME,
                               CL_ALERTERS_MANAGER_NAME,
                               EVM_NODE_ALERTER_MANAGER_NAME,
                               DATA_STORE_MANAGER_NAME, CHANNELS_MANAGER_NAME]

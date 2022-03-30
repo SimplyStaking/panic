@@ -23,6 +23,7 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (
     SYSTEM_MONITORS_MANAGER_NAME, GITHUB_MONITORS_MANAGER_NAME,
+    DOCKERHUB_MONITORS_MANAGER_NAME, DOCKERHUB_ALERTER_MANAGER_NAME,
     DATA_TRANSFORMERS_MANAGER_NAME, SYSTEM_ALERTERS_MANAGER_NAME,
     GITHUB_ALERTER_MANAGER_NAME, CL_ALERTERS_MANAGER_NAME,
     DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME,
@@ -722,11 +723,13 @@ class TestSlackCommandHandlers(unittest.TestCase):
                 {
                     SYSTEM_MONITORS_MANAGER_NAME: False,
                     GITHUB_MONITORS_MANAGER_NAME: False,
+                    DOCKERHUB_MONITORS_MANAGER_NAME: False,
                     NODE_MONITORS_MANAGER_NAME: False,
                     CONTRACT_MONITORS_MANAGER_NAME: False,
                     DATA_TRANSFORMERS_MANAGER_NAME: False,
                     SYSTEM_ALERTERS_MANAGER_NAME: False,
                     GITHUB_ALERTER_MANAGER_NAME: False,
+                    DOCKERHUB_ALERTER_MANAGER_NAME: False,
                     CL_ALERTERS_MANAGER_NAME: False,
                     EVM_NODE_ALERTER_MANAGER_NAME: False,
                     DATA_STORE_MANAGER_NAME: False,
@@ -739,11 +742,13 @@ class TestSlackCommandHandlers(unittest.TestCase):
                 {
                     SYSTEM_MONITORS_MANAGER_NAME: False,
                     GITHUB_MONITORS_MANAGER_NAME: False,
+                    DOCKERHUB_MONITORS_MANAGER_NAME: False,
                     NODE_MONITORS_MANAGER_NAME: False,
                     CONTRACT_MONITORS_MANAGER_NAME: True,
                     DATA_TRANSFORMERS_MANAGER_NAME: False,
                     SYSTEM_ALERTERS_MANAGER_NAME: False,
                     GITHUB_ALERTER_MANAGER_NAME: True,
+                    DOCKERHUB_ALERTER_MANAGER_NAME: True,
                     CL_ALERTERS_MANAGER_NAME: True,
                     EVM_NODE_ALERTER_MANAGER_NAME: False,
                     DATA_STORE_MANAGER_NAME: True,
@@ -798,6 +803,10 @@ class TestSlackCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': False,
                     },
+                    DOCKERHUB_MONITORS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
                     NODE_MONITORS_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
@@ -815,6 +824,10 @@ class TestSlackCommandHandlers(unittest.TestCase):
                         'hb_ok': False,
                     },
                     GITHUB_ALERTER_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
+                    DOCKERHUB_ALERTER_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
                     },
@@ -854,6 +867,10 @@ class TestSlackCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': False,
                     },
+                    DOCKERHUB_MONITORS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
                     NODE_MONITORS_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
@@ -871,6 +888,10 @@ class TestSlackCommandHandlers(unittest.TestCase):
                         'hb_ok': False,
                     },
                     GITHUB_ALERTER_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': True,
+                    },
+                    DOCKERHUB_ALERTER_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': True,
                     },
@@ -923,11 +944,13 @@ class TestSlackCommandHandlers(unittest.TestCase):
         ]
         manager_components = [SYSTEM_MONITORS_MANAGER_NAME,
                               GITHUB_MONITORS_MANAGER_NAME,
+                              DOCKERHUB_MONITORS_MANAGER_NAME,
                               NODE_MONITORS_MANAGER_NAME,
                               CONTRACT_MONITORS_MANAGER_NAME,
                               DATA_TRANSFORMERS_MANAGER_NAME,
                               SYSTEM_ALERTERS_MANAGER_NAME,
                               GITHUB_ALERTER_MANAGER_NAME,
+                              DOCKERHUB_ALERTER_MANAGER_NAME,
                               CL_ALERTERS_MANAGER_NAME,
                               EVM_NODE_ALERTER_MANAGER_NAME,
                               DATA_STORE_MANAGER_NAME, CHANNELS_MANAGER_NAME]
@@ -1479,17 +1502,8 @@ class TestSlackCommandHandlers(unittest.TestCase):
         expected_reply = \
             "Muting Failed: Invalid severity/severities {}. Please enter a " \
             "combination of CRITICAL, WARNING, INFO or ERROR separated by " \
-            "spaces after the /panicmute command. You can enter no severities " \
-            "" \
-            "" \
-            "" \
-            "" \
-            "" \
-            "" \
-            "" \
-            "" \
-            "" \
-            "and PANIC will automatically mute all alerts for {}".format(
+            "spaces after the /panicmute command. You can enter no severities" \
+            " and PANIC will automatically mute all alerts for {}".format(
                 ', '.join(unrecognised_severities), ', '.join(chain_names))
         expected_calls = [call("Performing mute..."), call(expected_reply)]
         actual_calls = mock_say.call_args_list

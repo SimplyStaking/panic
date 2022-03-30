@@ -5,6 +5,7 @@ import pika.exceptions
 
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
+from src.alerter.alerters.dockerhub import DockerhubAlerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
@@ -14,11 +15,10 @@ from src.configs.factory.node.chainlink_alerts import (
     ChainlinkNodeAlertsConfigsFactory, ChainlinkContractAlertsConfigsFactory)
 from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.utils.constants.names import (SYSTEM_ALERTER_NAME_TEMPLATE,
-                                       GITHUB_ALERTER_NAME,
-                                       CHAINLINK_NODE_ALERTER_NAME,
-                                       CHAINLINK_CONTRACT_ALERTER_NAME,
-                                       EVM_NODE_ALERTER_NAME)
+from src.utils.constants.names import (
+    SYSTEM_ALERTER_NAME_TEMPLATE, GITHUB_ALERTER_NAME, DOCKERHUB_ALERTER_NAME,
+    CHAINLINK_NODE_ALERTER_NAME, CHAINLINK_CONTRACT_ALERTER_NAME,
+    EVM_NODE_ALERTER_NAME)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
                                           RESTART_SLEEPING_PERIOD)
 from src.utils.env import (ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL,
@@ -109,6 +109,35 @@ def _initialise_github_alerter() -> GithubAlerter:
             time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return github_alerter
+
+
+def _initialise_dockerhub_alerter() -> DockerhubAlerter:
+    alerter_display_name = DOCKERHUB_ALERTER_NAME
+
+    dockerhub_alerter_logger = _initialise_alerter_logger(
+        alerter_display_name, DockerhubAlerter.__name__)
+
+    # Try initialising an alerter until successful
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=dockerhub_alerter_logger.getChild(RabbitMQApi.__name__),
+                host=RABBIT_IP)
+            dockerhub_alerter = DockerhubAlerter(alerter_display_name,
+                                                 dockerhub_alerter_logger,
+                                                 rabbitmq,
+                                                 ALERTER_PUBLISHING_QUEUE_SIZE
+                                                 )
+            log_and_print("Successfully initialised {}".format(
+                alerter_display_name), dockerhub_alerter_logger)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(alerter_display_name, e)
+            log_and_print(msg, dockerhub_alerter_logger)
+            # sleep 10 seconds before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return dockerhub_alerter
 
 
 def _initialise_chainlink_node_alerter(
@@ -213,6 +242,11 @@ def _initialise_evm_node_alerter(
 def start_github_alerter() -> None:
     github_alerter = _initialise_github_alerter()
     start_alerter(github_alerter)
+
+
+def start_dockerhub_alerter() -> None:
+    dockerhub_alerter = _initialise_dockerhub_alerter()
+    start_alerter(dockerhub_alerter)
 
 
 def start_system_alerter(system_alerts_config: SystemAlertsConfig,

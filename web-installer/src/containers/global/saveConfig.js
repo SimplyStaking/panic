@@ -229,7 +229,7 @@ class SaveConfig extends Component {
       const { weiWatchers } = chainlinkChains.byId[currentChainId];
 
       await sendConfig('chain', 'weiwatchers_config.ini', chainConfig.chain_name, 'chainlink', {
-        weitwatchers: weiWatchers,
+        weiwatchers: weiWatchers,
       });
 
       const evmNodesToSave = {};

@@ -9,6 +9,7 @@ from src.data_transformers.contracts.chainlink import (
     ChainlinkContractsDataTransformer
 )
 from src.data_transformers.data_transformer import DataTransformer
+from src.data_transformers.dockerhub import DockerHubDataTransformer
 from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.node.chainlink import ChainlinkNodeDataTransformer
 from src.data_transformers.node.evm import EVMNodeDataTransformer
@@ -17,8 +18,8 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (
     SYSTEM_DATA_TRANSFORMER_NAME, GITHUB_DATA_TRANSFORMER_NAME,
-    CL_NODE_DATA_TRANSFORMER_NAME, EVM_NODE_DATA_TRANSFORMER_NAME,
-    CL_CONTRACTS_DATA_TRANSFORMER_NAME)
+    DOCKERHUB_DATA_TRANSFORMER_NAME, CL_NODE_DATA_TRANSFORMER_NAME,
+    EVM_NODE_DATA_TRANSFORMER_NAME, CL_CONTRACTS_DATA_TRANSFORMER_NAME)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
                                           RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
@@ -112,6 +113,12 @@ def start_github_data_transformer() -> None:
     github_data_transformer = _initialise_data_transformer(
         GitHubDataTransformer, GITHUB_DATA_TRANSFORMER_NAME)
     start_transformer(github_data_transformer)
+
+
+def start_dockerhub_data_transformer() -> None:
+    dockerhub_data_transformer = _initialise_data_transformer(
+        DockerHubDataTransformer, DOCKERHUB_DATA_TRANSFORMER_NAME)
+    start_transformer(dockerhub_data_transformer)
 
 
 def start_chainlink_node_data_transformer() -> None:

@@ -12,7 +12,7 @@ export const toBool = (boolStr: string): boolean => ['true', 'yes', 'y'].some(
 export const missingValues = (object: { [id: string]: any }): string[] => {
     let missingValuesList: string[] = [];
     Object.keys(object).forEach((key) => {
-        if (object[key] == null) {
+        if (object[key] == null || object[key] == undefined) {
             missingValuesList.push(key);
         }
     });

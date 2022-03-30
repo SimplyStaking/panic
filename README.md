@@ -1,10 +1,17 @@
 # PANIC Monitoring and Alerting for Blockchains
 
-**NOTE**: Substrate and Cosmos SDK blockchain monitoring and alerting are still in progress!
+**DISCLAIMERS**: 
+- Substrate and Cosmos SDK blockchain monitoring and alerting are still in progress!
+- Don't allow public access to PANIC UI as it might contain sensitive information about your infrastructure. UI authentication is still to be developed.
 
 ![PANIC Banner](./docs/images/PANIC_BANNER.png)
 
-PANIC is an open source monitoring and alerting solution for Cosmos-SDK, Substrate and Chainlink based nodes by [Simply VC](https://simply-vc.com.mt/). The tool was built with user friendliness in mind, and comes with numerous features such as phone calls for critical alerts, a Web-UI installation process and Telegram/Slack commands for increased control over your alerter.
+PANIC is an open source monitoring and alerting solution for Cosmos-SDK, 
+Substrate and Chainlink based nodes by [Simply VC](https://simply-vc.com.mt/). 
+The tool was built with user friendliness in mind, and comes with numerous 
+features such as phone calls for critical alerts, a UI Dashboard, a Web-UI 
+installation process and Telegram/Slack commands for increased control over your
+alerter.
 
 We are sure that PANIC will be beneficial for node operators and we look forward for feedback. Feel free to read on if you are interested in the design of the alerter, if you wish to try it out, or if you would like to support and contribute to this open source project.
 
@@ -76,16 +83,17 @@ git clone https://github.com/SimplyVC/panic
 cd panic
 ```
 
-Now that you're in inside the PANIC directory, open up the .env file and change the fields of `INSTALLER_USERNAME` and `INSTALLER_PASSWORD` to your preferred but secure choice. This is to ensure that when configuring PANIC through the web-installer no one else can access it.
+Now that you're inside the PANIC directory, open up the .env file and change the `INSTALLER_USERNAME` and `INSTALLER_PASSWORD` fields to your preferred but secure choice. This is to ensure that when configuring PANIC through the web-installer no one else can access it. Moreover, the `UI_ACCESS_IP` field must also be changed to the IP of where PANIC UI is going to be hosted (can be set to `localhost` if running locally). This is to ensure that the API is only accessible from the UI. Helper scripts which can be used to get the IP address (`scripts/get_ip_linux.sh` and `scripts/get_ip_mac.sh`) are available but please note that these are not guaranteed to work on all servers/machines.
 
 ```bash
 # This will access the .env file on your terminal
 nano .env
 ```
 
-Once inside change `admin` and `password` to different values. Here is an example:
+Once inside change `UI_ACCESS_IP`, `INSTALLER_USERNAME` and `INSTALLER_PASSWORD` accordingly. Here is an example:
 
 ```ini
+UI_ACCESS_IP=1.1.1.1
 INSTALLER_USERNAME=panic_operator
 INSTALLER_PASSWORD=wowthisisasecurepassword
 ```
@@ -111,12 +119,14 @@ docker system prune -a --volumes
 docker-compose up -d --build
 ```
 
-Now you will have to configure PANIC to monitor your nodes and systems as well as give it the channels to alert you through. To do this you will have to navigate to the running web-installer. This can be found on 
-`https://{IP_ADDRESS}:8000`, and if you're running it locally then it can be found here `https://localhost:8000`. The installer will first ask you to enter the username and password. These are `INSTALLER_USERNAME` and `INSTALLER_PASSWORD` which you have changed previously. Make sure you type **HTTPS** if you're getting an error when accessing the installer on your browser.
+Now you will have to configure PANIC to monitor your nodes and systems as well as give it the channels to alert you through. To do this you will have to navigate to the running web-installer. This can be found at `https://{UI_ACCESS_IP}:8000`, or at `https://localhost:8000` if you're running it locally. The installer will first ask you to enter the username and password. These are `INSTALLER_USERNAME` and `INSTALLER_PASSWORD` which you have changed previously. Make sure you type **HTTPS** if you're getting an error when accessing the installer on your browser.
 
 After you set-up PANIC to your liking, the Web-Installer will save these details in the form of configuration files inside the `config` folder. For correct behavior, these configuration files should never be modified. If you would like to edit them at some point, we suggest to re-run the web-installer again. The web-installer will ask you if you want to start a fresh install or load your old configuration.
 
 PANIC will automatically read these configuration files and begin monitoring the data sources. To check that this is the case we suggest running the command `docker-compose logs -f alerter` and `docker-compose logs -f health-checker`. By this you can see the different components starting up. If you have set-up telegram/slack commands we suggest that you enter the command `/status` to check that all PANIC components are running. If you really want to check that PANIC is up and running, we suggest that you check that all the logs inside `panic/alerter/logs` have no errors.
+
+You can visualise node metrics and alerts using PANIC UI, which can be accessed at `https://{UI_ACCESS_IP}:3333`, or at `https://localhost:3333` if you're running it locally.
+For more information regarding PANIC UI, [click here](./ui/README.md).
 
 Congratulations you should have PANIC up and running!
 
@@ -126,7 +136,7 @@ Congratulations you should have PANIC up and running!
 
 **Note**: This needs to be done on every host machine that you want the system metrics monitored and alerted on.
 
-[Github](https://github.com/prometheus/node_exporter) link to most recent version of Node Exporter we support.
+[GitHub link](https://github.com/prometheus/node_exporter) to most recent version of Node Exporter we support.
 
 ##### Create a Node Exporter user for running the exporter:
 
@@ -223,6 +233,7 @@ Check if the installation was successful by checking if {NODE_IP}:{PORT}/metrics
     8. Go to the 'Install App' setting (left pane) and click `Install to Workspace`, followed by `Allow`.
     9. Go to the 'OAuth & Permissions' feature (left pane) and take note of the `Bot User OAuth Token`.
     10. Add the newly created `PANIC Notifications` app to the target channel by typing `/add` within the channel and selecting `Add apps to this channel`.
+    11. Right click the actual app that was added to the workspace, then `Open app details` and from there `+ add app to channel`.
 4. Go to the Slack client, right click the name of the target slack channel within the list of channels (left pane), click `Open channel details`, and take note of the Channel ID *(found at the bottom)*.
 
 **At the end, you should have:**
@@ -309,12 +320,26 @@ Apply your own SSL certificate signed by a certificate authority. The SSL certif
 We suggest reading [this](https://nodejs.org/en/knowledge/HTTP/servers/how-to-create-a-HTTPS-server/) for more details on SSL certificates, and how to generate a self signed certificate in case you do not want to obtain a certificate signed by a certificate authority. However, for maximum security, the self signed certificate option is not recommended.
 
 ### Running the PANIC test suite
-If you want to run the tests for PANIC do the following:
+To run the tests for the **alerter** component within PANIC, do the following:
 ```bash
 docker-compose kill  # To stop any running containers (to avoid conflicts)
 docker-compose -p panic-tests -f docker-compose-tests.yml up --build -d  # To build the tests container
 docker-compose -p panic-tests -f docker-compose-tests.yml logs test-suite  # To see the result of the tests
 docker-compose -p panic-tests -f docker-compose-tests.yml kill  # To remove test environment
+```
+
+To run the tests for the **API** component within PANIC, navigate to the 
+`/api` directory and do the following:
+```bash
+npm install         # Install API project dependencies
+npm test            # Run API unit tests
+```
+
+To run the tests for the **UI** component within PANIC, navigate to the
+`/ui` directory and do the following:
+```bash
+npm install         # Install UI project dependencies
+npm test            # Run UI E2E and unit tests
 ```
 
 ## Support and Contribution

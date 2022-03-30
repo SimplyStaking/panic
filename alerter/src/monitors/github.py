@@ -11,7 +11,7 @@ from requests.exceptions import (ConnectionError as ReqConnectionError,
                                  ReadTimeout, ChunkedEncodingError)
 from urllib3.exceptions import ProtocolError
 
-from src.configs.repo import RepoConfig
+from src.configs.repo import GitHubRepoConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
 from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
@@ -23,14 +23,14 @@ from src.utils.exceptions import (DataReadingException, PANICException,
 
 
 class GitHubMonitor(Monitor):
-    def __init__(self, monitor_name: str, repo_config: RepoConfig,
+    def __init__(self, monitor_name: str, repo_config: GitHubRepoConfig,
                  logger: logging.Logger, monitor_period: int,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(monitor_name, logger, monitor_period, rabbitmq)
         self._repo_config = repo_config
 
     @property
-    def repo_config(self) -> RepoConfig:
+    def repo_config(self) -> GitHubRepoConfig:
         return self._repo_config
 
     def _display_data(self, data: Dict) -> str:
@@ -147,7 +147,7 @@ class GitHubMonitor(Monitor):
 
         if not data_retrieval_failed:
             # Only output the gathered metrics if there was no error
-            self.logger.info(self._display_data(
+            self.logger.debug(self._display_data(
                 processed_data['result']['data']))
 
         # Send a heartbeat only if the entire round was successful

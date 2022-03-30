@@ -1,5 +1,20 @@
 # Change Log
 
+## 1.0.0
+
+Released on 30th March 2022
+
+- Added DockerHub repository tags monitoring and alerting.
+- Developed a UI dashboard capable of showing problems and alert logs related to the Chainlink/EVM nodes, GitHub/DockerHub repositories and host systems. A System's overview page showing the host system metrics was also developed.
+- Replaced Config Store with Monitorable Store within the alerter.
+- Integrated Monitorable Store with Monitor Managers.
+- Fixed uncaught Telegram connection exceptions.
+- Fixed incorrectly raised missing contract observations upon alerter/monitor restart.
+- Updated configs manager to ignore weiwatchers configs.
+- Fixed alerting logic bug for the `SyncedDataSourcesFound` and `ContractsNowRetrieved` metrics when the node isn't participating in any contract.
+- Added alerts for GitHub API call error and resolution.
+- Fixed improper RabbitMQ connection handling in ConfigsManager.
+
 ## 0.3.4
 
 Released on 16th March 2022

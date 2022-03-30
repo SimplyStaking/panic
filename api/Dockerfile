@@ -8,8 +8,8 @@ WORKDIR /opt/panic
 WORKDIR ./api
 COPY ./api ./
 
-# RUN npm install
-RUN npm install
+# RUN npm install (ci)
+RUN npm ci
 
 # Build API
 RUN npm run build

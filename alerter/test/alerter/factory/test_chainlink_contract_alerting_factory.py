@@ -231,7 +231,7 @@ class TestChainlinkContractAlertingFactory(unittest.TestCase):
             self) -> None:
 
         self.chainlink_contract_alerting_factory.create_parent_alerting_state(
-            self.test_parent_id, self.cl_contract_alerts_config)
+            self.test_parent_id)
         expected_state = {
             self.test_parent_id: {
                 'chain_errors': {

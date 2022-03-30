@@ -33,3 +33,23 @@ class GitHubPageNowAccessibleAlert(Alert):
             "Github page accessible {}.".format(origin_name),
             severity, timestamp, parent_id, origin_id,
             GroupedGithubAlertsMetricCode.CannotAccessGithub)
+
+
+class GitHubAPICallErrorAlert(Alert):
+    def __init__(self, origin_name: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str, error_msg: str) -> None:
+        super().__init__(
+            GithubAlertCode.GitHubAPICallErrorAlert,
+            "{}: {}.".format(origin_name, error_msg),
+            severity, timestamp, parent_id, origin_id,
+            GroupedGithubAlertsMetricCode.APICallError)
+
+
+class GitHubAPICallErrorResolvedAlert(Alert):
+    def __init__(self, origin_name: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            GithubAlertCode.GitHubAPICallErrorResolvedAlert,
+            "{}: Github API call no longer causing errors.".format(origin_name),
+            severity, timestamp, parent_id, origin_id,
+            GroupedGithubAlertsMetricCode.APICallError)

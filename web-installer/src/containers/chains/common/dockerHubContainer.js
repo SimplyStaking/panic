@@ -28,11 +28,20 @@ const Form = withFormik({
   validationSchema: (props) => DockerHubSchema(props),
   handleSubmit: (values, { resetForm, props }) => {
     const { saveDockerHubDetails, currentChain } = props;
+
+    let repoName = values.name;
+    let repoNamespace = 'library';
+    if (values.name.includes('/')) {
+      [repoNamespace, repoName] = values.name.split('/');
+    }
+
     const payload = {
       parent_id: currentChain,
-      name: values.name,
-      monitor_docker: values.monitor_docker,
+      repo_name: repoName,
+      repo_namespace: repoNamespace,
+      monitor_repo: values.monitor_docker,
     };
+
     saveDockerHubDetails(payload);
     resetForm();
   },

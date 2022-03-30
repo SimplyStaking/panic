@@ -9,6 +9,7 @@ from parameterized import parameterized
 from src.data_store.redis import RedisApi
 from src.data_transformers.contracts.chainlink import (
     ChainlinkContractsDataTransformer)
+from src.data_transformers.dockerhub import DockerHubDataTransformer
 from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.node.chainlink import ChainlinkNodeDataTransformer
 from src.data_transformers.node.evm import EVMNodeDataTransformer
@@ -21,9 +22,9 @@ from src.data_transformers.system import SystemDataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (
-    SYSTEM_DATA_TRANSFORMER_NAME, GITHUB_DATA_TRANSFORMER_NAME,
-    CL_NODE_DATA_TRANSFORMER_NAME, EVM_NODE_DATA_TRANSFORMER_NAME,
-    CL_CONTRACTS_DATA_TRANSFORMER_NAME)
+    SYSTEM_DATA_TRANSFORMER_NAME, DOCKERHUB_DATA_TRANSFORMER_NAME,
+    GITHUB_DATA_TRANSFORMER_NAME, CL_NODE_DATA_TRANSFORMER_NAME,
+    EVM_NODE_DATA_TRANSFORMER_NAME, CL_CONTRACTS_DATA_TRANSFORMER_NAME)
 
 
 class TestDataTransformersStarters(unittest.TestCase):
@@ -59,6 +60,17 @@ class TestDataTransformersStarters(unittest.TestCase):
             self.github_dt_name, self.dummy_logger, self.redis, self.rabbitmq,
             self.github_dt_publishing_queue_size)
         self.test_github_dt._publishing_queue = self.publishing_queue_github_dt
+
+        # DockerHub Data Transformer
+        self.dockerhub_dt_name = 'test_dockerhub_data_transformer'
+        self.dockerhub_dt_publishing_queue_size = 1000
+        self.publishing_queue_dockerhub_dt = Queue(
+            self.dockerhub_dt_publishing_queue_size)
+        self.test_dockerhub_dt = DockerHubDataTransformer(
+            self.dockerhub_dt_name, self.dummy_logger, self.redis,
+            self.rabbitmq, self.dockerhub_dt_publishing_queue_size)
+        self.test_dockerhub_dt._publishing_queue = \
+            self.publishing_queue_dockerhub_dt
 
         # System Data Transformer
         self.system_dt_name = 'test_system_data_transformer'
@@ -113,9 +125,11 @@ class TestDataTransformersStarters(unittest.TestCase):
         self.redis = None
         self.publishing_queue_system_dt = None
         self.publishing_queue_github_dt = None
+        self.publishing_queue_dockerhub_dt = None
         self.publishing_queue_cl_node_dt = None
         self.publishing_queue_cl_contracts_dt = None
         self.test_github_dt = None
+        self.test_dockerhub_dt = None
         self.test_system_dt = None
         self.test_cl_node_dt = None
         self.test_evm_node_dt = None
@@ -163,6 +177,8 @@ class TestDataTransformersStarters(unittest.TestCase):
     @parameterized.expand([
         (GitHubDataTransformer, GITHUB_DATA_TRANSFORMER_NAME,
          GitHubDataTransformer.__name__),
+        (DockerHubDataTransformer, DOCKERHUB_DATA_TRANSFORMER_NAME,
+         DockerHubDataTransformer.__name__),
         (SystemDataTransformer, SYSTEM_DATA_TRANSFORMER_NAME,
          SystemDataTransformer.__name__),
         (ChainlinkNodeDataTransformer, CL_NODE_DATA_TRANSFORMER_NAME,
@@ -186,6 +202,7 @@ class TestDataTransformersStarters(unittest.TestCase):
 
     @parameterized.expand([
         (GitHubDataTransformer, GITHUB_DATA_TRANSFORMER_NAME,),
+        (DockerHubDataTransformer, DOCKERHUB_DATA_TRANSFORMER_NAME,),
         (SystemDataTransformer, SYSTEM_DATA_TRANSFORMER_NAME,),
         (ChainlinkNodeDataTransformer, CL_NODE_DATA_TRANSFORMER_NAME,),
         (EVMNodeDataTransformer, EVM_NODE_DATA_TRANSFORMER_NAME,),
@@ -209,6 +226,8 @@ class TestDataTransformersStarters(unittest.TestCase):
     @parameterized.expand([
         (GitHubDataTransformer, 'self.github_dt_name',
          'self.publishing_queue_github_dt', 'self.test_github_dt'),
+        (DockerHubDataTransformer, 'self.dockerhub_dt_name',
+         'self.publishing_queue_dockerhub_dt', 'self.test_dockerhub_dt'),
         (SystemDataTransformer, 'self.system_dt_name',
          'self.publishing_queue_system_dt', 'self.test_system_dt'),
         (ChainlinkNodeDataTransformer, 'self.cl_node_dt_name',
