@@ -7,3 +7,5 @@ export enum Severities {
     CRITICAL = "CRITICAL",
     ERROR = "ERROR",
 }
+
+export const baseChains = ['cosmos', 'substrate', 'chainlink', 'general'];

@@ -5,19 +5,20 @@ from typing import TypeVar, Type
 import pika.exceptions
 
 from src.data_store.stores.alert import AlertStore
-from src.data_store.stores.config import ConfigStore
 from src.data_store.stores.contract.chainlink import ChainlinkContractStore
+from src.data_store.stores.dockerhub import DockerhubStore
 from src.data_store.stores.github import GithubStore
+from src.data_store.stores.monitorable import MonitorableStore
 from src.data_store.stores.node.chainlink import ChainlinkNodeStore
 from src.data_store.stores.node.evm import EVMNodeStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants.names import (CONFIG_STORE_NAME, SYSTEM_STORE_NAME,
-                                       GITHUB_STORE_NAME, ALERT_STORE_NAME,
-                                       CL_NODE_STORE_NAME, EVM_NODE_STORE_NAME,
-                                       CL_CONTRACT_STORE_NAME)
+from src.utils.constants.names import (
+    SYSTEM_STORE_NAME, GITHUB_STORE_NAME, DOCKERHUB_STORE_NAME,
+    ALERT_STORE_NAME, CL_NODE_STORE_NAME, EVM_NODE_STORE_NAME,
+    CL_CONTRACT_STORE_NAME, MONITORABLE_STORE_NAME)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
                                           RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
@@ -72,9 +73,10 @@ def _initialise_store(store_type: Type[T], store_display_name: str) -> T:
     return store
 
 
-def start_config_store() -> None:
-    config_store = _initialise_store(ConfigStore, CONFIG_STORE_NAME)
-    start_store(config_store)
+def start_monitorable_store() -> None:
+    monitorable_store = _initialise_store(MonitorableStore,
+                                          MONITORABLE_STORE_NAME)
+    start_store(monitorable_store)
 
 
 def start_system_store() -> None:
@@ -85,6 +87,11 @@ def start_system_store() -> None:
 def start_github_store() -> None:
     github_store = _initialise_store(GithubStore, GITHUB_STORE_NAME)
     start_store(github_store)
+
+
+def start_dockerhub_store() -> None:
+    dockerhub_store = _initialise_store(DockerhubStore, DOCKERHUB_STORE_NAME)
+    start_store(dockerhub_store)
 
 
 def start_alert_store() -> None:

@@ -6,16 +6,18 @@ import pika.exceptions
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.configs.nodes.node import NodeConfig
-from src.configs.repo import RepoConfig
+from src.configs.repo import GitHubRepoConfig, DockerHubRepoConfig
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.contracts.chainlink import ChainlinkContractsMonitor
+from src.monitors.dockerhub import DockerHubMonitor
 from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
 from src.monitors.system import SystemMonitor
 from src.utils import env
 from src.utils.constants.names import (SYSTEM_MONITOR_NAME_TEMPLATE,
                                        GITHUB_MONITOR_NAME_TEMPLATE,
+                                       DOCKERHUB_MONITOR_NAME_TEMPLATE,
                                        NODE_MONITOR_NAME_TEMPLATE,
                                        CL_CONTRACTS_MONITOR_NAME_TEMPLATE)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
@@ -53,7 +55,8 @@ def _initialise_monitor_logger(monitor_display_name: str,
 def _initialise_monitor(
         monitor_type: Type[T], monitor_display_name: str,
         monitoring_period: int,
-        config: Union[SystemConfig, RepoConfig, NodeConfig]) -> T:
+        config: Union[SystemConfig, GitHubRepoConfig, DockerHubRepoConfig,
+                      NodeConfig]) -> T:
     monitor_logger = _initialise_monitor_logger(monitor_display_name,
                                                 monitor_type.__name__)
 
@@ -115,7 +118,7 @@ def start_system_monitor(system_config: SystemConfig) -> None:
     start_monitor(system_monitor)
 
 
-def start_github_monitor(repo_config: RepoConfig) -> None:
+def start_github_monitor(repo_config: GitHubRepoConfig) -> None:
     # Monitor display name based on repo name. The '/' are replaced with spaces,
     # and the last space is removed.
     monitor_display_name = GITHUB_MONITOR_NAME_TEMPLATE.format(
@@ -124,6 +127,17 @@ def start_github_monitor(repo_config: RepoConfig) -> None:
                                          env.GITHUB_MONITOR_PERIOD_SECONDS,
                                          repo_config)
     start_monitor(github_monitor)
+
+
+def start_dockerhub_monitor(repo_config: DockerHubRepoConfig) -> None:
+    # Monitor display name based on repo name. The '/' are replaced with spaces,
+    # and the last space is removed.
+    monitor_display_name = DOCKERHUB_MONITOR_NAME_TEMPLATE.format(
+        repo_config.repo_namespace + ' ' + repo_config.repo_name)
+    dockerhub_monitor = _initialise_monitor(
+        DockerHubMonitor, monitor_display_name,
+        env.DOCKERHUB_MONITOR_PERIOD_SECONDS, repo_config)
+    start_monitor(dockerhub_monitor)
 
 
 def start_node_monitor(node_config: NodeConfig, monitor_type: Type[T]) -> None:

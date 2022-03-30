@@ -15,6 +15,7 @@ from src.monitors.starters import start_system_monitor
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
 from src.utils.constants.configs import NODES_CONFIG
+from src.utils.constants.monitorables import MonitorableType
 from src.utils.constants.names import SYSTEM_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, SYS_MON_MAN_CONFIGS_QUEUE_NAME,
@@ -94,8 +95,9 @@ class SystemMonitorsManager(MonitorsManager):
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 
-    def _create_and_start_monitor_process(self, system_config: SystemConfig,
-                                          config_id: str, chain: str) -> None:
+    def _create_and_start_monitor_process(
+            self, system_config: SystemConfig, config_id: str, chain: str,
+            base_chain: str, sub_chain: str) -> None:
         log_and_print("Creating a new process for the monitor of {}"
                       .format(system_config.system_name), self.logger)
         process = multiprocessing.Process(target=start_system_monitor,
@@ -104,10 +106,16 @@ class SystemMonitorsManager(MonitorsManager):
         process.daemon = True
         process.start()
         self._config_process_dict[config_id] = {}
-        self._config_process_dict[config_id]['component_name'] = \
-            SYSTEM_MONITOR_NAME_TEMPLATE.format(system_config.system_name)
+        self._config_process_dict[config_id]['component_name'] = (
+            SYSTEM_MONITOR_NAME_TEMPLATE.format(system_config.system_name))
         self._config_process_dict[config_id]['process'] = process
         self._config_process_dict[config_id]['chain'] = chain
+        self._config_process_dict[config_id]['parent_id'] = (
+            system_config.parent_id)
+        self._config_process_dict[config_id]['source_name'] = (
+            system_config.system_name)
+        self._config_process_dict[config_id]['base_chain'] = base_chain
+        self._config_process_dict[config_id]['sub_chain'] = sub_chain
 
     def _process_configs(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -125,9 +133,12 @@ class SystemMonitorsManager(MonitorsManager):
             else:
                 current_configs = {}
             chain = 'general'
+            base_chain = 'general'
+            sub_chain = 'general'
         else:
             parsed_routing_key = method.routing_key.split('.')
             base_chain = parsed_routing_key[1]
+            sub_chain = parsed_routing_key[2]
             specific_chain = parsed_routing_key[2]
             config_type = parsed_routing_key[3]
             chain = base_chain + ' ' + specific_chain
@@ -167,7 +178,8 @@ class SystemMonitorsManager(MonitorsManager):
                 system_config = SystemConfig(system_id, parent_id, system_name,
                                              monitor_system, node_exporter_url)
                 self._create_and_start_monitor_process(system_config, config_id,
-                                                       chain)
+                                                       chain, base_chain,
+                                                       sub_chain)
                 correct_systems_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
@@ -202,7 +214,8 @@ class SystemMonitorsManager(MonitorsManager):
                     "the latest configuration will be started.".format(
                         modified_configs[config_id]['name']), self.logger)
                 self._create_and_start_monitor_process(system_config, config_id,
-                                                       chain)
+                                                       chain, base_chain,
+                                                       sub_chain)
                 correct_systems_configs[config_id] = config
 
             removed_configs = get_removed_configs(sent_configs, current_configs)
@@ -232,7 +245,15 @@ class SystemMonitorsManager(MonitorsManager):
             chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
             self._systems_configs[chain] = correct_systems_configs
 
+        self.process_and_send_monitorable_data(base_chain,
+                                               MonitorableType.SYSTEMS)
+
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+    def process_and_send_monitorable_data(
+            self, base_chain: str, monitorable_type: MonitorableType) -> None:
+        self.process_and_send_monitorable_data_generic(
+            base_chain, monitorable_type)
 
     def _process_ping(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -256,6 +277,8 @@ class SystemMonitorsManager(MonitorsManager):
 
                     # Restart dead process
                     chain = process_details['chain']
+                    base_chain = process_details['base_chain']
+                    sub_chain = process_details['sub_chain']
                     config = self.systems_configs[chain][config_id]
                     system_id = config['id']
                     parent_id = config['parent_id']
@@ -266,8 +289,8 @@ class SystemMonitorsManager(MonitorsManager):
                                                  system_name,
                                                  monitor_system,
                                                  node_exporter_url)
-                    self._create_and_start_monitor_process(system_config,
-                                                           config_id, chain)
+                    self._create_and_start_monitor_process(
+                        system_config, config_id, chain, base_chain, sub_chain)
             heartbeat['timestamp'] = datetime.now().timestamp()
         except Exception as e:
             # If we encounter an error during processing log the error and

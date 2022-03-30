@@ -6,11 +6,13 @@ from unittest import mock
 
 from src.alerter.alerter_starters import (
     _initialise_alerter_logger, _initialise_system_alerter,
-    _initialise_github_alerter, _initialise_chainlink_node_alerter,
-    _initialise_chainlink_contract_alerter, _initialise_evm_node_alerter,
-    start_github_alerter, start_system_alerter, start_chainlink_node_alerter,
-    start_evm_node_alerter, start_chainlink_contract_alerter)
+    _initialise_github_alerter, _initialise_dockerhub_alerter,
+    _initialise_chainlink_node_alerter, _initialise_chainlink_contract_alerter,
+    _initialise_evm_node_alerter, start_github_alerter, start_system_alerter,
+    start_chainlink_node_alerter, start_evm_node_alerter,
+    start_chainlink_contract_alerter)
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
+from src.alerter.alerters.dockerhub import DockerhubAlerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
@@ -80,6 +82,9 @@ class TestAlertersStarters(unittest.TestCase):
         # Note github_alerter_name is the same as in the alerter_starters file
         self.github_alerter_name = "GitHub Alerter"
 
+        # Similarly for Dockerhub
+        self.dockerhub_alerter_name = "DockerHub Alerter"
+
         self.system_alerts_config = SystemAlertsConfig(
             self.parent_id,
             self.open_file_descriptors,
@@ -99,6 +104,13 @@ class TestAlertersStarters(unittest.TestCase):
 
         self.test_github_alerter = GithubAlerter(
             self.github_alerter_name,
+            self.dummy_logger,
+            self.rabbitmq,
+            env.ALERTER_PUBLISHING_QUEUE_SIZE
+        )
+
+        self.test_dockerhub_alerter = DockerhubAlerter(
+            self.dockerhub_alerter_name,
             self.dummy_logger,
             self.rabbitmq,
             env.ALERTER_PUBLISHING_QUEUE_SIZE
@@ -136,6 +148,7 @@ class TestAlertersStarters(unittest.TestCase):
     def tearDown(self) -> None:
         self.dummy_logger = None
         self.test_github_alerter = None
+        self.test_dockerhub_alerter = None
         self.rabbitmq = None
         self.system_alerts_config = None
         self.test_system_alerter = None
@@ -182,6 +195,18 @@ class TestAlertersStarters(unittest.TestCase):
         mock_init_logger.assert_called_once_with(
             self.github_alerter_name,
             GithubAlerter.__name__
+        )
+
+    @mock.patch("src.alerter.alerter_starters._initialise_alerter_logger")
+    def test_initialise_alerter_dockerhub_calls_initialise_logger_correctly(
+            self, mock_init_logger) -> None:
+        mock_init_logger.return_value = self.dummy_logger
+
+        _initialise_dockerhub_alerter()
+
+        mock_init_logger.assert_called_once_with(
+            self.dockerhub_alerter_name,
+            DockerhubAlerter.__name__
         )
 
     @mock.patch("src.alerter.alerter_starters._initialise_alerter_logger")
@@ -247,6 +272,21 @@ class TestAlertersStarters(unittest.TestCase):
 
         args, _ = mock_github_alerter.call_args
         self.assertEqual(self.github_alerter_name, args[0])
+        self.assertEqual(self.dummy_logger, args[1])
+        self.assertEqual(type(self.rabbitmq), type(args[2]))
+        self.assertEqual(env.ALERTER_PUBLISHING_QUEUE_SIZE, args[3])
+
+    @mock.patch("src.alerter.alerter_starters._initialise_alerter_logger")
+    @mock.patch('src.alerter.alerter_starters.DockerhubAlerter')
+    def test_initialise_alerter_creates_dockerhub_alerter_correctly(
+            self, mock_dockerhub_alerter, mock_init_logger) -> None:
+        mock_init_logger.return_value = self.dummy_logger
+        mock_dockerhub_alerter.__name__ = 'dockerhub_alerter_name'
+
+        _initialise_dockerhub_alerter()
+
+        args, _ = mock_dockerhub_alerter.call_args
+        self.assertEqual(self.dockerhub_alerter_name, args[0])
         self.assertEqual(self.dummy_logger, args[1])
         self.assertEqual(type(self.rabbitmq), type(args[2]))
         self.assertEqual(env.ALERTER_PUBLISHING_QUEUE_SIZE, args[3])

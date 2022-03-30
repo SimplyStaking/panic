@@ -1,30 +1,16 @@
 import * as Yup from 'yup';
-import { checkSourceName } from 'utils/helpers';
+import { checkGitHubRepoExists } from 'utils/helpers';
 
 const RepositorySchema = (props) => Yup.object().shape({
   repo_name: Yup.string()
-    .test('unique-repository-name', 'Name already exists.', (value) => {
+    .test('unique-repository-name', 'GitHub repo already exists.', (value) => {
       const {
-        systemConfig,
-        substrateNodesConfig,
-        cosmosNodesConfig,
         reposConfig,
-        chainlinkNodesConfig,
-        dockerHubConfig,
-        evmNodesConfig,
       } = props;
 
-      return checkSourceName(
+      return checkGitHubRepoExists(
         value,
-        ...[
-          evmNodesConfig,
-          chainlinkNodesConfig,
-          cosmosNodesConfig,
-          substrateNodesConfig,
-          systemConfig,
-          reposConfig,
-          dockerHubConfig,
-        ],
+        reposConfig,
       );
     })
     .required('Repository name is required.'),

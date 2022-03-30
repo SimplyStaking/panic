@@ -8,17 +8,17 @@ import {
   RepositoriesChainlinkFormContainer,
   RepositoriesChainlinkTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
-// import {
-// DockerHubChainlinkFormContainer,
-// DockerHubChainlinkTableContainer,
-// } from 'containers/chains/common/dockerHubContainer';
+import {
+  DockerHubChainlinkFormContainer,
+  DockerHubChainlinkTableContainer,
+} from 'containers/chains/common/dockerHubContainer';
 import {
   ALERTS_STEP,
   CHAINS_STEP,
   CHANNELS_STEP,
   NODES_STEP,
   REPOSITORIES_STEP,
-  // DOCKER_STEP,
+  DOCKER_STEP,
 } from 'constants/constants';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 import { EvmNodesFormContainer, EvmNodesTableContainer } from './evmNodesContainer';
@@ -60,13 +60,13 @@ function getStep(stepName) {
           <RepositoriesChainlinkTableContainer />
         </div>
       );
-    // case DOCKER_STEP:
-    //   return (
-    //     <div>
-    //       <DockerHubChainlinkFormContainer />
-    //       <DockerHubChainlinkTableContainer />
-    //     </div>
-    //   );
+    case DOCKER_STEP:
+      return (
+        <div>
+          <DockerHubChainlinkFormContainer />
+          <DockerHubChainlinkTableContainer />
+        </div>
+      );
     default:
       return <ChainlinkChainFormContainer />;
   }

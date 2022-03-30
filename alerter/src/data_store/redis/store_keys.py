@@ -59,17 +59,15 @@ _key_cl_contract_last_round_observed = 'ChainlinkContract11'
 _key_github_no_of_releases = 'gh1'
 _key_github_last_monitored = 'gh2'
 
+# dhX_<repo_id>
+_key_dockerhub_last_tags = 'dh1'
+_key_dockerhub_last_monitored = 'dh2'
+
 # cX_<component_name>
 _key_component_heartbeat = 'c1'
 
 # chX_<parent_id>
 _key_chain_mute_alerts = 'ch1'
-
-# confx_<routing_key>
-_key_config = 'conf1'
-
-# bcX_<base_chain>
-_key_base_chain_monitorables_info = 'bc1'
 
 # alert_systemX_<origin_id>
 _key_alert_system_open_file_descriptors = 'alert_system1'
@@ -83,6 +81,14 @@ _key_alert_system_invalid_url = 'alert_system7'
 # alert_githubX_<origin_id>
 _key_alert_github_release = 'alert_github1'
 _key_alert_github_cannot_access = 'alert_github2'
+_key_alert_github_api_call_error = 'alert_github3'
+
+# alert_dockerhubX_<origin_id>
+_key_alert_dockerhub_new_tag = 'alert_dockerhub1'
+_key_alert_dockerhub_updated_tag = 'alert_dockerhub2'
+_key_alert_dockerhub_deleted_tag = 'alert_dockerhub3'
+_key_alert_dockerhub_cannot_access = 'alert_dockerhub4'
+_key_alert_dockerhub_tags_api_call_error = 'alert_dockerhub5'
 
 # alert_cl_nodeX_<origin_id>
 _key_alert_cl_head_tracker_current_head = 'alert_cl_node1'
@@ -351,16 +357,20 @@ class Keys:
         return Keys._as_prefix(_key_github_last_monitored) + repo_id
 
     @staticmethod
+    def get_dockerhub_last_tags(repo_id: str) -> str:
+        return Keys._as_prefix(_key_dockerhub_last_tags) + repo_id
+
+    @staticmethod
+    def get_dockerhub_last_monitored(repo_id: str) -> str:
+        return Keys._as_prefix(_key_dockerhub_last_monitored) + repo_id
+
+    @staticmethod
     def get_component_heartbeat(component_name: str) -> str:
         return Keys._as_prefix(_key_component_heartbeat) + component_name
 
     @staticmethod
     def get_chain_mute_alerts() -> str:
         return _key_chain_mute_alerts
-
-    @staticmethod
-    def get_config(routing_key: str) -> str:
-        return Keys._as_prefix(_key_config) + routing_key
 
     @staticmethod
     def get_alert_system_open_file_descriptors(origin_id: str) -> str:
@@ -398,6 +408,31 @@ class Keys:
     @staticmethod
     def get_alert_github_cannot_access(origin_id: str) -> str:
         return Keys._as_prefix(_key_alert_github_cannot_access) + origin_id
+
+    @staticmethod
+    def get_alert_github_api_call_error(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_github_api_call_error) + origin_id
+
+    @staticmethod
+    def get_alert_dockerhub_new_tag(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_dockerhub_new_tag) + origin_id
+
+    @staticmethod
+    def get_alert_dockerhub_updated_tag(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_dockerhub_updated_tag) + origin_id
+
+    @staticmethod
+    def get_alert_dockerhub_deleted_tag(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_dockerhub_deleted_tag) + origin_id
+
+    @staticmethod
+    def get_alert_dockerhub_cannot_access(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_dockerhub_cannot_access) + origin_id
+
+    @staticmethod
+    def get_alert_dockerhub_tags_api_call_error(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_dockerhub_tags_api_call_error) + origin_id
 
     @staticmethod
     def get_alert_cl_prometheus_is_down(origin_id: str) -> str:
@@ -465,7 +500,7 @@ class Keys:
             cl_node_id: str, contract_proxy_address: str) -> str:
         return Keys._as_prefix(
             _key_alert_cl_contract_price_feed_not_observed) + (
-                Keys._as_prefix(cl_node_id) + contract_proxy_address)
+                       Keys._as_prefix(cl_node_id) + contract_proxy_address)
 
     @staticmethod
     def get_alert_cl_contract_price_feed_deviation(
@@ -502,13 +537,9 @@ class Keys:
             evm_node_id: str) -> str:
         return Keys._as_prefix(
             _key_alert_evm_block_syncing_no_change_in_block_height) + (
-            evm_node_id)
+                   evm_node_id)
 
     @staticmethod
     def get_alert_evm_invalid_url(
             evm_node_id: str) -> str:
         return Keys._as_prefix(_key_alert_evm_invalid_url) + evm_node_id
-
-    @staticmethod
-    def get_base_chain_monitorables_info(base_chain: str) -> str:
-        return Keys._as_prefix(_key_base_chain_monitorables_info) + base_chain

@@ -63,6 +63,7 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
         self._name = name
         self._config_directory = config_directory
         self._file_patterns = file_patterns
+        self._ignore_file_patterns = ignore_file_patterns
         self._watching = False
         self._connected_to_rabbit = False
         self._current_thread = None
@@ -294,15 +295,14 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
         """
         self._create_and_start_sending_configs_thread()
 
-        def do_first_run_event(name: str) -> None:
-            event = FileSystemEvent(name)
-            event.event_type = _FIRST_RUN_EVENT
-            self._on_event_thrown(event)
+        if not self.watching:
+            def do_first_run_event(name: str) -> None:
+                event = FileSystemEvent(name)
+                event.event_type = _FIRST_RUN_EVENT
+                self._on_event_thrown(event)
 
-        self._logger.info("Throwing first run event for all config files")
-        self.foreach_config_file(do_first_run_event)
-
-        if not self._watching:
+            self._logger.info("Throwing first run event for all config files")
+            self.foreach_config_file(do_first_run_event)
             self._logger.info("Starting config file observer")
             self._observer.start()
             self._watching = True
@@ -321,6 +321,8 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
                         self._send_data()
                     except MessageWasNotDeliveredException as e:
                         self.logger.exception(e)
+                if self.connected_to_rabbit:
+                    self.rabbitmq.connection.sleep(10)
             except (ConnectionNotInitialisedException,
                     AMQPConnectionError) as e:
                 # If the connection is not initialised or there is a connection
@@ -336,14 +338,14 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
 
                 self._logger.info("Connection restored, will attempt sending "
                                   "the config.")
-            except AMQPChannelError:
+            except AMQPChannelError as e:
                 # This error would have already been logged by the RabbitMQ
                 # logger and handled by RabbitMQ. Since a new channel is
                 # created we need to re-initialise RabbitMQ
                 self._initialise_rabbitmq()
                 raise e
-
-            self.rabbitmq.connection.sleep(10)
+            except Exception as e:
+                self._logger.exception(e)
 
     def _create_and_start_sending_configs_thread(self) -> None:
         try:
@@ -355,7 +357,7 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
             self._logger.exception(e)
             raise e
 
-    def _terminate_and_stop_sending_configs_thread(self) -> None:
+    def terminate_and_stop_sending_configs_thread(self) -> None:
         if self._current_thread is not None:
             self._current_thread.join()
             self._current_thread = None
@@ -372,7 +374,7 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
                       "closed, and afterwards the process will exit."
                       .format(self), self._logger)
 
-        if self._watching:
+        if self.watching:
             self._logger.info("Stopping config file observer")
             self._observer.stop()
             self._observer.join()
@@ -381,7 +383,7 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
         else:
             self._logger.info("Config file observer already stopped")
         self.disconnect_from_rabbit()
-        self._terminate_and_stop_sending_configs_thread()
+        self.terminate_and_stop_sending_configs_thread()
         log_and_print("{} terminated.".format(self), self._logger)
         sys.exit()
 
@@ -392,8 +394,11 @@ class ConfigsManager(QueuingPublisherSubscriberComponent):
             file path as {config_directory} + {file path}
         :return: Nothing
         """
-        for root, dirs, files in os.walk(self.config_directory):
+        for root, _, files in os.walk(self.config_directory):
             for name in files:
+                complete_path: str = os.path.join(root, name)
                 if any([fnmatch.fnmatch(name, pattern) for pattern in
-                        self._file_patterns]):
-                    callback(os.path.join(root, name))
+                        self._file_patterns]) and not (
+                        any([fnmatch.fnmatch(complete_path, pattern) for
+                             pattern in self._ignore_file_patterns])):
+                    callback(complete_path)

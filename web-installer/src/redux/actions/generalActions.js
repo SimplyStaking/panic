@@ -73,8 +73,9 @@ export function addDockerHub(payload) {
     payload: {
       id,
       parent_id: payload.parent_id,
-      name: payload.name,
-      monitor_docker: payload.monitor_docker,
+      repo_name: payload.repo_name,
+      repo_namespace: payload.repo_namespace,
+      monitor_repo: payload.monitor_repo,
     },
   };
 }

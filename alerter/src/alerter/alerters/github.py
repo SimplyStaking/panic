@@ -10,14 +10,18 @@ from src.alerter.alert_severities import Severity
 from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerts.github_alerts import (CannotAccessGitHubPageAlert,
                                               NewGitHubReleaseAlert,
-                                              GitHubPageNowAccessibleAlert)
+                                              GitHubPageNowAccessibleAlert,
+                                              GitHubAPICallErrorAlert,
+                                              GitHubAPICallErrorResolvedAlert)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           GITHUB_ALERTER_INPUT_QUEUE_NAME,
                                           GITHUB_TRANSFORMED_DATA_ROUTING_KEY,
                                           GITHUB_ALERT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
-                                  ReceivedUnexpectedDataException)
+                                  ReceivedUnexpectedDataException,
+                                  CannotAccessGitHubPageException,
+                                  GitHubAPICallException)
 
 
 class GithubAlerter(Alerter):
@@ -25,6 +29,7 @@ class GithubAlerter(Alerter):
                  rabbitmq: RabbitMQApi, max_queue_size: int = 0) -> None:
         super().__init__(alerter_name, logger, rabbitmq, max_queue_size)
         self._cannot_access_github_page = {}
+        self._api_call_error = {}
 
     def _initialise_rabbitmq(self) -> None:
         # An alerter is both a consumer and producer, therefore we need to
@@ -67,6 +72,8 @@ class GithubAlerter(Alerter):
     def _create_state_for_github(self, github_id: str) -> None:
         if github_id not in self._cannot_access_github_page:
             self._cannot_access_github_page[github_id] = False
+        if github_id not in self._api_call_error:
+            self._api_call_error[github_id] = False
 
     def _process_data(self,
                       ch: pika.adapters.blocking_connection.BlockingChannel,
@@ -91,10 +98,20 @@ class GithubAlerter(Alerter):
                         meta['repo_name'], Severity.INFO.value,
                         meta['last_monitored'], meta['repo_parent_id'],
                         meta['repo_id'])
+                    self._cannot_access_github_page[meta['repo_id']] = False
                     data_for_alerting.append(alert.alert_data)
                     self.logger.debug("Successfully classified alert %s",
                                       alert.alert_data)
-                    self._cannot_access_github_page[meta['repo_id']] = False
+
+                if self._api_call_error[meta['repo_id']]:
+                    alert = GitHubAPICallErrorResolvedAlert(
+                        meta['repo_name'], Severity.INFO.value,
+                        meta['last_monitored'], meta['repo_parent_id'],
+                        meta['repo_id'])
+                    self._api_call_error[meta['repo_id']] = False
+                    data_for_alerting.append(alert.alert_data)
+                    self.logger.debug("Successfully classified alert %s",
+                                      alert.alert_data)
 
                 current = data['no_of_releases']['current']
                 previous = data['no_of_releases']['previous']
@@ -117,16 +134,20 @@ class GithubAlerter(Alerter):
                                           alert.alert_data)
             elif 'error' in data_received:
                 """
-                CannotAccessGithubPageAlert repeats constantly on each
-                monitoring round (DEFAULT: 1 hour). This has repeat timer as
-                it's an indication that the configuration is wrong and should
-                be fixed.
+                CannotAccessGithubPageAlert and GitHubAPICallErrorAlert repeats 
+                constantly on each monitoring round (DEFAULT: 1 hour). This has 
+                repeat timer as it's an indication that the configuration is 
+                wrong and should be fixed.
                 """
-                if int(data_received['error']['code']) == 5006:
-                    meta_data = data_received['error']['meta_data']
+                error_code = int(data_received['error']['code'])
+                error_message = data_received['error']['message']
+                meta_data = data_received['error']['meta_data']
 
-                    self._create_state_for_github(meta_data['repo_id'])
+                self._create_state_for_github(meta_data['repo_id'])
 
+                # Check for error code match. If not, check if error has been
+                # resolved.
+                if error_code == CannotAccessGitHubPageException.code:
                     alert = CannotAccessGitHubPageAlert(
                         meta_data['repo_name'], Severity.ERROR.value,
                         meta_data['time'], meta_data['repo_parent_id'],
@@ -135,7 +156,41 @@ class GithubAlerter(Alerter):
                     data_for_alerting.append(alert.alert_data)
                     self.logger.debug("Successfully classified alert %s",
                                       alert.alert_data)
-                    self._cannot_access_github_page[meta_data['repo_id']] = True
+                    self._cannot_access_github_page[meta_data[
+                        'repo_id']] = True
+                elif self._cannot_access_github_page[meta_data['repo_id']]:
+                    alert = GitHubPageNowAccessibleAlert(
+                        meta_data['repo_name'], Severity.INFO.value,
+                        meta_data['last_monitored'],
+                        meta_data['repo_parent_id'],
+                        meta_data['repo_id'])
+                    self._cannot_access_github_page[meta_data[
+                        'repo_id']] = False
+                    data_for_alerting.append(alert.alert_data)
+                    self.logger.debug("Successfully classified alert %s",
+                                      alert.alert_data)
+
+                if error_code == GitHubAPICallException.code:
+                    alert = GitHubAPICallErrorAlert(
+                        meta_data['repo_name'], Severity.ERROR.value,
+                        meta_data['time'], meta_data['repo_parent_id'],
+                        meta_data['repo_id'], error_message
+                    )
+                    data_for_alerting.append(alert.alert_data)
+                    self.logger.debug("Successfully classified alert %s",
+                                      alert.alert_data)
+                    self._api_call_error[meta_data['repo_id']] = True
+                elif self._api_call_error[meta_data['repo_id']]:
+                    alert = GitHubAPICallErrorResolvedAlert(
+                        meta_data['repo_name'], Severity.INFO.value,
+                        meta_data['time'],
+                        meta_data['repo_parent_id'],
+                        meta_data['repo_id'])
+                    self._api_call_error[meta_data[
+                        'repo_id']] = False
+                    data_for_alerting.append(alert.alert_data)
+                    self.logger.debug("Successfully classified alert %s",
+                                      alert.alert_data)
             else:
                 raise ReceivedUnexpectedDataException("{}: _process_data"
                                                       "".format(self))

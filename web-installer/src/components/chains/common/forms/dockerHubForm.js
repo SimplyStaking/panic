@@ -122,7 +122,7 @@ const DockerHubForm = ({
                     <Box px={2}>
                       <PingDockerHubButton
                         disabled={Object.keys(errors).length !== 0}
-                        name={values.name}
+                        name={values.name.includes('/') ? values.name : `library/${values.name}`}
                       />
                       <Button
                         color="primary"

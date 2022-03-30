@@ -9,8 +9,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 
 import src.alerter.alerts.node.evm as evm_alerts
 from src.alerter.alerters.alerter import Alerter
-from src.alerter.factory.evm_node_alerting_factory import \
-    EVMNodeAlertingFactory
+from src.alerter.factory.evm_node_alerting_factory import EVMNodeAlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode as MetricCode
 from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
@@ -21,7 +20,8 @@ from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, EVM_NODE_ALERT_ROUTING_KEY,
     EVM_ALERTS_CONFIGS_ROUTING_KEY)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
-                                  ReceivedUnexpectedDataException)
+                                  ReceivedUnexpectedDataException,
+                                  InvalidUrlException, NodeIsDownException)
 from src.utils.types import str_to_bool
 
 
@@ -136,11 +136,11 @@ class EVMNodeAlerter(Alerter):
 
             # Check if some errors have been resolved
             self.alerting_factory.classify_error_alert(
-                5009, evm_alerts.InvalidUrlAlert, evm_alerts.ValidUrlAlert,
-                data_for_alerting, meta_data['node_parent_id'],
-                meta_data['node_id'], meta_data['node_name'],
-                meta_data['last_monitored'], MetricCode.InvalidUrl.value,
-                "", "EVM URL is now valid!.", None
+                InvalidUrlException.code, evm_alerts.InvalidUrlAlert,
+                evm_alerts.ValidUrlAlert, data_for_alerting,
+                meta_data['node_parent_id'], meta_data['node_id'],
+                meta_data['node_name'], meta_data['last_monitored'],
+                MetricCode.InvalidUrl.value, "", "EVM URL is now valid!.", None
             )
 
             # Check if the alert rules are satisfied for the metrics
@@ -224,18 +224,18 @@ class EVMNodeAlerter(Alerter):
             # Detect whether some errors need to be raised, or have been
             # resolved.
             self.alerting_factory.classify_error_alert(
-                5009, evm_alerts.InvalidUrlAlert, evm_alerts.ValidUrlAlert,
-                data_for_alerting, meta_data['node_parent_id'],
-                meta_data['node_id'], meta_data['node_name'], meta_data['time'],
+                InvalidUrlException.code, evm_alerts.InvalidUrlAlert,
+                evm_alerts.ValidUrlAlert, data_for_alerting,
+                meta_data['node_parent_id'], meta_data['node_id'],
+                meta_data['node_name'], meta_data['time'],
                 MetricCode.InvalidUrl.value, data['message'],
-                "EVM URL is now valid!",
-                data['code']
+                "EVM URL is now valid!", data['code']
             )
 
             # Check if the alert rules are satisfied for the metrics
             if str_to_bool(configs.evm_node_is_down['enabled']):
                 sub_config = configs.evm_node_is_down
-                if data['code'] == 5015:
+                if data['code'] == NodeIsDownException.code:
                     self.alerting_factory.classify_downtime_alert(
                         data['data']['went_down_at']['current'], sub_config,
                         evm_alerts.NodeWentDownAtAlert,

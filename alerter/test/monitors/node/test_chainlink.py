@@ -1369,7 +1369,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             self.test_queue_name)
         self.assertEqual(expected_output_data, json.loads(body))
 
-    @mock.patch.object(logging.Logger, "info")
+    @mock.patch.object(logging.Logger, "debug")
     @mock.patch.object(ChainlinkNodeMonitor, "_send_heartbeat")
     @mock.patch.object(ChainlinkNodeMonitor, "_send_data")
     @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
@@ -1386,7 +1386,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         mock_log.assert_called_with(self.test_monitor._display_data(
             self.processed_prometheus_data_example))
 
-    @mock.patch.object(logging.Logger, "info")
+    @mock.patch.object(logging.Logger, "debug")
     @mock.patch.object(ChainlinkNodeMonitor, "_send_heartbeat")
     @mock.patch.object(ChainlinkNodeMonitor, "_send_data")
     @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
@@ -1407,7 +1407,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         assert_not_called_with(mock_log,
                                self.test_monitor._display_data(processed_data))
 
-    @mock.patch.object(logging.Logger, "info")
+    @mock.patch.object(logging.Logger, "debug")
     @mock.patch.object(ChainlinkNodeMonitor, "_send_heartbeat")
     @mock.patch.object(ChainlinkNodeMonitor, "_send_data")
     @mock.patch.object(ChainlinkNodeMonitor, "_get_data")

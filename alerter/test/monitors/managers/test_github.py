@@ -12,7 +12,7 @@ import pika
 import pika.exceptions
 from freezegun import freeze_time
 
-from src.configs.repo import RepoConfig
+from src.configs.repo import GitHubRepoConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.starters import start_github_monitor
@@ -25,10 +25,12 @@ from src.utils.constants.rabbitmq import (GH_MON_MAN_CONFIGS_QUEUE_NAME,
                                           HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
                                           HEALTH_CHECK_EXCHANGE,
                                           CONFIG_EXCHANGE, PING_ROUTING_KEY,
-                                          TOPIC)
+                                          MONITORABLE_EXCHANGE)
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
-from test.utils.utils import infinite_fn
+from test.utils.utils import (infinite_fn, connect_to_rabbit,
+                              delete_queue_if_exists, delete_exchange_if_exists,
+                              disconnect_from_rabbit)
 
 
 class TestGitHubMonitorsManager(unittest.TestCase):
@@ -58,12 +60,20 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             'config_id1': {
                 'component_name': GITHUB_MONITOR_NAME_TEMPLATE.format('repo_1'),
                 'process': self.dummy_process1,
-                'chain': 'Substrate Polkadot'
+                'chain': 'Substrate Polkadot',
+                'parent_id': 'chain_id1',
+                'source_name': 'source_1',
+                'base_chain': 'Substrate',
+                'sub_chain': 'Polkadot',
             },
             'config_id2': {
                 'component_name': GITHUB_MONITOR_NAME_TEMPLATE.format('repo_2'),
                 'process': self.dummy_process2,
-                'chain': 'general'
+                'chain': 'general',
+                'parent_id': 'general',
+                'source_name': 'source_2',
+                'base_chain': 'general',
+                'sub_chain': 'general',
             },
         }
         self.github_repos_configs_example = {
@@ -105,13 +115,15 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         self.repo_name_new = 'repo_3/'
         self.monitor_repo_new = True
         self.chain_example_new = 'Substrate Polkadot'
+        self.base_chain_new = 'Substrate'
+        self.sub_chain_new = 'Polkadot'
         self.releases_page_new = \
             env.GITHUB_RELEASES_TEMPLATE.format(self.repo_name_new)
-        self.repo_config_example = RepoConfig(self.repo_id_new,
-                                              self.parent_id_new,
-                                              self.repo_name_new,
-                                              self.monitor_repo_new,
-                                              self.releases_page_new)
+        self.repo_config_example = GitHubRepoConfig(self.repo_id_new,
+                                                    self.parent_id_new,
+                                                    self.repo_name_new,
+                                                    self.monitor_repo_new,
+                                                    self.releases_page_new)
         self.test_manager = GitHubMonitorsManager(
             self.dummy_logger, self.manager_name, self.rabbitmq)
         self.chains_routing_key = \
@@ -121,39 +133,18 @@ class TestGitHubMonitorsManager(unittest.TestCase):
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
-        try:
-            self.test_manager.rabbitmq.connect()
-
-            # Declare them before just in case there are tests which do not
-            # use these queues and exchanges
-            self.test_manager.rabbitmq.queue_declare(
-                queue=self.test_queue_name, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-            self.test_manager.rabbitmq.queue_declare(
-                GH_MON_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
-            self.test_manager.rabbitmq.queue_declare(
-                GH_MON_MAN_CONFIGS_QUEUE_NAME, False, True, False, False)
-            self.test_manager.rabbitmq.exchange_declare(
-                CONFIG_EXCHANGE, TOPIC, False, True, False, False)
-            self.test_manager.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
-
-            self.test_manager.rabbitmq.queue_purge(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_purge(
-                GH_MON_MAN_HEARTBEAT_QUEUE_NAME)
-            self.test_manager.rabbitmq.queue_purge(
-                GH_MON_MAN_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
-            self.test_manager.rabbitmq.queue_delete(
-                GH_MON_MAN_HEARTBEAT_QUEUE_NAME)
-            self.test_manager.rabbitmq.queue_delete(
-                GH_MON_MAN_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.test_manager.rabbitmq.disconnect()
-        except Exception as e:
-            print("Deletion of queues and exchanges failed: {}".format(e))
+        connect_to_rabbit(self.test_manager.rabbitmq)
+        delete_queue_if_exists(self.test_manager.rabbitmq, self.test_queue_name)
+        delete_queue_if_exists(self.test_manager.rabbitmq,
+                               GH_MON_MAN_HEARTBEAT_QUEUE_NAME)
+        delete_queue_if_exists(self.test_manager.rabbitmq,
+                               GH_MON_MAN_CONFIGS_QUEUE_NAME)
+        delete_exchange_if_exists(self.test_manager.rabbitmq,
+                                  HEALTH_CHECK_EXCHANGE)
+        delete_exchange_if_exists(self.test_manager.rabbitmq, CONFIG_EXCHANGE)
+        delete_exchange_if_exists(self.test_manager.rabbitmq,
+                                  MONITORABLE_EXCHANGE)
+        disconnect_from_rabbit(self.test_manager.rabbitmq)
 
         self.dummy_logger = None
         self.rabbitmq = None
@@ -301,27 +292,21 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         mock_init.return_value = self.dummy_process3
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
-        expected_output = {
-            'config_id1': {
-                'component_name': GITHUB_MONITOR_NAME_TEMPLATE.format('repo_1'),
-                'process': self.dummy_process1,
-                'chain': 'Substrate Polkadot'
-            },
-            'config_id2': {
-                'component_name': GITHUB_MONITOR_NAME_TEMPLATE.format('repo_2'),
-                'process': self.dummy_process2,
-                'chain': 'general'
-            },
-            self.repo_id_new: {}
+        expected_output = self.test_manager._config_process_dict
+        expected_output[self.repo_id_new] = {
+            'component_name': GITHUB_MONITOR_NAME_TEMPLATE.format(
+                self.repo_name_new.replace('/', ' ')[:-1]),
+            'base_chain': self.base_chain_new,
+            'sub_chain': self.sub_chain_new,
+            'source_name': self.repo_name_new[:-1],
+            'chain': self.chain_example_new,
+            'parent_id': self.parent_id_new,
+            'process': self.dummy_process3,
         }
-        new_entry = expected_output[self.repo_id_new]
-        new_entry['component_name'] = GITHUB_MONITOR_NAME_TEMPLATE.format(
-            self.repo_name_new.replace('/', ' ')[:-1])
-        new_entry['chain'] = self.chain_example_new
-        new_entry['process'] = self.dummy_process3
 
         self.test_manager._create_and_start_monitor_process(
-            self.repo_config_example, self.repo_id_new, self.chain_example_new)
+            self.repo_config_example, self.repo_id_new, self.chain_example_new,
+            self.base_chain_new, self.sub_chain_new)
 
         self.assertEqual(
             expected_output, self.test_manager.config_process_dict)
@@ -332,7 +317,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         mock_start.return_value = None
 
         self.test_manager._create_and_start_monitor_process(
-            self.repo_config_example, self.repo_id_new, self.chain_example_new)
+            self.repo_config_example, self.repo_id_new, self.chain_example_new,
+            self.base_chain_new, self.sub_chain_new)
 
         new_entry = self.test_manager.config_process_dict[self.repo_id_new]
         new_entry_process = new_entry['process']
@@ -346,7 +332,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self, mock_create_logger) -> None:
         mock_create_logger.return_value = self.dummy_logger
         self.test_manager._create_and_start_monitor_process(
-            self.repo_config_example, self.repo_id_new, self.chain_example_new)
+            self.repo_config_example, self.repo_id_new, self.chain_example_new,
+            self.base_chain_new, self.sub_chain_new)
 
         # We need to sleep to give some time for the monitor to be initialised,
         # otherwise the process would not terminate
@@ -359,12 +346,16 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         new_entry_process.terminate()
         new_entry_process.join()
 
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_configs_ignores_default_key(self, mock_ack) -> None:
+    def test_process_configs_ignores_default_key(self, mock_ack,
+                                                 mock_send_mon_data) -> None:
         # This test will pass if the stored repos config does not change.
         # This would mean that the DEFAULT key was ignored, otherwise, it would
         # have been included as a new config.
         mock_ack.return_value = None
+        mock_send_mon_data.return_value = None
         old_github_repos_configs = copy.deepcopy(
             self.github_repos_configs_example)
         self.test_manager._github_repos_configs = \
@@ -412,17 +403,19 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(GitHubMonitorsManager,
                        "_create_and_start_monitor_process")
     def test_process_configs_stores_new_configs_to_be_monitored_correctly(
-            self, startup_mock, mock_ack) -> None:
+            self, startup_mock, mock_ack, mock_send_mon_data) -> None:
         # We will check whether new configs are added to the state. Since some
         # new configs have `monitor_repo = False` we are also testing that
         # new configs are ignored if they should not be monitored.
-
-        mock_ack.return_value = None
         startup_mock.return_value = None
+        mock_ack.return_value = None
+        mock_send_mon_data.return_value = None
         new_configs_chain = {
             'config_id1': {
                 'id': 'config_id1',
@@ -506,22 +499,25 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(GitHubMonitorsManager,
                        "_create_and_start_monitor_process")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "join")
     def test_process_configs_stores_modified_configs_to_be_monitored_correctly(
-            self, join_mock, terminate_mock, startup_mock, mock_ack) -> None:
+            self, join_mock, terminate_mock, startup_mock, mock_ack,
+            mock_send_mon_data) -> None:
         # In this test we will check that modified configurations with
         # `monitor_repo = True` are stored correctly in the state. Some
         # configurations will have `monitor_repo = False` to check whether the
         # monitor associated with the previous configuration is terminated.
-
-        mock_ack.return_value = None
-        startup_mock.return_value = None
         join_mock.return_value = None
         terminate_mock.return_value = None
+        startup_mock.return_value = None
+        mock_ack.return_value = None
+        mock_send_mon_data.return_value = None
         self.test_manager._github_repos_configs = \
             self.github_repos_configs_example
         self.test_manager._config_process_dict = \
@@ -611,17 +607,20 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "join")
     def test_process_configs_removes_deleted_configs_from_state_correctly(
-            self, join_mock, terminate_mock, mock_ack) -> None:
+            self, join_mock, terminate_mock, mock_ack,
+            mock_send_mon_data) -> None:
         # In this test we will check that removed configurations are actually
         # removed from the state
-
-        mock_ack.return_value = None
         join_mock.return_value = None
         terminate_mock.return_value = None
+        mock_ack.return_value = None
+        mock_send_mon_data.return_value = None
         self.test_manager._github_repos_configs = \
             self.github_repos_configs_example
         self.test_manager._config_process_dict = \
@@ -660,16 +659,18 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(GitHubMonitorsManager,
                        "_create_and_start_monitor_process")
     def test_proc_configs_starts_new_monitors_for_new_configs_to_be_monitored(
-            self, startup_mock, mock_ack) -> None:
+            self, startup_mock, mock_ack, mock_send_mon_data) -> None:
         # We will check whether _create_and_start_monitor_process is called
         # correctly on each newly added configuration if
         # `monitor_repo = True`. Implicitly we will be also testing that if
         # `monitor_repo = False` no new monitor is created.
-
+        mock_send_mon_data.return_value = None
         mock_ack.return_value = None
         startup_mock.return_value = None
         new_configs_chain = {
@@ -811,19 +812,22 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.assertEqual(env.GITHUB_RELEASES_TEMPLATE.format(
                 new_configs_general['config_id5']['repo_name'] + '/'),
                 args[0].releases_page)
+
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch("src.monitors.starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_proc_confs_term_and_starts_monitors_for_modified_confs_to_be_mon(
-            self, mock_ack, mock_create_logger) -> None:
+            self, mock_ack, mock_create_logger, mock_send_mon_data) -> None:
         # In this test we will check that modified configurations with
         # `monitor_repo = True` will have new monitors started. Implicitly
         # we will be checking that modified configs with
         # `monitor_repo = False` will only have their previous processes
         # terminated.
-
+        mock_send_mon_data.return_value = None
         mock_ack.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         new_configs_chain_monitor_true = {
@@ -941,15 +945,19 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(GitHubMonitorsManager,
                        "_create_and_start_monitor_process")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_confs_restarts_an_updated_monitor_with_the_correct_conf(
-            self, mock_terminate, mock_join, startup_mock, mock_ack) -> None:
+            self, mock_terminate, mock_join, startup_mock, mock_ack,
+            mock_send_mon_data) -> None:
         # We will check whether _create_and_start_monitor_process is called
         # correctly on an updated configuration.
+        mock_send_mon_data.return_value = None
         mock_ack.return_value = None
         startup_mock.return_value = None
         mock_terminate.return_value = None
@@ -1034,14 +1042,17 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch("src.monitors.starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_terminates_monitors_for_removed_configs(
-            self, mock_ack, mock_create_logger) -> None:
+            self, mock_ack, mock_create_logger, mock_send_mon_data) -> None:
         # In this test we will check that when a config is removed, it's monitor
         # is terminated by _process_configs.
         mock_ack.return_value = None
         mock_create_logger.return_value = self.dummy_logger
+        mock_send_mon_data.return_value = None
         try:
             # Must create a connection so that the blocking channel is passed
             self.test_manager.rabbitmq.connect()
@@ -1091,13 +1102,16 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_ignores_new_configs_with_missing_keys(
-            self, mock_ack) -> None:
+            self, mock_ack, mock_send_mon_data) -> None:
         # We will check whether the state is kept intact if new configurations
         # with missing keys are sent. Exceptions should never be raised in this
         # case, and basic_ack must be called to ignore the message.
         mock_ack.return_value = None
+        mock_send_mon_data.return_value = None
         new_configs_chain = {
             'config_id3': {
                 'id': 'config_id3',
@@ -1138,6 +1152,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                                properties,
                                                body_new_configs_general)
             self.assertEqual(1, mock_ack.call_count)
+            self.assertEqual(1, mock_send_mon_data.call_count)
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.config_process_dict)
             self.assertEqual(self.github_repos_configs_example,
@@ -1147,6 +1162,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                                properties,
                                                body_new_configs_chain)
             self.assertEqual(2, mock_ack.call_count)
+            self.assertEqual(2, mock_send_mon_data.call_count)
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.config_process_dict)
             self.assertEqual(self.github_repos_configs_example,
@@ -1154,14 +1170,17 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         except Exception as e:
             self.fail("Test failed: {}".format(e))
 
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_ignores_modified_configs_with_missing_Keys(
-            self, mock_ack) -> None:
+            self, mock_ack, mock_send_mon_data) -> None:
         # We will check whether the state is kept intact if modified
         # configurations with missing keys are sent. Exceptions should never be
         # raised in this case, and basic_ack must be called to ignore the
         # message.
         mock_ack.return_value = None
+        mock_send_mon_data.return_value = None
         updated_configs_chain = {
             'config_id1': {
                 'id': 'config_id1',
@@ -1202,6 +1221,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                                properties,
                                                body_updated_configs_general)
             self.assertEqual(1, mock_ack.call_count)
+            self.assertEqual(1, mock_send_mon_data.call_count)
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.config_process_dict)
             self.assertEqual(self.github_repos_configs_example,
@@ -1211,6 +1231,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                                properties,
                                                body_updated_configs_chain)
             self.assertEqual(2, mock_ack.call_count)
+            self.assertEqual(2, mock_send_mon_data.call_count)
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.config_process_dict)
             self.assertEqual(self.github_repos_configs_example,
@@ -1219,13 +1240,16 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch("src.monitors.starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_ping_sends_a_valid_hb_if_all_processes_are_alive(
-            self, mock_ack, mock_create_logger) -> None:
+            self, mock_ack, mock_create_logger, mock_send_mon_data) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
+        mock_send_mon_data.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
         try:
@@ -1248,7 +1272,6 @@ class TestGitHubMonitorsManager(unittest.TestCase):
 
             # Give time for the processes to start
             time.sleep(1)
-
             # Delete the queue before to avoid messages in the queue on error.
             self.test_manager.rabbitmq.queue_delete(self.test_queue_name)
 
@@ -1303,13 +1326,16 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch("src.monitors.starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_ping_sends_a_valid_hb_if_some_processes_alive_some_dead(
-            self, mock_ack, mock_create_logger) -> None:
+            self, mock_ack, mock_create_logger, mock_send_mon_data) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
+        mock_send_mon_data.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
         try:
@@ -1391,13 +1417,16 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch("src.monitors.starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_ping_sends_a_valid_hb_if_all_processes_dead(
-            self, mock_ack, mock_create_logger) -> None:
+            self, mock_ack, mock_create_logger, mock_send_mon_data) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
+        mock_send_mon_data.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
         try:
@@ -1477,11 +1506,15 @@ class TestGitHubMonitorsManager(unittest.TestCase):
             self.fail("Test failed: {}".format(e))
 
     @freeze_time("2012-01-01")
+    @mock.patch.object(GitHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch("src.monitors.starters.create_logger")
     @mock.patch.object(GitHubMonitorsManager, "_send_heartbeat")
     def test_process_ping_restarts_dead_processes(
-            self, send_hb_mock, mock_create_logger, mock_ack) -> None:
+            self, send_hb_mock, mock_create_logger, mock_ack,
+            mock_send_mon_data) -> None:
+        mock_send_mon_data.return_value = None
         send_hb_mock.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None

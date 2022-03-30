@@ -13,7 +13,7 @@ from requests.exceptions import (ConnectionError as ReqConnectionError,
                                  ReadTimeout, ChunkedEncodingError)
 from urllib3.exceptions import ProtocolError
 
-from src.configs.repo import RepoConfig
+from src.configs.repo import GitHubRepoConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.github import GitHubMonitor
 from src.utils import env
@@ -67,9 +67,9 @@ class TestGitHubMonitor(unittest.TestCase):
             '1': {'release_name': 'Release Candidate 1', 'tag_name': 'v0.1.0'},
         }
         self.test_exception = PANICException('test_exception', 1)
-        self.repo_config = RepoConfig(self.repo_id, self.parent_id,
-                                      self.repo_name, self.monitor_repo,
-                                      self.releases_page)
+        self.repo_config = GitHubRepoConfig(self.repo_id, self.parent_id,
+                                            self.repo_name, self.monitor_repo,
+                                            self.releases_page)
         self.test_monitor = GitHubMonitor(self.monitor_name, self.repo_config,
                                           self.dummy_logger,
                                           self.monitoring_period, self.rabbitmq)

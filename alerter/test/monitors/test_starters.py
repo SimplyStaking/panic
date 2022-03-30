@@ -7,10 +7,11 @@ from parameterized import parameterized
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.configs.nodes.evm import EVMNodeConfig
-from src.configs.repo import RepoConfig
+from src.configs.repo import GitHubRepoConfig, DockerHubRepoConfig
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.contracts.chainlink import ChainlinkContractsMonitor
+from src.monitors.dockerhub import DockerHubMonitor
 from src.monitors.github import GitHubMonitor
 from src.monitors.node.chainlink import ChainlinkNodeMonitor
 from src.monitors.node.evm import EVMNodeMonitor
@@ -18,13 +19,15 @@ from src.monitors.starters import (_initialise_monitor_logger,
                                    _initialise_monitor, start_system_monitor,
                                    start_github_monitor, start_node_monitor,
                                    _initialise_chainlink_contracts_monitor,
-                                   start_chainlink_contracts_monitor)
+                                   start_chainlink_contracts_monitor,
+                                   start_dockerhub_monitor)
 from src.monitors.system import SystemMonitor
 from src.utils import env
 from src.utils.constants.names import (SYSTEM_MONITOR_NAME_TEMPLATE,
                                        GITHUB_MONITOR_NAME_TEMPLATE,
                                        NODE_MONITOR_NAME_TEMPLATE,
-                                       CL_CONTRACTS_MONITOR_NAME_TEMPLATE)
+                                       CL_CONTRACTS_MONITOR_NAME_TEMPLATE,
+                                       DOCKERHUB_MONITOR_NAME_TEMPLATE)
 
 
 class TestMonitorStarters(unittest.TestCase):
@@ -43,20 +46,37 @@ class TestMonitorStarters(unittest.TestCase):
         # Github monitor
         self.github_monitor_name = 'test_github_monitor'
         self.github_monitoring_period = env.GITHUB_MONITOR_PERIOD_SECONDS
-        self.github_repo_id = 'test_repo_id'
+        self.github_repo_id = 'test_github_repo_id'
         self.github_parent_id = 'test_github_parent_id'
-        self.github_repo_name = 'test_repo'
+        self.github_repo_name = 'test_github_repo'
         self.monitor_repo = True
-        self.releases_page = 'test_url'
-        self.repo_config = RepoConfig(self.github_repo_id,
-                                      self.github_parent_id,
-                                      self.github_repo_name, self.monitor_repo,
-                                      self.releases_page)
+        self.releases_page = 'test_releases_url'
+        self.github_repo_config = GitHubRepoConfig(self.github_repo_id,
+                                                   self.github_parent_id,
+                                                   self.github_repo_name,
+                                                   self.monitor_repo,
+                                                   self.releases_page)
         self.test_github_monitor = GitHubMonitor(self.github_monitor_name,
-                                                 self.repo_config,
+                                                 self.github_repo_config,
                                                  self.dummy_logger,
                                                  self.github_monitoring_period,
                                                  self.rabbitmq)
+
+        # DockerHub monitor
+        self.dockerhub_monitor_name = 'test_dockerhub_monitor'
+        self.dockerhub_monitoring_period = env.DOCKERHUB_MONITOR_PERIOD_SECONDS
+        self.dockerhub_repo_id = 'test_dockerhub_repo_id'
+        self.dockerhub_parent_id = 'test_dockerhub_parent_id'
+        self.dockerhub_repo_name = 'test_dockerhub_repo'
+        self.dockerhub_repo_namespace = 'test_repo_namespace'
+        self.tags_page = 'test_tags_url'
+        self.dockerhub_repo_config = DockerHubRepoConfig(
+            self.dockerhub_repo_id, self.dockerhub_parent_id,
+            self.dockerhub_repo_namespace, self.dockerhub_repo_name,
+            self.monitor_repo, self.tags_page)
+        self.test_dockerhub_monitor = DockerHubMonitor(
+            self.dockerhub_monitor_name, self.dockerhub_repo_config,
+            self.dummy_logger, self.dockerhub_monitoring_period, self.rabbitmq)
 
         # System Monitor
         self.system_monitor_name = 'test_system_monitor'
@@ -116,8 +136,10 @@ class TestMonitorStarters(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.dummy_logger = None
-        self.repo_config = None
+        self.github_repo_config = None
         self.test_github_monitor = None
+        self.dockerhub_repo_config = None
+        self.test_dockerhub_monitor = None
         self.rabbitmq = None
         self.system_config = None
         self.test_system_monitor = None
@@ -143,7 +165,9 @@ class TestMonitorStarters(unittest.TestCase):
 
     @parameterized.expand([
         (GitHubMonitor, 'self.github_monitor_name',
-         'self.github_monitoring_period', 'self.repo_config',),
+         'self.github_monitoring_period', 'self.github_repo_config',),
+        (DockerHubMonitor, 'self.dockerhub_monitor_name',
+         'self.dockerhub_monitoring_period', 'self.dockerhub_repo_config',),
         (SystemMonitor, 'self.system_monitor_name',
          'self.system_monitoring_period', 'self.system_config',),
         (ChainlinkNodeMonitor, 'self.node_monitor_name',
@@ -180,8 +204,11 @@ class TestMonitorStarters(unittest.TestCase):
 
     @parameterized.expand([
         (GitHubMonitor, 'self.github_monitor_name',
-         'self.github_monitoring_period', 'self.repo_config',
+         'self.github_monitoring_period', 'self.github_repo_config',
          'self.test_github_monitor'),
+        (DockerHubMonitor, 'self.dockerhub_monitor_name',
+         'self.dockerhub_monitoring_period', 'self.dockerhub_repo_config',
+         'self.test_dockerhub_monitor'),
         (SystemMonitor, 'self.system_monitor_name',
          'self.system_monitoring_period', 'self.system_config',
          'self.test_system_monitor'),
@@ -236,7 +263,8 @@ class TestMonitorStarters(unittest.TestCase):
         mock_start_monitor.assert_called_once_with(self.test_system_monitor)
         mock_initialise_monitor.assert_called_once_with(
             SystemMonitor,
-            SYSTEM_MONITOR_NAME_TEMPLATE.format(self.system_config.system_name),
+            SYSTEM_MONITOR_NAME_TEMPLATE.format(
+                self.system_config.system_name),
             env.SYSTEM_MONITOR_PERIOD_SECONDS, self.system_config
         )
 
@@ -247,14 +275,32 @@ class TestMonitorStarters(unittest.TestCase):
         mock_start_monitor.return_value = None
         mock_initialise_monitor.return_value = self.test_github_monitor
 
-        start_github_monitor(self.repo_config)
+        start_github_monitor(self.github_repo_config)
 
         mock_start_monitor.assert_called_once_with(self.test_github_monitor)
         mock_initialise_monitor.assert_called_once_with(
             GitHubMonitor,
             GITHUB_MONITOR_NAME_TEMPLATE.format(
-                self.repo_config.repo_name.replace('/', ' ')[:-1]),
-            env.GITHUB_MONITOR_PERIOD_SECONDS, self.repo_config
+                self.github_repo_config.repo_name.replace('/', ' ')[:-1]),
+            env.GITHUB_MONITOR_PERIOD_SECONDS, self.github_repo_config
+        )
+
+    @mock.patch("src.monitors.starters._initialise_monitor")
+    @mock.patch('src.monitors.starters.start_monitor')
+    def test_start_dockerhub_monitor_calls_sub_functions_correctly(
+            self, mock_start_monitor, mock_initialise_monitor) -> None:
+        mock_start_monitor.return_value = None
+        mock_initialise_monitor.return_value = self.test_dockerhub_monitor
+
+        start_dockerhub_monitor(self.dockerhub_repo_config)
+
+        mock_start_monitor.assert_called_once_with(self.test_dockerhub_monitor)
+        mock_initialise_monitor.assert_called_once_with(
+            DockerHubMonitor,
+            DOCKERHUB_MONITOR_NAME_TEMPLATE.format(
+                self.dockerhub_repo_config.repo_namespace + ' ' +
+                self.dockerhub_repo_config.repo_name),
+            env.DOCKERHUB_MONITOR_PERIOD_SECONDS, self.dockerhub_repo_config
         )
 
     @parameterized.expand([
@@ -289,8 +335,6 @@ class TestMonitorStarters(unittest.TestCase):
         mock_initialise_cl_contracts_monitor.return_value = \
             self.test_chainlink_contracts_monitor
         test_sub_chain = 'test_sub_chain'
-        monitor_display_name = CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(
-            test_sub_chain)
 
         start_chainlink_contracts_monitor(self.weiwatchers_url, self.evm_nodes,
                                           self.node_configs,
@@ -300,7 +344,7 @@ class TestMonitorStarters(unittest.TestCase):
         mock_start_monitor.assert_called_once_with(
             self.test_chainlink_contracts_monitor)
         mock_initialise_cl_contracts_monitor.assert_called_once_with(
-            monitor_display_name,
+            CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(test_sub_chain),
             env.CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS,
             self.weiwatchers_url, self.evm_nodes, self.node_configs,
             self.cl_contracts_parent_id

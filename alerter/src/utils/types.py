@@ -42,11 +42,11 @@ from src.monitorables.contracts.chainlink.v3 import V3ChainlinkContract
 from src.monitorables.contracts.chainlink.v4 import V4ChainlinkContract
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
 from src.monitorables.nodes.evm_node import EVMNode
-from src.monitorables.repo import GitHubRepo
+from src.monitorables.repo import (GitHubRepo, DockerHubRepo)
 from src.monitorables.system import System
 
 RedisType = Union[bytes, str, int, float]
-Monitorable = Union[System, GitHubRepo, ChainlinkNode, EVMNode,
+Monitorable = Union[System, GitHubRepo, DockerHubRepo, ChainlinkNode, EVMNode,
                     V4ChainlinkContract, V3ChainlinkContract]
 
 # TODO: The below system alerts must be refactored to the types beneath them

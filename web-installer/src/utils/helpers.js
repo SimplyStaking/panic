@@ -59,6 +59,45 @@ export function checkSourceName(value, ...configs) {
 }
 
 /**
+ * @param value is the variable to check the repo name against
+ * @param config dockerhub configuration file which needs to be iterated
+ */
+export function checkDockerHubRepoExists(value, config) {
+  if (value === undefined) {
+    return true;
+  }
+  let valueToTest = value;
+  for (let j = 0; j < config.allIds.length; j += 1) {
+    let fullRepoName = `library/${config.byId[config.allIds[j]].repo_name}`;
+    if (valueToTest.includes('/')) {
+      fullRepoName = `${config.byId[config.allIds[j]].repo_namespace}/${config.byId[config.allIds[j]].repo_name}`;
+    } else {
+      valueToTest = `library/${value}`;
+    }
+    if (fullRepoName === valueToTest) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * @param value is the variable to check the repo name against
+ * @param config github configuration file which needs to be iterated
+ */
+export function checkGitHubRepoExists(value, config) {
+  if (value === undefined) {
+    return true;
+  }
+  for (let j = 0; j < config.allIds.length; j += 1) {
+    if (value === config.byId[config.allIds[j]].repo_name) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
  * @param value is the variable to check the chain name against
  * @param configs is a list of configuration files which need to be iterated
  */

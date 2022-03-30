@@ -51,6 +51,10 @@ class TelegramCommandsHandler(ChannelHandler):
         # Set up updater
         self._updater = Updater(token=telegram_channel.telegram_bot.bot_token,
                                 use_context=True)
+        self._updater.logger = self.logger
+
+        self._updater.dispatcher.add_error_handler(
+            self.cmd_handlers.error_handler_callback)
 
         for handler in command_specific_handlers:
             self._updater.dispatcher.add_handler(handler)

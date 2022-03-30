@@ -8,17 +8,17 @@ import {
   RepositoriesCosmosFormContainer,
   RepositoriesCosmosTableContainer,
 } from 'containers/chains/common/repositoriesContainer';
-// import {
-// DockerHubCosmosFormContainer,
-// DockerHubCosmosTableContainer,
-// } from 'containers/chains/common/dockerHubContainer';
+import {
+  DockerHubCosmosFormContainer,
+  DockerHubCosmosTableContainer,
+} from 'containers/chains/common/dockerHubContainer';
 import {
   ALERTS_STEP,
   CHAINS_STEP,
   CHANNELS_STEP,
   NODES_STEP,
   REPOSITORIES_STEP,
-  // DOCKER_STEP,
+  DOCKER_STEP,
 } from 'constants/constants';
 import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
 
@@ -49,13 +49,13 @@ function getStep(stepName) {
           <RepositoriesCosmosTableContainer />
         </div>
       );
-    // case DOCKER_STEP:
-    //   return (
-    //     <div>
-    //       <DockerHubCosmosFormContainer />
-    //       <DockerHubCosmosTableContainer />
-    //     </div>
-    //   );
+    case DOCKER_STEP:
+      return (
+        <div>
+          <DockerHubCosmosFormContainer />
+          <DockerHubCosmosTableContainer />
+        </div>
+      );
     default:
       return <CosmosChainFormContainer />;
   }

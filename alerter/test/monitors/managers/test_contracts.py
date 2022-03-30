@@ -13,17 +13,21 @@ import pika.exceptions
 from freezegun import freeze_time
 from parameterized import parameterized
 
+from src.abstract.publisher_subscriber import \
+    QueuingPublisherSubscriberComponent
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.contracts import ContractMonitorsManager
+from src.monitors.managers.manager import MonitorsManager
 from src.monitors.starters import start_chainlink_contracts_monitor
 from src.utils import env
+from src.utils.constants.monitorables import MonitorableType
 from src.utils.constants.names import CL_CONTRACTS_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE,
     CONTRACT_MON_MAN_HEARTBEAT_QUEUE_NAME, CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
     HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, PING_ROUTING_KEY,
-    NODES_CONFIGS_ROUTING_KEY_CHAINS)
+    NODES_CONFIGS_ROUTING_KEY_CHAINS, MONITORABLE_EXCHANGE, TOPIC)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.utils.utils import (infinite_fn, connect_to_rabbit,
                               delete_queue_if_exists, delete_exchange_if_exists,
@@ -191,6 +195,42 @@ class TestContractMonitorsManager(unittest.TestCase):
             }
         }
 
+        # expected data from process_and_send_monitorable_data
+        self.config_process_dict_example_expected = [
+            {
+                'manager_name': self.manager_name,
+                'sources': [
+                    {
+                        'chain_id': self.parent_id_1,
+                        'chain_name': self.sub_chain_1,
+                        'source_id':
+                            self.chainlink_node_configs_1[0].node_id,
+                        'source_name':
+                            self.chainlink_node_configs_1[0].node_name
+                    },
+                    {
+                        'chain_id': self.parent_id_1,
+                        'chain_name': self.sub_chain_1,
+                        'source_id':
+                            self.chainlink_node_configs_1[1].node_id,
+                        'source_name':
+                            self.chainlink_node_configs_1[1].node_name
+                    }
+                ]
+            },
+            {
+                'manager_name': self.manager_name,
+                'sources': [
+                    {
+                        'chain_id': self.parent_id_1,
+                        'chain_name': self.sub_chain_1,
+                        'source_id': self.parent_id_1,
+                        'source_name': self.chain_1
+                    },
+                ]
+            }
+        ]
+
         # Test manager instance
         self.test_manager = ContractMonitorsManager(
             self.dummy_logger, self.manager_name, self.rabbitmq)
@@ -203,7 +243,8 @@ class TestContractMonitorsManager(unittest.TestCase):
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         connect_to_rabbit(self.test_manager.rabbitmq)
-        delete_queue_if_exists(self.test_manager.rabbitmq, self.test_queue_name)
+        delete_queue_if_exists(
+            self.test_manager.rabbitmq, self.test_queue_name)
         delete_queue_if_exists(self.test_manager.rabbitmq,
                                CONTRACT_MON_MAN_HEARTBEAT_QUEUE_NAME)
         delete_queue_if_exists(self.test_manager.rabbitmq,
@@ -211,6 +252,8 @@ class TestContractMonitorsManager(unittest.TestCase):
         delete_exchange_if_exists(self.test_manager.rabbitmq,
                                   HEALTH_CHECK_EXCHANGE)
         delete_exchange_if_exists(self.test_manager.rabbitmq, CONFIG_EXCHANGE)
+        delete_exchange_if_exists(self.test_manager.rabbitmq,
+                                  MONITORABLE_EXCHANGE)
         disconnect_from_rabbit(self.test_manager.rabbitmq)
 
         self.dummy_logger = None
@@ -456,8 +499,9 @@ class TestContractMonitorsManager(unittest.TestCase):
 
     @mock.patch.object(ContractMonitorsManager,
                        "_create_and_start_chainlink_contracts_monitor_process")
+    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_chainlink_node_configs_creates_new_monitor_if_none_running(
-            self, mock_create_and_start) -> None:
+            self, mock_send_data, mock_create_and_start) -> None:
         """
         In this test we will check that if a valid nodes configuration for
         contracts monitoring is received and no Chainlink contracts monitor has
@@ -465,7 +509,11 @@ class TestContractMonitorsManager(unittest.TestCase):
         we will check that the function outputs the correct contracts
         configuration
         """
+        self.test_manager._initialise_rabbitmq()
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
         mock_create_and_start.return_value = None
+        mock_send_data.return_value = None
         expected_confs = {
             'parent_id': self.parent_id_1,
             'weiwatchers_url': self.weiwatchers_url_1,
@@ -487,8 +535,10 @@ class TestContractMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(ContractMonitorsManager,
                        "_create_and_start_chainlink_contracts_monitor_process")
+    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_chainlink_node_configs_stops_and_creates_new_monitor_if_newer_confs(
-            self, mock_create_and_start, mock_join, mock_terminate) -> None:
+            self, mock_send_data, mock_create_and_start, mock_join,
+            mock_terminate) -> None:
         """
         In this test we will check that if a new valid nodes configuration for
         contracts monitoring is received and a Chainlink contracts monitor has
@@ -496,6 +546,10 @@ class TestContractMonitorsManager(unittest.TestCase):
         started. In addition to this we will check that the function outputs the
         correct contracts configuration
         """
+        self.test_manager._initialise_rabbitmq()
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
+        mock_send_data.return_value = None
         mock_create_and_start.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
@@ -532,8 +586,10 @@ class TestContractMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(ContractMonitorsManager,
                        "_create_and_start_chainlink_contracts_monitor_process")
+    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_chainlink_node_configs_stops_monitor_if_confs_removed(
-            self, mock_create_and_start, mock_join, mock_terminate) -> None:
+            self, mock_send_data, mock_create_and_start, mock_join,
+            mock_terminate) -> None:
         """
         In this test we will check that if configurations for contracts
         monitoring have been removed for a chain and a Chainlink contracts
@@ -541,6 +597,10 @@ class TestContractMonitorsManager(unittest.TestCase):
         In addition to this we will check that the function outputs the correct
         contracts configuration
         """
+        self.test_manager._initialise_rabbitmq()
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
+        mock_send_data.return_value = None
         mock_create_and_start.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
@@ -916,3 +976,30 @@ class TestContractMonitorsManager(unittest.TestCase):
 
         self.assertRaises(exception_class, self.test_manager._process_ping,
                           blocking_channel, method, properties, body)
+
+    @parameterized.expand([
+        ('self.config_process_dict_example',
+         'self.config_process_dict_example_expected',),
+    ])
+    @mock.patch.object(MonitorsManager, "send_monitorable_data")
+    def test_process_and_send_monitorable_data_processes_data_correctly(
+            self, config_process_dict, expected_monitorable_data,
+            mock_send_mon_data) -> None:
+        mock_send_mon_data.return_value = None
+
+        self.test_manager._config_process_dict = eval(config_process_dict)
+        self.test_manager.process_and_send_monitorable_data(self.base_chain_1)
+
+        routing_key_nodes = '{}.{}'.format(self.base_chain_1,
+                                           MonitorableType.NODES.value)
+        routing_key_chains = '{}.{}'.format(self.base_chain_1,
+                                            MonitorableType.CHAINS.value)
+
+        expected_dict = eval(expected_monitorable_data)
+        calls = [
+            call(routing_key_nodes, expected_dict[0]),
+            call(routing_key_chains, expected_dict[1])
+        ]
+
+        mock_send_mon_data.assert_has_calls(calls)
+        self.assertEqual(2, mock_send_mon_data.call_count)

@@ -95,6 +95,17 @@ class MongoApi:
             lambda col, q, doc: self._db[col].update_one(q, doc, upsert=True),
             [collection, query, document], None)
 
+    def replace_one(self, collection: str, query: Dict, document: Dict) \
+            -> Optional[UpdateResult]:
+        return self._safe(
+            lambda col, q, doc: self._db[col].replace_one(q, doc, upsert=True),
+            [collection, query, document], None)
+
+    def get_one(self, collection: str, query: Dict) -> Optional[Dict]:
+        return self._safe(
+            lambda col, q: self._db[col].find_one(q),
+            [collection, query], None)
+
     def get_all(self, collection: str) -> Optional[List[Dict]]:
         return self._safe(
             lambda col: list(self._db[col].find({})),

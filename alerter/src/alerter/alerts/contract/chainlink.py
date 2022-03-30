@@ -51,8 +51,8 @@ class PriceFeedDeviationIncreasedAboveThreshold(Alert):
                 .PriceFeedDeviationIncreasedAboveThreshold,
             "The Chainlink {} node's submission has increased above {} "
             "threshold to {}% deviation for the price feed {}.".format(
-                origin_name, threshold_severity, deviation, contract_description),
-            severity, timestamp, parent_id, origin_id,
+                origin_name, threshold_severity, deviation, contract_description
+            ), severity, timestamp, parent_id, origin_id,
             MetricCode.PriceFeedDeviation, alert_data)
 
 

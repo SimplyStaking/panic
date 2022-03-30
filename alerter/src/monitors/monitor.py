@@ -2,7 +2,7 @@ import logging
 import sys
 from abc import ABC, abstractmethod
 from types import FrameType
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Union
 
 import pika.exceptions
 import urllib3
@@ -54,7 +54,7 @@ class Monitor(PublisherComponent, ABC):
                                        True, False, False)
 
     @abstractmethod
-    def _get_data(self, *args) -> Dict:
+    def _get_data(self, *args) -> Union[Dict, List]:
         pass
 
     def _process_data(self, data_retrieval_failed: bool,

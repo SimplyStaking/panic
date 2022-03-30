@@ -103,6 +103,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self.test_historical_rounds_1)
         self.test_historical_rounds_1_transformed[0]['deviation'] = 50.0
         self.test_historical_rounds_1_transformed[1]['deviation'] = 100.0
+        self.test_last_round_observed_1 = 39
         self.test_proxy_address_2 = 'test_proxy_address_2'
         self.test_aggregator_address_2 = 'test_aggregator_address_2'
         self.test_contract_description_2 = 'test_contract_description_2'
@@ -132,6 +133,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self.test_historical_rounds_2)
         self.test_historical_rounds_2_transformed[0]['deviation'] = 50.0
         self.test_historical_rounds_2_transformed[1]['deviation'] = 100.0
+        self.test_last_round_observed_2 = 49
         self.test_historical_rounds_3 = [
             {
                 'roundId': 28,
@@ -156,6 +158,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self.test_historical_rounds_3)
         self.test_historical_rounds_3_transformed[0]['deviation'] = 50.0
         self.test_historical_rounds_3_transformed[1]['deviation'] = 100.0
+        self.test_last_round_observed_3 = 29
         self.test_historical_rounds_4 = [
             {
                 'roundId': 38,
@@ -180,6 +183,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self.test_historical_rounds_4)
         self.test_historical_rounds_4_transformed[0]['deviation'] = 50.0
         self.test_historical_rounds_4_transformed[1]['deviation'] = 100.0
+        self.test_last_round_observed_4 = 39
 
         # Some raw data examples
         self.raw_data_example_result_v3 = {
@@ -202,6 +206,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         'answeredInRound': self.test_answered_in_round_1,
                         'withdrawablePayment': self.test_withdrawable_payment_1,
                         'historicalRounds': self.test_historical_rounds_1,
+                        'lastRoundObserved': self.test_last_round_observed_1
                     },
                     self.test_proxy_address_2: {
                         'contractVersion': 3,
@@ -213,6 +218,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         'answeredInRound': self.test_answered_in_round_2,
                         'withdrawablePayment': self.test_withdrawable_payment_2,
                         'historicalRounds': self.test_historical_rounds_2,
+                        'lastRoundObserved': self.test_last_round_observed_2
                     },
                 },
             }
@@ -237,6 +243,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         'answeredInRound': self.test_answered_in_round_1,
                         'owedPayment': self.test_owed_payment_1,
                         'historicalRounds': self.test_historical_rounds_3,
+                        'lastRoundObserved': self.test_last_round_observed_3
                     },
                     self.test_proxy_address_2: {
                         'contractVersion': 4,
@@ -248,6 +255,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         'answeredInRound': self.test_answered_in_round_2,
                         'owedPayment': self.test_owed_payment_2,
                         'historicalRounds': self.test_historical_rounds_4,
+                        'lastRoundObserved': self.test_last_round_observed_4
                     },
                 },
             }
@@ -286,6 +294,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         'withdrawablePayment': self.test_withdrawable_payment_1,
                         'historicalRounds':
                             self.test_historical_rounds_1_transformed,
+                        'lastRoundObserved': self.test_last_round_observed_1
                     },
                     self.test_proxy_address_2: {
                         'contractVersion': 3,
@@ -298,18 +307,11 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         'withdrawablePayment': self.test_withdrawable_payment_2,
                         'historicalRounds':
                             self.test_historical_rounds_2_transformed,
+                        'lastRoundObserved': self.test_last_round_observed_2
                     },
                 },
             }
         }
-        self.transformed_data_example_result_v3_last_round_obs = \
-            copy.deepcopy(self.transformed_data_example_result_v3)
-        self.transformed_data_example_result_v3_last_round_obs['result'][
-            'data'][self.test_proxy_address_1]['lastRoundObserved'] = \
-            self.test_latest_round_1 - 1
-        self.transformed_data_example_result_v3_last_round_obs['result'][
-            'data'][self.test_proxy_address_2]['lastRoundObserved'] = \
-            self.test_latest_round_2 - 1
 
         self.transformed_data_example_result_v4 = {
             'result': {
@@ -332,6 +334,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         'owedPayment': self.test_owed_payment_1,
                         'historicalRounds':
                             self.test_historical_rounds_3_transformed,
+                        'lastRoundObserved': self.test_last_round_observed_3
                     },
                     self.test_proxy_address_2: {
                         'contractVersion': 4,
@@ -344,16 +347,11 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                         'owedPayment': self.test_owed_payment_2,
                         'historicalRounds':
                             self.test_historical_rounds_4_transformed,
+                        'lastRoundObserved': self.test_last_round_observed_4
                     },
                 },
             }
         }
-        self.transformed_data_example_result_v4_last_round_obs = \
-            copy.deepcopy(self.transformed_data_example_result_v4)
-        self.transformed_data_example_result_v4_last_round_obs['result'][
-            'data'][self.test_proxy_address_1]['lastRoundObserved'] = 29
-        self.transformed_data_example_result_v4_last_round_obs['result'][
-            'data'][self.test_proxy_address_2]['lastRoundObserved'] = 39
 
         self.transformed_data_example_error = {
             'error': {
@@ -415,7 +413,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self.test_historical_rounds_1_transformed)
         self.test_cl_contract_1_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
-        self.test_cl_contract_1_new_metrics.set_last_round_observed(39)
+        self.test_cl_contract_1_new_metrics.set_last_round_observed(
+            self.test_last_round_observed_1)
 
         self.test_cl_contract_2_new_metrics.set_latest_round(
             self.test_latest_round_2)
@@ -431,7 +430,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self.test_historical_rounds_2_transformed)
         self.test_cl_contract_2_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
-        self.test_cl_contract_2_new_metrics.set_last_round_observed(49)
+        self.test_cl_contract_2_new_metrics.set_last_round_observed(
+            self.test_last_round_observed_2)
 
         self.test_cl_contract_3_new_metrics.set_latest_round(
             self.test_latest_round_1)
@@ -447,7 +447,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self.test_historical_rounds_3_transformed)
         self.test_cl_contract_3_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
-        self.test_cl_contract_3_new_metrics.set_last_round_observed(29)
+        self.test_cl_contract_3_new_metrics.set_last_round_observed(
+            self.test_last_round_observed_3)
 
         self.test_cl_contract_4_new_metrics.set_latest_round(
             self.test_latest_round_2)
@@ -463,7 +464,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
             self.test_historical_rounds_4_transformed)
         self.test_cl_contract_4_new_metrics.set_last_monitored(
             self.test_last_monitored + 60)
-        self.test_cl_contract_4_new_metrics.set_last_round_observed(39)
+        self.test_cl_contract_4_new_metrics.set_last_round_observed(
+            self.test_last_round_observed_4)
 
         # Test state after receiving new metrics
         self.test_state_v3_updated = {
@@ -512,7 +514,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                             'previous': [],
                         },
                         'lastRoundObserved': {
-                            'current': 39,
+                            'current': self.test_last_round_observed_1,
                             'previous': None
                         },
                         'contractVersion': 3,
@@ -546,7 +548,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                             'previous': [],
                         },
                         'lastRoundObserved': {
-                            'current': 49,
+                            'current': self.test_last_round_observed_2,
                             'previous': None
                         },
                         'contractVersion': 3,
@@ -589,7 +591,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                             'previous': [],
                         },
                         'lastRoundObserved': {
-                            'current': 29,
+                            'current': self.test_last_round_observed_3,
                             'previous': None
                         },
                         'contractVersion': 4,
@@ -623,7 +625,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                             'previous': [],
                         },
                         'lastRoundObserved': {
-                            'current': 39,
+                            'current': self.test_last_round_observed_4,
                             'previous': None
                         },
                         'contractVersion': 4,
@@ -835,6 +837,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                          loaded_cl_contract_v3.withdrawable_payment)
         self.assertEqual(self.test_last_monitored + 60,
                          loaded_cl_contract_v3.last_monitored)
+        self.assertEqual(self.test_last_round_observed_1,
+                         loaded_cl_contract_v3.last_round_observed)
 
         self.assertEqual(self.test_latest_round_2,
                          loaded_cl_contract_v4.latest_round)
@@ -850,6 +854,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                          loaded_cl_contract_v4.owed_payment)
         self.assertEqual(self.test_last_monitored + 60,
                          loaded_cl_contract_v4.last_monitored)
+        self.assertEqual(self.test_last_round_observed_4,
+                         loaded_cl_contract_v4.last_round_observed)
 
         # Clean test db
         self.redis.delete_all()
@@ -891,6 +897,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         self.assertEqual([], loaded_cl_contract_v3.historical_rounds)
         self.assertEqual(None, loaded_cl_contract_v3.withdrawable_payment)
         self.assertEqual(None, loaded_cl_contract_v3.last_monitored)
+        self.assertEqual(None, loaded_cl_contract_v3.last_round_observed)
 
         self.assertEqual(None, loaded_cl_contract_v4.latest_round)
         self.assertEqual(None, loaded_cl_contract_v4.latest_answer)
@@ -899,6 +906,7 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
         self.assertEqual([], loaded_cl_contract_v4.historical_rounds)
         self.assertEqual(None, loaded_cl_contract_v4.owed_payment)
         self.assertEqual(None, loaded_cl_contract_v4.last_monitored)
+        self.assertEqual(None, loaded_cl_contract_v4.last_round_observed)
 
         # Clean test db
         self.redis.delete_all()
@@ -932,6 +940,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                          loaded_cl_contract_v3.withdrawable_payment)
         self.assertEqual(self.test_last_monitored + 60,
                          loaded_cl_contract_v3.last_monitored)
+        self.assertEqual(self.test_last_round_observed_1,
+                         loaded_cl_contract_v3.last_round_observed)
 
         self.assertEqual(self.test_latest_round_2,
                          loaded_cl_contract_v4.latest_round)
@@ -947,6 +957,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                          loaded_cl_contract_v4.owed_payment)
         self.assertEqual(self.test_last_monitored + 60,
                          loaded_cl_contract_v4.last_monitored)
+        self.assertEqual(self.test_last_round_observed_4,
+                         loaded_cl_contract_v4.last_round_observed)
 
         # Clean test db
         self.redis.delete_all()
@@ -981,6 +993,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                          loaded_cl_contract_v3.withdrawable_payment)
         self.assertEqual(self.test_last_monitored + 60,
                          loaded_cl_contract_v3.last_monitored)
+        self.assertEqual(self.test_last_round_observed_1,
+                         loaded_cl_contract_v3.last_round_observed)
 
         self.assertEqual(self.test_latest_round_2,
                          loaded_cl_contract_v4.latest_round)
@@ -996,6 +1010,8 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
                          loaded_cl_contract_v4.owed_payment)
         self.assertEqual(self.test_last_monitored + 60,
                          loaded_cl_contract_v4.last_monitored)
+        self.assertEqual(self.test_last_round_observed_4,
+                         loaded_cl_contract_v4.last_round_observed)
 
         # Clean test db
         self.redis.delete_all()
@@ -1035,9 +1051,9 @@ class TestChainlinkContractsDataTransformer(unittest.TestCase):
 
     @parameterized.expand([
         ('self.transformed_data_example_result_v3',
-         'self.transformed_data_example_result_v3_last_round_obs'),
+         'self.transformed_data_example_result_v3'),
         ('self.transformed_data_example_result_v4',
-         'self.transformed_data_example_result_v4_last_round_obs'),
+         'self.transformed_data_example_result_v4'),
         ('self.transformed_data_example_error',
          'self.transformed_data_example_error'),
     ])

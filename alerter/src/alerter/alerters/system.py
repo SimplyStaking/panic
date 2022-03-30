@@ -27,7 +27,9 @@ from src.utils.constants.rabbitmq import (
     SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE, SYSTEM_ALERT_ROUTING_KEY,
     SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE, TOPIC)
 from src.utils.exceptions import (MessageWasNotDeliveredException,
-                                  ReceivedUnexpectedDataException)
+                                  ReceivedUnexpectedDataException,
+                                  MetricNotFoundException,
+                                  SystemIsDownException, InvalidUrlException)
 from src.utils.timing import TimedTaskLimiter
 from src.utils.types import (IncreasedAboveThresholdSystemAlert,
                              DecreasedBelowThresholdSystemAlert, str_to_bool,
@@ -259,8 +261,8 @@ class SystemAlerter(Alerter):
         is_down = self.alerts_configs.system_is_down
         meta_data = error_data['meta_data']
 
-        if self._invalid_url[meta_data['system_id']] and \
-                int(error_data['code']) != 5009:
+        if (self._invalid_url[meta_data['system_id']]
+                and int(error_data['code']) != InvalidUrlException.code):
             alert = ValidUrlAlert(
                 meta_data['system_name'], "Url is valid!",
                 Severity.INFO.value, meta_data['time'],
@@ -272,8 +274,8 @@ class SystemAlerter(Alerter):
                               alert.alert_data)
             self._invalid_url[meta_data['system_id']] = False
 
-        if self._metric_not_found[meta_data['system_id']] and \
-                int(error_data['code']) != 5003:
+        if (self._metric_not_found[meta_data['system_id']]
+                and int(error_data['code']) != MetricNotFoundException.code):
             alert = MetricFoundAlert(
                 meta_data['system_name'], "Metrics have been found!",
                 Severity.INFO.value, meta_data['time'],
@@ -290,7 +292,7 @@ class SystemAlerter(Alerter):
         monitoring round (DEFAULT: 60 seconds). This is done without delays as
         it's indication that the configuration is wrong.
         """
-        if int(error_data['code']) == 5003:
+        if int(error_data['code']) == MetricNotFoundException.code:
             alert = MetricNotFoundErrorAlert(
                 meta_data['system_name'], error_data['message'],
                 Severity.ERROR.value, meta_data['time'],
@@ -301,7 +303,7 @@ class SystemAlerter(Alerter):
             self.logger.debug("Successfully classified alert %s",
                               alert.alert_data)
             self._metric_not_found[meta_data['system_id']] = True
-        elif int(error_data['code']) == 5009:
+        elif int(error_data['code']) == InvalidUrlException.code:
             alert = InvalidUrlAlert(
                 meta_data['system_name'], error_data['message'],
                 Severity.ERROR.value, meta_data['time'],
@@ -312,7 +314,7 @@ class SystemAlerter(Alerter):
             self.logger.debug("Successfully classified alert %s",
                               alert.alert_data)
             self._invalid_url[meta_data['system_id']] = True
-        elif int(error_data['code']) == 5004:
+        elif int(error_data['code']) == SystemIsDownException.code:
             if str_to_bool(is_down['enabled']):
                 data = error_data['data']
                 current = float(data['went_down_at']['current'])

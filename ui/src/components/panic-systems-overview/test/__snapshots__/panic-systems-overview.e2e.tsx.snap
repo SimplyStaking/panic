@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-systems-overview renders 1`] = `
+<panic-systems-overview>
+  <svc-surface label="SYSTEMS OVERVIEW - GENERAL" labelposition="center">
+    <h3 class="panic-systems-overview__subtitle">
+      System Metrics
+    </h3>
+    <svc-data-table last-clicked-column-index="0" no-records-message="There are no metrics to display at this time" ordering="ascending"></svc-data-table>
+  </svc-surface>
+</panic-systems-overview>
+`;

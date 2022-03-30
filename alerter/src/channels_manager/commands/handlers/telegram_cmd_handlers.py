@@ -20,6 +20,7 @@ from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (
     SYSTEM_MONITORS_MANAGER_NAME, GITHUB_MONITORS_MANAGER_NAME,
+    DOCKERHUB_MONITORS_MANAGER_NAME, DOCKERHUB_ALERTER_MANAGER_NAME,
     DATA_TRANSFORMERS_MANAGER_NAME, SYSTEM_ALERTERS_MANAGER_NAME,
     GITHUB_ALERTER_MANAGER_NAME, CL_ALERTERS_MANAGER_NAME,
     DATA_STORE_MANAGER_NAME, ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME,
@@ -292,6 +293,8 @@ class TelegramCommandHandlers(CommandHandler):
              "self._get_manager_component_hb_status"),
             (GITHUB_MONITORS_MANAGER_NAME,
              "self._get_manager_component_hb_status"),
+            (DOCKERHUB_MONITORS_MANAGER_NAME,
+             "self._get_manager_component_hb_status"),
             (NODE_MONITORS_MANAGER_NAME,
              "self._get_manager_component_hb_status"),
             (CONTRACT_MONITORS_MANAGER_NAME,
@@ -301,6 +304,8 @@ class TelegramCommandHandlers(CommandHandler):
             (SYSTEM_ALERTERS_MANAGER_NAME,
              "self._get_manager_component_hb_status"),
             (GITHUB_ALERTER_MANAGER_NAME,
+             "self._get_manager_component_hb_status"),
+            (DOCKERHUB_ALERTER_MANAGER_NAME,
              "self._get_manager_component_hb_status"),
             (CL_ALERTERS_MANAGER_NAME, "self._get_manager_component_hb_status"),
             (EVM_NODE_ALERTER_MANAGER_NAME,
@@ -865,5 +870,8 @@ class TelegramCommandHandlers(CommandHandler):
                                   self.telegram_channel)
                 self.logger.exception(e)
             return False
+
+    def error_handler_callback(self, _: Update, context: CallbackContext):
+        self.logger.error(context.error)
 
     _execute_safely = staticmethod(_execute_safely)

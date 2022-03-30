@@ -476,7 +476,7 @@ class TestEVMNodeMonitor(unittest.TestCase):
             mock_send_hb.reset_mock()
             mock_send_data.reset_mock()
 
-    @mock.patch.object(logging.Logger, "info")
+    @mock.patch.object(logging.Logger, "debug")
     @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
     @mock.patch.object(EVMNodeMonitor, "_send_data")
     @mock.patch.object(EVMNodeMonitor, "_get_data")
@@ -492,7 +492,7 @@ class TestEVMNodeMonitor(unittest.TestCase):
         mock_log.assert_called_with(self.test_monitor._display_data(
             self.retrieved_metrics_example))
 
-    @mock.patch.object(logging.Logger, "info")
+    @mock.patch.object(logging.Logger, "debug")
     @mock.patch.object(EVMNodeMonitor, "_process_data")
     @mock.patch.object(EVMNodeMonitor, "_send_heartbeat")
     @mock.patch.object(EVMNodeMonitor, "_send_data")

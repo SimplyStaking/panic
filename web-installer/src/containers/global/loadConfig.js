@@ -838,13 +838,14 @@ class LoadConfig extends Component {
           }
         }
       }
+      ToastsStore.success('Configuration files loaded successfully!', 5000);
     } catch (err) {
       ToastsStore.error(
         'An Error occurred your configuration may be corrupted.',
         5000,
       );
     }
-    ToastsStore.success('Configuration files loaded successfully!', 5000);
+
     // RESET the current chain for all types so when creating a new you
     // chain config you do not attempt to load an old one.
     clearChainIdChainlink();

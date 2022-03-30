@@ -155,10 +155,6 @@ class TestAlertStore(unittest.TestCase):
         self.last_monitored = datetime(2012, 1, 1).timestamp()
         self.none = None
 
-        # We do not want to reset `github_release` for Github metrics as we
-        # will lose the pending upgrades
-        self.github_alert_metrics = ['github_cannot_access']
-
         # Normal alerts
         self.alert_data_1 = {
             'parent_id': self.parent_id,
@@ -222,8 +218,10 @@ class TestAlertStore(unittest.TestCase):
             'metric': self.metric_5,
             'message': self.message_5,
             'timestamp': self.last_monitored,
-            'alert_data': {'contract_proxy_address':
-                               '0x5DcB78343780E1B1e578ae0590dc1e868792a435'}
+            'alert_data': {
+                'contract_proxy_address':
+                    '0x5DcB78343780E1B1e578ae0590dc1e868792a435'
+            }
         }
         self.alert_data_5_1 = copy.deepcopy(self.alert_data_5)
         self.alert_data_5_1['parent_id'] = self.parent_id2
@@ -700,6 +698,7 @@ class TestAlertStore(unittest.TestCase):
 
         metric_data = {'severity': data['severity'],
                        'message': data['message'],
+                       'metric': data['metric'],
                        'timestamp': data['timestamp'],
                        'expiry': None}
         key = data['origin_id']

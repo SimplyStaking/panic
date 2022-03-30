@@ -1,23 +1,20 @@
 import redis, {RetryStrategyOptions} from "redis"
 import {MSG_REDIS_CONNECTION_ESTABLISHED, MSG_REDIS_DISCONNECTED} from "./msgs";
 import {
+    AlertKeysDockerHubRepo,
     AlertKeysGitHubRepo,
+    AlertKeysNode,
     AlertKeysSystem,
-    BaseChainKeys,
     ChainKeys,
+    ChainlinkNodeKeys,
     ComponentKeys,
-    ConfigKeys,
     GitHubKeys,
     RedisHashes,
     RedisKeys,
     SystemKeys,
-    UniqueKeys,
-    ChainlinkNodeKeys,
-    AlertKeysChainlinkNode
+    UniqueKeys
 } from "./types";
 import {RedisClientNotInitialised} from "./errors";
-
-export const baseChainsRedis = ['cosmos', 'substrate', 'chainlink', 'general'];
 
 export const getRedisHashes = (): RedisHashes => ({
     parent: 'hash_p1'
@@ -50,20 +47,20 @@ export const getGitHubKeys = (): GitHubKeys => ({
     last_monitored: 'gh2',
 });
 
-export const getChainlinkKeys = (): ChainlinkNodeKeys => ({
-    current_height: 'c1',
-    total_block_headers_received: 'c2',
-    max_pending_tx_delay: 'c3',
-    process_start_time_seconds: 'c4',
-    total_gas_bumps: 'c5',
-    total_gas_bumps_exceeds_limit: 'c6',
-    no_of_unconfirmed_txs: 'c7',
-    total_errored_job_runs: 'c8',
-    current_gas_price_info: 'c9',
-    eth_balance_info: 'c10',
-    went_down_at_prometheus: 'c11',
-    last_prometheus_source_used: 'c12',
-    last_monitored_prometheus: 'c13',
+export const getChainlinkNodeKeys = (): ChainlinkNodeKeys => ({
+    current_height: 'cl1',
+    total_block_headers_received: 'cl2',
+    max_pending_tx_delay: 'cl3',
+    process_start_time_seconds: 'cl4',
+    total_gas_bumps: 'cl5',
+    total_gas_bumps_exceeds_limit: 'cl6',
+    no_of_unconfirmed_txs: 'cl7',
+    total_errored_job_runs: 'cl8',
+    current_gas_price_info: 'cl9',
+    eth_balance_info: 'cl10',
+    went_down_at_prometheus: 'cl11',
+    last_prometheus_source_used: 'cl12',
+    last_monitored_prometheus: 'cl13',
 });
 
 export const getComponentKeys = (): ComponentKeys => ({
@@ -74,43 +71,61 @@ export const getChainKeys = (): ChainKeys => ({
     mute_alerts: 'ch1'
 });
 
-export const getConfigKeys = (): ConfigKeys => ({
-    config: 'conf1'
-});
+export const alertKeysSystemPrefix: string = 'alert_system';
+export const alertKeysClNodePrefix: string = 'alert_cl_node';
+export const alertKeysEvmNodePrefix: string = 'alert_evm_node';
+export const alertKeysClContractPrefix: string = 'alert_cl_contract';
+export const alertKeysGitHubPrefix: string = 'alert_github';
+export const alertKeysDockerHubPrefix: string = 'alert_dockerhub';
+export const alertKeysChainSourced: string[] = [
+    'alert_cl_contract4',
+    'alert_cl_contract5'
+]
 
 export const getAlertKeysSystem = (): AlertKeysSystem => ({
-    open_file_descriptors: 'alert_system1',
-    system_cpu_usage: 'alert_system2',
-    system_storage_usage: 'alert_system3',
-    system_ram_usage: 'alert_system4',
-    system_is_down: 'alert_system5',
-    metric_not_found: 'alert_system6',
-    invalid_url: 'alert_system7',
+    open_file_descriptors: `${alertKeysSystemPrefix}1`,
+    system_cpu_usage: `${alertKeysSystemPrefix}2`,
+    system_storage_usage: `${alertKeysSystemPrefix}3`,
+    system_ram_usage: `${alertKeysSystemPrefix}4`,
+    system_is_down: `${alertKeysSystemPrefix}5`,
+    metric_not_found: `${alertKeysSystemPrefix}6`,
+    invalid_url: `${alertKeysSystemPrefix}7`,
+});
+
+export const getAlertKeysNode = (): AlertKeysNode => ({
+    // Chainlink Nodes
+    cl_head_tracker_current_head: `${alertKeysClNodePrefix}1`,
+    cl_head_tracker_heads_received_total: `${alertKeysClNodePrefix}2`,
+    cl_max_unconfirmed_blocks: `${alertKeysClNodePrefix}3`,
+    cl_process_start_time_seconds: `${alertKeysClNodePrefix}4`,
+    cl_tx_manager_gas_bump_exceeds_limit_total: `${alertKeysClNodePrefix}5`,
+    cl_unconfirmed_transactions: `${alertKeysClNodePrefix}6`,
+    cl_run_status_update_total: `${alertKeysClNodePrefix}7`,
+    cl_eth_balance_amount: `${alertKeysClNodePrefix}8`,
+    cl_eth_balance_amount_increase: `${alertKeysClNodePrefix}9`,
+    cl_invalid_url: `${alertKeysClNodePrefix}10`,
+    cl_metric_not_found: `${alertKeysClNodePrefix}11`,
+    cl_node_is_down: `${alertKeysClNodePrefix}12`,
+    cl_prometheus_is_down: `${alertKeysClNodePrefix}13`,
+    // EVM Nodes
+    evm_node_is_down: `${alertKeysEvmNodePrefix}1`,
+    evm_block_syncing_block_height_difference: `${alertKeysEvmNodePrefix}2`,
+    evm_block_syncing_no_change_in_block_height: `${alertKeysEvmNodePrefix}3`,
+    evm_invalid_url: `${alertKeysEvmNodePrefix}4`,
 });
 
 export const getAlertKeysGitHubRepo = (): AlertKeysGitHubRepo => ({
-    github_release: 'alert_github1',
-    cannot_access_github: 'alert_github2',
+    github_release: `${alertKeysGitHubPrefix}1`,
+    github_cannot_access: `${alertKeysGitHubPrefix}2`,
+    github_api_call_error: `${alertKeysGitHubPrefix}3`,
 });
 
-export const getAlertKeysChainlinkNode = (): AlertKeysChainlinkNode => ({
-    head_tracker_current_head: 'alert_cl_node1',
-    head_tracker_heads_received_total: 'alert_cl_node2',
-    max_unconfirmed_blocks: 'alert_cl_node3',
-    process_start_time_seconds: 'alert_cl_node4',
-    tx_manager_gas_bump_exceeds_limit_total: 'alert_cl_node5',
-    unconfirmed_transactions: 'alert_cl_node6',
-    run_status_update_total: 'alert_cl_node7',
-    eth_balance_amount: 'alert_cl_node8',
-    eth_balance_amount_increase: 'alert_cl_node9',
-    invalid_url: 'alert_cl_node10',
-    metric_not_found: 'alert_cl_node11',
-    node_is_down: 'alert_cl_node12',
-    prometheus_is_down: 'alert_cl_node13',
-});
-
-export const getBaseChainKeys = (): BaseChainKeys => ({
-    monitorables_info: 'bc1'
+export const getAlertKeysDockerHubRepo = (): AlertKeysDockerHubRepo => ({
+    dockerhub_new_tag: `${alertKeysDockerHubPrefix}1`,
+    dockerhub_updated_tag: `${alertKeysDockerHubPrefix}2`,
+    dockerhub_deleted_tag: `${alertKeysDockerHubPrefix}3`,
+    dockerhub_cannot_access: `${alertKeysDockerHubPrefix}4`,
+    dockerhub_tags_api_call_error: `${alertKeysDockerHubPrefix}5`,
 });
 
 export const addPrefixToKeys =
@@ -186,5 +201,4 @@ export class RedisInterface {
             throw new RedisClientNotInitialised()
         }
     }
-
 }

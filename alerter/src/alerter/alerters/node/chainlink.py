@@ -25,7 +25,9 @@ from src.utils.constants.rabbitmq import (
     CL_NODE_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
     CONFIG_EXCHANGE, CL_NODE_ALERT_ROUTING_KEY, CL_ALERTS_CONFIGS_ROUTING_KEY)
 from src.utils.data import transformed_data_processing_helper
-from src.utils.exceptions import MessageWasNotDeliveredException
+from src.utils.exceptions import (MessageWasNotDeliveredException,
+                                  MetricNotFoundException, InvalidUrlException,
+                                  NodeIsDownException)
 from src.utils.types import str_to_bool
 
 
@@ -128,7 +130,7 @@ class ChainlinkNodeAlerter(Alerter):
     @staticmethod
     def _prometheus_is_down_condition_function(index_key: Optional[str],
                                                code: Optional[int]) -> bool:
-        return (index_key == 'error' and code == 5015)
+        return index_key == 'error' and code == NodeIsDownException.code
 
     def _process_prometheus_result(self, prom_data: Dict,
                                    data_for_alerting: List) -> None:
@@ -146,16 +148,16 @@ class ChainlinkNodeAlerter(Alerter):
 
             # Check if some errors have been resolved
             self.alerting_factory.classify_error_alert(
-                5009,
-                cl_alerts.InvalidUrlAlert, cl_alerts.ValidUrlAlert,
-                data_for_alerting, meta_data['node_parent_id'],
-                meta_data['node_id'], meta_data['node_name'],
-                meta_data['last_monitored'], MetricCode.InvalidUrl.value,
-                "", "Prometheus url is now valid!. Last source used {}.".format(
+                InvalidUrlException.code, cl_alerts.InvalidUrlAlert,
+                cl_alerts.ValidUrlAlert, data_for_alerting,
+                meta_data['node_parent_id'], meta_data['node_id'],
+                meta_data['node_name'], meta_data['last_monitored'],
+                MetricCode.InvalidUrl.value, "",
+                "Prometheus url is now valid!. Last source used {}.".format(
                     meta_data['last_source_used']['current']), None
             )
             self.alerting_factory.classify_error_alert(
-                5003,
+                MetricNotFoundException.code,
                 cl_alerts.MetricNotFoundErrorAlert,
                 cl_alerts.MetricFoundAlert, data_for_alerting,
                 meta_data['node_parent_id'], meta_data['node_id'],
@@ -339,17 +341,17 @@ class ChainlinkNodeAlerter(Alerter):
             # Detect whether some errors need to be raised, or have been
             # resolved.
             self.alerting_factory.classify_error_alert(
-                5009,
-                cl_alerts.InvalidUrlAlert, cl_alerts.ValidUrlAlert,
-                data_for_alerting, meta_data['node_parent_id'],
-                meta_data['node_id'], meta_data['node_name'], meta_data['time'],
+                InvalidUrlException.code, cl_alerts.InvalidUrlAlert,
+                cl_alerts.ValidUrlAlert, data_for_alerting,
+                meta_data['node_parent_id'], meta_data['node_id'],
+                meta_data['node_name'], meta_data['time'],
                 MetricCode.InvalidUrl.value, prom_data['message'],
                 "Prometheus url is now valid!. Last source used {}.".format(
                     meta_data['last_source_used']['current']),
                 prom_data['code']
             )
             self.alerting_factory.classify_error_alert(
-                5003,
+                MetricNotFoundException.code,
                 cl_alerts.MetricNotFoundErrorAlert,
                 cl_alerts.MetricFoundAlert, data_for_alerting,
                 meta_data['node_parent_id'], meta_data['node_id'],
@@ -398,7 +400,7 @@ class ChainlinkNodeAlerter(Alerter):
                             source] else 'error'
                         data = trans_data[source][response_index_key]
                         if (response_index_key != 'error' or data['code'] !=
-                                5015):
+                                NodeIsDownException.code):
                             all_sources_down = False
                             break
 

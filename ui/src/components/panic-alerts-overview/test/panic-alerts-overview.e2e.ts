@@ -1,11 +1,21 @@
-import { newE2EPage } from '@stencil/core/testing';
+import {newSpecPage} from '@stencil/core/testing';
+import {
+    fetchMock,
+    mockAlertsData,
+    mockMonitorablesInfoData
+} from '../../../utils/mock';
+import {PanicAlertsOverview} from '../panic-alerts-overview';
+
+fetchMock.mockResponses([JSON.stringify(mockMonitorablesInfoData())], [JSON.stringify(mockAlertsData())]);
 
 describe('panic-alerts-overview', () => {
     it('renders', async () => {
-        const page = await newE2EPage();
-        await page.setContent('<panic-alerts-overview></panic-alerts-overview>');
+        const page = await newSpecPage({
+            components: [PanicAlertsOverview],
+            html: '<panic-alerts-overview></panic-alerts-overview>',
+        });
 
-        const element = await page.find('panic-alerts-overview');
-        expect(element).toMatchSnapshot();
+        const panicAlertsOverview = page.body.querySelector('panic-alerts-overview');
+        expect(panicAlertsOverview).toMatchSnapshot();
     });
 });

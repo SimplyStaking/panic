@@ -19,6 +19,7 @@ from src.monitors.node.evm import EVMNodeMonitor
 from src.monitors.starters import start_node_monitor
 from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
+from src.utils.constants.monitorables import MonitorableType
 from src.utils.constants.names import NODE_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, NODE_MON_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
@@ -91,8 +92,8 @@ class NodeMonitorsManager(MonitorsManager):
         self.rabbitmq.confirm_delivery()
 
     def _create_and_start_monitor_process(
-            self, node_config: NodeConfig, config_id: str,
-            monitor_type: Type[Monitor]) -> None:
+            self, node_config: NodeConfig, config_id: str, monitor_type:
+            Type[Monitor], base_chain: str, sub_chain: str) -> None:
         log_and_print("Creating a new process for the monitor of {}".format(
             node_config.node_name), self.logger)
         process = multiprocessing.Process(target=start_node_monitor,
@@ -101,14 +102,22 @@ class NodeMonitorsManager(MonitorsManager):
         process.daemon = True
         process.start()
         self._config_process_dict[config_id] = {}
-        self._config_process_dict[config_id]['component_name'] = \
-            NODE_MONITOR_NAME_TEMPLATE.format(node_config.node_name)
+        self._config_process_dict[config_id]['component_name'] = (
+            NODE_MONITOR_NAME_TEMPLATE.format(node_config.node_name))
         self._config_process_dict[config_id]['process'] = process
         self._config_process_dict[config_id]['monitor_type'] = monitor_type
         self._config_process_dict[config_id]['node_config'] = node_config
+        self._config_process_dict[config_id]['parent_id'] = (
+            node_config.parent_id)
+        self._config_process_dict[config_id]['source_name'] = (
+            node_config.node_name)
+        self._config_process_dict[config_id]['base_chain'] = base_chain
+        self._config_process_dict[config_id]['sub_chain'] = sub_chain
 
     def _process_chainlink_node_configs(self, sent_configs: Dict,
-                                        current_configs: Dict) -> Dict:
+                                        current_configs: Dict,
+                                        base_chain: str,
+                                        sub_chain: str) -> Dict:
         """
         This function processes the new nodes configs for a particular chainlink
         chain. It creates/removes new processes, and it keeps a local copy of
@@ -147,7 +156,8 @@ class NodeMonitorsManager(MonitorsManager):
                     node_id, parent_id, node_name, monitor_node,
                     monitor_prometheus, node_prometheus_urls)
                 self._create_and_start_monitor_process(node_config, config_id,
-                                                       ChainlinkNodeMonitor)
+                                                       ChainlinkNodeMonitor,
+                                                       base_chain, sub_chain)
                 correct_nodes_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
@@ -187,7 +197,8 @@ class NodeMonitorsManager(MonitorsManager):
                         modified_configs[config_id]['name']), self.logger)
 
                 self._create_and_start_monitor_process(node_config, config_id,
-                                                       ChainlinkNodeMonitor)
+                                                       ChainlinkNodeMonitor,
+                                                       base_chain, sub_chain)
                 correct_nodes_configs[config_id] = config
 
             removed_configs = get_removed_configs(sent_configs, current_configs)
@@ -209,10 +220,15 @@ class NodeMonitorsManager(MonitorsManager):
             self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
+        self.process_and_send_monitorable_data(base_chain,
+                                               MonitorableType.NODES)
+
         return correct_nodes_configs
 
     def _process_evm_node_configs(self, sent_configs: Dict,
-                                  current_configs: Dict) -> Dict:
+                                  current_configs: Dict,
+                                  base_chain: str,
+                                  sub_chain: str) -> Dict:
         """
         This function processes the new evm nodes configs for a particular
         chain. It creates/removes new processes, and it keeps a local copy of
@@ -246,7 +262,8 @@ class NodeMonitorsManager(MonitorsManager):
                 node_config = EVMNodeConfig(node_id, parent_id, node_name,
                                             monitor_node, node_http_url)
                 self._create_and_start_monitor_process(node_config, config_id,
-                                                       EVMNodeMonitor)
+                                                       EVMNodeMonitor,
+                                                       base_chain, sub_chain)
                 correct_nodes_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
@@ -282,7 +299,8 @@ class NodeMonitorsManager(MonitorsManager):
                         modified_configs[config_id]['name']), self.logger)
 
                 self._create_and_start_monitor_process(node_config, config_id,
-                                                       EVMNodeMonitor)
+                                                       EVMNodeMonitor,
+                                                       base_chain, sub_chain)
                 correct_nodes_configs[config_id] = config
 
             removed_configs = get_removed_configs(sent_configs, current_configs)
@@ -304,6 +322,9 @@ class NodeMonitorsManager(MonitorsManager):
             self.logger.error("Error when processing %s", sent_configs)
             self.logger.exception(e)
 
+        self.process_and_send_monitorable_data(base_chain,
+                                               MonitorableType.NODES)
+
         return correct_nodes_configs
 
     def _process_configs(
@@ -318,6 +339,8 @@ class NodeMonitorsManager(MonitorsManager):
 
         parsed_routing_key = method.routing_key.split('.')
         chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        base_chain = parsed_routing_key[1]
+        sub_chain = parsed_routing_key[2]
         config_type = parsed_routing_key[3]
         if chain in self.nodes_configs \
                 and config_type in self.nodes_configs[chain]:
@@ -328,10 +351,10 @@ class NodeMonitorsManager(MonitorsManager):
         updated_configs = {}
         if config_type == 'evm_nodes_config':
             updated_configs = self._process_evm_node_configs(
-                sent_configs, current_configs)
+                sent_configs, current_configs, base_chain, sub_chain)
         elif parsed_routing_key[1].lower() == 'chainlink':
             updated_configs = self._process_chainlink_node_configs(
-                sent_configs, current_configs)
+                sent_configs, current_configs, base_chain, sub_chain)
 
         if chain not in self._nodes_configs:
             self._nodes_configs[chain] = {}
@@ -339,6 +362,11 @@ class NodeMonitorsManager(MonitorsManager):
         self._nodes_configs[chain][config_type] = updated_configs
 
         self.rabbitmq.basic_ack(method.delivery_tag, False)
+
+    def process_and_send_monitorable_data(
+            self, base_chain: str, monitorable_type: MonitorableType) -> None:
+        self.process_and_send_monitorable_data_generic(
+            base_chain, monitorable_type)
 
     def _process_ping(
             self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
@@ -363,8 +391,11 @@ class NodeMonitorsManager(MonitorsManager):
                     # Restart dead process
                     node_config = process_details['node_config']
                     monitor_type = process_details['monitor_type']
+                    base_chain = process_details['base_chain']
+                    sub_chain = process_details['sub_chain']
                     self._create_and_start_monitor_process(
-                        node_config, config_id, monitor_type)
+                        node_config, config_id, monitor_type, base_chain,
+                        sub_chain)
             heartbeat['timestamp'] = datetime.now().timestamp()
         except Exception as e:
             # If we encounter an error during processing log the error and

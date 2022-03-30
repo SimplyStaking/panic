@@ -62,9 +62,9 @@ const DockerHubTable = ({
           <TableBody>
             {config.byId[currentChain].dockerHubs.map((id) => (
               <StyledTableRow key={id}>
-                <StyledTableCell align="center">{dockerHubConfig.byId[id].name}</StyledTableCell>
+                <StyledTableCell align="center">{`${dockerHubConfig.byId[id].repo_namespace}/${dockerHubConfig.byId[id].repo_name}`}</StyledTableCell>
                 <StyledTableCell align="center">
-                  {dockerHubConfig.byId[id].monitor_docker ? <CheckIcon /> : <ClearIcon />}
+                  {dockerHubConfig.byId[id].monitor_repo ? <CheckIcon /> : <ClearIcon />}
                 </StyledTableCell>
                 <StyledTableCell align="center">
                   <Button

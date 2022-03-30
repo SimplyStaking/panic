@@ -1,135 +1,171 @@
-import { Component, Host, h, State, Listen } from '@stencil/core';
-import { Alert } from '../../interfaces/alerts';
-import { Chain } from '../../interfaces/chains';
-import { AlertsAPI } from '../../utils/alerts';
-import { AlertsOverviewAPI } from './utils/panic-alerts-overview.utils';
-import { ChainsAPI } from '../../utils/chains';
-import { SeverityAPI } from '../../utils/severity';
-import { pollingFrequency } from '../../utils/constants';
-import { PanicAlertsOverviewInterface } from './panic-alerts-overview.interface';
-import { addTitleToSVCSelect, arrayEquals } from '../../utils/helpers';
-import { FilterState } from '../../interfaces/filterState';
+import {Component, h, Host, Listen, State} from '@stencil/core';
+import {Alert} from '../../interfaces/alerts';
+import {SubChain} from '../../interfaces/chains';
+import {AlertsAPI} from '../../utils/alerts';
+import {AlertsOverviewAPI} from './utils/panic-alerts-overview.utils';
+import {ChainsAPI} from '../../utils/chains';
+import {SeverityAPI} from '../../utils/severity';
+import {POLLING_FREQUENCY, Severity} from "../../utils/constants";
+import {PanicAlertsOverviewInterface} from './panic-alerts-overview.interface';
+import {FilterStateV2} from '../../interfaces/filterState';
+import {HelperAPI} from '../../utils/helpers';
 
 @Component({
-  tag: 'panic-alerts-overview',
-  styleUrl: 'panic-alerts-overview.scss'
+    tag: 'panic-alerts-overview',
+    styleUrl: 'panic-alerts-overview.scss'
 })
 export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
-  @State() alerts: Alert[] = [];
-  _chains: Chain[];
-  _filterState: FilterState = {
-    chainName: '',
-    selectedSeverities: SeverityAPI.getAllSeverityValues(),
-    lastClickedColumnIndex: 1,
-    ordering: 'descending'
-  }
-  _updater: number;
-  _updateFrequency: number = pollingFrequency;
-
-  async componentWillLoad() {
-    try {
-      this._chains = await ChainsAPI.getChains();
-      await this.reRenderAction();
-
-      this._updater = window.setInterval(async () => {
-        await this.reRenderAction();
-      }, this._updateFrequency);
-    } catch (error: any) {
-      console.error(error);
+    @State() alerts: Alert[] = [];
+    _subChains: SubChain[] = [];
+    _filterState: FilterStateV2 = {
+        chainName: '',
+        selectedSubChains: [],
+        selectedSeverities: [],
+        selectedSources: [],
+        fromDateTime: '',
+        toDateTime: ''
     }
-  }
+    _updater: number;
+    _updateFrequency: number = POLLING_FREQUENCY;
 
-  async reRenderAction() {
-    this.alerts = await AlertsAPI.getAlerts(this._chains, this._filterState.selectedSeverities, 0, 2625677273);
-  }
+    async componentWillLoad() {
+        try {
+            this._subChains = await ChainsAPI.getSubChains();
+            await this.reRenderAction();
 
-  async componentDidLoad() {
-    // Chain Filter text-placeholder (Chains).
-    addTitleToSVCSelect('chains-filter', 'Chains');
-    // Severity Filter text-placeholder (Severity).
-    addTitleToSVCSelect('severity-filter', 'Severity');
-  }
-
-  @Listen('filter-changed')
-  async filterChanged(event: CustomEvent) {
-    try {
-      const selectedChains: string[] = event.detail['selected-chains'].split(',');
-
-      // Remove empty string element from array if no chains are selected.
-      if (selectedChains.length > 0 && selectedChains[0] === '') {
-        selectedChains.pop();
-      }
-
-      // Update active chains if chains filter was changed.
-      if (!arrayEquals(ChainsAPI.getChainFilterValue(this._chains), selectedChains)) {
-        this._chains = ChainsAPI.updateActiveChains(this._chains, selectedChains);
-        await this.reRenderAction();
-      } else {
-        const selectedSeverities = event.detail['alerts-severity'].split(',');
-
-        // Remove empty string element from array if no alerts are selected.
-        if (selectedSeverities.length > 0 && selectedSeverities[0] === '') {
-          selectedSeverities.pop();
+            this._updater = window.setInterval(async () => {
+                await this.reRenderAction();
+            }, this._updateFrequency);
+        } catch (error: any) {
+            console.error(error);
         }
-
-        // Update severities shown if severity filter was changed.
-        if (!arrayEquals(SeverityAPI.getSeverityFilterValue(this._filterState.selectedSeverities), selectedSeverities)) {
-          if (selectedSeverities.length > 0) {
-            this._filterState.selectedSeverities = selectedSeverities;
-          } else {
-            this._filterState.selectedSeverities = SeverityAPI.getAllSeverityValues();
-          }
-          await this.reRenderAction();
-        }
-      }
-    } catch (error: any) {
-      console.error(error);
     }
-  }
 
-  // Used to keep track of the last clicked column index and the order of the
-  // sorted column within the data table (and base chain since correlated).
-  @Listen("svcDataTable__lastClickedColumnIndexEvent")
-  setDataTableProperties(e: CustomEvent) {
-    this._filterState.lastClickedColumnIndex = e.detail.index;
-    this._filterState.ordering = e.detail.ordering;
-  }
+    async reRenderAction() {
+        this.alerts = await AlertsAPI.getAlerts(this._subChains, this._filterState);
+    }
 
-  render() {
-    return (
-      <Host>
-        <h1 class='panic-alerts-overview__title'>ALERTS OVERVIEW</h1>
-        <svc-card class="panic-alerts-overview__chain-card">
-          <div slot='content' id='expanded' class="panic-alerts-overview__data-table-container">
-            <svc-filter event-name="filter-changed" debounce={100}>
-              <div class="panic-alerts-overview__slots">
-                {/* Chain filter */}
-                <svc-select
-                  name="selected-chains"
-                  id="chains-filter"
-                  multiple={true}
-                  value={ChainsAPI.getChainFilterValue(this._chains)}
-                  header="Select chains"
-                  placeholder="All"
-                  options={AlertsOverviewAPI.getChainFilterOptionsFromChains(this._chains)}>
-                </svc-select>
-                {/* Severity filter */}
-                <svc-select
-                  name="alerts-severity"
-                  id="severity-filter"
-                  multiple={true}
-                  value={SeverityAPI.getSeverityFilterValue(this._filterState.selectedSeverities)}
-                  header="Select severities"
-                  placeholder="All"
-                  options={SeverityAPI.getSeverityFilterOptions()}>
-                </svc-select>
-              </div>
-              {/* Data table */}
-              {AlertsOverviewAPI.getDataTableJSX(this.alerts, this._chains, this._filterState)}
-            </svc-filter>
-          </div>
-        </svc-card>
-      </Host>
-    );
-  }
+    async componentDidLoad() {
+        // Chain Filter text-placeholder (Chains).
+        HelperAPI.addTitleToSVCSelect('chains-filter', 'Chains');
+        // Severity Filter text-placeholder (Severity).
+        HelperAPI.addTitleToSVCSelect('severity-filter', 'Severity');
+        // Sources Filter text-placeholder (Sources).
+        HelperAPI.addTitleToSVCSelect('sources-filter', 'Sources');
+    }
+
+    @Listen('filter-changed')
+    async filterChanged(event: CustomEvent) {
+        try {
+            // Check selected date/time
+            if (event.detail['date-time-from'] !== this._filterState.fromDateTime) {
+                // Check if datetime specified is out of bounds (future datetime).
+                // TODO: In the future, this will be replaced (min/max datetime).
+                if (HelperAPI.dateTimeStringToTimestamp(event.detail['date-time-from']) > HelperAPI.getCurrentTimestamp()) {
+                    window.alert('Inputted \'from\' date/time value is not valid since it\'s in the future.');
+                } else if (!AlertsOverviewAPI.validateDateTimeOrder(event.detail['date-time-from'], this._filterState.toDateTime)) {
+                    window.alert('Inputted \'from\' date/time value is not valid since it\'s bigger than the \'to\' date/time value.');
+                } else {
+                    this._filterState.fromDateTime = event.detail['date-time-from'];
+                }
+                await this.reRenderAction();
+            } else if (event.detail['date-time-to'] !== this._filterState.toDateTime) {
+                // Check if datetime specified is out of bounds (future datetime).
+                // TODO: In the future, this will be replaced (min/max datetime).
+                if (HelperAPI.dateTimeStringToTimestamp(event.detail['date-time-to']) > HelperAPI.getCurrentTimestamp()) {
+                    window.alert('Inputted \'to\' date/time value is not valid since it\'s in the future.');
+                } else if (!AlertsOverviewAPI.validateDateTimeOrder(this._filterState.fromDateTime, event.detail['date-time-to'])) {
+                    window.alert('Inputted \'to\' date/time value is not valid since it\'s smaller than the \'from\' date/time value.');
+                } else {
+                    this._filterState.toDateTime = event.detail['date-time-to'];
+                }
+                await this.reRenderAction();
+            } else if (!HelperAPI.arrayEquals(this._filterState.selectedSubChains, AlertsOverviewAPI.formatEventData(event.detail['selected-chains']))) {
+                // Update active chains if chains filter was changed.
+                this._filterState.selectedSubChains = AlertsOverviewAPI.formatEventData(event.detail['selected-chains']);
+                this._filterState.selectedSources = [];
+                HelperAPI.updateTextSVCSelect('chains-filter', this._filterState.selectedSubChains.length === this._subChains.length);
+                await this.reRenderAction();
+            } else if (!HelperAPI.arrayEquals(this._filterState.selectedSeverities, AlertsOverviewAPI.formatEventData(event.detail['selected-severities']))) {
+                // Update severities shown if severity filter was changed.
+                this._filterState.selectedSeverities = AlertsOverviewAPI.formatEventData(event.detail['selected-severities']) as Severity[];
+                HelperAPI.updateTextSVCSelect('severity-filter', this._filterState.selectedSeverities.length === Object.keys(Severity).length);
+                await this.reRenderAction();
+            } else if (!HelperAPI.arrayEquals(this._filterState.selectedSources, AlertsOverviewAPI.formatEventData(event.detail['selected-sources']))) {
+                // Update sources shown if sources filter was changed.
+                this._filterState.selectedSources = AlertsOverviewAPI.formatEventData(event.detail['selected-sources']);
+                HelperAPI.updateTextSVCSelect('sources-filter', this._filterState.selectedSources.length === ChainsAPI.activeChainsSources(this._subChains, this._filterState.selectedSubChains).length);
+                await this.reRenderAction();
+            }
+        } catch (error: any) {
+            console.error(error);
+        }
+    }
+
+    render() {
+        return (
+            <Host>
+                <h1 class='panic-alerts-overview__title'
+                    id="alerts-overview">ALERTS OVERVIEW</h1>
+                <svc-surface>
+                    <div class="panic-alerts-overview__data-table-container">
+                        <svc-filter event-name="filter-changed" debounce={100}>
+                            <div class="panic-alerts-overview__slots">
+                                {/* Chain filter */}
+                                <svc-select
+                                    name="selected-chains"
+                                    id="chains-filter"
+                                    multiple={true}
+                                    value={this._filterState.selectedSubChains}
+                                    header="Select chains"
+                                    placeholder="Select chains"
+                                    options={AlertsOverviewAPI.getChainFilterOptionsFromChains(this._subChains)}
+                                />
+                                {/* Severity filter */}
+                                <svc-select
+                                    name="selected-severities"
+                                    id="severity-filter"
+                                    multiple={true}
+                                    value={this._filterState.selectedSeverities}
+                                    header="Select severities"
+                                    placeholder="Select severities"
+                                    options={SeverityAPI.getSeverityFilterOptions()}
+                                />
+                            </div>
+                            <div class="panic-alerts-overview__slots">
+                                {/* Sources filter */}
+                                <svc-select
+                                    name="selected-sources"
+                                    id="sources-filter"
+                                    multiple={true}
+                                    value={this._filterState.selectedSources}
+                                    header="Select sources"
+                                    placeholder="Select sources"
+                                    options={AlertsOverviewAPI.getSourcesFilterOptions(ChainsAPI.activeChainsSources(this._subChains, this._filterState.selectedSubChains))}
+                                />
+                                {/* Date/time picker */}
+                                <div
+                                    class="panic-alerts-overview__date-time-container">
+                                    <h4>From:</h4>
+                                    <svc-date-time
+                                        name="date-time-from"
+                                        mode="datetime-local"
+                                        value={this._filterState.fromDateTime}
+                                    />
+                                    <h4> To:</h4>
+                                    <svc-date-time
+                                        name="date-time-to"
+                                        mode="datetime-local"
+                                        value={this._filterState.toDateTime}
+                                    />
+                                </div>
+                            </div>
+                        </svc-filter>
+                        {/* Data table */}
+                        {AlertsOverviewAPI.getDataTableJSX(this.alerts)}
+                    </div>
+                </svc-surface>
+            </Host>
+        );
+    }
 }
