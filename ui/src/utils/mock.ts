@@ -162,7 +162,7 @@ export function mockBaseChainsData(): BaseChain[] {
 }
 
 export function mockFilterStates(): FilterState[] {
-    return FilterStateAPI.getFilterStates(mockBaseChainsData());
+    return FilterStateAPI.getFilterStates(mockBaseChainsData(), []);
 }
 
 /**

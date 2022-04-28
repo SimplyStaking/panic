@@ -15,8 +15,8 @@ from src.alerter.grouped_alerts_metric_code.contract. \
     chainlink_contract_metric_code import \
     GroupedChainlinkContractAlertsMetricCode as MetricCode
 from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
-from src.configs.factory.node.chainlink_alerts import \
-    ChainlinkContractAlertsConfigsFactory
+from src.configs.factory.alerts.chainlink_alerts import (
+    ChainlinkContractAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, TOPIC, CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
@@ -122,9 +122,9 @@ class ChainlinkContractAlerter(Alerter):
         :return:
         """
         if method.routing_key == CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY:
-            self._process_transformed_data(ch, method, properties, body)
+            self._process_transformed_data(method, body)
         elif 'alerts_config' in method.routing_key:
-            self._process_configs(ch, method, properties, body)
+            self._process_configs(method, body)
         else:
             self.logger.debug("Received unexpected data %s with routing key %s",
                               body, method.routing_key)
@@ -134,8 +134,8 @@ class ChainlinkContractAlerter(Alerter):
                         data_for_alerting: List) -> None:
         meta_data = transformer_data['meta_data']
         data = transformer_data['data']
-        # We must make sure that the alerts_config has been received for the
-        # chain.
+
+        # Assert that the alerts_config has been received for the chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
             meta_data['node_parent_id'], ChainlinkContractAlertsConfig)
         if chain_name is not None:
@@ -298,8 +298,8 @@ class ChainlinkContractAlerter(Alerter):
 
     def _process_error(self, data: Dict, data_for_alerting: List) -> None:
         meta_data = data['meta_data']
-        # We must make sure that the alerts_config has been received for the
-        # chain.
+
+        # Assert that the alerts_config has been received for the chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
             meta_data['node_parent_id'], ChainlinkContractAlertsConfig)
         if chain_name is not None:
@@ -328,9 +328,8 @@ class ChainlinkContractAlerter(Alerter):
                 data['message'], "Synced EVM data sources found!", data['code']
             )
 
-    def _process_transformed_data(
-            self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
-            properties: pika.spec.BasicProperties, body: bytes) -> None:
+    def _process_transformed_data(self, method: pika.spec.Basic.Deliver,
+                                  body: bytes) -> None:
         data_received = json.loads(body)
         self.logger.debug("Received %s. Now processing this data.",
                           data_received)
@@ -380,9 +379,8 @@ class ChainlinkContractAlerter(Alerter):
             # reside in the publisher queue
             raise e
 
-    def _process_configs(
-            self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
-            properties: pika.spec.BasicProperties, body: bytes) -> None:
+    def _process_configs(self, method: pika.spec.Basic.Deliver,
+                         body: bytes) -> None:
         sent_configs = json.loads(body)
 
         self.logger.debug("Received configs %s", sent_configs)

@@ -7,15 +7,18 @@ export const FilterStateAPI = {
 }
 
 /**
- * Returns an array of filter states based on an array of base chains.
+ * Returns an array of filter states based on an array of base chains and previous filter states.
  * @param baseChains base chains to be used as reference.
- * @returns array of {@link FilterState} objects.
+ * @param filterStates previous filter states to be used as reference.
+ * @returns array of updated {@link FilterState} objects.
  */
-function getFilterStates(baseChains: BaseChain[]): FilterState[] {
+function getFilterStates(baseChains: BaseChain[], filterStates: FilterState[]): FilterState[] {
     return baseChains.map(baseChain => ({
         chainName: baseChain.name,
-        selectedSubChains: [],
-        selectedSeverities: []
+        selectedSubChains: filterStates.some(filterState => filterState.chainName === baseChain.name) ?
+            filterStates.filter(filterState => filterState.chainName === baseChain.name)[0].selectedSubChains : [],
+        selectedSeverities: filterStates.some(filterState => filterState.chainName === baseChain.name) ?
+            filterStates.filter(filterState => filterState.chainName === baseChain.name)[0].selectedSeverities : []
     }));
 }
 

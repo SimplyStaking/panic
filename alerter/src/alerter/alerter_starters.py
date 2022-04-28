@@ -7,25 +7,31 @@ from src.alerter.alerters.alerter import Alerter
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerters.dockerhub import DockerhubAlerter
 from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerters.network.cosmos import CosmosNetworkAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
+from src.alerter.alerters.node.cosmos import CosmosNodeAlerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.alerts.system import SystemAlertsConfig
-from src.configs.factory.node.chainlink_alerts import (
+from src.configs.factory.alerts.chainlink_alerts import (
     ChainlinkNodeAlertsConfigsFactory, ChainlinkContractAlertsConfigsFactory)
-from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
+from src.configs.factory.alerts.cosmos_alerts import (
+    CosmosNodeAlertsConfigsFactory, CosmosNetworkAlertsConfigsFactory)
+from src.configs.factory.alerts.evm_alerts import EVMNodeAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (
     SYSTEM_ALERTER_NAME_TEMPLATE, GITHUB_ALERTER_NAME, DOCKERHUB_ALERTER_NAME,
     CHAINLINK_NODE_ALERTER_NAME, CHAINLINK_CONTRACT_ALERTER_NAME,
-    EVM_NODE_ALERTER_NAME)
-from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
-                                          RESTART_SLEEPING_PERIOD)
-from src.utils.env import (ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL,
-                           RABBIT_IP, ALERTER_PUBLISHING_QUEUE_SIZE)
+    EVM_NODE_ALERTER_NAME, COSMOS_NODE_ALERTER_NAME,
+    COSMOS_NETWORK_ALERTER_NAME)
+from src.utils.constants.starters import (
+    RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD)
+from src.utils.env import (
+    ALERTERS_LOG_FILE_TEMPLATE, LOGGING_LEVEL, RABBIT_IP,
+    ALERTER_PUBLISHING_QUEUE_SIZE)
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import (get_initialisation_error_message,
-                                get_stopped_message)
+from src.utils.starters import (
+    get_initialisation_error_message, get_stopped_message)
 
 
 def _initialise_alerter_logger(alerter_display_name: str,
@@ -239,6 +245,72 @@ def _initialise_evm_node_alerter(
     return evm_node_alerter
 
 
+def _initialise_cosmos_node_alerter(
+        cosmos_alerts_configs_factory: CosmosNodeAlertsConfigsFactory
+) -> CosmosNodeAlerter:
+    alerter_display_name = COSMOS_NODE_ALERTER_NAME
+
+    cosmos_alerter_logger = _initialise_alerter_logger(
+        alerter_display_name, CosmosNodeAlerter.__name__)
+
+    # Try initialising an alerter until successful
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=cosmos_alerter_logger.getChild(RabbitMQApi.__name__),
+                host=RABBIT_IP)
+            cosmos_alerter = CosmosNodeAlerter(
+                alerter_display_name, cosmos_alerter_logger, rabbitmq,
+                cosmos_alerts_configs_factory, ALERTER_PUBLISHING_QUEUE_SIZE
+            )
+            log_and_print("Successfully initialised {}".format(
+                alerter_display_name), cosmos_alerter_logger)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(alerter_display_name, e)
+            log_and_print(msg, cosmos_alerter_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return cosmos_alerter
+
+
+def _initialise_cosmos_network_alerter(
+        cosmos_alerts_configs_factory: CosmosNetworkAlertsConfigsFactory
+) -> CosmosNetworkAlerter:
+    alerter_display_name = COSMOS_NETWORK_ALERTER_NAME
+
+    cosmos_alerter_logger = _initialise_alerter_logger(
+        alerter_display_name, CosmosNetworkAlerter.__name__)
+
+    # Try initialising an alerter until successful
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=cosmos_alerter_logger.getChild(RabbitMQApi.__name__),
+                host=RABBIT_IP)
+            cosmos_alerter = CosmosNetworkAlerter(
+                alerter_display_name, cosmos_alerter_logger, rabbitmq,
+                cosmos_alerts_configs_factory, ALERTER_PUBLISHING_QUEUE_SIZE
+            )
+            log_and_print("Successfully initialised {}".format(
+                alerter_display_name), cosmos_alerter_logger)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(alerter_display_name, e)
+            log_and_print(msg, cosmos_alerter_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return cosmos_alerter
+
+
+def start_system_alerter(system_alerts_config: SystemAlertsConfig,
+                         chain: str) -> None:
+    system_alerter = _initialise_system_alerter(system_alerts_config, chain)
+    start_alerter(system_alerter)
+
+
 def start_github_alerter() -> None:
     github_alerter = _initialise_github_alerter()
     start_alerter(github_alerter)
@@ -247,12 +319,6 @@ def start_github_alerter() -> None:
 def start_dockerhub_alerter() -> None:
     dockerhub_alerter = _initialise_dockerhub_alerter()
     start_alerter(dockerhub_alerter)
-
-
-def start_system_alerter(system_alerts_config: SystemAlertsConfig,
-                         chain: str) -> None:
-    system_alerter = _initialise_system_alerter(system_alerts_config, chain)
-    start_alerter(system_alerter)
 
 
 def start_chainlink_node_alerter(
@@ -275,6 +341,21 @@ def start_evm_node_alerter(
         evm_alerts_configs_factory: EVMNodeAlertsConfigsFactory) -> None:
     evm_alerter = _initialise_evm_node_alerter(evm_alerts_configs_factory)
     start_alerter(evm_alerter)
+
+
+def start_cosmos_node_alerter(
+        cosmos_alerts_configs_factory: CosmosNodeAlertsConfigsFactory) -> None:
+    cosmos_alerter = _initialise_cosmos_node_alerter(
+        cosmos_alerts_configs_factory)
+    start_alerter(cosmos_alerter)
+
+
+def start_cosmos_network_alerter(
+        cosmos_alerts_configs_factory: CosmosNetworkAlertsConfigsFactory
+) -> None:
+    cosmos_alerter = _initialise_cosmos_network_alerter(
+        cosmos_alerts_configs_factory)
+    start_alerter(cosmos_alerter)
 
 
 def start_alerter(alerter: Alerter) -> None:

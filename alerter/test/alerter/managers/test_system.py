@@ -29,7 +29,7 @@ from src.utils.constants.rabbitmq import (
     HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, SYSTEM_ALERT_ROUTING_KEY,
     ALERT_EXCHANGE, TOPIC)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
-from test.utils.utils import infinite_fn
+from test.test_utils.utils import infinite_fn
 
 
 # Tests adapted from Monitors managers

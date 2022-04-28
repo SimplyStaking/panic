@@ -2,8 +2,9 @@ import { withFormik } from 'formik';
 import { connect } from 'react-redux';
 import NodesForm from 'components/chains/cosmos/forms/nodesForm';
 import NodesTable from 'components/chains/cosmos/tables/nodesTable';
-import { addNodeCosmos, removeNodeCosmos } from 'redux/actions/cosmosActions';
+import { addNodeCosmos, removeNodeCosmos, toggleMonitorNetworkNodesCosmos } from 'redux/actions/cosmosActions';
 import CosmosData from 'data/cosmos';
+import MonitorNetworkNodesForm from 'components/chains/cosmos/forms/monitorNetworkNodesForm';
 import { toggleDirty } from 'redux/actions/pageActions';
 import NodeSchema from '../common/schemas/nodeSchema';
 
@@ -15,18 +16,19 @@ const Form = withFormik({
   }),
   mapPropsToValues: () => ({
     name: '',
-    tendermint_rpc_url: '',
-    monitor_tendermint: false,
-    cosmos_rpc_url: '',
-    monitor_rpc: false,
+    cosmos_rest_url: '',
+    monitor_cosmos_rest: true,
     prometheus_url: '',
-    monitor_prometheus: false,
+    monitor_prometheus: true,
     exporter_url: '',
     monitor_system: true,
-    is_validator: false,
+    is_validator: true,
     monitor_node: true,
-    is_archive_node: false,
-    use_as_data_source: false,
+    is_archive_node: true,
+    use_as_data_source: true,
+    operator_address: '',
+    monitor_tendermint_rpc: true,
+    tendermint_rpc_url: '',
   }),
   toggleDirtyForm: (tog, { props }) => {
     const { toggleDirtyForm } = props;
@@ -38,10 +40,8 @@ const Form = withFormik({
     const payload = {
       parent_id: currentChain,
       name: values.name,
-      tendermint_rpc_url: values.tendermint_rpc_url,
-      monitor_tendermint: values.monitor_tendermint,
-      cosmos_rpc_url: values.cosmos_rpc_url,
-      monitor_rpc: values.monitor_rpc,
+      cosmos_rest_url: values.cosmos_rest_url,
+      monitor_cosmos_rest: values.monitor_cosmos_rest,
       prometheus_url: values.prometheus_url,
       monitor_prometheus: values.monitor_prometheus,
       exporter_url: values.exporter_url,
@@ -50,12 +50,30 @@ const Form = withFormik({
       monitor_node: values.monitor_node,
       is_archive_node: values.is_archive_node,
       use_as_data_source: values.use_as_data_source,
+      operator_address: values.operator_address,
+      monitor_tendermint_rpc: values.monitor_tendermint_rpc,
+      tendermint_rpc_url: values.tendermint_rpc_url,
+      monitor_network: true,
     };
     saveNodeDetails(payload);
     resetForm();
   },
 
 })(NodesForm);
+
+const MonitorNetworkForm = withFormik({
+  mapPropsToValues: () => ({
+    monitor_network: true,
+  }),
+  toggleMonitorNetworkNodes: ({ props }) => {
+    const { toggleMonitorNetworkNodes, currentChain } = props;
+    const payload = {
+      parent_id: currentChain,
+      monitor_network: props.values.monitor_network,
+    };
+    toggleMonitorNetworkNodes(payload);
+  },
+})(MonitorNetworkNodesForm);
 
 // ------------------------- Cosmos Based Chain Data --------------------
 
@@ -78,6 +96,7 @@ function mapDispatchToProps(dispatch) {
   return {
     saveNodeDetails: (details) => dispatch(addNodeCosmos(details)),
     toggleDirtyForm: (tog) => dispatch(toggleDirty(tog)),
+    toggleMonitorNetworkNodes: (toggle) => dispatch(toggleMonitorNetworkNodesCosmos(toggle)),
   };
 }
 
@@ -95,10 +114,15 @@ const NodesFormContainer = connect(
   mapDispatchToProps,
 )(Form);
 
+const MonitorNetworkFormContainer = connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(MonitorNetworkForm);
+
 // Combine cosmos state and dispatch functions to the node table
 const NodesTableContainer = connect(
   mapStateToProps,
   mapDispatchToPropsRemove,
 )(NodesTable);
 
-export { NodesFormContainer, NodesTableContainer };
+export { NodesFormContainer, MonitorNetworkFormContainer, NodesTableContainer };

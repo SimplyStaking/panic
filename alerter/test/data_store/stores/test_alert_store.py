@@ -14,7 +14,9 @@ from parameterized import parameterized
 
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerters.network.cosmos import CosmosNetworkAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
+from src.alerter.alerters.node.cosmos import CosmosNodeAlerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.data_store.mongo.mongo_api import MongoApi
@@ -23,16 +25,16 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.alert import AlertStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
+from src.utils.constants.data import (EXPIRE_METRICS, CHAIN_SOURCED_METRICS)
 from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           ALERT_STORE_INPUT_QUEUE_NAME,
                                           HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
                                           ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException,
                                   MessageWasNotDeliveredException)
-from test.utils.utils import (connect_to_rabbit,
-                              disconnect_from_rabbit,
-                              delete_exchange_if_exists,
-                              delete_queue_if_exists)
+from test.test_utils.utils import (
+    connect_to_rabbit, disconnect_from_rabbit, delete_exchange_if_exists,
+    delete_queue_if_exists)
 
 
 class TestAlertStore(unittest.TestCase):
@@ -152,6 +154,22 @@ class TestAlertStore(unittest.TestCase):
 
         self.metric_7 = 'cl_contract_no_synced_data_sources'
 
+        self.alert_id_8 = 'test_alert_id_8'
+        self.origin_id_8 = 'test_origin_id_8'
+        self.alert_name_8 = 'test_alert_8'
+        self.metric_8 = 'cosmos_node_slashed'
+        self.severity_8 = 'info'
+        self.message_8 = 'alert message 8'
+        self.value_8 = 'alert_code_8'
+
+        self.alert_id_9 = 'test_alert_id_9'
+        self.origin_id_9 = 'test_origin_id_9'
+        self.alert_name_9 = 'test_alert_9'
+        self.metric_9 = 'cosmos_network_proposals_submitted'
+        self.severity_9 = 'info'
+        self.message_9 = 'alert message 9'
+        self.value_9 = 'alert_code_9'
+
         self.last_monitored = datetime(2012, 1, 1).timestamp()
         self.none = None
 
@@ -247,6 +265,37 @@ class TestAlertStore(unittest.TestCase):
         self.alert_data_6_1 = copy.deepcopy(self.alert_data_6)
         self.alert_data_6_1['parent_id'] = self.parent_id2
 
+        self.alert_data_8 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id_8,
+            'alert_code': {
+                'name': self.alert_name_8,
+                'code': self.value_8,
+            },
+            'severity': self.severity_8,
+            'metric': self.metric_8,
+            'message': self.message_8,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_data_8_1 = copy.deepcopy(self.alert_data_8)
+        self.alert_data_8_1['parent_id'] = self.parent_id2
+
+        self.alert_data_9 = {
+            'parent_id': self.parent_id,
+            'origin_id': self.origin_id_9,
+            'alert_code': {
+                'name': self.alert_name_9,
+                'code': self.value_9,
+            },
+            'severity': self.severity_9,
+            'metric': self.metric_9,
+            'message': self.message_9,
+            'timestamp': self.last_monitored,
+        }
+
+        self.alert_data_9_1 = copy.deepcopy(self.alert_data_9)
+        self.alert_data_9_1['parent_id'] = self.parent_id2
+
         # Bad data
         self.alert_data_key_error = {
             "result": {
@@ -318,6 +367,54 @@ class TestAlertStore(unittest.TestCase):
             },
             'severity': self.internal,
             'metric': self.metric_2,
+            'message': self.message_2,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_cosmos_node = {
+            'parent_id': self.parent_id,
+            'origin_id': CosmosNodeAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_8,
+            'message': self.message,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_cosmos_node_all_chains = {
+            'parent_id': None,
+            'origin_id': CosmosNodeAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_8,
+            'message': self.message_2,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_cosmos_network = {
+            'parent_id': self.parent_id,
+            'origin_id': CosmosNetworkAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_9,
+            'message': self.message,
+            'timestamp': self.last_monitored,
+        }
+        self.alert_internal_cosmos_network_all_chains = {
+            'parent_id': None,
+            'origin_id': CosmosNetworkAlerter.__name__,
+            'alert_code': {
+                'name': 'internal_alert_1',
+                'code': 'internal_alert_1',
+            },
+            'severity': self.internal,
+            'metric': self.metric_9,
             'message': self.message_2,
             'timestamp': self.last_monitored,
         }
@@ -653,6 +750,8 @@ class TestAlertStore(unittest.TestCase):
         ("self.alert_data_1",),
         ("self.alert_data_2",),
         ("self.alert_data_3",),
+        ("self.alert_data_8",),
+        ("self.alert_data_9",),
     ])
     @freeze_time("2012-01-01")
     @mock.patch.object(MongoApi, "update_one")
@@ -689,6 +788,8 @@ class TestAlertStore(unittest.TestCase):
         ("self.alert_data_1",),
         ("self.alert_data_2",),
         ("self.alert_data_3",),
+        ("self.alert_data_8",),
+        ("self.alert_data_9",),
     ])
     @mock.patch.object(RedisApi, "hset")
     def test_process_redis_store_calls_redis_correctly_storing_metrics(
@@ -696,16 +797,29 @@ class TestAlertStore(unittest.TestCase):
         data = eval(mock_system_data)
         self.test_store._process_redis_store(data)
 
+        # testing if the 'expiry' metric data is processed accordingly if the
+        # metric is recognized to be within the list of EXPIRE_METRICS
+        if data['metric'] in EXPIRE_METRICS:
+            expiry = data['timestamp'] + 600
+        else:
+            expiry = None
+
         metric_data = {'severity': data['severity'],
                        'message': data['message'],
                        'metric': data['metric'],
                        'timestamp': data['timestamp'],
-                       'expiry': None}
+                       'expiry': expiry}
         key = data['origin_id']
 
-        call_1 = call(Keys.get_hash_parent(data['parent_id']),
-                      eval('Keys.get_alert_{}(key)'.format(data['metric'])),
-                      json.dumps(metric_data))
+        if data['metric'] in CHAIN_SOURCED_METRICS:
+            call_1 = call(Keys.get_hash_parent(data['parent_id']),
+                          eval('Keys.get_alert_{}()'.format(data['metric'])),
+                          json.dumps(metric_data))
+        else:
+            call_1 = call(Keys.get_hash_parent(data['parent_id']),
+                          eval('Keys.get_alert_{}(key)'.format(data['metric'])),
+                          json.dumps(metric_data))
+
         mock_hset.assert_has_calls([call_1])
 
     def test_process_redis_store_system_removes_all_chains_sys_metrics_pid_none(
@@ -816,6 +930,102 @@ class TestAlertStore(unittest.TestCase):
 
         self.test_store._process_redis_store(
             self.alert_internal_chainlink_1)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_cosmos_removes_all_cosmos_metrics_for_all_chains(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_8)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_8['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_{}(self.alert_data_8['origin_id'])".format(
+                self.alert_data_8['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_8_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_8_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_{}(self.alert_data_8_1['origin_id'])".format(
+                self.alert_data_8_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_cosmos_node_all_chains)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertFalse(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_cosmos_removes_all_cosmos_metrics_for_one_chain(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_8)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_8['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_{}(self.alert_data_8['origin_id'])".format(
+                self.alert_data_8['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_8_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_8_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_{}(self.alert_data_8_1['origin_id'])".format(
+                self.alert_data_8_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_cosmos_node)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_cos_net_removes_all_cos_net_metrics_for_all_chains(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_9)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_9['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_{}()".format(
+                self.alert_data_9['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_9_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_9_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_{}()".format(
+                self.alert_data_9_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_cosmos_network_all_chains)
+
+        self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
+        self.assertFalse(self.redis.hexists(chain_hash_2, metric_key_2))
+
+    def test_process_redis_store_cos_net_removes_all_cos_net_metrics_for_one_chain(
+            self) -> None:
+        # First set metrics for different chains and check that they were set
+        # in Redis.
+        self.test_store._process_redis_store(self.alert_data_9)
+        chain_hash_1 = Keys.get_hash_parent(self.alert_data_9['parent_id'])
+        metric_key_1 = eval(
+            "Keys.get_alert_{}()".format(
+                self.alert_data_9['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_1, metric_key_1))
+
+        self.test_store._process_redis_store(self.alert_data_9_1)
+        chain_hash_2 = Keys.get_hash_parent(self.alert_data_9_1['parent_id'])
+        metric_key_2 = eval(
+            "Keys.get_alert_{}()".format(
+                self.alert_data_9_1['metric']))
+        self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))
+
+        self.test_store._process_redis_store(
+            self.alert_internal_cosmos_network)
 
         self.assertFalse(self.redis.hexists(chain_hash_1, metric_key_1))
         self.assertTrue(self.redis.hexists(chain_hash_2, metric_key_2))

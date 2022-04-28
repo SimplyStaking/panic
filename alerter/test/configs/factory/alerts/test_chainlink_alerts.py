@@ -6,7 +6,7 @@ from parameterized import parameterized
 from src.configs.alerts.contract.chainlink import (
     ChainlinkContractAlertsConfig)
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
-from src.configs.factory.node.chainlink_alerts import (
+from src.configs.factory.alerts.chainlink_alerts import (
     ChainlinkNodeAlertsConfigsFactory, ChainlinkContractAlertsConfigsFactory
 )
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration

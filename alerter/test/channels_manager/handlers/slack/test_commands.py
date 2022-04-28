@@ -29,8 +29,9 @@ from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           CHAN_CMDS_HAN_HB_QUEUE_NAME_TEMPLATE,
                                           HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
 from src.utils.exceptions import MessageWasNotDeliveredException
-from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
-                              delete_exchange_if_exists, disconnect_from_rabbit)
+from test.test_utils.utils import (
+    connect_to_rabbit, delete_queue_if_exists, delete_exchange_if_exists,
+    disconnect_from_rabbit)
 
 
 class TestSlackCommandsHandler(unittest.TestCase):

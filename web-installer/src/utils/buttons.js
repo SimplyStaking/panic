@@ -12,12 +12,13 @@ import {
   pingRepo,
   sendTestPagerDuty,
   sendTestOpsGenie,
-  pingTendermint,
+  pingCosmosRestUrl,
   pingPrometheus,
   saveAccount,
   deleteAccount,
   pingDockerHub,
   pingEthRPC,
+  pingTendermintRPC,
 } from './data';
 import sleep from './time';
 
@@ -339,24 +340,24 @@ function AddAccount({
   );
 }
 
-function PingTendermint({ disabled, tendermintRpcUrl }) {
+function PingCosmosRest({ disabled, restUrl }) {
   const onClick = async () => {
     try {
-      ToastsStore.info(`Connecting with Tendermint RPC URL ${tendermintRpcUrl}`, 5000);
-      await pingTendermint(tendermintRpcUrl);
+      ToastsStore.info(`Connecting with Cosmos REST URL ${restUrl}`, 5000);
+      await pingCosmosRestUrl(restUrl);
       ToastsStore.success('Successfully connected', 5000);
     } catch (e) {
       if (e.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
         ToastsStore.error(
-          `Could not connect with the Tendermint RPC URL ${tendermintRpcUrl}. Error: ${e.response.data.message}`,
+          `Could not connect with the Cosmos Rest URL ${restUrl}. Error: ${e.response.data.message}`,
           5000,
         );
       } else {
         // Something happened in setting up the request that triggered an Error
         ToastsStore.error(
-          `Could not connect with Tendermint RPC URL ${tendermintRpcUrl}. Error: ${e.message}`,
+          `Could not connect with Cosmos REST URL ${restUrl}. Error: ${e.message}`,
           5000,
         );
       }
@@ -436,6 +437,33 @@ function PingRPC({ disabled, httpUrl }) {
     try {
       ToastsStore.info(`Connecting with Node Http URL ${httpUrl}`, 5000);
       await pingEthRPC(httpUrl);
+      ToastsStore.success('Successfully connected', 5000);
+    } catch (e) {
+      if (e.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        ToastsStore.error(
+          `Could not connect with RPC URL ${httpUrl}. Error: ${e.response.data.message}`,
+          5000,
+        );
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        ToastsStore.error(`Could not connect with RPC URL ${httpUrl}. Error: ${e.message}`, 5000);
+      }
+    }
+  };
+  return (
+    <Button color="primary" size="md" disabled={disabled} onClick={onClick}>
+      Test
+    </Button>
+  );
+}
+
+function PingTendermint({ disabled, httpUrl }) {
+  const onClick = async () => {
+    try {
+      ToastsStore.info(`Connecting with Node Http URL ${httpUrl}`, 5000);
+      await pingTendermintRPC(httpUrl);
       ToastsStore.success('Successfully connected', 5000);
     } catch (e) {
       if (e.response) {
@@ -606,6 +634,11 @@ PingRPC.propTypes = forbidExtraProps({
   httpUrl: PropTypes.string.isRequired,
 });
 
+PingTendermint.propTypes = forbidExtraProps({
+  disabled: PropTypes.bool.isRequired,
+  httpUrl: PropTypes.string.isRequired,
+});
+
 PingMultiplePrometheus.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
   prometheusUrls: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
@@ -618,9 +651,9 @@ PingPrometheus.propTypes = forbidExtraProps({
   metric: PropTypes.string.isRequired,
 });
 
-PingTendermint.propTypes = forbidExtraProps({
+PingCosmosRest.propTypes = forbidExtraProps({
   disabled: PropTypes.bool.isRequired,
-  tendermintRpcUrl: PropTypes.string.isRequired,
+  restUrl: PropTypes.string.isRequired,
 });
 
 AddAccount.propTypes = forbidExtraProps({
@@ -644,7 +677,7 @@ export {
   SendTestOpsGenieButton,
   LoginButton,
   PingRepoButton,
-  PingTendermint,
+  PingCosmosRest,
   PingPrometheus,
   SaveConfigButton,
   LoadConfigButton,
@@ -654,5 +687,6 @@ export {
   BackButton,
   PingDockerHubButton,
   PingRPC,
+  PingTendermint,
   PingMultiplePrometheus,
 };

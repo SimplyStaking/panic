@@ -17,7 +17,8 @@ from src.utils.constants.names import CL_CONTRACTS_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY, CONFIG_EXCHANGE,
     NODES_CONFIGS_ROUTING_KEY_CHAINS, TOPIC,
-    CONTRACT_MON_MAN_HEARTBEAT_QUEUE_NAME, CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME)
+    CONTRACT_MON_MAN_HEARTBEAT_QUEUE_NAME, CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
+    MONITORABLE_EXCHANGE)
 from src.utils.exceptions import (EnabledSourceIsEmptyException,
                                   MessageWasNotDeliveredException)
 from src.utils.logging import log_and_print
@@ -76,6 +77,10 @@ class ContractMonitorsManager(MonitorsManager):
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions
+        self.logger.info("Creating exchange '%s'", MONITORABLE_EXCHANGE)
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
+
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 

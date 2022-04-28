@@ -18,7 +18,7 @@ from requests.exceptions import (ConnectionError as ReqConnectionError,
 from urllib3.exceptions import ProtocolError
 from web3 import Web3
 from web3.contract import ContractFunction, ContractEvent
-from web3.eth import Eth
+from web3.eth import Eth, BaseEth
 from web3.exceptions import ContractLogicError
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
@@ -36,8 +36,9 @@ from src.utils.exceptions import (PANICException,
                                   MetricNotFoundException,
                                   CouldNotRetrieveContractsException,
                                   NoSyncedDataSourceWasAccessibleException)
-from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
-                              delete_exchange_if_exists, disconnect_from_rabbit)
+from test.test_utils.utils import (
+    connect_to_rabbit, delete_queue_if_exists, delete_exchange_if_exists,
+    disconnect_from_rabbit)
 
 
 class TestEventsClass:
@@ -481,7 +482,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         self.assertEqual(self.test_data_dict,
                          self.test_monitor.node_eth_address)
 
-    @mock.patch.object(Eth, 'is_syncing')
+    @mock.patch.object(BaseEth, '_is_syncing')
     @mock.patch.object(Web3, 'isConnected')
     def test_select_node_selects_first_connected_and_synced_node_it_finds(
             self, mock_is_connected, mock_syncing) -> None:
@@ -494,7 +495,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         actual = self.test_monitor._select_node()
         self.assertEqual(self.evm_nodes[0], actual)
 
-    @mock.patch.object(Eth, 'is_syncing')
+    @mock.patch.object(BaseEth, '_is_syncing')
     @mock.patch.object(Web3, 'isConnected')
     def test_select_node_does_not_select_syncing_nodes(
             self, mock_is_connected, mock_syncing) -> None:
@@ -508,7 +509,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         actual = self.test_monitor._select_node()
         self.assertEqual(self.evm_nodes[2], actual)
 
-    @mock.patch.object(Eth, 'is_syncing')
+    @mock.patch.object(BaseEth, '_is_syncing')
     @mock.patch.object(Web3, 'isConnected')
     def test_select_node_does_not_select_disconnected_nodes(
             self, mock_is_connected, mock_syncing) -> None:
@@ -532,7 +533,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         (InvalidSchema('test'),),
         (MissingSchema('test'),),
     ])
-    @mock.patch.object(Eth, 'is_syncing')
+    @mock.patch.object(BaseEth, '_is_syncing')
     @mock.patch.object(Web3, 'isConnected')
     def test_select_node_does_not_select_nodes_raising_recognizable_errors(
             self, exception_instance, mock_is_connected, mock_syncing) -> None:
@@ -558,7 +559,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         (InvalidSchema('test'),),
         (MissingSchema('test'),),
     ])
-    @mock.patch.object(Eth, 'is_syncing')
+    @mock.patch.object(BaseEth, '_is_syncing')
     @mock.patch.object(Web3, 'isConnected')
     def test_select_node_returns_None_if_no_node_satisfies_the_requirements(
             self, exception_instance, mock_is_connected, mock_syncing) -> None:

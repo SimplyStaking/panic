@@ -57,6 +57,8 @@ DOCKERHUB_MONITOR_PERIOD_SECONDS = \
 NODE_MONITOR_PERIOD_SECONDS = int(os.environ['NODE_MONITOR_PERIOD_SECONDS'])
 CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS = int(
     os.environ['CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS'])
+NETWORK_MONITOR_PERIOD_SECONDS = int(
+    os.environ['NETWORK_MONITOR_PERIOD_SECONDS'])
 # These define how often a monitor runs an iteration of its monitoring loop
 
 # Publishers limits

@@ -10,6 +10,7 @@ import pika.exceptions
 
 from src.alert_router.alert_router import AlertRouter
 from src.alerter.managers.chainlink import ChainlinkAlertersManager
+from src.alerter.managers.cosmos import CosmosAlertersManager
 from src.alerter.managers.dockerhub import DockerhubAlerterManager
 from src.alerter.managers.evm import EVMNodeAlerterManager
 from src.alerter.managers.github import GithubAlerterManager
@@ -24,6 +25,7 @@ from src.monitors.managers.contracts import ContractMonitorsManager
 from src.monitors.managers.dockerhub import DockerHubMonitorsManager
 from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.managers.manager import MonitorsManager
+from src.monitors.managers.network import NetworkMonitorsManager
 from src.monitors.managers.node import NodeMonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
 from src.utils import env
@@ -35,7 +37,8 @@ from src.utils.constants.names import (
     DATA_TRANSFORMERS_MANAGER_NAME, CHANNELS_MANAGER_NAME, ALERT_ROUTER_NAME,
     CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME, NODE_MONITORS_MANAGER_NAME,
     CONTRACT_MONITORS_MANAGER_NAME, EVM_NODE_ALERTER_MANAGER_NAME,
-    CL_ALERTERS_MANAGER_NAME)
+    CL_ALERTERS_MANAGER_NAME, NETWORK_MONITORS_MANAGER_NAME,
+    COSMOS_ALERTERS_MANAGER_NAME)
 from src.utils.constants.rabbitmq import (
     ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
     SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
@@ -55,8 +58,12 @@ from src.utils.constants.rabbitmq import (
     EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME,
     EVM_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     CL_CONTRACT_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+    NETWORK_MON_MAN_CONFIGS_QUEUE_NAME, COSMOS_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
+    COSMOS_ALERTS_CONFIGS_ROUTING_KEY,
+    COSMOS_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     MONITORABLE_STORE_INPUT_QUEUE_NAME, MONITORABLE_EXCHANGE,
-    MONITORABLE_STORE_INPUT_ROUTING_KEY)
+    MONITORABLE_STORE_INPUT_ROUTING_KEY,
+    COSMOS_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME)
 from src.utils.constants.starters import (
     RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD,
 )
@@ -184,7 +191,7 @@ def _initialise_chainlink_alerters_manager() -> ChainlinkAlertersManager:
         env.MANAGERS_LOG_FILE_TEMPLATE
     )
 
-    # Attempt to initialise the chainlink node alerter manager
+    # Attempt to initialise the Chainlink alerters manager
     while True:
         try:
             rabbitmq = RabbitMQApi(
@@ -231,6 +238,35 @@ def _initialise_evm_node_alerter_manager() -> EVMNodeAlerterManager:
             time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return evm_node_alerter_manager
+
+
+def _initialise_cosmos_alerters_manager() -> CosmosAlertersManager:
+    manager_display_name = COSMOS_ALERTERS_MANAGER_NAME
+
+    cosmos_alerters_manager_logger = _initialise_logger(
+        manager_display_name, CosmosAlertersManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialise the Cosmos alerters manager
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=cosmos_alerters_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=env.RABBIT_IP)
+            cosmos_alerters_manager = CosmosAlertersManager(
+                cosmos_alerters_manager_logger, manager_display_name,
+                rabbitmq)
+            break
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), cosmos_alerters_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          cosmos_alerters_manager_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return cosmos_alerters_manager
 
 
 def _initialise_system_monitors_manager() -> SystemMonitorsManager:
@@ -378,6 +414,36 @@ def _initialise_contract_monitors_manager() -> ContractMonitorsManager:
             time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return contract_monitors_manager
+
+
+def _initialise_network_monitors_manager() -> NetworkMonitorsManager:
+    manager_display_name = NETWORK_MONITORS_MANAGER_NAME
+
+    network_monitors_manager_logger = _initialise_logger(
+        manager_display_name, NetworkMonitorsManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialise the network monitors manager
+    while True:
+        try:
+            rabbit_ip = env.RABBIT_IP
+            rabbitmq = RabbitMQApi(
+                logger=network_monitors_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=rabbit_ip)
+            network_monitors_manager = NetworkMonitorsManager(
+                network_monitors_manager_logger, manager_display_name,
+                rabbitmq)
+            break
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), network_monitors_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          network_monitors_manager_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return network_monitors_manager
 
 
 def _initialise_data_transformers_manager() -> DataTransformersManager:
@@ -585,6 +651,11 @@ def run_contract_monitors_manager() -> None:
     run_monitors_manager(contract_monitors_manager)
 
 
+def run_network_monitors_manager() -> None:
+    network_monitors_manager = _initialise_network_monitors_manager()
+    run_monitors_manager(network_monitors_manager)
+
+
 def run_system_alerters_manager() -> None:
     system_alerters_manager = _initialise_system_alerters_manager()
     run_alerters_manager(system_alerters_manager)
@@ -608,6 +679,11 @@ def run_chainlink_alerters_manager() -> None:
 def run_evm_node_alerter_manager() -> None:
     evm_node_alerter_manager = _initialise_evm_node_alerter_manager()
     run_alerters_manager(evm_node_alerter_manager)
+
+
+def run_cosmos_alerters_manager() -> None:
+    cosmos_alerters_manager = _initialise_cosmos_alerters_manager()
+    run_alerters_manager(cosmos_alerters_manager)
 
 
 def run_monitors_manager(manager: MonitorsManager) -> None:
@@ -765,6 +841,9 @@ def on_terminate(signum: int, stack: FrameType) -> None:
     terminate_and_join_process(contract_monitors_manager_process,
                                CONTRACT_MONITORS_MANAGER_NAME)
 
+    terminate_and_join_process(network_monitors_manager_process,
+                               NETWORK_MONITORS_MANAGER_NAME)
+
     terminate_and_join_process(dockerhub_monitors_manager_process,
                                DOCKERHUB_MONITORS_MANAGER_NAME)
 
@@ -782,6 +861,9 @@ def on_terminate(signum: int, stack: FrameType) -> None:
 
     terminate_and_join_process(evm_node_alerter_manager_process,
                                EVM_NODE_ALERTER_MANAGER_NAME)
+
+    terminate_and_join_process(cosmos_alerters_manager_process,
+                               COSMOS_ALERTERS_MANAGER_NAME)
 
     terminate_and_join_process(dockerhub_alerter_manager_process,
                                DOCKERHUB_ALERTER_MANAGER_NAME)
@@ -934,6 +1016,53 @@ def _initialise_and_declare_config_queues() -> None:
                                 CONFIG_EXCHANGE,
                                 CL_ALERTS_CONFIGS_ROUTING_KEY)
 
+            # Cosmos Alerters Manager queues
+            log_and_print("Creating queue '{}'".format(
+                COSMOS_ALERTERS_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(
+                COSMOS_ALERTERS_MAN_CONFIGS_QUEUE_NAME, False, True, False,
+                False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing key "
+                "{}.".format(COSMOS_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
+                             CONFIG_EXCHANGE,
+                             COSMOS_ALERTS_CONFIGS_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(
+                COSMOS_ALERTERS_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                COSMOS_ALERTS_CONFIGS_ROUTING_KEY)
+
+            # Cosmos Node Alerter queues
+            log_and_print("Creating queue '{}'".format(
+                COSMOS_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(COSMOS_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(COSMOS_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 COSMOS_ALERTS_CONFIGS_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(COSMOS_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                COSMOS_ALERTS_CONFIGS_ROUTING_KEY)
+
+            # Cosmos Network Alerter queues
+            log_and_print("Creating queue '{}'".format(
+                COSMOS_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(
+                COSMOS_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME, False, True,
+                False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(
+                    COSMOS_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                    CONFIG_EXCHANGE, COSMOS_ALERTS_CONFIGS_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(COSMOS_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                COSMOS_ALERTS_CONFIGS_ROUTING_KEY)
+
             # Channels manager queues
             log_and_print("Creating queue '{}'".format(
                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
@@ -1055,6 +1184,21 @@ def _initialise_and_declare_config_queues() -> None:
                                  NODES_CONFIGS_ROUTING_KEY_CHAINS),
                 dummy_logger)
             rabbitmq.queue_bind(CONTRACT_MON_MAN_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                NODES_CONFIGS_ROUTING_KEY_CHAINS)
+
+            # Network Monitors Manager queues
+            log_and_print("Creating queue '{}'".format(
+                NETWORK_MON_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(NETWORK_MON_MAN_CONFIGS_QUEUE_NAME, False,
+                                   True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(NETWORK_MON_MAN_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 NODES_CONFIGS_ROUTING_KEY_CHAINS),
+                dummy_logger)
+            rabbitmq.queue_bind(NETWORK_MON_MAN_CONFIGS_QUEUE_NAME,
                                 CONFIG_EXCHANGE,
                                 NODES_CONFIGS_ROUTING_KEY_CHAINS)
 
@@ -1232,6 +1376,10 @@ if __name__ == '__main__':
         target=run_evm_node_alerter_manager, args=())
     evm_node_alerter_manager_process.start()
 
+    cosmos_alerters_manager_process = multiprocessing.Process(
+        target=run_cosmos_alerters_manager, args=())
+    cosmos_alerters_manager_process.start()
+
     dockerhub_alerter_manager_process = multiprocessing.Process(
         target=run_dockerhub_alerters_manager, args=())
     dockerhub_alerter_manager_process.start()
@@ -1257,6 +1405,10 @@ if __name__ == '__main__':
         target=run_contract_monitors_manager, args=())
     contract_monitors_manager_process.start()
 
+    network_monitors_manager_process = multiprocessing.Process(
+        target=run_network_monitors_manager, args=())
+    network_monitors_manager_process.start()
+
     signal.signal(signal.SIGTERM, on_terminate)
     signal.signal(signal.SIGINT, on_terminate)
     signal.signal(signal.SIGHUP, on_terminate)
@@ -1269,10 +1421,12 @@ if __name__ == '__main__':
     node_monitors_manager_process.join()
     system_monitors_manager_process.join()
     contract_monitors_manager_process.join()
+    network_monitors_manager_process.join()
     system_alerters_manager_process.join()
     github_alerter_manager_process.join()
     chainlink_alerters_manager_process.join()
     evm_node_alerter_manager_process.join()
+    cosmos_alerters_manager_process.join()
     dockerhub_alerter_manager_process.join()
     data_transformers_manager_process.join()
     data_store_process.join()

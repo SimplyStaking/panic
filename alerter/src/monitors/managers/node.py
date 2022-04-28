@@ -3,29 +3,31 @@ import json
 import logging
 import multiprocessing
 from datetime import datetime
-from typing import Dict, Type
+from typing import Dict, Type, List
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.configs.nodes.chainlink import ChainlinkNodeConfig
-from src.configs.nodes.evm import EVMNodeConfig
+from src.configs.nodes.cosmos import CosmosNodeConfig
 from src.configs.nodes.node import NodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.manager import MonitorsManager
 from src.monitors.monitor import Monitor
 from src.monitors.node.chainlink import ChainlinkNodeMonitor
+from src.monitors.node.cosmos import CosmosNodeMonitor
 from src.monitors.node.evm import EVMNodeMonitor
 from src.monitors.starters import start_node_monitor
-from src.utils.configs import (get_newly_added_configs, get_modified_configs,
-                               get_removed_configs)
+from src.utils.configs import (
+    get_newly_added_configs, get_modified_configs, get_removed_configs,
+    parse_cosmos_node_config, parse_chainlink_node_config,
+    parse_evm_node_config)
 from src.utils.constants.monitorables import MonitorableType
 from src.utils.constants.names import NODE_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, NODE_MON_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
     CONFIG_EXCHANGE, NODE_MON_MAN_CONFIGS_QUEUE_NAME,
     NODES_CONFIGS_ROUTING_KEY_CHAINS, EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS,
-    TOPIC)
+    TOPIC, MONITORABLE_EXCHANGE)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -67,7 +69,8 @@ class NodeMonitorsManager(MonitorsManager):
         self.logger.info("Creating exchange '%s'", CONFIG_EXCHANGE)
         self.rabbitmq.exchange_declare(CONFIG_EXCHANGE, TOPIC, False, True,
                                        False, False)
-        self.logger.info("Creating queue '%s'", NODE_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.logger.info("Creating queue '%s'",
+                         NODE_MON_MAN_CONFIGS_QUEUE_NAME)
         self.rabbitmq.queue_declare(NODE_MON_MAN_CONFIGS_QUEUE_NAME, False,
                                     True, False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
@@ -88,16 +91,31 @@ class NodeMonitorsManager(MonitorsManager):
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions
+        self.logger.info("Creating exchange '%s'", MONITORABLE_EXCHANGE)
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
+
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 
     def _create_and_start_monitor_process(
             self, node_config: NodeConfig, config_id: str, monitor_type:
-            Type[Monitor], base_chain: str, sub_chain: str) -> None:
+            Type[Monitor], base_chain: str, sub_chain: str, *args) -> None:
+        """
+        This function creates and starts the monitor process, and stores some
+        info about the running process inside self._config_process_dict
+        :param node_config: The configuration of the node to be monitored
+        :param config_id: The id of the node configuration to be monitored
+        :param monitor_type: The type of the monitor to be started
+        :param base_chain: The name of the base chain to be monitored
+        :param sub_chain: The name of the sub chain to be monitored
+        :param args: Other arguments that need to be passed to the starter
+        :return: None
+        """
         log_and_print("Creating a new process for the monitor of {}".format(
             node_config.node_name), self.logger)
-        process = multiprocessing.Process(target=start_node_monitor,
-                                          args=(node_config, monitor_type))
+        process = multiprocessing.Process(
+            target=start_node_monitor, args=(node_config, monitor_type, *args))
         # Kill children if parent is killed
         process.daemon = True
         process.start()
@@ -113,6 +131,178 @@ class NodeMonitorsManager(MonitorsManager):
             node_config.node_name)
         self._config_process_dict[config_id]['base_chain'] = base_chain
         self._config_process_dict[config_id]['sub_chain'] = sub_chain
+        self._config_process_dict[config_id]['args'] = args
+
+    @staticmethod
+    def _determine_data_sources_for_cosmos_monitor(
+            node_config: CosmosNodeConfig,
+            sent_configs: Dict) -> List[CosmosNodeConfig]:
+        """
+        Given the configuration of the node to be monitored and the sent
+        configurations, this function will determine the data sources to be
+        given to the Cosmos node monitor. This function computes the list of
+        data sources as follows:
+        [non_validator_data_sources, validator_data_sources,
+        node_to_be_monitored]
+        :param node_config: The configuration of the node to be monitored
+        :param sent_configs: The sent configurations
+        :return: A list of configurations in the following format:
+                 [non_validator_data_sources, validator_data_sources,
+                 node_to_be_monitored]
+        """
+        validator_data_sources = []
+        non_validator_data_sources = []
+        for _, config_data in sent_configs.items():
+            # For each configuration, check if use_as_data_source is enabled and
+            # classify if the data source is a validator or not. Ignore the node
+            # to be monitored as this must always be appended last.
+            use_as_data_source = str_to_bool(config_data['use_as_data_source'])
+            node_id = config_data['id']
+            is_validator = str_to_bool(config_data['is_validator'])
+            if node_id != node_config.node_id and use_as_data_source:
+                data_source_config = parse_cosmos_node_config(config_data)
+                (validator_data_sources.append(data_source_config)
+                 if is_validator
+                 else non_validator_data_sources.append(data_source_config))
+
+        return [*non_validator_data_sources, *validator_data_sources,
+                node_config]
+
+    def _process_cosmos_node_configs(self, sent_configs: Dict,
+                                     current_configs: Dict,
+                                     base_chain: str,
+                                     sub_chain: str) -> Dict:
+        """
+        This function processes the new nodes configs for a particular
+        cosmos-based chain. It creates/removes new processes, and it keeps a
+        local copy of all changes being done step by step. This is done in this
+        way so that if a sub-config is malformed or a process errors, we can
+        keep track of what the new self._nodes_config should be.
+        :param sent_configs:
+        The new node configurations for a particular cosmos-based chain
+        :param current_configs:
+        The currently stored node configurations for a particular cosmos-based
+        chain
+        :return:
+        The new nodes configuration for a particular cosmos-based chain based on
+        the current configs and the new configs.
+        """
+        correct_nodes_configs = copy.deepcopy(current_configs)
+        try:
+            new_configs = get_newly_added_configs(
+                sent_configs, current_configs)
+            for config_id in new_configs:
+                config = new_configs[config_id]
+                node_config = parse_cosmos_node_config(config)
+
+                # Check if all `monitor_<source>` are false. If this is the case
+                # or `monitor_node` is disabled do not start a monitor and move
+                # to the next config.
+                sources_enabled = [
+                    node_config.monitor_cosmos_rest,
+                    node_config.monitor_prometheus,
+                    node_config.monitor_tendermint_rpc
+                ]
+                if not node_config.monitor_node or not any(sources_enabled):
+                    continue
+
+                data_sources = self._determine_data_sources_for_cosmos_monitor(
+                    node_config, sent_configs)
+                self._create_and_start_monitor_process(
+                    node_config, config_id, CosmosNodeMonitor, base_chain,
+                    sub_chain, data_sources)
+                correct_nodes_configs[config_id] = config
+
+            modified_configs = get_modified_configs(sent_configs,
+                                                    current_configs)
+            for config_id in modified_configs:
+                # Get the latest updates
+                config = sent_configs[config_id]
+                node_config = parse_cosmos_node_config(config)
+                previous_process = self.config_process_dict[config_id][
+                    'process']
+                previous_process.terminate()
+                previous_process.join()
+
+                # Check if all `monitor_<source>` are false. If this is the case
+                # or `monitor_node` is disabled do not restart a monitor, but
+                # delete the previous process from the system and move to the
+                # next config.
+                sources_enabled = [
+                    node_config.monitor_cosmos_rest,
+                    node_config.monitor_prometheus,
+                    node_config.monitor_tendermint_rpc
+                ]
+                if not node_config.monitor_node or not any(sources_enabled):
+                    del self.config_process_dict[config_id]
+                    del correct_nodes_configs[config_id]
+                    log_and_print("Killed the monitor of {} ".format(
+                        modified_configs[config_id]['name']), self.logger)
+                    continue
+
+                log_and_print(
+                    "The configuration for {} was modified. A new monitor with "
+                    "the latest configuration will be started.".format(
+                        modified_configs[config_id]['name']), self.logger)
+
+                data_sources = self._determine_data_sources_for_cosmos_monitor(
+                    node_config, sent_configs)
+                self._create_and_start_monitor_process(
+                    node_config, config_id, CosmosNodeMonitor, base_chain,
+                    sub_chain, data_sources)
+                correct_nodes_configs[config_id] = config
+
+            removed_configs = get_removed_configs(
+                sent_configs, current_configs)
+            for config_id in removed_configs:
+                config = removed_configs[config_id]
+                node_name = config['name']
+                previous_process = self.config_process_dict[config_id][
+                    'process']
+                previous_process.terminate()
+                previous_process.join()
+                del self.config_process_dict[config_id]
+                del correct_nodes_configs[config_id]
+                log_and_print("Killed the monitor of {} ".format(node_name),
+                              self.logger)
+
+            # For each correct configuration we need to check that the data
+            # sources used by each monitor is up to date. Suppose we have two
+            # monitors for node A and B having use_as_data_source = True. If
+            # use_data_source is set to False for node A, then the monitor of
+            # node A would have the correct data sources but node B wouldn't
+            # because it would not be classified as new or modified
+            # configuration
+            for config_id, config in correct_nodes_configs.items():
+                node_config = parse_cosmos_node_config(config)
+                data_sources = self._determine_data_sources_for_cosmos_monitor(
+                    node_config, sent_configs)
+                previous_data_sources = self.config_process_dict[config_id][
+                    'args'][0]
+                if data_sources != previous_data_sources:
+                    log_and_print(
+                        "The monitor of {} does not have updated data "
+                        "sources. We will restart it with the updated "
+                        "configurations".format(node_config.node_name),
+                        self.logger)
+                    previous_process = self.config_process_dict[config_id][
+                        'process']
+                    previous_process.terminate()
+                    previous_process.join()
+                    self._create_and_start_monitor_process(
+                        node_config, config_id, CosmosNodeMonitor, base_chain,
+                        sub_chain, data_sources)
+        except Exception as e:
+            # If we encounter an error during processing, this error must be
+            # logged and the message must be acknowledged so that it is removed
+            # from the queue
+            self.logger.error("Error when processing %s", sent_configs)
+            self.logger.exception(e)
+
+        self.process_and_send_monitorable_data(base_chain,
+                                               MonitorableType.NODES)
+
+        return correct_nodes_configs
 
     def _process_chainlink_node_configs(self, sent_configs: Dict,
                                         current_configs: Dict,
@@ -135,26 +325,19 @@ class NodeMonitorsManager(MonitorsManager):
         """
         correct_nodes_configs = copy.deepcopy(current_configs)
         try:
-            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            new_configs = get_newly_added_configs(
+                sent_configs, current_configs)
             for config_id in new_configs:
                 config = new_configs[config_id]
-                node_id = config['id']
-                parent_id = config['parent_id']
-                node_name = config['name']
-                node_prometheus_urls = config['node_prometheus_urls'].split(',')
-                monitor_node = str_to_bool(config['monitor_node'])
-                monitor_prometheus = str_to_bool(config['monitor_prometheus'])
+                node_config = parse_chainlink_node_config(config)
 
                 # Check if all `monitor_<source>` are false. If this is the case
                 # or `monitor_node` is disabled do not start a monitor and move
                 # to the next config.
-                sources_enabled = [monitor_prometheus]
-                if not monitor_node or not any(sources_enabled):
+                sources_enabled = [node_config.monitor_prometheus]
+                if not node_config.monitor_node or not any(sources_enabled):
                     continue
 
-                node_config = ChainlinkNodeConfig(
-                    node_id, parent_id, node_name, monitor_node,
-                    monitor_prometheus, node_prometheus_urls)
                 self._create_and_start_monitor_process(node_config, config_id,
                                                        ChainlinkNodeMonitor,
                                                        base_chain, sub_chain)
@@ -165,16 +348,7 @@ class NodeMonitorsManager(MonitorsManager):
             for config_id in modified_configs:
                 # Get the latest updates
                 config = sent_configs[config_id]
-                node_id = config['id']
-                parent_id = config['parent_id']
-                node_name = config['name']
-                node_prometheus_urls = config['node_prometheus_urls'].split(',')
-                monitor_node = str_to_bool(config['monitor_node'])
-                monitor_prometheus = str_to_bool(config['monitor_prometheus'])
-                sources_enabled = [monitor_prometheus]
-                node_config = ChainlinkNodeConfig(
-                    node_id, parent_id, node_name, monitor_node,
-                    monitor_prometheus, node_prometheus_urls)
+                node_config = parse_chainlink_node_config(config)
                 previous_process = self.config_process_dict[config_id][
                     'process']
                 previous_process.terminate()
@@ -184,7 +358,8 @@ class NodeMonitorsManager(MonitorsManager):
                 # or `monitor_node` is disabled do not restart a monitor, but
                 # delete the previous process from the system and move to the
                 # next config.
-                if not monitor_node or not any(sources_enabled):
+                sources_enabled = [node_config.monitor_prometheus]
+                if not node_config.monitor_node or not any(sources_enabled):
                     del self.config_process_dict[config_id]
                     del correct_nodes_configs[config_id]
                     log_and_print("Killed the monitor of {} ".format(
@@ -201,7 +376,8 @@ class NodeMonitorsManager(MonitorsManager):
                                                        base_chain, sub_chain)
                 correct_nodes_configs[config_id] = config
 
-            removed_configs = get_removed_configs(sent_configs, current_configs)
+            removed_configs = get_removed_configs(
+                sent_configs, current_configs)
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 node_name = config['name']
@@ -245,22 +421,17 @@ class NodeMonitorsManager(MonitorsManager):
         """
         correct_nodes_configs = copy.deepcopy(current_configs)
         try:
-            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            new_configs = get_newly_added_configs(
+                sent_configs, current_configs)
             for config_id in new_configs:
                 config = new_configs[config_id]
-                node_id = config['id']
-                parent_id = config['parent_id']
-                node_name = config['name']
-                node_http_url = config['node_http_url']
-                monitor_node = str_to_bool(config['monitor_node'])
+                node_config = parse_evm_node_config(config)
 
                 # If `monitor_node` is disabled do not start a monitor and move
                 # to the next config.
-                if not monitor_node:
+                if not node_config.monitor_node:
                     continue
 
-                node_config = EVMNodeConfig(node_id, parent_id, node_name,
-                                            monitor_node, node_http_url)
                 self._create_and_start_monitor_process(node_config, config_id,
                                                        EVMNodeMonitor,
                                                        base_chain, sub_chain)
@@ -271,13 +442,7 @@ class NodeMonitorsManager(MonitorsManager):
             for config_id in modified_configs:
                 # Get the latest updates
                 config = sent_configs[config_id]
-                node_id = config['id']
-                parent_id = config['parent_id']
-                node_name = config['name']
-                node_http_url = config['node_http_url']
-                monitor_node = str_to_bool(config['monitor_node'])
-                node_config = EVMNodeConfig(node_id, parent_id, node_name,
-                                            monitor_node, node_http_url)
+                node_config = parse_evm_node_config(config)
                 previous_process = self.config_process_dict[config_id][
                     'process']
                 previous_process.terminate()
@@ -286,7 +451,7 @@ class NodeMonitorsManager(MonitorsManager):
                 # If `monitor_node` is disabled do not restart a monitor, but
                 # delete the previous process from the system and move to the
                 # next config.
-                if not monitor_node:
+                if not node_config.monitor_node:
                     del self.config_process_dict[config_id]
                     del correct_nodes_configs[config_id]
                     log_and_print("Killed the monitor of {} ".format(
@@ -303,7 +468,8 @@ class NodeMonitorsManager(MonitorsManager):
                                                        base_chain, sub_chain)
                 correct_nodes_configs[config_id] = config
 
-            removed_configs = get_removed_configs(sent_configs, current_configs)
+            removed_configs = get_removed_configs(
+                sent_configs, current_configs)
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 node_name = config['name']
@@ -342,18 +508,21 @@ class NodeMonitorsManager(MonitorsManager):
         base_chain = parsed_routing_key[1]
         sub_chain = parsed_routing_key[2]
         config_type = parsed_routing_key[3]
-        if chain in self.nodes_configs \
-                and config_type in self.nodes_configs[chain]:
+        if (chain in self.nodes_configs
+                and config_type in self.nodes_configs[chain]):
             current_configs = self.nodes_configs[chain][config_type]
         else:
             current_configs = {}
 
         updated_configs = {}
-        if config_type == 'evm_nodes_config':
+        if config_type.lower() == 'evm_nodes_config':
             updated_configs = self._process_evm_node_configs(
                 sent_configs, current_configs, base_chain, sub_chain)
         elif parsed_routing_key[1].lower() == 'chainlink':
             updated_configs = self._process_chainlink_node_configs(
+                sent_configs, current_configs, base_chain, sub_chain)
+        elif parsed_routing_key[1].lower() == 'cosmos':
+            updated_configs = self._process_cosmos_node_configs(
                 sent_configs, current_configs, base_chain, sub_chain)
 
         if chain not in self._nodes_configs:
@@ -393,9 +562,10 @@ class NodeMonitorsManager(MonitorsManager):
                     monitor_type = process_details['monitor_type']
                     base_chain = process_details['base_chain']
                     sub_chain = process_details['sub_chain']
+                    args = process_details['args']
                     self._create_and_start_monitor_process(
                         node_config, config_id, monitor_type, base_chain,
-                        sub_chain)
+                        sub_chain, *args)
             heartbeat['timestamp'] = datetime.now().timestamp()
         except Exception as e:
             # If we encounter an error during processing log the error and

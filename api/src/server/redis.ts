@@ -74,12 +74,17 @@ export const getChainKeys = (): ChainKeys => ({
 export const alertKeysSystemPrefix: string = 'alert_system';
 export const alertKeysClNodePrefix: string = 'alert_cl_node';
 export const alertKeysEvmNodePrefix: string = 'alert_evm_node';
+export const alertKeysCosmosNodePrefix: string = 'alert_cosmos_node';
 export const alertKeysClContractPrefix: string = 'alert_cl_contract';
 export const alertKeysGitHubPrefix: string = 'alert_github';
 export const alertKeysDockerHubPrefix: string = 'alert_dockerhub';
 export const alertKeysChainSourced: string[] = [
     'alert_cl_contract4',
-    'alert_cl_contract5'
+    'alert_cl_contract5',
+    'alert_cosmos_network1',
+    'alert_cosmos_network2',
+    'alert_cosmos_network3',
+    'alert_cosmos_network4'
 ]
 
 export const getAlertKeysSystem = (): AlertKeysSystem => ({
@@ -112,6 +117,26 @@ export const getAlertKeysNode = (): AlertKeysNode => ({
     evm_block_syncing_block_height_difference: `${alertKeysEvmNodePrefix}2`,
     evm_block_syncing_no_change_in_block_height: `${alertKeysEvmNodePrefix}3`,
     evm_invalid_url: `${alertKeysEvmNodePrefix}4`,
+    // Cosmos Nodes
+    cosmos_node_is_down: `${alertKeysCosmosNodePrefix}1`,
+    cosmos_node_slashed: `${alertKeysCosmosNodePrefix}2`,
+    cosmos_node_syncing: `${alertKeysCosmosNodePrefix}3`,
+    cosmos_node_active: `${alertKeysCosmosNodePrefix}4`,
+    cosmos_node_jailed: `${alertKeysCosmosNodePrefix}5`,
+    cosmos_node_blocks_missed: `${alertKeysCosmosNodePrefix}6`,
+    cosmos_node_change_in_height: `${alertKeysCosmosNodePrefix}7`,
+    cosmos_node_height_difference: `${alertKeysCosmosNodePrefix}8`,
+    cosmos_node_prometheus_url_invalid: `${alertKeysCosmosNodePrefix}9`,
+    cosmos_node_cosmos_rest_url_invalid: `${alertKeysCosmosNodePrefix}10`,
+    cosmos_node_tendermint_rpc_url_invalid: `${alertKeysCosmosNodePrefix}11`,
+    cosmos_node_prometheus_is_down: `${alertKeysCosmosNodePrefix}12`,
+    cosmos_node_cosmos_rest_is_down: `${alertKeysCosmosNodePrefix}13`,
+    cosmos_node_tendermint_rpc_is_down: `${alertKeysCosmosNodePrefix}14`,
+    cosmos_node_no_synced_cosmos_rest_source: `${alertKeysCosmosNodePrefix}15`,
+    cosmos_node_no_synced_tendermint_rpc_source: `${alertKeysCosmosNodePrefix}16`,
+    cosmos_node_cosmos_rest_data_not_obtained: `${alertKeysCosmosNodePrefix}17`,
+    cosmos_node_tendermint_rpc_data_not_obtained: `${alertKeysCosmosNodePrefix}18`,
+    cosmos_node_metric_not_found: `${alertKeysCosmosNodePrefix}19`,
 });
 
 export const getAlertKeysGitHubRepo = (): AlertKeysGitHubRepo => ({

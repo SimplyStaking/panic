@@ -26,7 +26,7 @@ export class MongoInterface {
     }
 
     async connect() {
-        if (this._client && this._client.isConnected()) {
+        if (this._client) {
             return;
         }
         try {
@@ -41,10 +41,8 @@ export class MongoInterface {
     async disconnect() {
         if (this._client) {
             try {
-                if (this._client.isConnected()) {
-                    await this._client.close();
-                    console.log(MSG_MONGO_DISCONNECTED)
-                }
+                await this._client.close();
+                console.log(MSG_MONGO_DISCONNECTED)
             } catch (err) {
                 console.error(MSG_MONGO_COULD_NOT_DISCONNECT);
                 console.error(err)

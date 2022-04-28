@@ -26,8 +26,9 @@ from src.utils.constants.rabbitmq import (
     CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE)
 from src.utils.data import RequestStatus
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
-from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
-                              delete_exchange_if_exists, disconnect_from_rabbit)
+from test.test_utils.utils import (
+    connect_to_rabbit, delete_queue_if_exists, delete_exchange_if_exists,
+    disconnect_from_rabbit)
 
 
 class TestEmailAlertsHandler(unittest.TestCase):

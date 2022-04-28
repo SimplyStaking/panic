@@ -24,6 +24,8 @@ opsgenie-sdk = "*"
 watchdog = "*"
 slack-bolt = "*"
 web3 = "*"
+eth-rlp = "==0.2.1"
+bech32 = "*"
 
 [requires]
 python_version = "3.9.5"

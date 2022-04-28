@@ -16,6 +16,9 @@ from src.alerter.alerts.node.chainlink import (
     PrometheusSourceBackUpAgainAlert, EthBalanceIncreasedAboveThresholdAlert,
     EthBalanceDecreasedBelowThresholdAlert, InvalidUrlAlert, ValidUrlAlert,
     NodeWentDownAtAlert, NodeBackUpAgainAlert, NodeStillDownAlert)
+from src.alerter.alerts.node.cosmos import (
+    NodeIsSyncingAlert, NodeIsNoLongerSyncingAlert
+)
 from src.alerter.alerts.node.evm import (
     BlockHeightDifferenceIncreasedAboveThresholdAlert,
     BlockHeightDifferenceDecreasedBelowThresholdAlert
@@ -23,9 +26,12 @@ from src.alerter.alerts.node.evm import (
 from src.alerter.factory.alerting_factory import AlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
+from src.alerter.grouped_alerts_metric_code.node.cosmos_node_metric_code \
+    import GroupedCosmosNodeAlertsMetricCode as CosmosAlertsMetricCode
 from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode as EVMAlertsMetricCode
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
+from src.configs.alerts.node.cosmos import CosmosNodeAlertsConfig
 from src.configs.alerts.node.evm import EVMNodeAlertsConfig
 from src.utils.configs import parse_alert_time_thresholds
 from src.utils.exceptions import InvalidUrlException, MetricNotFoundException
@@ -33,9 +39,9 @@ from src.utils.timing import (TimedTaskTracker, TimedTaskLimiter,
                               OccurrencesInTimePeriodTracker)
 
 """
-We will use some chainlink and evm node alerts and configurations for the tests
-below. This should not effect the validity and scope of the tests because the
-implementation was conducted to be as general as possible.
+We will use some chainlink, evm, and cosmos node alerts and configurations for 
+the tests below. This should not effect the validity and scope of the tests 
+because the implementation was conducted to be as general as possible.
 """
 
 
@@ -264,6 +270,89 @@ class EVMAlertingFactoryInstance(AlertingFactory):
             }
 
 
+class CosmosAlertingFactoryInstance(AlertingFactory):
+    def __init__(self, component_logger: logging.Logger) -> None:
+        super().__init__(component_logger)
+
+    def create_alerting_state(
+            self, parent_id: str, node_id: str,
+            alerts_config: CosmosNodeAlertsConfig, is_validator: bool) -> None:
+        """
+        This function is a smaller/modified version of the
+        CosmosNodeAlertingFactory create_alerting_state function
+        """
+        if parent_id not in self.alerting_state:
+            self.alerting_state[parent_id] = {}
+
+        if node_id not in self.alerting_state[parent_id]:
+            warning_sent = {
+                CosmosAlertsMetricCode.NodeIsDown.value: False,
+                CosmosAlertsMetricCode.BlocksMissedThreshold.value: False,
+            }
+            critical_sent = {
+                CosmosAlertsMetricCode.NodeIsDown.value: False,
+                CosmosAlertsMetricCode.BlocksMissedThreshold.value: False,
+            }
+            error_sent = {
+                CosmosAlertsMetricCode.PrometheusInvalidUrl.value: False,
+            }
+            any_severity_sent = {
+                CosmosAlertsMetricCode.NodeIsSyncing.value: False,
+            }
+
+            node_is_down_thresholds = parse_alert_time_thresholds(
+                ['warning_threshold', 'critical_threshold', 'critical_repeat'],
+                alerts_config.cannot_access_validator if is_validator
+                else alerts_config.cannot_access_node
+            )
+            blocks_missed_thresholds = parse_alert_time_thresholds(
+                ['warning_time_window', 'critical_time_window',
+                 'critical_repeat'], alerts_config.missed_blocks
+            )
+
+            warning_window_timer = {
+                CosmosAlertsMetricCode.NodeIsDown.value: TimedTaskTracker(
+                    timedelta(seconds=node_is_down_thresholds[
+                        'warning_threshold'])),
+            }
+            critical_window_timer = {
+                CosmosAlertsMetricCode.NodeIsDown.value: TimedTaskTracker(
+                    timedelta(seconds=node_is_down_thresholds[
+                        'critical_threshold'])),
+            }
+            critical_repeat_timer = {
+                CosmosAlertsMetricCode.NodeIsDown.value: TimedTaskLimiter(
+                    timedelta(seconds=node_is_down_thresholds[
+                        'critical_repeat'])),
+            }
+            warning_occurrences_in_period_tracker = {
+                CosmosAlertsMetricCode.BlocksMissedThreshold.value:
+                    OccurrencesInTimePeriodTracker(timedelta(
+                        seconds=blocks_missed_thresholds[
+                            'warning_time_window'])),
+            }
+            critical_occurrences_in_period_tracker = {
+                CosmosAlertsMetricCode.BlocksMissedThreshold.value:
+                    OccurrencesInTimePeriodTracker(timedelta(
+                        seconds=blocks_missed_thresholds[
+                            'critical_time_window'])),
+            }
+            self.alerting_state[parent_id][node_id] = {
+                'warning_sent': warning_sent,
+                'critical_sent': critical_sent,
+                'error_sent': error_sent,
+                'any_severity_sent': any_severity_sent,
+                'warning_window_timer': warning_window_timer,
+                'critical_window_timer': critical_window_timer,
+                'critical_repeat_timer': critical_repeat_timer,
+                'warning_occurrences_in_period_tracker':
+                    warning_occurrences_in_period_tracker,
+                'critical_occurrences_in_period_tracker':
+                    critical_occurrences_in_period_tracker,
+                'is_validator': is_validator
+            }
+
+
 class TestAlertingFactory(unittest.TestCase):
     def setUp(self) -> None:
         # Some dummy data
@@ -387,11 +476,87 @@ class TestAlertingFactory(unittest.TestCase):
         self.test_evm_factory_instance.create_alerting_state(
             self.test_parent_id, self.test_node_id, self.evm_node_alerts_config)
 
+        # Create Cosmos Alerting state
+        self.cannot_access_node = {
+            'name': 'cannot_access_node',
+            'parent_id': self.test_parent_id,
+            'enabled': 'true',
+            'critical_threshold': '7',
+            'critical_repeat': '5',
+            'critical_enabled': 'true',
+            'critical_repeat_enabled': 'true',
+            'warning_threshold': '3',
+            'warning_enabled': 'true'
+        }
+        self.cannot_access_validator = {
+            'name': 'cannot_access_validator',
+            'parent_id': self.test_parent_id,
+            'enabled': 'true',
+            'critical_threshold': '3',
+            'critical_repeat': '2',
+            'critical_enabled': 'true',
+            'critical_repeat_enabled': 'true',
+            'warning_threshold': '1',
+            'warning_enabled': 'true'
+        }
+        self.blocks_missed = {
+            'name': 'missed_blocks',
+            'parent_id': self.test_parent_id,
+            'enabled': 'true',
+            'warning_threshold': '5',
+            'warning_time_window': '5',
+            'warning_enabled': 'true',
+            'critical_threshold': '10',
+            'critical_time_window': '8',
+            'critical_repeat': '5',
+            'critical_repeat_enabled': 'true',
+            'critical_enabled': 'true'
+        }
+        self.node_is_syncing = {
+            'name': 'node_is_syncing',
+            'parent_id': self.test_parent_id,
+            'enabled': 'true',
+            'severity': 'INFO'
+        }
+        self.validator_is_syncing = {
+            'name': 'validator_is_syncing',
+            'parent_id': self.test_parent_id,
+            'enabled': 'true',
+            'severity': 'CRITICAL'
+        }
+        self.is_validator = True
+        self.cosmos_node_alerts_config = CosmosNodeAlertsConfig(
+            parent_id=self.test_parent_id,
+            cannot_access_validator=self.cannot_access_validator,
+            cannot_access_node=self.cannot_access_node,
+            validator_not_active_in_session={},
+            no_change_in_block_height_validator={},
+            no_change_in_block_height_node={}, block_height_difference={},
+            cannot_access_prometheus_validator={},
+            cannot_access_prometheus_node={},
+            cannot_access_cosmos_rest_validator={},
+            cannot_access_cosmos_rest_node={},
+            cannot_access_tendermint_rpc_validator={},
+            cannot_access_tendermint_rpc_node={},
+            missed_blocks=self.blocks_missed, slashed={},
+            node_is_syncing=self.node_is_syncing,
+            validator_is_syncing=self.validator_is_syncing,
+            validator_is_jailed={}
+        )
+        self.test_cosmos_factory_instance = CosmosAlertingFactoryInstance(
+            self.dummy_logger)
+        self.test_cosmos_factory_instance.create_alerting_state(
+            self.test_parent_id, self.test_node_id,
+            self.cosmos_node_alerts_config, self.is_validator)
+
     def tearDown(self) -> None:
         self.dummy_logger = None
         self.test_alerts_config = None
+        self.evm_node_alerts_config = None
+        self.cosmos_node_alerts_config = None
         self.test_factory_instance = None
         self.test_evm_factory_instance = None
+        self.test_cosmos_factory_instance = None
 
     def test_alerting_state_returns_alerting_state(self) -> None:
         self.test_factory_instance._alerting_state = self.test_alerting_state
@@ -1574,6 +1739,145 @@ class TestAlertingFactory(unittest.TestCase):
                 self.test_node_name, 'WARNING', datetime.now().timestamp(),
                 self.test_parent_id, self.test_node_id
             ], data_for_alerting
+        )
+
+        self.assertEqual([], data_for_alerting)
+
+    @freeze_time("2012-01-01")
+    def test_classify_solvable_cond_no_rep_raises_true_alert_if_not_raised(
+            self) -> None:
+        """
+        Given a true condition, in this test we will check that the
+        classify_solvable_conditional_alert_no_repetition fn calls the
+        condition_true_alert
+        """
+
+        def condition_function(*args): return True
+
+        data_for_alerting = []
+        classification_fn = (
+            self.test_cosmos_factory_instance
+                .classify_solvable_conditional_alert_no_repetition
+        )
+
+        classification_fn(
+            self.test_parent_id, self.test_node_id,
+            CosmosAlertsMetricCode.NodeIsSyncing, NodeIsSyncingAlert,
+            condition_function, [], [
+                self.test_node_name, 'WARNING', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ], data_for_alerting, NodeIsNoLongerSyncingAlert, [
+                self.test_node_name, 'INFO', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ],
+        )
+
+        expected_alert = NodeIsSyncingAlert(
+            self.test_node_name, 'WARNING', datetime.now().timestamp(),
+            self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_solvable_cond_no_rep_no_true_alert_if_already_raised(
+            self) -> None:
+        """
+        Given a true condition, in this test we will check that if a True alert
+        has already been raised, the
+        classify_solvable_conditional_alert_no_repetition fn does not call the
+        condition_true_alert again
+        """
+
+        def condition_function(*args): return True
+
+        data_for_alerting = []
+        classification_fn = (
+            self.test_cosmos_factory_instance
+                .classify_solvable_conditional_alert_no_repetition
+        )
+        self.test_cosmos_factory_instance.alerting_state[self.test_parent_id][
+            self.test_node_id]['any_severity_sent'][
+            CosmosAlertsMetricCode.NodeIsSyncing] = True
+
+        classification_fn(
+            self.test_parent_id, self.test_node_id,
+            CosmosAlertsMetricCode.NodeIsSyncing, NodeIsSyncingAlert,
+            condition_function, [], [
+                self.test_node_name, 'WARNING', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ], data_for_alerting, NodeIsNoLongerSyncingAlert, [
+                self.test_node_name, 'INFO', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ],
+        )
+
+        self.assertEqual([], data_for_alerting)
+
+    @freeze_time("2012-01-01")
+    def test_classify_solvable_cond_no_rep_raises_false_alert_if_true_raised(
+            self) -> None:
+        """
+        Given a false condition, in this test we will check that the
+        classify_solvable_conditional_alert_no_repetition fn calls the
+        solved_alert if the condition_true_alert has already been raised.
+        """
+
+        def condition_function(*args): return False
+
+        data_for_alerting = []
+        classification_fn = (
+            self.test_cosmos_factory_instance
+                .classify_solvable_conditional_alert_no_repetition
+        )
+        self.test_cosmos_factory_instance.alerting_state[self.test_parent_id][
+            self.test_node_id]['any_severity_sent'][
+            CosmosAlertsMetricCode.NodeIsSyncing] = True
+
+        classification_fn(
+            self.test_parent_id, self.test_node_id,
+            CosmosAlertsMetricCode.NodeIsSyncing, NodeIsSyncingAlert,
+            condition_function, [], [
+                self.test_node_name, 'WARNING', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ], data_for_alerting, NodeIsNoLongerSyncingAlert, [
+                self.test_node_name, 'INFO', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ],
+        )
+
+        expected_alert = NodeIsNoLongerSyncingAlert(
+            self.test_node_name, 'INFO', datetime.now().timestamp(),
+            self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_solvable_cond_no_rep_no_false_alert_if_true_not_raised(
+            self) -> None:
+        """
+        Given a false condition, in this test we will check that the
+        classify_solvable_conditional_alert_no_repetition fn does not call the
+        solved_alert if the condition_true_alert has not been raised.
+        """
+
+        def condition_function(*args): return False
+
+        data_for_alerting = []
+        classification_fn = (
+            self.test_cosmos_factory_instance
+                .classify_solvable_conditional_alert_no_repetition
+        )
+
+        classification_fn(
+            self.test_parent_id, self.test_node_id,
+            CosmosAlertsMetricCode.NodeIsSyncing, NodeIsSyncingAlert,
+            condition_function, [], [
+                self.test_node_name, 'WARNING', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ], data_for_alerting, NodeIsNoLongerSyncingAlert, [
+                self.test_node_name, 'INFO', datetime.now().timestamp(),
+                self.test_parent_id, self.test_node_id
+            ],
         )
 
         self.assertEqual([], data_for_alerting)

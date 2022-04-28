@@ -8,14 +8,18 @@ function fetchData(url, params) {
   return axios.get(url, { params });
 }
 
-function pingTendermint(tendermintRpcUrl) {
-  return sendData('/server/cosmos/tendermint', {},
-    { tendermintRpcUrl });
+function pingCosmosRestUrl(restUrl) {
+  return sendData('/server/cosmos/rest', {}, { restUrl });
 }
 
 function pingPrometheus(prometheusUrl, metric) {
   return sendData('/server/common/prometheus', {},
     { prometheusUrl, metric });
+}
+
+function pingTendermintRPC(httpUrl) {
+  return sendData('/server/cosmos/tendermint', {},
+    { httpUrl });
 }
 
 function pingEthRPC(httpUrl) {
@@ -100,8 +104,9 @@ function refreshAccessToken() {
 }
 
 export {
-  fetchData, testCall, sendData, sendTestEmail, pingTendermint, pingRepo,
+  fetchData, testCall, sendData, sendTestEmail, pingRepo,
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
   sendConfig, saveAccount, deleteAccount, getConfigPaths, getConfig,
   loadAccounts, deleteConfigs, pingDockerHub, pingPrometheus, pingEthRPC,
+  pingCosmosRestUrl, pingTendermintRPC,
 };

@@ -9,8 +9,8 @@ import pika
 from parameterized import parameterized
 from pika.adapters.blocking_connection import BlockingChannel
 
-from src.abstract.publisher_subscriber import \
-    QueuingPublisherSubscriberComponent
+from src.abstract.publisher_subscriber import (
+    QueuingPublisherSubscriberComponent)
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.manager import MonitorsManager
@@ -22,9 +22,9 @@ from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
     MONITORABLE_EXCHANGE)
 from src.utils.exceptions import PANICException
-from test.utils.utils import (connect_to_rabbit,
-                              delete_queue_if_exists, delete_exchange_if_exists,
-                              disconnect_from_rabbit)
+from test.test_utils.utils import (
+    connect_to_rabbit, delete_queue_if_exists, delete_exchange_if_exists,
+    disconnect_from_rabbit)
 
 
 class MonitorManagerInstance(MonitorsManager, ABC):

@@ -5,7 +5,7 @@ from parameterized import parameterized
 
 from src.utils.data import transformed_data_processing_helper
 from src.utils.exceptions import ReceivedUnexpectedDataException
-from test.utils.utils import dummy_function, dummy_none_function
+from test.test_utils.utils import dummy_function, dummy_none_function
 
 
 class TestDataUtils(unittest.TestCase):

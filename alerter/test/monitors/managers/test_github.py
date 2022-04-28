@@ -18,19 +18,16 @@ from src.monitors.managers.github import GitHubMonitorsManager
 from src.monitors.starters import start_github_monitor
 from src.utils import env
 from src.utils.constants.names import GITHUB_MONITOR_NAME_TEMPLATE
-from src.utils.constants.rabbitmq import (GH_MON_MAN_CONFIGS_QUEUE_NAME,
-                                          GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-                                          GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                          GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
-                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                          HEALTH_CHECK_EXCHANGE,
-                                          CONFIG_EXCHANGE, PING_ROUTING_KEY,
-                                          MONITORABLE_EXCHANGE)
+from src.utils.constants.rabbitmq import (
+    GH_MON_MAN_CONFIGS_QUEUE_NAME, GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+    GH_MON_MAN_HEARTBEAT_QUEUE_NAME, GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
+    CONFIG_EXCHANGE, PING_ROUTING_KEY, MONITORABLE_EXCHANGE)
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
-from test.utils.utils import (infinite_fn, connect_to_rabbit,
-                              delete_queue_if_exists, delete_exchange_if_exists,
-                              disconnect_from_rabbit)
+from test.test_utils.utils import (
+    infinite_fn, connect_to_rabbit, delete_queue_if_exists,
+    delete_exchange_if_exists, disconnect_from_rabbit)
 
 
 class TestGitHubMonitorsManager(unittest.TestCase):
@@ -183,71 +180,87 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         self.test_manager._listen_for_data()
         mock_start_consuming.assert_called_once()
 
+    @mock.patch.object(RabbitMQApi, 'basic_consume')
     def test_initialise_rabbitmq_initialises_everything_as_expected(
-            self) -> None:
-        try:
-            # To make sure that there is no connection/channel already
-            # established
-            self.assertIsNone(self.rabbitmq.connection)
-            self.assertIsNone(self.rabbitmq.channel)
+            self, mock_basic_consume) -> None:
+        mock_basic_consume.return_value = None
+        # To make sure that there is no connection/channel already
+        # established
+        self.assertIsNone(self.rabbitmq.connection)
+        self.assertIsNone(self.rabbitmq.channel)
 
-            # To make sure that the exchanges and queues have not already been
-            # declared
-            self.rabbitmq.connect()
-            self.test_manager.rabbitmq.queue_delete(
-                GH_MON_MAN_HEARTBEAT_QUEUE_NAME)
-            self.test_manager.rabbitmq.queue_delete(
-                GH_MON_MAN_CONFIGS_QUEUE_NAME)
-            self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
-            self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
-            self.rabbitmq.disconnect()
+        # To make sure that the exchanges and queues have not already been
+        # declared
+        self.rabbitmq.connect()
+        self.test_manager.rabbitmq.queue_delete(
+            GH_MON_MAN_HEARTBEAT_QUEUE_NAME)
+        self.test_manager.rabbitmq.queue_delete(
+            GH_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+        self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+        self.test_manager.rabbitmq.exchange_delete(MONITORABLE_EXCHANGE)
+        self.rabbitmq.disconnect()
 
-            self.test_manager._initialise_rabbitmq()
+        self.test_manager._initialise_rabbitmq()
 
-            # Perform checks that the connection has been opened, marked as open
-            # and that the delivery confirmation variable is set.
-            self.assertTrue(self.test_manager.rabbitmq.is_connected)
-            self.assertTrue(self.test_manager.rabbitmq.connection.is_open)
-            self.assertTrue(
-                self.test_manager.rabbitmq.channel._delivery_confirmation)
+        # Perform checks that the connection has been opened, marked as open
+        # and that the delivery confirmation variable is set.
+        self.assertTrue(self.test_manager.rabbitmq.is_connected)
+        self.assertTrue(self.test_manager.rabbitmq.connection.is_open)
+        self.assertTrue(
+            self.test_manager.rabbitmq.channel._delivery_confirmation)
 
-            # Check whether the exchanges and queues have been creating by
-            # sending messages with the same routing keys as for the queues. We
-            # will also check if the size of the queues is 0 to confirm that
-            # basic_consume was called (it will store the msg in the component
-            # memory immediately). If one of the exchanges or queues is not
-            # created, then an exception will be thrown. Note when deleting the
-            # exchanges in the beginning we also released every binding, hence
-            # there is no other queue binded with the same routing key to any
-            # exchange at this point.
-            self.test_manager.rabbitmq.basic_publish_confirm(
-                exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=PING_ROUTING_KEY, body=self.test_data_str,
-                is_body_dict=False,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self.test_manager.rabbitmq.basic_publish_confirm(
-                exchange=CONFIG_EXCHANGE,
-                routing_key=GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
-                body=self.test_data_str, is_body_dict=False,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
-            self.test_manager.rabbitmq.basic_publish_confirm(
-                exchange=CONFIG_EXCHANGE,
-                routing_key=GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-                body=self.test_data_str, is_body_dict=False,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
+        # Check whether the exchanges and queues have been creating by
+        # sending messages with the same routing keys as for the queues, and
+        # checking what messages have been received if any.
+        self.test_manager.rabbitmq.basic_publish_confirm(
+            exchange=HEALTH_CHECK_EXCHANGE,
+            routing_key=PING_ROUTING_KEY, body=self.test_data_str,
+            is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
+        self.test_manager.rabbitmq.basic_publish_confirm(
+            exchange=CONFIG_EXCHANGE,
+            routing_key=GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
+        self.test_manager.rabbitmq.basic_publish_confirm(
+            exchange=CONFIG_EXCHANGE,
+            routing_key=GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2),
+            mandatory=True)
 
-            # Re-declare queue to get the number of messages
-            res = self.test_manager.rabbitmq.queue_declare(
-                GH_MON_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
-            self.assertEqual(0, res.method.message_count)
-            res = self.test_manager.rabbitmq.queue_declare(
-                GH_MON_MAN_CONFIGS_QUEUE_NAME, False, True, False, False)
-            self.assertEqual(0, res.method.message_count)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        # Re-declare queue to get the number of messages
+        res = self.test_manager.rabbitmq.queue_declare(
+            GH_MON_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
+        self.assertEqual(1, res.method.message_count)
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            GH_MON_MAN_HEARTBEAT_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+
+        res = self.test_manager.rabbitmq.queue_declare(
+            GH_MON_MAN_CONFIGS_QUEUE_NAME, False, True, False, False)
+        self.assertEqual(2, res.method.message_count)
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            GH_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            GH_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+
+        # Check that basic_consume was called twice, once for each consumer
+        # queue
+        calls = mock_basic_consume.call_args_list
+        self.assertEqual(2, len(calls))
+
+        # Check that the publishing exchanges were created by sending messages
+        # to them. If this fails an exception is raised hence the test fails.
+        self.test_manager.rabbitmq.basic_publish_confirm(
+            exchange=MONITORABLE_EXCHANGE, routing_key='test_key',
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=False)
 
     def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
         # This test creates a queue which receives messages with the same
@@ -349,13 +362,13 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch.object(GitHubMonitorsManager,
                        "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_configs_ignores_default_key(self, mock_ack,
-                                                 mock_send_mon_data) -> None:
+    def test_process_configs_ignores_default_key(
+            self, mock_ack, mock_process_send_mon_data) -> None:
         # This test will pass if the stored repos config does not change.
         # This would mean that the DEFAULT key was ignored, otherwise, it would
         # have been included as a new config.
         mock_ack.return_value = None
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         old_github_repos_configs = copy.deepcopy(
             self.github_repos_configs_example)
         self.test_manager._github_repos_configs = \
@@ -409,13 +422,13 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch.object(GitHubMonitorsManager,
                        "_create_and_start_monitor_process")
     def test_process_configs_stores_new_configs_to_be_monitored_correctly(
-            self, startup_mock, mock_ack, mock_send_mon_data) -> None:
+            self, startup_mock, mock_ack, mock_process_send_mon_data) -> None:
         # We will check whether new configs are added to the state. Since some
         # new configs have `monitor_repo = False` we are also testing that
         # new configs are ignored if they should not be monitored.
         startup_mock.return_value = None
         mock_ack.return_value = None
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         new_configs_chain = {
             'config_id1': {
                 'id': 'config_id1',
@@ -508,7 +521,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     def test_process_configs_stores_modified_configs_to_be_monitored_correctly(
             self, join_mock, terminate_mock, startup_mock, mock_ack,
-            mock_send_mon_data) -> None:
+            mock_process_send_mon_data) -> None:
         # In this test we will check that modified configurations with
         # `monitor_repo = True` are stored correctly in the state. Some
         # configurations will have `monitor_repo = False` to check whether the
@@ -517,7 +530,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
         terminate_mock.return_value = None
         startup_mock.return_value = None
         mock_ack.return_value = None
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         self.test_manager._github_repos_configs = \
             self.github_repos_configs_example
         self.test_manager._config_process_dict = \
@@ -614,13 +627,13 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "join")
     def test_process_configs_removes_deleted_configs_from_state_correctly(
             self, join_mock, terminate_mock, mock_ack,
-            mock_send_mon_data) -> None:
+            mock_process_send_mon_data) -> None:
         # In this test we will check that removed configurations are actually
         # removed from the state
         join_mock.return_value = None
         terminate_mock.return_value = None
         mock_ack.return_value = None
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         self.test_manager._github_repos_configs = \
             self.github_repos_configs_example
         self.test_manager._config_process_dict = \
@@ -665,12 +678,12 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch.object(GitHubMonitorsManager,
                        "_create_and_start_monitor_process")
     def test_proc_configs_starts_new_monitors_for_new_configs_to_be_monitored(
-            self, startup_mock, mock_ack, mock_send_mon_data) -> None:
+            self, startup_mock, mock_ack, mock_process_send_mon_data) -> None:
         # We will check whether _create_and_start_monitor_process is called
         # correctly on each newly added configuration if
         # `monitor_repo = True`. Implicitly we will be also testing that if
         # `monitor_repo = False` no new monitor is created.
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         mock_ack.return_value = None
         startup_mock.return_value = None
         new_configs_chain = {
@@ -821,13 +834,14 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch("src.monitors.starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_proc_confs_term_and_starts_monitors_for_modified_confs_to_be_mon(
-            self, mock_ack, mock_create_logger, mock_send_mon_data) -> None:
+            self, mock_ack, mock_create_logger,
+            mock_process_send_mon_data) -> None:
         # In this test we will check that modified configurations with
         # `monitor_repo = True` will have new monitors started. Implicitly
         # we will be checking that modified configs with
         # `monitor_repo = False` will only have their previous processes
         # terminated.
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         mock_ack.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         new_configs_chain_monitor_true = {
@@ -954,10 +968,10 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_confs_restarts_an_updated_monitor_with_the_correct_conf(
             self, mock_terminate, mock_join, startup_mock, mock_ack,
-            mock_send_mon_data) -> None:
+            mock_process_send_mon_data) -> None:
         # We will check whether _create_and_start_monitor_process is called
         # correctly on an updated configuration.
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         mock_ack.return_value = None
         startup_mock.return_value = None
         mock_terminate.return_value = None
@@ -1047,12 +1061,13 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch("src.monitors.starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_terminates_monitors_for_removed_configs(
-            self, mock_ack, mock_create_logger, mock_send_mon_data) -> None:
+            self, mock_ack, mock_create_logger,
+            mock_process_send_mon_data) -> None:
         # In this test we will check that when a config is removed, it's monitor
         # is terminated by _process_configs.
         mock_ack.return_value = None
         mock_create_logger.return_value = self.dummy_logger
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         try:
             # Must create a connection so that the blocking channel is passed
             self.test_manager.rabbitmq.connect()
@@ -1106,12 +1121,12 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                        "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_ignores_new_configs_with_missing_keys(
-            self, mock_ack, mock_send_mon_data) -> None:
+            self, mock_ack, mock_process_send_mon_data) -> None:
         # We will check whether the state is kept intact if new configurations
         # with missing keys are sent. Exceptions should never be raised in this
         # case, and basic_ack must be called to ignore the message.
         mock_ack.return_value = None
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         new_configs_chain = {
             'config_id3': {
                 'id': 'config_id3',
@@ -1152,7 +1167,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                                properties,
                                                body_new_configs_general)
             self.assertEqual(1, mock_ack.call_count)
-            self.assertEqual(1, mock_send_mon_data.call_count)
+            self.assertEqual(1, mock_process_send_mon_data.call_count)
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.config_process_dict)
             self.assertEqual(self.github_repos_configs_example,
@@ -1162,7 +1177,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                                properties,
                                                body_new_configs_chain)
             self.assertEqual(2, mock_ack.call_count)
-            self.assertEqual(2, mock_send_mon_data.call_count)
+            self.assertEqual(2, mock_process_send_mon_data.call_count)
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.config_process_dict)
             self.assertEqual(self.github_repos_configs_example,
@@ -1174,13 +1189,13 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                        "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_ignores_modified_configs_with_missing_Keys(
-            self, mock_ack, mock_send_mon_data) -> None:
+            self, mock_ack, mock_process_send_mon_data) -> None:
         # We will check whether the state is kept intact if modified
         # configurations with missing keys are sent. Exceptions should never be
         # raised in this case, and basic_ack must be called to ignore the
         # message.
         mock_ack.return_value = None
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         updated_configs_chain = {
             'config_id1': {
                 'id': 'config_id1',
@@ -1221,7 +1236,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                                properties,
                                                body_updated_configs_general)
             self.assertEqual(1, mock_ack.call_count)
-            self.assertEqual(1, mock_send_mon_data.call_count)
+            self.assertEqual(1, mock_process_send_mon_data.call_count)
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.config_process_dict)
             self.assertEqual(self.github_repos_configs_example,
@@ -1231,7 +1246,7 @@ class TestGitHubMonitorsManager(unittest.TestCase):
                                                properties,
                                                body_updated_configs_chain)
             self.assertEqual(2, mock_ack.call_count)
-            self.assertEqual(2, mock_send_mon_data.call_count)
+            self.assertEqual(2, mock_process_send_mon_data.call_count)
             self.assertEqual(self.config_process_dict_example,
                              self.test_manager.config_process_dict)
             self.assertEqual(self.github_repos_configs_example,
@@ -1245,11 +1260,12 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch("src.monitors.starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_ping_sends_a_valid_hb_if_all_processes_are_alive(
-            self, mock_ack, mock_create_logger, mock_send_mon_data) -> None:
+            self, mock_ack, mock_create_logger,
+            mock_process_send_mon_data) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
         try:
@@ -1331,11 +1347,12 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch("src.monitors.starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_ping_sends_a_valid_hb_if_some_processes_alive_some_dead(
-            self, mock_ack, mock_create_logger, mock_send_mon_data) -> None:
+            self, mock_ack, mock_create_logger,
+            mock_process_send_mon_data) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
         try:
@@ -1422,11 +1439,12 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch("src.monitors.starters.create_logger")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_ping_sends_a_valid_hb_if_all_processes_dead(
-            self, mock_ack, mock_create_logger, mock_send_mon_data) -> None:
+            self, mock_ack, mock_create_logger,
+            mock_process_send_mon_data) -> None:
         # This test creates a queue which receives messages with the same
         # routing key as the ones sent by send_heartbeat, and checks that the
         # received heartbeat is valid.
-        mock_send_mon_data.return_value = None
+        mock_process_send_mon_data.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None
         try:
@@ -1513,8 +1531,8 @@ class TestGitHubMonitorsManager(unittest.TestCase):
     @mock.patch.object(GitHubMonitorsManager, "_send_heartbeat")
     def test_process_ping_restarts_dead_processes(
             self, send_hb_mock, mock_create_logger, mock_ack,
-            mock_send_mon_data) -> None:
-        mock_send_mon_data.return_value = None
+            mock_process_send_mon_data) -> None:
+        mock_process_send_mon_data.return_value = None
         send_hb_mock.return_value = None
         mock_create_logger.return_value = self.dummy_logger
         mock_ack.return_value = None

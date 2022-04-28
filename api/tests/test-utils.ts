@@ -731,7 +731,7 @@ const alertsOverviewSingleNodeRedisRet: { [p: string]: string } = {
 const alertsOverviewSingleNodeEndpointRet: any = {
     result: {
         unique_chain_id: {
-            info: 16, critical: 1, warning: 1, error: 0,
+            info: 35, critical: 1, warning: 1, error: 0,
             problems: {
                 test_node: [{
                     severity: 'WARNING',
@@ -741,16 +741,16 @@ const alertsOverviewSingleNodeEndpointRet: any = {
                     timestamp: 1636446847.232556,
                     expiry: null
                 },
-                    {
-                        severity: 'CRITICAL',
-                        message: 'The Chainlink test_node node\'s submission' +
-                            ' has increased above CRITICAL threshold to 10%' +
-                            ' deviation for the price feed 0x12345. Current' +
-                            ' value: 123.456.',
-                        metric: 'cl_contract_price_feed_deviation',
-                        timestamp: 1636446847.232556,
-                        expiry: null
-                    }]
+                {
+                    severity: 'CRITICAL',
+                    message: 'The Chainlink test_node node\'s submission' +
+                        ' has increased above CRITICAL threshold to 10%' +
+                        ' deviation for the price feed 0x12345. Current' +
+                        ' value: 123.456.',
+                    metric: 'cl_contract_price_feed_deviation',
+                    timestamp: 1636446847.232556,
+                    expiry: null
+                }]
             },
             releases: {},
             tags: {}
@@ -876,13 +876,17 @@ const alertsOverviewMultipleSourcesRedisRet: { [p: string]: string } = {
     'alert_cl_contract4': '{"severity": "ERROR", "message": ' +
         '"No synced data sources found.", "metric": ' +
         '"cl_contract_no_synced_data_sources", "timestamp": ' +
+        '1636446847.232556, "expiry": null}',
+    'alert_cosmos_network1': '{"severity": "CRITICAL", "message": ' +
+        '"New proposal submitted: example proposal.", "metric": ' +
+        '"cosmos_network_proposals_submitted", "timestamp": ' +
         '1636446847.232556, "expiry": null}'
 }
 
 const alertsOverviewMultipleSourcesEndpointRet: any = {
     result: {
         unique_chain_id: {
-            info: 46, critical: 0, warning: 3, error: 1,
+            info: 84, critical: 1, warning: 3, error: 1,
             problems: {
                 test_system: [{
                     severity: 'WARNING',
@@ -913,7 +917,14 @@ const alertsOverviewMultipleSourcesEndpointRet: any = {
                     metric: 'cl_contract_no_synced_data_sources',
                     timestamp: 1636446847.232556,
                     expiry: null
-                }]
+                }, {
+                    severity: 'CRITICAL',
+                    message: 'New proposal submitted: example proposal.',
+                    metric: 'cosmos_network_proposals_submitted',
+                    timestamp: 1636446847.232556,
+                    expiry: null
+                }
+                ],
             },
             releases: {
                 test_github_repo: {

@@ -54,12 +54,15 @@ const NodesTable = ({
           <TableHead>
             <TableRow>
               <StyledTableCell align="center">Name</StyledTableCell>
-              <StyledTableCell align="center">Tendermint</StyledTableCell>
-              <StyledTableCell align="center">Cosmos Rest Server</StyledTableCell>
+              <StyledTableCell align="center">Cosmos Rest URL</StyledTableCell>
               <StyledTableCell align="center">Prometheus</StyledTableCell>
               <StyledTableCell align="center">Node Exporter</StyledTableCell>
+              <StyledTableCell align="center">Operator Address</StyledTableCell>
               <StyledTableCell align="center">Validator</StyledTableCell>
-              <StyledTableCell align="center">Monitor</StyledTableCell>
+              <StyledTableCell align="center">Monitor Prometheus</StyledTableCell>
+              <StyledTableCell align="center">Monitor Cosmos Rest</StyledTableCell>
+              <StyledTableCell align="center">Monitor System</StyledTableCell>
+              <StyledTableCell align="center">Monitor Node</StyledTableCell>
               <StyledTableCell align="center">Archive</StyledTableCell>
               <StyledTableCell align="center">Data Source</StyledTableCell>
               <StyledTableCell align="center">Delete</StyledTableCell>
@@ -70,10 +73,7 @@ const NodesTable = ({
               <StyledTableRow key={id}>
                 <StyledTableCell align="center">{cosmosNodesConfig.byId[id].name}</StyledTableCell>
                 <StyledTableCell align="center">
-                  {cosmosNodesConfig.byId[id].tendermint_rpc_url}
-                </StyledTableCell>
-                <StyledTableCell align="center">
-                  {cosmosNodesConfig.byId[id].cosmos_rpc_url}
+                  {cosmosNodesConfig.byId[id].cosmos_rest_url}
                 </StyledTableCell>
                 <StyledTableCell align="center">
                   {cosmosNodesConfig.byId[id].prometheus_url}
@@ -82,7 +82,19 @@ const NodesTable = ({
                   {cosmosNodesConfig.byId[id].exporter_url}
                 </StyledTableCell>
                 <StyledTableCell align="center">
+                  {cosmosNodesConfig.byId[id].operator_address}
+                </StyledTableCell>
+                <StyledTableCell align="center">
                   {cosmosNodesConfig.byId[id].is_validator ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {cosmosNodesConfig.byId[id].monitor_prometheus ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {cosmosNodesConfig.byId[id].monitor_cosmos_rest ? <CheckIcon /> : <ClearIcon />}
+                </StyledTableCell>
+                <StyledTableCell align="center">
+                  {cosmosNodesConfig.byId[id].monitor_system ? <CheckIcon /> : <ClearIcon />}
                 </StyledTableCell>
                 <StyledTableCell align="center">
                   {cosmosNodesConfig.byId[id].monitor_node ? <CheckIcon /> : <ClearIcon />}
@@ -143,7 +155,6 @@ NodesTable.propTypes = {
       id: PropTypes.string,
       parent_id: PropTypes.string,
       name: PropTypes.string,
-      tendermint_rpc_url: PropTypes.string,
       cosmos_rpc_url: PropTypes.string,
       prometheus_url: PropTypes.string,
       exporter_url: PropTypes.string,

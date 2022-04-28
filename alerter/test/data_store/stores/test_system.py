@@ -24,10 +24,9 @@ from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           SYSTEM_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException)
-from test.utils.utils import (connect_to_rabbit,
-                              disconnect_from_rabbit,
-                              delete_exchange_if_exists,
-                              delete_queue_if_exists)
+from test.test_utils.utils import (
+    connect_to_rabbit, disconnect_from_rabbit, delete_exchange_if_exists,
+    delete_queue_if_exists)
 
 
 class TestSystemStore(unittest.TestCase):

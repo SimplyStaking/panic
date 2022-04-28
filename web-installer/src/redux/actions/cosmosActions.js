@@ -2,6 +2,7 @@ import {
   ADD_CHAIN_COSMOS,
   ADD_NODE_COSMOS,
   REMOVE_NODE_COSMOS,
+  TOGGLE_NODE_MONITORING_COSMOS,
   LOAD_CONFIG_COSMOS,
   RESET_CHAIN_COSMOS,
   UPDATE_CHAIN_NAME_COSMOS,
@@ -73,10 +74,8 @@ export function addNodeCosmos(payload) {
       id,
       parent_id: payload.parent_id,
       name: payload.name,
-      tendermint_rpc_url: payload.tendermint_rpc_url,
-      monitor_tendermint: payload.monitor_tendermint,
-      cosmos_rpc_url: payload.cosmos_rpc_url,
-      monitor_rpc: payload.monitor_rpc,
+      cosmos_rest_url: payload.cosmos_rest_url,
+      monitor_cosmos_rest: payload.monitor_cosmos_rest,
       prometheus_url: payload.prometheus_url,
       monitor_prometheus: payload.monitor_prometheus,
       exporter_url: payload.exporter_url,
@@ -85,7 +84,20 @@ export function addNodeCosmos(payload) {
       monitor_node: payload.monitor_node,
       is_archive_node: payload.is_archive_node,
       use_as_data_source: payload.use_as_data_source,
+      monitor_network: payload.monitor_network,
+      operator_address: payload.operator_address,
+      monitor_tendermint_rpc: payload.monitor_tendermint_rpc,
+      tendermint_rpc_url: payload.tendermint_rpc_url,
     },
+  };
+}
+
+// Action to add a cosmos node to a configuration, payload is intercepted,
+// and a unique id is generated for it.
+export function toggleMonitorNetworkNodesCosmos(payload) {
+  return {
+    type: TOGGLE_NODE_MONITORING_COSMOS,
+    payload,
   };
 }
 

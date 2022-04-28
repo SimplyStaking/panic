@@ -19,7 +19,7 @@ from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerts.internal_alerts import ComponentResetAlert
 from src.alerter.managers.evm import EVMNodeAlerterManager
 from src.configs.alerts.node.evm import EVMNodeAlertsConfig
-from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
+from src.configs.factory.alerts.evm_alerts import EVMNodeAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import EVM_NODE_ALERTER_NAME
@@ -30,11 +30,10 @@ from src.utils.constants.rabbitmq import (
     CL_ALERTS_CONFIGS_ROUTING_KEY, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
     EVM_NODE_ALERT_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
-from test.utils.utils import (
+from test.test_utils.utils import (
     delete_exchange_if_exists, delete_queue_if_exists, disconnect_from_rabbit,
-    connect_to_rabbit
+    connect_to_rabbit, infinite_fn
 )
-from test.utils.utils import infinite_fn
 
 
 class TestEVMNodeAlerterManager(unittest.TestCase):

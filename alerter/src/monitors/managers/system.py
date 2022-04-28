@@ -21,7 +21,8 @@ from src.utils.constants.rabbitmq import (
     CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, SYS_MON_MAN_CONFIGS_QUEUE_NAME,
     SYS_MON_MAN_HEARTBEAT_QUEUE_NAME, SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
-    NODES_CONFIGS_ROUTING_KEY_CHAINS, PING_ROUTING_KEY, TOPIC)
+    NODES_CONFIGS_ROUTING_KEY_CHAINS, PING_ROUTING_KEY, TOPIC,
+    MONITORABLE_EXCHANGE)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -92,6 +93,10 @@ class SystemMonitorsManager(MonitorsManager):
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions
+        self.logger.info("Creating exchange '%s'", MONITORABLE_EXCHANGE)
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
+
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 

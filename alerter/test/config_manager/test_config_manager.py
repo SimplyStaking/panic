@@ -26,9 +26,9 @@ from src.utils.constants.rabbitmq import (CONFIG_EXCHANGE,
                                           HEALTH_CHECK_EXCHANGE,
                                           CONFIGS_MANAGER_HEARTBEAT_QUEUE,
                                           PING_ROUTING_KEY)
-from test.utils.utils import (
-    delete_exchange_if_exists, delete_queue_if_exists,
-    disconnect_from_rabbit, connect_to_rabbit
+from test.test_utils.utils import (
+    delete_exchange_if_exists, delete_queue_if_exists, disconnect_from_rabbit,
+    connect_to_rabbit
 )
 
 

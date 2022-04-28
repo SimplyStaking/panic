@@ -10,7 +10,9 @@ from src.alerter.alert_severities import Severity
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerters.dockerhub import DockerhubAlerter
 from src.alerter.alerters.github import GithubAlerter
+from src.alerter.alerters.network.cosmos import CosmosNetworkAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
+from src.alerter.alerters.node.cosmos import CosmosNodeAlerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.data_store.mongo.mongo_api import MongoApi
@@ -27,6 +29,8 @@ from src.utils.exceptions import (MessageWasNotDeliveredException)
 
 _LIST_OF_ALERTERS = [SystemAlerter.__name__,
                      ChainlinkNodeAlerter.__name__,
+                     CosmosNodeAlerter.__name__,
+                     CosmosNetworkAlerter.__name__,
                      GithubAlerter.__name__,
                      DockerhubAlerter.__name__,
                      EVMNodeAlerter.__name__,
@@ -186,6 +190,16 @@ class AlertStore(Store):
                         'redis_key_index': 'alert_cl_node',
                         'ignore_metrics': []
                     },
+                    CosmosNodeAlerter.__name__: {
+                        'metrics_type': 'cosmos node metrics',
+                        'redis_key_index': 'alert_cosmos_node',
+                        'ignore_metrics': []
+                    },
+                    CosmosNetworkAlerter.__name__: {
+                        'metrics_type': 'cosmos network metrics',
+                        'redis_key_index': 'alert_cosmos_network',
+                        'ignore_metrics': []
+                    },
                     GithubAlerter.__name__: {
                         'metrics_type': 'github',
                         'redis_key_index': 'alert_github',
@@ -272,23 +286,22 @@ class AlertStore(Store):
             if metric in EXPIRE_METRICS:
                 metric_data['expiry'] = alert['timestamp'] + 600
 
-            if metric in CHAINLINK_CONTRACT_METRICS_TO_STORE:
-                if metric in CHAIN_SOURCED_METRICS:
-                    self.redis.hset(
-                        Keys.get_hash_parent(alert['parent_id']),
-                        eval('Keys.get_alert_{}()'.format(
-                            metric)),
-                        json.dumps(metric_data)
-                    )
-                else:
-                    contract_proxy_address = alert['alert_data'][
-                        'contract_proxy_address']
-                    self.redis.hset(
-                        Keys.get_hash_parent(alert['parent_id']),
-                        eval('Keys.get_alert_{}(origin_id, '
-                             'contract_proxy_address)'.format(metric)),
-                        json.dumps(metric_data)
-                    )
+            if metric in CHAIN_SOURCED_METRICS:
+                self.redis.hset(
+                    Keys.get_hash_parent(alert['parent_id']),
+                    eval('Keys.get_alert_{}()'.format(
+                        metric)),
+                    json.dumps(metric_data)
+                )
+            elif metric in CHAINLINK_CONTRACT_METRICS_TO_STORE:
+                contract_proxy_address = alert['alert_data'][
+                    'contract_proxy_address']
+                self.redis.hset(
+                    Keys.get_hash_parent(alert['parent_id']),
+                    eval('Keys.get_alert_{}(origin_id, '
+                         'contract_proxy_address)'.format(metric)),
+                    json.dumps(metric_data)
+                )
             else:
                 self.redis.hset(
                     Keys.get_hash_parent(alert['parent_id']),

@@ -16,7 +16,7 @@ from src.alerter.factory.chainlink_node_alerting_factory import (
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode as MetricCode
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
-from src.configs.factory.node.chainlink_alerts import (
+from src.configs.factory.alerts.chainlink_alerts import (
     ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.data import VALID_CHAINLINK_SOURCES
@@ -119,9 +119,9 @@ class ChainlinkNodeAlerter(Alerter):
         :return:
         """
         if method.routing_key == CL_NODE_TRANSFORMED_DATA_ROUTING_KEY:
-            self._process_transformed_data(ch, method, properties, body)
+            self._process_transformed_data(method, body)
         elif 'alerts_config' in method.routing_key:
-            self._process_configs(ch, method, properties, body)
+            self._process_configs(method, body)
         else:
             self.logger.debug("Received unexpected data %s with routing key %s",
                               body, method.routing_key)
@@ -137,8 +137,7 @@ class ChainlinkNodeAlerter(Alerter):
         meta_data = prom_data['meta_data']
         data = prom_data['data']
 
-        # We must make sure that the alerts_config has been received for the
-        # chain.
+        # Assert that the alerts_config has been received for the chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
             meta_data['node_parent_id'], ChainlinkNodeAlertsConfig)
         if chain_name is not None:
@@ -309,8 +308,7 @@ class ChainlinkNodeAlerter(Alerter):
                                   data_for_alerting: List) -> None:
         meta_data = prom_data['meta_data']
 
-        # We must make sure that the alerts_config has been received for the
-        # chain.
+        # Assert that the alerts_config has been received for the chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
             meta_data['node_parent_id'], ChainlinkNodeAlertsConfig)
         if chain_name is not None:
@@ -380,8 +378,7 @@ class ChainlinkNodeAlerter(Alerter):
                     'meta_data']['node_name']
                 break
 
-        # We must make sure that the alerts_config has been received for the
-        # chain.
+        # Assert that the alerts_config has been received for the chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
             parent_id, ChainlinkNodeAlertsConfig)
         if chain_name is not None:
@@ -491,9 +488,8 @@ class ChainlinkNodeAlerter(Alerter):
                         ]
                     )
 
-    def _process_transformed_data(
-            self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
-            properties: pika.spec.BasicProperties, body: bytes) -> None:
+    def _process_transformed_data(self, method: pika.spec.Basic.Deliver,
+                                  body: bytes) -> None:
         data_received = json.loads(body)
         self.logger.debug("Received %s. Now processing this data.",
                           data_received)
@@ -507,10 +503,10 @@ class ChainlinkNodeAlerter(Alerter):
                     'error': self._process_prometheus_error,
                 }
             }
+            self._process_downtime(data_received, data_for_alerting)
             transformed_data_processing_helper(
                 self.alerter_name, configuration, data_received,
                 data_for_alerting)
-            self._process_downtime(data_received, data_for_alerting)
         except Exception as e:
             self.logger.error("Error when processing %s", data_received)
             self.logger.exception(e)
@@ -545,9 +541,8 @@ class ChainlinkNodeAlerter(Alerter):
             # reside in the publisher queue
             raise e
 
-    def _process_configs(
-            self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
-            properties: pika.spec.BasicProperties, body: bytes) -> None:
+    def _process_configs(self, method: pika.spec.Basic.Deliver,
+                         body: bytes) -> None:
         sent_configs = json.loads(body)
 
         self.logger.debug("Received configs %s", sent_configs)

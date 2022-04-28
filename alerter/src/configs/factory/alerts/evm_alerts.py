@@ -20,18 +20,21 @@ class EVMNodeAlertsConfigsFactory(ConfigsFactory):
     def add_new_config(self, chain_name: str, sent_configs: Dict) -> None:
         # Check if all the parent_ids in the received configuration are the
         # same, if not there is some misconfiguration
-        parent_id = sent_configs['1']['parent_id']
-        for _, config in sent_configs.items():
-            if parent_id != config['parent_id']:
-                raise ParentIdsMissMatchInAlertsConfiguration(
-                    "{}: _process_configs".format(self))
+        parent_ids = {
+            configuration['parent_id']
+            for _, configuration in sent_configs.items()
+        }
+        if len(parent_ids) != 1:
+            raise ParentIdsMissMatchInAlertsConfiguration(
+                "{}: add_new_config".format(self))
 
-        filtered = {}
-        for _, config in sent_configs.items():
-            filtered[config['name']] = copy.deepcopy(config)
+        filtered = {
+            config['name']: copy.deepcopy(config)
+            for _, config in sent_configs.items()
+        }
 
         evm_node_alerts_config = EVMNodeAlertsConfig(
-            parent_id=parent_id,
+            parent_id=parent_ids.pop(),
             evm_node_is_down=filtered['evm_node_is_down'],
             evm_block_syncing_block_height_difference=filtered[
                 'evm_block_syncing_block_height_difference'],

@@ -12,7 +12,7 @@ from src.alerter.alerters.alerter import Alerter
 from src.alerter.factory.evm_node_alerting_factory import EVMNodeAlertingFactory
 from src.alerter.grouped_alerts_metric_code.node.evm_node_metric_code \
     import GroupedEVMNodeAlertsMetricCode as MetricCode
-from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
+from src.configs.factory.alerts.evm_alerts import EVMNodeAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, TOPIC, EVM_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
@@ -113,9 +113,9 @@ class EVMNodeAlerter(Alerter):
         :return:
         """
         if method.routing_key == EVM_NODE_TRANSFORMED_DATA_ROUTING_KEY:
-            self._process_transformed_data(ch, method, properties, body)
+            self._process_transformed_data(method, body)
         elif 'alerts_config' in method.routing_key:
-            self._process_configs(ch, method, properties, body)
+            self._process_configs(method, body)
         else:
             self.logger.debug("Received unexpected data %s with routing key %s",
                               body, method.routing_key)
@@ -125,8 +125,8 @@ class EVMNodeAlerter(Alerter):
                         data_for_alerting: List) -> None:
         meta_data = transformer_data['meta_data']
         data = transformer_data['data']
-        # We must make sure that the alerts_config has been received for the
-        # chain.
+
+        # Assert that the alerts_config has been received for the chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
             meta_data['node_parent_id'])
         if chain_name is not None:
@@ -212,8 +212,8 @@ class EVMNodeAlerter(Alerter):
 
     def _process_error(self, data: Dict, data_for_alerting: List) -> None:
         meta_data = data['meta_data']
-        # We must make sure that the alerts_config has been received for the
-        # chain.
+
+        # Assert that the alerts_config has been received for the chain.
         chain_name = self.alerts_configs_factory.get_chain_name(
             meta_data['node_parent_id'])
         if chain_name is not None:
@@ -247,9 +247,8 @@ class EVMNodeAlerter(Alerter):
                         meta_data['node_name'], meta_data['time']
                     )
 
-    def _process_transformed_data(
-            self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
-            properties: pika.spec.BasicProperties, body: bytes) -> None:
+    def _process_transformed_data(self, method: pika.spec.Basic.Deliver,
+                                  body: bytes) -> None:
         data_received = json.loads(body)
         self.logger.debug("Received %s. Now processing this data.",
                           data_received)
@@ -300,9 +299,8 @@ class EVMNodeAlerter(Alerter):
             # reside in the publisher queue
             raise e
 
-    def _process_configs(
-            self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
-            properties: pika.spec.BasicProperties, body: bytes) -> None:
+    def _process_configs(self, method: pika.spec.Basic.Deliver,
+                         body: bytes) -> None:
         sent_configs = json.loads(body)
 
         self.logger.debug("Received configs %s", sent_configs)

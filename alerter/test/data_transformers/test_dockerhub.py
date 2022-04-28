@@ -25,9 +25,9 @@ from src.utils.constants.rabbitmq import (
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from test.utils.utils import (save_dockerhub_repo_to_redis,
-                              connect_to_rabbit, delete_queue_if_exists,
-                              disconnect_from_rabbit, delete_exchange_if_exists)
+from test.test_utils.utils import (
+    save_dockerhub_repo_to_redis, connect_to_rabbit, delete_queue_if_exists,
+    disconnect_from_rabbit, delete_exchange_if_exists)
 
 
 class TestDockerHubDataTransformer(unittest.TestCase):
@@ -344,16 +344,8 @@ class TestDockerHubDataTransformer(unittest.TestCase):
         self.test_data_transformer.rabbitmq.exchange_declare(
             HEALTH_CHECK_EXCHANGE, passive=True)
 
-        # Check whether the consuming exchanges and queues have been
-        # creating by sending messages with the same routing keys as for the
-        # bindings. We will also check if the size of the queues is 0 to
-        # confirm that basic_consume was called (it will store the msg in
-        # the component memory immediately). If one of the exchanges or
-        # queues is not created or basic_consume is not called, then either
-        # an exception will be thrown or the queue size would be 1
-        # respectively. Note when deleting the exchanges in the beginning we
-        # also released every binding, hence there are no other queue binded
-        # with the same routing key to any exchange at this point.
+        # Check whether the consuming exchanges and queues have been creating by
+        # sending messages with the same routing keys as for the bindings.
         self.test_data_transformer.rabbitmq.basic_publish_confirm(
             exchange=RAW_DATA_EXCHANGE,
             routing_key=DOCKERHUB_RAW_DATA_ROUTING_KEY,

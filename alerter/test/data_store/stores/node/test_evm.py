@@ -23,10 +23,9 @@ from src.utils.exceptions import (PANICException, NodeIsDownException,
                                   MessageWasNotDeliveredException)
 from src.utils.types import (convert_to_int, convert_to_float,
                              convert_none_to_bool)
-from test.utils.utils import (connect_to_rabbit,
-                              disconnect_from_rabbit,
-                              delete_exchange_if_exists,
-                              delete_queue_if_exists)
+from test.test_utils.utils import (
+    connect_to_rabbit, disconnect_from_rabbit, delete_exchange_if_exists,
+    delete_queue_if_exists)
 
 
 class TestEVMNodeStore(unittest.TestCase):

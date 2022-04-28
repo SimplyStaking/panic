@@ -19,8 +19,7 @@ class ConnectionNotInitialisedException(PANICException):
     code = 5000
 
     def __init__(self, component):
-        message = "Did not initialise a connection with {}" \
-            .format(component)
+        message = "Did not initialise a connection with {}".format(component)
         super().__init__(message, self.code)
 
 
@@ -60,8 +59,8 @@ class DataReadingException(PANICException):
     code = 5005
 
     def __init__(self, monitor_name, source) -> None:
-        message = "{} experienced errors when reading data from {}" \
-            .format(monitor_name, source)
+        message = "{} experienced errors when reading data from {}".format(
+            monitor_name, source)
         super().__init__(message, self.code)
 
 
@@ -101,7 +100,7 @@ class ParentIdsMissMatchInAlertsConfiguration(PANICException):
     code = 5010
 
     def __init__(self, err) -> None:
-        message = "{} Error alerts do not have the same parent_ids".format(err)
+        message = "{} Error, alerts do not have the same parent_ids".format(err)
         super().__init__(message, self.code)
 
 
@@ -124,10 +123,11 @@ class BlankCredentialException(PANICException):
     code = 5013
 
     def __init__(self, blank_credentials: List[str]) -> None:
-        message = \
+        message = (
             "Tried to initiate a connection with a blank or NoneType {}".format(
                 ",".join(blank_credentials)
             )
+        )
         super().__init__(message, self.code)
 
 
@@ -196,4 +196,109 @@ class CannotAccessDockerHubPageException(PANICException):
 
     def __init__(self, page) -> None:
         message = "Cannot access Dockerhub page {}".format(page)
+        super().__init__(message, self.code)
+
+
+class CosmosSDKVersionIncompatibleException(PANICException):
+    code = 5022
+
+    def __init__(self, node_name: str, supported_version: str) -> None:
+        message = (
+            "The Cosmos SDK version of node {} is not compatible with "
+            "supported version(s) {}".format(node_name, supported_version)
+        )
+        super().__init__(message, self.code)
+
+
+class CosmosRestServerDataCouldNotBeObtained(PANICException):
+    code = 5023
+
+    def __init__(self, node_name: str) -> None:
+        message = (
+            "PANIC cannot obtain Rest data for {} either due to Cosmos SDK or "
+            "Tendermint incompatibility issues in the node used as data "
+            "source. Please check the logs of {} to detect which node is "
+            "incompatible and disable it from being a data source. If no "
+            "other compatible data source can be given (not even {}), please "
+            "disable Rest monitoring altogether for {}. ".format(
+                node_name, node_name, node_name, node_name))
+        super().__init__(message, self.code)
+
+
+class CosmosRestServerApiCallException(PANICException):
+    code = 5024
+
+    def __init__(self, api_call: str, error_message: str) -> None:
+        message = "Cosmos Rest Server call {} failed. Error: {}".format(
+            api_call, error_message)
+        super().__init__(message, self.code)
+
+
+class IncorrectJSONRetrievedException(PANICException):
+    code = 5025
+
+    def __init__(self, api_name: str, error_message: str) -> None:
+        message = "Invalid JSON structure retrieved from {}. Error: {}".format(
+            api_name, error_message)
+        super().__init__(message, self.code)
+
+
+class CannotConnectWithDataSourceException(PANICException):
+    code = 5026
+
+    def __init__(self, monitor_name: str, source_name: str,
+                 error_message: str) -> None:
+        message = "{} cannot connect with data source {}. Error: {}".format(
+            monitor_name, source_name, error_message)
+        super().__init__(message, self.code)
+
+
+class CosmosNetworkDataCouldNotBeObtained(PANICException):
+    code = 5027
+
+    def __init__(self) -> None:
+        message = (
+            "PANIC cannot obtain network data from COSMOS Rest Server either "
+            "due to Cosmos SDK or Tendermint incompatibility issues in the "
+            "nodes used as data sources. Please check the logs to detect which "
+            "nodes are incompatible and disable them from being a data source. "
+            "If no other compatible data source can be given, please disable "
+            "network monitoring."
+        )
+        super().__init__(message, self.code)
+
+
+class TendermintRPCIncompatibleException(PANICException):
+    code = 5028
+
+    def __init__(self, node_name: str) -> None:
+        message = (
+            "The Tendermint RPC version of node {} is not compatible with "
+            "PANIC".format(node_name)
+        )
+        super().__init__(message, self.code)
+
+
+class TendermintRPCDataCouldNotBeObtained(PANICException):
+    code = 5029
+
+    def __init__(self, node_name: str) -> None:
+        message = (
+            "PANIC cannot obtain Tendermint RPC data for {} either due to "
+            "Tendermint or Tendermint RPC incompatibility issues in the node "
+            "used as data source. Please check the logs of {} to detect which "
+            "node is incompatible and disable it from being a data source. If "
+            "no other compatible data source can be given (not even {}), "
+            "please disable Tendermint RPC monitoring altogether for "
+            "{}.".format(node_name, node_name, node_name, node_name)
+        )
+        super().__init__(message, self.code)
+
+
+class TendermintRPCCallException(PANICException):
+    code = 5030
+
+    def __init__(self, api_call: str, error_message: str) -> None:
+        message = "Tendermint RPC call {} failed. Error: {}".format(
+            api_call, error_message)
         super().__init__(message, self.code)

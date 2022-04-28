@@ -24,11 +24,11 @@ from src.utils.constants.rabbitmq import (
     SYS_MON_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
     SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS,
     NODES_CONFIGS_ROUTING_KEY_CHAINS, SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, MONITORABLE_EXCHANGE, TOPIC)
+    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, MONITORABLE_EXCHANGE)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
-from test.utils.utils import (infinite_fn, connect_to_rabbit,
-                              delete_queue_if_exists, delete_exchange_if_exists,
-                              disconnect_from_rabbit)
+from test.test_utils.utils import (
+    infinite_fn, connect_to_rabbit, delete_queue_if_exists,
+    delete_exchange_if_exists, disconnect_from_rabbit)
 
 
 class TestSystemMonitorsManager(unittest.TestCase):
@@ -265,8 +265,10 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.test_manager._listen_for_data()
         mock_start_consuming.assert_called_once()
 
+    @mock.patch.object(RabbitMQApi, 'basic_consume')
     def test_initialise_rabbitmq_initialises_everything_as_expected(
-            self) -> None:
+            self, mock_basic_consume) -> None:
+        mock_basic_consume.return_value = None
         # To make sure that there is no connection/channel already established
         self.assertIsNone(self.rabbitmq.connection)
         self.assertIsNone(self.rabbitmq.channel)
@@ -279,6 +281,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.test_manager.rabbitmq.queue_delete(SYS_MON_MAN_CONFIGS_QUEUE_NAME)
         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+        self.test_manager.rabbitmq.exchange_delete(MONITORABLE_EXCHANGE)
         self.rabbitmq.disconnect()
 
         self.test_manager._initialise_rabbitmq()
@@ -291,14 +294,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.test_manager.rabbitmq.channel._delivery_confirmation)
 
         # Check whether the exchanges and queues have been creating by
-        # sending messages with the same routing keys as for the queues. We
-        # will also check if the size of the queues is 0 to confirm that
-        # basic_consume was called (it will store the msg in the component
-        # memory immediately). If one of the exchanges or queues is not
-        # created, then an exception will be thrown. Note when deleting the
-        # exchanges in the beginning we also released every binding, hence
-        # there is no other queue binded with the same routing key to any
-        # exchange at this point.
+        # sending messages with the same routing keys as for the queues, and
+        # checking what messages have been received if any.
         self.test_manager.rabbitmq.basic_publish_confirm(
             exchange=HEALTH_CHECK_EXCHANGE, routing_key=PING_ROUTING_KEY,
             body=self.test_data_str, is_body_dict=False,
@@ -322,10 +319,35 @@ class TestSystemMonitorsManager(unittest.TestCase):
         # Re-declare queue to get the number of messages
         res = self.test_manager.rabbitmq.queue_declare(
             SYS_MON_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
-        self.assertEqual(0, res.method.message_count)
+        self.assertEqual(1, res.method.message_count)
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            SYS_MON_MAN_HEARTBEAT_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+
         res = self.test_manager.rabbitmq.queue_declare(
             SYS_MON_MAN_CONFIGS_QUEUE_NAME, False, True, False, False)
-        self.assertEqual(0, res.method.message_count)
+        self.assertEqual(3, res.method.message_count)
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            SYS_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            SYS_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            SYS_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+
+        # Check that basic_consume was called twice, once for each consumer
+        # queue
+        calls = mock_basic_consume.call_args_list
+        self.assertEqual(2, len(calls))
+
+        # Check that the publishing exchanges were created by sending messages
+        # to them. If this fails an exception is raised hence the test fails.
+        self.test_manager.rabbitmq.basic_publish_confirm(
+            exchange=MONITORABLE_EXCHANGE, routing_key='test_key',
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=False)
 
     def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
         # This test creates a queue which receives messages with the same
@@ -408,12 +430,16 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.base_chain_3, self.sub_chain_3)
         mock_start.assert_called_once()
 
+    @mock.patch.object(SystemMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_configs_ignores_default_key(self, mock_ack) -> None:
+    def test_process_configs_ignores_default_key(
+            self, mock_ack, mock_process_send_mon_data) -> None:
         # This test will pass if the stored systems config does not change.
         # This would mean that the DEFAULT key was ignored, otherwise, it would
         # have been included as a new config.
         mock_ack.return_value = None
+        mock_process_send_mon_data.return_value = None
         old_systems_configs = copy.deepcopy(self.systems_configs_example)
         self.test_manager._systems_configs = self.systems_configs_example
 
@@ -445,8 +471,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
         method_chains_nodes = pika.spec.Basic.Deliver(
             routing_key=self.chains_routing_key_nodes)
@@ -509,16 +533,19 @@ class TestSystemMonitorsManager(unittest.TestCase):
     routing keys
     '''
 
+    @mock.patch.object(SystemMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(SystemMonitorsManager,
                        "_create_and_start_monitor_process")
     def test_process_configs_stores_new_configs_to_be_monitored_correctly(
-            self, startup_mock, mock_ack) -> None:
+            self, startup_mock, mock_ack, mock_process_send_mon_data) -> None:
         # We will check whether new configs are added to the state. Since some
         # new configs have `monitor_system = False` we are also testing that
         # new configs are ignored if they should not be monitored.
-        mock_ack.return_value = None
         startup_mock.return_value = None
+        mock_ack.return_value = None
+        mock_process_send_mon_data.return_value = None
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         self.test_manager._systems_configs = self.systems_configs_example
@@ -593,8 +620,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
         }
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -631,21 +656,25 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.assertEqual(expected_sys_confs, self.test_manager.systems_configs)
         self.assertEqual(3, mock_ack.call_count)
 
+    @mock.patch.object(SystemMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(SystemMonitorsManager,
                        "_create_and_start_monitor_process")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "join")
     def test_process_configs_stores_modified_configs_to_be_monitored_correctly(
-            self, join_mock, terminate_mock, startup_mock, mock_ack) -> None:
+            self, join_mock, terminate_mock, startup_mock, mock_ack,
+            mock_process_send_mon_data) -> None:
         # In this test we will check that modified configurations with
         # `monitor_system = True` are stored correctly in the state. Some
         # configurations will have `monitor_system = False` to check whether the
         # monitor associated with the previous configuration is terminated.
-        mock_ack.return_value = None
-        startup_mock.return_value = None
         join_mock.return_value = None
         terminate_mock.return_value = None
+        startup_mock.return_value = None
+        mock_ack.return_value = None
+        mock_process_send_mon_data.return_value = None
         self.test_manager._systems_configs = self.systems_configs_example
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
@@ -706,8 +735,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
         }
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
         method_chains_nodes = pika.spec.Basic.Deliver(
             routing_key=self.chains_routing_key_nodes)
@@ -773,16 +800,20 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         self.assertEqual(6, mock_ack.call_count)
 
+    @mock.patch.object(SystemMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "join")
     def test_process_configs_removes_deleted_configs_from_state_correctly(
-            self, join_mock, terminate_mock, mock_ack) -> None:
+            self, join_mock, terminate_mock, mock_ack,
+            mock_process_send_mon_data) -> None:
         # In this test we will check that removed configurations are actually
         # removed from the state
-        mock_ack.return_value = None
         join_mock.return_value = None
         terminate_mock.return_value = None
+        mock_ack.return_value = None
+        mock_process_send_mon_data.return_value = None
         self.test_manager._systems_configs = self.systems_configs_example
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
@@ -793,8 +824,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
         method_chains_sys = pika.spec.Basic.Deliver(
             routing_key=self.chains_routing_key_sys)
@@ -831,17 +860,20 @@ class TestSystemMonitorsManager(unittest.TestCase):
             self.system_id_2 not in self.test_manager.config_process_dict)
         self.assertEqual(3, mock_ack.call_count)
 
+    @mock.patch.object(SystemMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(SystemMonitorsManager,
                        "_create_and_start_monitor_process")
     def test_proc_configs_starts_new_monitors_for_new_configs_to_be_monitored(
-            self, startup_mock, mock_ack) -> None:
+            self, startup_mock, mock_ack, mock_process_send_mon_data) -> None:
         # We will check whether _create_and_start_monitor_process is called
         # correctly on each newly added configuration if
         # `monitor_system = True`. Implicitly we will be also testing that if
         # `monitor_system = False` no new monitor is created.
-        mock_ack.return_value = None
         startup_mock.return_value = None
+        mock_ack.return_value = None
+        mock_process_send_mon_data.return_value = None
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         self.test_manager._systems_configs = self.systems_configs_example
@@ -916,8 +948,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
         }
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -967,6 +997,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         self.assertEqual(3, mock_ack.call_count)
 
+    @mock.patch.object(SystemMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "start")
@@ -975,7 +1007,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_proc_confs_term_and_starts_monitors_for_modified_confs_to_be_mon(
             self, mock_ack, mock_startup, mock_start, mock_terminate,
-            mock_join) -> None:
+            mock_join, mock_process_send_mon_data) -> None:
         # In this test we will check that modified configurations with
         # `monitor_system = True` will have new monitors started. Implicitly
         # we will be checking that modified configs with
@@ -986,6 +1018,7 @@ class TestSystemMonitorsManager(unittest.TestCase):
         mock_start.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
+        mock_process_send_mon_data.return_value = None
         self.test_manager._systems_configs = self.systems_configs_example
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
@@ -1046,8 +1079,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
         }
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
         method_chains_nodes = pika.spec.Basic.Deliver(
             routing_key=self.chains_routing_key_nodes)
@@ -1119,6 +1150,8 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.assertEqual(6, mock_join.call_count)
         self.assertEqual(6, mock_ack.call_count)
 
+    @mock.patch.object(SystemMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(multiprocessing.Process, "join")
@@ -1127,14 +1160,15 @@ class TestSystemMonitorsManager(unittest.TestCase):
                        "_create_and_start_monitor_process")
     def test_process_configs_terminates_monitors_for_removed_configs(
             self, mock_startup, mock_start, mock_join, mock_terminate,
-            mock_ack) -> None:
+            mock_ack, mock_process_send_mon_data) -> None:
         # In this test we will check that the monitors associated with removed
         # configurations are terminated.
-        mock_ack.return_value = None
-        mock_join.return_value = None
-        mock_terminate.return_value = None
         mock_startup.return_value = None
         mock_start.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        mock_ack.return_value = None
+        mock_process_send_mon_data.return_value = None
         self.test_manager._systems_configs = self.systems_configs_example
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
@@ -1145,8 +1179,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
         method_chains_sys = pika.spec.Basic.Deliver(
             routing_key=self.chains_routing_key_sys)
@@ -1183,13 +1215,16 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         self.assertEqual(3, mock_ack.call_count)
 
+    @mock.patch.object(SystemMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_ignores_new_configs_with_missing_keys(
-            self, mock_ack) -> None:
+            self, mock_ack, mock_process_send_mon_data) -> None:
         # We will check whether the state is kept intact if new configurations
         # with missing keys are sent. Exceptions should never be raised in this
         # case, and basic_ack must be called to ignore the message.
         mock_ack.return_value = None
+        mock_process_send_mon_data.return_value = None
         new_configs_chain_nodes = {
             self.system_id_3: {
                 'id': self.system_id_3,
@@ -1223,8 +1258,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -1268,14 +1301,17 @@ class TestSystemMonitorsManager(unittest.TestCase):
         self.assertEqual(self.systems_configs_example,
                          self.test_manager.systems_configs)
 
+    @mock.patch.object(SystemMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     def test_process_configs_ignores_modified_configs_with_missing_keys(
-            self, mock_ack) -> None:
+            self, mock_ack, mock_process_send_mon_data) -> None:
         # We will check whether the state is kept intact if modified
         # configurations with missing keys are sent. Exceptions should never be
         # raised in this case, and basic_ack must be called to ignore the
         # message.
         mock_ack.return_value = None
+        mock_process_send_mon_data.return_value = None
         updated_configs_chain_nodes = {
             self.system_id_1: {
                 'id': self.system_id_1,
@@ -1309,8 +1345,6 @@ class TestSystemMonitorsManager(unittest.TestCase):
 
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
 
         # We will send new configs through both the existing and

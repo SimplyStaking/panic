@@ -25,8 +25,9 @@ from src.utils.exceptions import (PANICException, DockerHubAPICallException,
                                   CannotAccessDockerHubPageException,
                                   DataReadingException, JSONDecodeException,
                                   MessageWasNotDeliveredException)
-from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
-                              disconnect_from_rabbit, delete_exchange_if_exists)
+from test.test_utils.utils import (
+    connect_to_rabbit, delete_queue_if_exists, disconnect_from_rabbit,
+    delete_exchange_if_exists)
 
 
 class TestDockerHubMonitor(unittest.TestCase):

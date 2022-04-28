@@ -30,7 +30,6 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
 
     async componentWillLoad() {
         try {
-            this._subChains = await ChainsAPI.getSubChains();
             await this.reRenderAction();
 
             this._updater = window.setInterval(async () => {
@@ -42,6 +41,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
     }
 
     async reRenderAction() {
+        this._subChains = await ChainsAPI.getSubChains();
         this.alerts = await AlertsAPI.getAlerts(this._subChains, this._filterState);
     }
 

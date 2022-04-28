@@ -73,10 +73,9 @@ class DataTransformer(QueuingPublisherSubscriberComponent):
         pass
 
     @abstractmethod
-    def _process_raw_data(self, ch: BlockingChannel,
-                          method: pika.spec.Basic.Deliver,
-                          properties: pika.spec.BasicProperties, body: bytes) \
-            -> None:
+    def _process_raw_data(
+            self, ch: BlockingChannel, method: pika.spec.Basic.Deliver,
+            properties: pika.spec.BasicProperties, body: bytes) -> None:
         pass
 
     def _send_heartbeat(self, data_to_send: dict) -> None:

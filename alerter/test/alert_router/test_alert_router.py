@@ -28,7 +28,7 @@ from src.utils.constants.rabbitmq import (
     ALERT_STORE_INPUT_ROUTING_KEY, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY
 )
 from src.utils.exceptions import MissingKeyInConfigException
-from test.utils.utils import (
+from test.test_utils.utils import (
     DummyAlertCode, delete_exchange_if_exists, delete_queue_if_exists,
     disconnect_from_rabbit, connect_to_rabbit
 )

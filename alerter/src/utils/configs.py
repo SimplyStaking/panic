@@ -3,7 +3,10 @@
 from datetime import timedelta
 from typing import Dict, List
 
-from src.utils.types import convert_to_float
+from src.configs.nodes.chainlink import ChainlinkNodeConfig
+from src.configs.nodes.cosmos import CosmosNodeConfig
+from src.configs.nodes.evm import EVMNodeConfig
+from src.utils.types import convert_to_float, str_to_bool
 
 
 def get_newly_added_configs(new_config_file: Dict, current_config_file: Dict) \
@@ -70,3 +73,70 @@ def parse_alert_time_thresholds(expected_thresholds: List[str],
             config[threshold], timedelta.max.total_seconds() - 1)
 
     return parsed_thresholds
+
+
+def parse_cosmos_node_config(node_config: Dict) -> CosmosNodeConfig:
+    """
+    Given the received node configuration, this function parses the values
+    as a CosmosNodeConfig object
+    :param node_config: The received configuration for the node
+    :return: A representation of the node config as a CosmosNodeConfig
+           : object
+    """
+    node_id = node_config['id']
+    parent_id = node_config['parent_id']
+    node_name = node_config['name']
+    monitor_node = str_to_bool(node_config['monitor_node'])
+    monitor_prometheus = str_to_bool(
+        node_config['monitor_prometheus'])
+    prometheus_url = node_config['prometheus_url']
+    monitor_cosmos_rest = str_to_bool(
+        node_config['monitor_cosmos_rest'])
+    cosmos_rest_url = node_config['cosmos_rest_url']
+    monitor_tendermint_rpc = str_to_bool(
+        node_config['monitor_tendermint_rpc'])
+    tendermint_rpc_url = node_config['tendermint_rpc_url']
+    is_validator = str_to_bool(node_config['is_validator'])
+    use_as_data_source = str_to_bool(node_config['use_as_data_source'])
+    is_archive_node = str_to_bool(node_config['is_archive_node'])
+    operator_address = node_config['operator_address']
+    return CosmosNodeConfig(
+        node_id, parent_id, node_name, monitor_node, monitor_prometheus,
+        prometheus_url, monitor_cosmos_rest, cosmos_rest_url,
+        monitor_tendermint_rpc, tendermint_rpc_url, is_validator,
+        is_archive_node, use_as_data_source, operator_address)
+
+
+def parse_chainlink_node_config(node_config: Dict) -> ChainlinkNodeConfig:
+    """
+    Given the received node configuration, this function parses the values
+    as a ChainlinkNodeConfig object
+    :param node_config: The received configuration for the node
+    :return: A representation of the node config as a ChainlinkNodeConfig
+           : object
+    """
+    node_id = node_config['id']
+    parent_id = node_config['parent_id']
+    node_name = node_config['name']
+    node_prometheus_urls = node_config['node_prometheus_urls'].split(',')
+    monitor_node = str_to_bool(node_config['monitor_node'])
+    monitor_prometheus = str_to_bool(node_config['monitor_prometheus'])
+    return ChainlinkNodeConfig(
+        node_id, parent_id, node_name, monitor_node, monitor_prometheus,
+        node_prometheus_urls)
+
+
+def parse_evm_node_config(node_config: Dict) -> EVMNodeConfig:
+    """
+    Given the received node configuration, this function parses the values
+    as a EVMNodeConfig object
+    :param node_config: The received configuration for the node
+    :return: A representation of the node config as a EVMNodeConfig object
+    """
+    node_id = node_config['id']
+    parent_id = node_config['parent_id']
+    node_name = node_config['name']
+    node_http_url = node_config['node_http_url']
+    monitor_node = str_to_bool(node_config['monitor_node'])
+    return EVMNodeConfig(node_id, parent_id, node_name, monitor_node,
+                         node_http_url)

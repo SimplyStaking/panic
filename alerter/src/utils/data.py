@@ -1,6 +1,7 @@
 import json
 import logging
 from enum import Enum
+from json import JSONDecodeError
 from typing import Dict
 
 import requests
@@ -16,11 +17,29 @@ class RequestStatus(Enum):
     FAILED = False
 
 
-def get_json(endpoint: str, logger: logging.Logger, params=None,
-             verify: bool = True):
+def get_cosmos_json(endpoint: str, logger: logging.Logger, params=None,
+                    verify: bool = True, timeout=10):
+    # For Cosmos SDK versions <= 0.39.2 a 404 not found error may be returned if
+    # a function is deprecated. Hence we want to return the error and not
+    # convert into JSON as this may raise a JSONDecodeError.
     if params is None:
         params = {}
-    get_ret = requests.get(url=endpoint, params=params, timeout=10,
+
+    get_ret = requests.get(url=endpoint, params=params, timeout=timeout,
+                           verify=verify, headers={'Connection': 'close'})
+    logger.debug("get_json: get_ret: %s", get_ret)
+
+    try:
+        return json.loads(get_ret.content.decode('UTF-8'))
+    except JSONDecodeError:
+        return get_ret
+
+
+def get_json(endpoint: str, logger: logging.Logger, params=None,
+             verify: bool = True, timeout=10):
+    if params is None:
+        params = {}
+    get_ret = requests.get(url=endpoint, params=params, timeout=timeout,
                            verify=verify, headers={'Connection': 'close'})
     logger.debug("get_json: get_ret: %s", get_ret)
     return json.loads(get_ret.content.decode('UTF-8'))

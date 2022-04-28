@@ -7,6 +7,7 @@ import {
   ADD_CHAIN_COSMOS,
   ADD_NODE_COSMOS,
   REMOVE_NODE_COSMOS,
+  TOGGLE_NODE_MONITORING_COSMOS,
   REMOVE_CHAIN_COSMOS,
   UPDATE_CHAIN_NAME_COSMOS,
   RESET_CHAIN_COSMOS,
@@ -26,18 +27,25 @@ import {
 } from 'redux/actions/types';
 
 const cosmosRepeatAlerts = {
+  byId: {},
+  allIds: [],
+};
+
+const cosmosThresholdAlerts = {
   byId: {
     1: {
       name: 'Cannot access validator',
       identifier: 'cannot_access_validator',
       description: 'If a validator is inaccessible you will be alerted.',
       adornment: 'Seconds',
+      adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        repeat: 60,
+        threshold: 0,
         enabled: true,
       },
       critical: {
+        threshold: 120,
         repeat: 300,
         repeat_enabled: true,
         enabled: true,
@@ -49,44 +57,21 @@ const cosmosRepeatAlerts = {
       identifier: 'cannot_access_node',
       description: 'If a node is inaccessible you will be alerted.',
       adornment: 'Seconds',
+      adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        repeat: 300,
+        threshold: 0,
         enabled: true,
       },
       critical: {
-        repeat: 300,
+        threshold: 300,
+        repeat: 600,
         repeat_enabled: true,
         enabled: false,
       },
       enabled: true,
     },
     3: {
-      name: 'Lost connection with specific peer',
-      identifier: 'lost_connection_with_peer',
-      description:
-        'If a node loses connection with a specific peer after some '
-        + 'time you will receive an alert.',
-      adornment: 'Seconds',
-      parent_id: '',
-      warning: {
-        repeat: 300,
-        enabled: true,
-      },
-      critical: {
-        repeat: 500,
-        repeat_enabled: true,
-        enabled: false,
-      },
-      enabled: true,
-    },
-  },
-  allIds: ['1', '2', '3'],
-};
-
-const cosmosThresholdAlerts = {
-  byId: {
-    4: {
       name: 'System Is Down',
       identifier: 'system_is_down',
       description:
@@ -106,85 +91,64 @@ const cosmosThresholdAlerts = {
       },
       enabled: true,
     },
-    5: {
-      name: 'Peer count decreased below threshold',
-      identifier: 'peer_count_decreased',
-      description: 'Number of peers connected to your node has decreased.',
-      adornment: 'Peers',
+    4: {
+      name: 'No change in block height for a validator.',
+      identifier: 'no_change_in_block_height_validator',
+      description: 'This alert is raised when there has not been a change in node block height over a period of time.',
+      adornment: 'Seconds',
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 3,
+        threshold: 30,
         enabled: true,
       },
       critical: {
-        threshold: 2,
-        repeat: 300,
+        threshold: 60,
+        repeat: 180,
         repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
     },
-    6: {
-      name: 'No change in block height',
-      identifier: 'no_change_in_block_height',
-      description: 'This alert is raised when the block height does not change after some time.',
+    5: {
+      name: 'No change in block height for a node.',
+      identifier: 'no_change_in_block_height_node',
+      description: 'This alert is raised when there has not been a change in node block height over a period of time.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 180,
+        threshold: 120,
         enabled: true,
       },
       critical: {
         threshold: 300,
         repeat: 300,
         repeat_enabled: true,
+        enabled: false,
+      },
+      enabled: true,
+    },
+    6: {
+      name: 'Difference between monitored node heights.',
+      identifier: 'block_height_difference',
+      description: 'This alert is raised when the block height difference between multiple Cosmos nodes increases above thresholds.',
+      adornment: 'Blocks',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 50,
         enabled: true,
+      },
+      critical: {
+        threshold: 100,
+        repeat: 300,
+        repeat_enabled: false,
+        enabled: false,
       },
       enabled: true,
     },
     7: {
-      name: 'Time of last activity is above threshold',
-      identifier: 'time_of_last_activity',
-      description:
-        'Alerts will be sent based on how much time has passed '
-        + 'since last pre-commit/pre-vote activity.',
-      adornment: 'Seconds',
-      adornment_time: 'Seconds',
-      parent_id: '',
-      warning: {
-        threshold: 60,
-        enabled: true,
-      },
-      critical: {
-        threshold: 180,
-        repeat: 300,
-        repeat_enabled: true,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    8: {
-      name: 'Mempool Size',
-      identifier: 'mempool_size',
-      description: 'Alerts will be sent based on how many transactions are in the mempool.',
-      adornment: 'Megabytes',
-      adornment_time: 'Seconds',
-      parent_id: '',
-      warning: {
-        threshold: 85,
-        enabled: true,
-      },
-      critical: {
-        threshold: 95,
-        repeat: 300,
-        repeat_enabled: true,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    9: {
       name: 'Open File Descriptors Increased',
       identifier: 'open_file_descriptors',
       description: 'Open File Descriptors alerted on based on percentage usage .',
@@ -203,7 +167,7 @@ const cosmosThresholdAlerts = {
       },
       enabled: true,
     },
-    10: {
+    8: {
       name: 'System CPU Usage Increased',
       identifier: 'system_cpu_usage',
       description: 'System CPU alerted on based on percentage usage.',
@@ -222,7 +186,7 @@ const cosmosThresholdAlerts = {
       },
       enabled: true,
     },
-    11: {
+    9: {
       name: 'System storage usage increased',
       identifier: 'system_storage_usage',
       description: 'System Storage alerted on based on percentage usage.',
@@ -241,7 +205,7 @@ const cosmosThresholdAlerts = {
       },
       enabled: true,
     },
-    12: {
+    10: {
       name: 'System RAM usage increased',
       identifier: 'system_ram_usage',
       description: 'System RAM alerted on based on percentage usage.',
@@ -260,27 +224,141 @@ const cosmosThresholdAlerts = {
       },
       enabled: true,
     },
+    11: {
+      name: 'Cannot access Prometheus for Validator.',
+      identifier: 'cannot_access_prometheus_validator',
+      description: 'The prometheus endpoint for a validator has not been accessible for some time.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 0,
+        enabled: true,
+      },
+      critical: {
+        threshold: 120,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    12: {
+      name: 'Cannot access Prometheus for Node.',
+      identifier: 'cannot_access_prometheus_node',
+      description: 'The prometheus endpoint for a node has not been accessible for a some time.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 0,
+        enabled: true,
+      },
+      critical: {
+        threshold: 300,
+        repeat: 600,
+        repeat_enabled: true,
+        enabled: false,
+      },
+      enabled: true,
+    },
+    13: {
+      name: 'Cannot access cosmos rest server for Validator.',
+      identifier: 'cannot_access_cosmos_rest_validator',
+      description: 'The Cosmos rest server for a validator has not been accessible for some time.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 0,
+        enabled: true,
+      },
+      critical: {
+        threshold: 120,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    14: {
+      name: 'Cannot access cosmos rest server for Node.',
+      identifier: 'cannot_access_cosmos_rest_node',
+      description: 'The Cosmos rest server for a node has not been accessible for a some time.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 0,
+        enabled: true,
+      },
+      critical: {
+        threshold: 300,
+        repeat: 600,
+        repeat_enabled: true,
+        enabled: false,
+      },
+      enabled: true,
+    },
+    15: {
+      name: 'Cannot access tendermint rpc for Validator.',
+      identifier: 'cannot_access_tendermint_rpc_validator',
+      description: 'The Tendermint RPC for a validator has not been accessible for some time.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 0,
+        enabled: true,
+      },
+      critical: {
+        threshold: 120,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    16: {
+      name: 'Cannot access tendermint rpc for Node.',
+      identifier: 'cannot_access_tendermint_rpc_node',
+      description: 'The Tendermint RPC for a node has not been accessible for a some time.',
+      adornment: '%',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 0,
+        enabled: true,
+      },
+      critical: {
+        threshold: 300,
+        repeat: 600,
+        repeat_enabled: true,
+        enabled: false,
+      },
+      enabled: true,
+    },
   },
-  allIds: ['4', '5', '6', '7', '8', '9', '10', '11', '12'],
+  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16'],
 };
 
 const cosmosTimeWindowAlerts = {
   byId: {
-    13: {
-      name: 'Missed Blocks',
+    17: {
+      name: 'Missed block signatures within a time window.',
       identifier: 'missed_blocks',
-      description: 'After a number of consecutive missed blocks you will receive an alert.',
+      description: 'After a number of missed block signatures during a time window.',
       adornment_threshold: 'Blocks',
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 20,
-        time_window: 360,
+        threshold: 10,
+        time_window: 180,
         enabled: true,
       },
       critical: {
-        threshold: 100,
-        time_window: 3600,
+        threshold: 25,
+        time_window: 300,
         repeat: 300,
         repeat_enabled: true,
         enabled: true,
@@ -288,28 +366,12 @@ const cosmosTimeWindowAlerts = {
       enabled: true,
     },
   },
-  allIds: ['13'],
+  allIds: ['17'],
 };
 
 const cosmosSeverityAlerts = {
   byId: {
-    14: {
-      name: 'Validator inaccessible on startup',
-      identifier: 'validator_inaccessible_on_startup',
-      description: 'Validator was not accessible on startup.',
-      severity: CRITICAL,
-      parent_id: '',
-      enabled: true,
-    },
-    15: {
-      name: 'Node inaccessible on startup',
-      identifier: 'node_inaccessible_on_startup',
-      description: 'Node was not accessible on startup.',
-      severity: WARNING,
-      parent_id: '',
-      enabled: true,
-    },
-    16: {
+    18: {
       name: 'Slashed',
       identifier: 'slashed',
       description: 'Occurs when your validator has been slashed.',
@@ -317,7 +379,7 @@ const cosmosSeverityAlerts = {
       parent_id: '',
       enabled: true,
     },
-    17: {
+    19: {
       name: 'Node is syncing',
       identifier: 'node_is_syncing',
       description:
@@ -327,101 +389,74 @@ const cosmosSeverityAlerts = {
       parent_id: '',
       enabled: true,
     },
-    18: {
-      name: 'Validator is not active in this session',
-      identifier: 'validator_not_active_in_session',
+    20: {
+      name: 'Validator is syncing',
+      identifier: 'validator_is_syncing',
       description:
-        'Occurs when your validator is not participating in the current consensus round.',
+        'Occurs when your validator is still catching up to the rest of '
+        + 'the blockchain network in terms of block height.',
       severity: WARNING,
       parent_id: '',
       enabled: true,
     },
-    19: {
-      name: 'Validator set size increased',
-      identifier: 'validator_set_size_increased',
-      description: 'The number of validators in the set have increased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: true,
-    },
-    20: {
-      name: 'Validator set size decreased',
-      identifier: 'validator_set_size_decreased',
-      description: 'The number of validators in the set have decreased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: true,
-    },
     21: {
-      name: 'Validator Is Jailed',
-      identifier: 'validator_is_jailed',
-      description: 'The number of validators in the set have decreased.',
+      name: 'Validator not active in session',
+      identifier: 'validator_not_active_in_session',
+      description: 'If a validator is not active in the current session.',
       severity: CRITICAL,
       parent_id: '',
       enabled: true,
     },
     22: {
-      name: 'Voting power increased',
-      identifier: 'voting_power_increased',
-      description: 'Voting power of a validator has increased.',
-      severity: INFO,
+      name: 'Validator Is Jailed',
+      identifier: 'validator_is_jailed',
+      description: 'Status of validator jailed/not jailed.',
+      severity: CRITICAL,
       parent_id: '',
-      enabled: false,
+      enabled: true,
     },
     23: {
-      name: 'Validator power decreased',
-      identifier: 'voting_power_decreased',
-      description: 'Voting power of a validator has decreased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
-    },
-    24: {
       name: 'New proposal submitted',
       identifier: 'new_proposal',
       description: 'A new proposal has been submitted.',
       severity: INFO,
       parent_id: '',
-      enabled: false,
+      enabled: true,
     },
-    25: {
-      name: 'Proposal conducted',
-      identifier: 'proposal_conducted',
-      description: 'A proposal has been conducted.',
+    24: {
+      name: 'Proposal concluded',
+      identifier: 'proposal_concluded',
+      description: 'A proposal has been concluded.',
       severity: INFO,
       parent_id: '',
-      enabled: false,
-    },
-    26: {
-      name: 'Delegated balance increase',
-      identifier: 'delegated_balance_increase',
-      description: 'The amount of tokens delegated to your validator has increased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
-    },
-    27: {
-      name: 'Delegated balance decrease',
-      identifier: 'delegated_balance_decrease',
-      description: 'The amount of tokens delegated to your validator has decreased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
+      enabled: true,
     },
   },
-  allIds: ['14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27'],
+  allIds: ['18', '19', '20', '21', '22', '23', '24'],
 };
 
 // Reducers to add and remove cosmos node configurations from global state
 function nodesById(state = {}, action) {
   switch (action.type) {
     case ADD_NODE_COSMOS:
+      Object.keys(state).forEach((node) => {
+        if (state[node].parent_id === action.payload.parent_id) {
+          action.payload.monitor_network = state[node].monitor_network;
+        }
+      });
       return {
         ...state,
         [action.payload.id]: action.payload,
       };
     case REMOVE_NODE_COSMOS:
       return _.omit(state, action.payload.id);
+    case TOGGLE_NODE_MONITORING_COSMOS:
+      Object.keys(state).forEach((node) => {
+        if (state[node].parent_id === action.payload.parent_id) {
+          state[node].monitor_network = action.payload.monitor_network;
+        }
+      });
+      return state;
     default:
       return state;
   }

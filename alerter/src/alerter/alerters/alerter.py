@@ -2,7 +2,7 @@ import logging
 import sys
 from abc import abstractmethod
 from types import FrameType
-from typing import Dict, Any
+from typing import Any
 
 import pika.exceptions
 
@@ -42,11 +42,19 @@ class Alerter(QueuingPublisherSubscriberComponent):
     def _equal_condition_function(current: Any, previous: Any) -> bool:
         return current == previous
 
+    @staticmethod
+    def _is_true_condition_function(current: Any) -> bool:
+        return current is True
+
+    @staticmethod
+    def _true_fn() -> bool:
+        return True
+
     def _listen_for_data(self) -> None:
         self.rabbitmq.start_consuming()
 
     @abstractmethod
-    def _place_latest_data_on_queue(self, data_list: Dict) -> None:
+    def _place_latest_data_on_queue(self, *args) -> None:
         pass
 
     @abstractmethod

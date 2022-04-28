@@ -294,8 +294,8 @@ class LoadConfig extends Component {
                 CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
                 Object.values(config.data.result).forEach((value) => {
                   const node = JSON.parse(JSON.stringify(value));
-                  node.monitor_tendermint = node.monitor_tendermint === 'true';
-                  node.monitor_rpc = node.monitor_rpc === 'true';
+                  node.monitor_cosmos_rest = node.monitor_cosmos_rest === 'true';
+                  node.monitor_network = node.monitor_network === 'true';
                   node.monitor_prometheus = node.monitor_prometheus === 'true';
                   node.monitor_system = node.monitor_system === 'true';
                   node.is_archive_node = node.is_archive_node === 'true';

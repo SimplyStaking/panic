@@ -12,7 +12,9 @@ from src.data_store.stores.monitorable import MonitorableStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.contracts.chainlink.v3 import V3ChainlinkContract
 from src.monitorables.contracts.chainlink.v4 import V4ChainlinkContract
+from src.monitorables.networks.cosmos import CosmosNetwork
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
+from src.monitorables.nodes.cosmos_node import CosmosNode
 from src.monitorables.nodes.evm_node import EVMNode
 from src.monitorables.repo import (GitHubRepo, DockerHubRepo)
 from src.monitorables.system import System
@@ -262,6 +264,51 @@ def save_chainlink_contract_to_redis(
             str(cl_contract.last_monitored),
         Keys.get_cl_contract_last_round_observed(node_id, proxy_address):
             str(cl_contract.last_round_observed)
+    })
+
+
+def save_cosmos_node_to_redis(redis: RedisApi,
+                              cosmos_node: CosmosNode) -> None:
+    redis_hash = Keys.get_hash_parent(cosmos_node.parent_id)
+    cosmos_node_id = cosmos_node.node_id
+    redis.hset_multiple(redis_hash, {
+        Keys.get_cosmos_node_went_down_at_prometheus(cosmos_node_id):
+            str(cosmos_node.went_down_at_prometheus),
+        Keys.get_cosmos_node_went_down_at_cosmos_rest(cosmos_node_id):
+            str(cosmos_node.went_down_at_cosmos_rest),
+        Keys.get_cosmos_node_went_down_at_tendermint_rpc(cosmos_node_id):
+            str(cosmos_node.went_down_at_tendermint_rpc),
+        Keys.get_cosmos_node_current_height(cosmos_node_id):
+            str(cosmos_node.current_height),
+        Keys.get_cosmos_node_voting_power(cosmos_node_id):
+            str(cosmos_node.voting_power),
+        Keys.get_cosmos_node_is_syncing(cosmos_node_id):
+            str(cosmos_node.is_syncing),
+        Keys.get_cosmos_node_bond_status(cosmos_node_id):
+            cosmos_node.bond_status,
+        Keys.get_cosmos_node_jailed(cosmos_node_id): str(cosmos_node.jailed),
+        Keys.get_cosmos_node_slashed(cosmos_node_id):
+            json.dumps(cosmos_node.slashed),
+        Keys.get_cosmos_node_missed_blocks(cosmos_node_id):
+            json.dumps(cosmos_node.missed_blocks),
+        Keys.get_cosmos_node_last_monitored_prometheus(cosmos_node_id):
+            str(cosmos_node.last_monitored_prometheus),
+        Keys.get_cosmos_node_last_monitored_tendermint_rpc(cosmos_node_id):
+            str(cosmos_node.last_monitored_tendermint_rpc),
+        Keys.get_cosmos_node_last_monitored_cosmos_rest(cosmos_node_id):
+            str(cosmos_node.last_monitored_cosmos_rest),
+    })
+
+
+def save_cosmos_network_to_redis(redis: RedisApi,
+                                 cosmos_network: CosmosNetwork) -> None:
+    redis_hash = Keys.get_hash_parent(cosmos_network.parent_id)
+    cosmos_parent_id = cosmos_network.parent_id
+    redis.hset_multiple(redis_hash, {
+        Keys.get_cosmos_network_proposals(cosmos_parent_id):
+            json.dumps(cosmos_network.proposals),
+        Keys.get_cosmos_network_last_monitored_cosmos_rest(cosmos_parent_id):
+            str(cosmos_network.last_monitored_cosmos_rest),
     })
 
 

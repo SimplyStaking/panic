@@ -15,8 +15,8 @@ class PriceFeedObservationsMissedIncreasedAboveThreshold(Alert):
         alert_data = ChainlinkContractAlertData()
         alert_data.set_alert_data(proxy_address)
         super().__init__(
-            ChainlinkContractAlertCode
-                .PriceFeedNotObservedIncreaseAboveThreshold,
+            ChainlinkContractAlertCode.
+                PriceFeedNotObservedIncreaseAboveThreshold,
             "The Chainlink {} node's missed observations have increased above "
             "{} threshold to {} missed observations for price feed {}.".format(
                 origin_name, threshold_severity, missed_observations,
@@ -64,8 +64,8 @@ class PriceFeedDeviationDecreasedBelowThreshold(Alert):
         alert_data = ChainlinkContractAlertData()
         alert_data.set_alert_data(proxy_address)
         super().__init__(
-            ChainlinkContractAlertCode
-                .PriceFeedDeviationDecreasedBelowThreshold,
+            ChainlinkContractAlertCode.
+                PriceFeedDeviationDecreasedBelowThreshold,
             "The Chainlink {} node's submission has decreased below {} "
             "threshold to {}% deviation for the price feed {}.".format(
                 origin_name, threshold_severity, deviation,
