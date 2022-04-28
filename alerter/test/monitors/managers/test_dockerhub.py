@@ -17,19 +17,16 @@ from src.monitors.managers.dockerhub import DockerHubMonitorsManager
 from src.monitors.starters import start_dockerhub_monitor
 from src.utils import env
 from src.utils.constants.names import DOCKERHUB_MONITOR_NAME_TEMPLATE
-from src.utils.constants.rabbitmq import (DH_MON_MAN_CONFIGS_QUEUE_NAME,
-                                          DH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-                                          DH_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                          DH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
-                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                          HEALTH_CHECK_EXCHANGE,
-                                          CONFIG_EXCHANGE, PING_ROUTING_KEY,
-                                          MONITORABLE_EXCHANGE, TOPIC)
+from src.utils.constants.rabbitmq import (
+    DH_MON_MAN_CONFIGS_QUEUE_NAME, DH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+    DH_MON_MAN_HEARTBEAT_QUEUE_NAME, DH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
+    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, HEALTH_CHECK_EXCHANGE,
+    CONFIG_EXCHANGE, PING_ROUTING_KEY, MONITORABLE_EXCHANGE)
 from src.utils.exceptions import PANICException
 from src.utils.types import str_to_bool
-from test.utils.utils import (infinite_fn, connect_to_rabbit,
-                              delete_queue_if_exists, disconnect_from_rabbit,
-                              delete_exchange_if_exists)
+from test.test_utils.utils import (
+    infinite_fn, connect_to_rabbit, delete_queue_if_exists,
+    disconnect_from_rabbit, delete_exchange_if_exists)
 
 
 class TestDockerHubMonitorsManager(unittest.TestCase):
@@ -190,8 +187,11 @@ class TestDockerHubMonitorsManager(unittest.TestCase):
         self.test_manager._listen_for_data()
         mock_start_consuming.assert_called_once()
 
+    @mock.patch.object(RabbitMQApi, 'basic_consume')
     def test_initialise_rabbitmq_initialises_everything_as_expected(
-            self) -> None:
+            self, mock_basic_consume) -> None:
+        mock_basic_consume.return_value = None
+
         # To make sure that there is no connection/channel already established
         self.assertIsNone(self.rabbitmq.connection)
         self.assertIsNone(self.rabbitmq.channel)
@@ -204,6 +204,7 @@ class TestDockerHubMonitorsManager(unittest.TestCase):
             DH_MON_MAN_CONFIGS_QUEUE_NAME)
         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+        self.test_manager.rabbitmq.exchange_delete(MONITORABLE_EXCHANGE)
         self.rabbitmq.disconnect()
 
         self.test_manager._initialise_rabbitmq()
@@ -216,40 +217,53 @@ class TestDockerHubMonitorsManager(unittest.TestCase):
             self.test_manager.rabbitmq.channel._delivery_confirmation)
 
         # Check whether the exchanges and queues have been creating by
-        # sending messages with the same routing keys as for the queues. We
-        # will also check if the size of the queues is 0 to confirm that
-        # basic_consume was called (it will store the msg in the component
-        # memory immediately). If one of the exchanges or queues is not
-        # created, then an exception will be thrown. Note when deleting the
-        # exchanges in the beginning we also released every binding, hence
-        # there is no other queue binded with the same routing key to any
-        # exchange at this point.
+        # sending messages with the same routing keys as for the queues, and
+        # checking what messages have been received if any.
         self.test_manager.rabbitmq.basic_publish_confirm(
             exchange=HEALTH_CHECK_EXCHANGE,
             routing_key=PING_ROUTING_KEY, body=self.test_data_str,
             is_body_dict=False,
-            properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True)
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.test_manager.rabbitmq.basic_publish_confirm(
             exchange=CONFIG_EXCHANGE,
             routing_key=DH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
             body=self.test_data_str, is_body_dict=False,
-            properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True)
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
         self.test_manager.rabbitmq.basic_publish_confirm(
             exchange=CONFIG_EXCHANGE,
             routing_key=DH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
             body=self.test_data_str, is_body_dict=False,
-            properties=pika.BasicProperties(delivery_mode=2),
-            mandatory=True)
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
 
         # Re-declare queue to get the number of messages
         res = self.test_manager.rabbitmq.queue_declare(
             DH_MON_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
-        self.assertEqual(0, res.method.message_count)
+        self.assertEqual(1, res.method.message_count)
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            DH_MON_MAN_HEARTBEAT_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+
         res = self.test_manager.rabbitmq.queue_declare(
             DH_MON_MAN_CONFIGS_QUEUE_NAME, False, True, False, False)
-        self.assertEqual(0, res.method.message_count)
+        self.assertEqual(2, res.method.message_count)
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            DH_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            DH_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+
+        # Check that basic_consume was called twice, once for each consumer
+        # queue
+        calls = mock_basic_consume.call_args_list
+        self.assertEqual(2, len(calls))
+
+        # Check that the publishing exchanges were created by sending messages
+        # to them. If this fails an exception is raised hence the test fails.
+        self.test_manager.rabbitmq.basic_publish_confirm(
+            exchange=MONITORABLE_EXCHANGE, routing_key='test_key',
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=False)
 
     def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
         # This test creates a queue which receives messages with the same
@@ -944,19 +958,23 @@ class TestDockerHubMonitorsManager(unittest.TestCase):
         self.assertFalse(
             'config_id2' in self.test_manager.config_process_dict)
 
+    @mock.patch.object(DockerHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
     @mock.patch.object(DockerHubMonitorsManager,
                        "_create_and_start_monitor_process")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     def test_process_confs_restarts_an_updated_monitor_with_the_correct_conf(
-            self, mock_terminate, mock_join, startup_mock, mock_ack) -> None:
+            self, mock_terminate, mock_join, startup_mock, mock_ack,
+            mock_process_send_mon_data) -> None:
         # We will check whether _create_and_start_monitor_process is called
         # correctly on an updated configuration.
-        mock_ack.return_value = None
-        startup_mock.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
+        startup_mock.return_value = None
+        mock_ack.return_value = None
+        mock_process_send_mon_data.return_value = None
         updated_configs_chain = {
             'config_id1': {
                 'id': 'config_id1',
@@ -981,8 +999,6 @@ class TestDockerHubMonitorsManager(unittest.TestCase):
 
         # Must create a connection so that the blocking channel is passed
         self.test_manager.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
 
         # We will send new configs through both the existing and
@@ -1455,6 +1471,8 @@ class TestDockerHubMonitorsManager(unittest.TestCase):
         send_hb_mock.assert_called_once_with(expected_output)
 
     @freeze_time("2012-01-01")
+    @mock.patch.object(DockerHubMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "start")
     @mock.patch.object(multiprocessing.Process, "terminate")
@@ -1463,17 +1481,15 @@ class TestDockerHubMonitorsManager(unittest.TestCase):
     @mock.patch.object(DockerHubMonitorsManager, "_send_heartbeat")
     def test_process_ping_restarts_dead_processes(
             self, send_hb_mock, mock_create_logger, mock_ack, mock_terminate,
-            mock_start, mock_join) -> None:
+            mock_start, mock_join, mock_process_send_mon_data) -> None:
         send_hb_mock.return_value = None
+        mock_create_logger.return_value = self.dummy_logger
+        mock_ack.return_value = None
         mock_terminate.return_value = None
         mock_start.return_value = None
         mock_join.return_value = None
-        mock_create_logger.return_value = self.dummy_logger
-        mock_ack.return_value = None
+        mock_process_send_mon_data.return_value = None
 
-        self.test_manager.rabbitmq.connect()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
         blocking_channel = self.test_manager.rabbitmq.channel
         method_chains = pika.spec.Basic.Deliver(
             routing_key=self.chains_routing_key)

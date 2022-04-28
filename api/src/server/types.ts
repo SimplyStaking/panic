@@ -108,6 +108,26 @@ export interface AlertKeysNode {
     evm_block_syncing_block_height_difference: string,
     evm_block_syncing_no_change_in_block_height: string,
     evm_invalid_url: string,
+    // Cosmos Nodes
+    cosmos_node_is_down: string,
+    cosmos_node_slashed: string,
+    cosmos_node_syncing: string,
+    cosmos_node_active: string,
+    cosmos_node_jailed: string,
+    cosmos_node_blocks_missed: string,
+    cosmos_node_change_in_height: string,
+    cosmos_node_height_difference: string,
+    cosmos_node_prometheus_url_invalid: string,
+    cosmos_node_cosmos_rest_url_invalid: string,
+    cosmos_node_tendermint_rpc_url_invalid: string,
+    cosmos_node_prometheus_is_down: string,
+    cosmos_node_cosmos_rest_is_down: string,
+    cosmos_node_tendermint_rpc_is_down: string,
+    cosmos_node_no_synced_cosmos_rest_source: string,
+    cosmos_node_no_synced_tendermint_rpc_source: string,
+    cosmos_node_cosmos_rest_data_not_obtained: string,
+    cosmos_node_tendermint_rpc_data_not_obtained: string,
+    cosmos_node_metric_not_found: string,
 
     [key: string]: string
 }

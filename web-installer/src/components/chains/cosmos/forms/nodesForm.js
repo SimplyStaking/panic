@@ -12,7 +12,7 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { PingPrometheus, PingTendermint } from 'utils/buttons';
+import { PingTendermint, PingCosmosRest, PingPrometheus } from 'utils/buttons';
 import { defaultTheme, theme } from 'components/theme/default';
 import Button from 'components/material_ui/CustomButtons/Button';
 import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
@@ -23,7 +23,8 @@ import GridItem from 'components/material_ui/Grid/GridItem';
 let isDirty = false;
 
 const NodesForm = ({
-  errors, values, handleSubmit, handleChange, setFieldValue, data, dirty, toggleDirtyForm,
+  errors, values, handleSubmit, handleChange, setFieldValue, data, dirty,
+  toggleDirtyForm,
 }) => {
   const classes = useStyles();
 
@@ -93,73 +94,16 @@ const NodesForm = ({
                 </Grid>
                 <Grid item xs={8}>
                   <CssTextField
-                    id="tendermint-name-outlined-full-width"
-                    value={values.tendermint_rpc_url}
-                    label="Tendermint RPC URL"
-                    type="text"
-                    style={{ margin: 8 }}
-                    name="tendermint_rpc_url"
-                    placeholder={data.nodeForm.tendermintHolder}
-                    helperText={errors.name ? errors.name : ''}
-                    onChange={handleChange}
-                    fullWidth
-                    margin="normal"
-                    disabled
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                    variant="outlined"
-                    autoComplete="off"
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <MuiThemeProvider theme={theme}>
-                            <Tooltip title={data.nodeForm.tendermintTip} placement="left">
-                              <InfoIcon />
-                            </Tooltip>
-                          </MuiThemeProvider>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={2}>
-                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          checked={values.monitor_tendermint}
-                          onClick={() => {
-                            setFieldValue('monitor_tendermint', !values.monitor_tendermint);
-                          }}
-                          name="monitor_tendermint"
-                          color="primary"
-                        />
-                      )}
-                      label="Monitor"
-                      labelPlacement="start"
-                      disabled
-                    />
-                  </Grid>
-                </Grid>
-                <Grid item xs={2}>
-                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
-                    <PingTendermint disabled tendermintRpcUrl={values.tendermint_rpc_url} />
-                  </Grid>
-                </Grid>
-                <Grid item xs={8}>
-                  <CssTextField
                     id="cosmos-rest-server-outlined-full-width"
-                    value={values.cosmos_rpc_url}
+                    value={values.cosmos_rest_url}
                     label="Cosmos Rest Server"
                     type="text"
                     style={{ margin: 8 }}
-                    name="cosmos_rpc_url"
+                    name="cosmos_rest_url"
                     placeholder={data.nodeForm.sdkHolder}
                     onChange={handleChange}
                     fullWidth
                     margin="normal"
-                    disabled
                     InputLabelProps={{
                       shrink: true,
                     }}
@@ -183,23 +127,22 @@ const NodesForm = ({
                     <FormControlLabel
                       control={(
                         <Switch
-                          checked={values.monitor_rpc}
+                          checked={values.monitor_cosmos_rest}
                           onClick={() => {
-                            setFieldValue('monitor_rpc', !values.monitor_rpc);
+                            setFieldValue('monitor_cosmos_rest', !values.monitor_cosmos_rest);
                           }}
-                          name="monitor_rpc"
+                          name="monitor_cosmos_rest"
                           color="primary"
                         />
                       )}
                       label="Monitor"
                       labelPlacement="start"
-                      disabled
                     />
                   </Grid>
                 </Grid>
                 <Grid item xs={2}>
                   <Grid container direction="row" justifyContent="flex-end" alignItems="center">
-                    <PingPrometheus disabled prometheusUrl="" metric="" />
+                    <PingCosmosRest disabled={false} restUrl={values.cosmos_rest_url} />
                   </Grid>
                 </Grid>
                 <Grid item xs={8}>
@@ -217,7 +160,6 @@ const NodesForm = ({
                     InputLabelProps={{
                       shrink: true,
                     }}
-                    disabled
                     variant="outlined"
                     autoComplete="off"
                     InputProps={{
@@ -248,13 +190,12 @@ const NodesForm = ({
                       )}
                       label="Monitor"
                       labelPlacement="start"
-                      disabled
                     />
                   </Grid>
                 </Grid>
                 <Grid item xs={2}>
                   <Grid container direction="row" justifyContent="flex-end" alignItems="center">
-                    <PingPrometheus disabled prometheusUrl={values.prometheus_url} />
+                    <PingPrometheus disabled={false} prometheusUrl={values.prometheus_url} metric="go_goroutines" />
                   </Grid>
                 </Grid>
                 <Grid item xs={8}>
@@ -316,7 +257,94 @@ const NodesForm = ({
                     />
                   </Grid>
                 </Grid>
+                <Grid item xs={8}>
+                  <CssTextField
+                    id="tendermint-rpc-url-outlined-full-width"
+                    value={values.tendermint_rpc_url}
+                    label="Tendermint RPC URL"
+                    type="text"
+                    style={{ margin: 8 }}
+                    name="tendermint_rpc_url"
+                    placeholder={data.nodeForm.tendermintRpcHolder}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    variant="outlined"
+                    autoComplete="off"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <MuiThemeProvider theme={theme}>
+                            <Tooltip title={data.nodeForm.tendermintRpcTip} placement="left">
+                              <InfoIcon />
+                            </Tooltip>
+                          </MuiThemeProvider>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
                 <Grid item xs={2}>
+                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={values.monitor_tendermint_rpc}
+                          onClick={() => {
+                            setFieldValue('monitor_tendermint_rpc', !values.monitor_tendermint_rpc);
+                          }}
+                          name="monitor_tendermint_rpc_system"
+                          color="primary"
+                        />
+                      )}
+                      label="Monitor"
+                      labelPlacement="start"
+                    />
+                  </Grid>
+                </Grid>
+                <Grid item xs={2}>
+                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
+                    <PingTendermint
+                      disabled={false}
+                      httpUrl={values.tendermint_rpc_url}
+                    />
+                  </Grid>
+                </Grid>
+                <Grid item xs={8}>
+                  <CssTextField
+                    id="operator-address-outlined-full-width"
+                    value={values.operator_address}
+                    label="Operator Address"
+                    type="text"
+                    style={{ margin: 8 }}
+                    name="operator_address"
+                    placeholder={data.nodeForm.operatorAddressHolder}
+                    onChange={handleChange}
+                    fullWidth
+                    margin="normal"
+                    disabled={!values.is_validator}
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    variant="outlined"
+                    autoComplete="off"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <MuiThemeProvider theme={theme}>
+                            <Tooltip title={data.nodeForm.operatorAddressTip} placement="left">
+                              <InfoIcon />
+                            </Tooltip>
+                          </MuiThemeProvider>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={2} container direction="row" justifyContent="center" alignItems="center">
                   <Box pl={1}>
                     <Typography> Node is Validator </Typography>
                   </Box>
@@ -334,7 +362,6 @@ const NodesForm = ({
                       />
                     )}
                     label=""
-                    disabled
                   />
                 </Grid>
                 <Grid item xs={1}>
@@ -362,7 +389,6 @@ const NodesForm = ({
                       />
                     )}
                     label=""
-                    disabled
                   />
                 </Grid>
                 <Grid item xs={1}>
@@ -374,7 +400,6 @@ const NodesForm = ({
                     </MuiThemeProvider>
                   </Grid>
                 </Grid>
-                <Grid item xs={4} />
                 <Grid item xs={2}>
                   <Box pl={1}>
                     <Typography> Monitor Node </Typography>
@@ -420,7 +445,6 @@ const NodesForm = ({
                       />
                     )}
                     label=""
-                    disabled
                   />
                 </Grid>
                 <Grid item xs={1}>
@@ -432,12 +456,12 @@ const NodesForm = ({
                     </MuiThemeProvider>
                   </Grid>
                 </Grid>
-                <Grid item xs={2} />
-                <Grid item xs={2}>
+                <Grid item xs={4}>
                   <Grid container direction="row" justifyContent="flex-end" alignItems="center">
                     <Button
                       color="primary"
                       size="md"
+                      fullWidth
                       disabled={Object.keys(errors).length !== 0}
                       type="submit"
                     >
@@ -462,10 +486,8 @@ NodesForm.propTypes = {
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     name: PropTypes.string.isRequired,
-    tendermint_rpc_url: PropTypes.string,
-    monitor_tendermint: PropTypes.bool.isRequired,
-    cosmos_rpc_url: PropTypes.string,
-    monitor_rpc: PropTypes.bool.isRequired,
+    cosmos_rest_url: PropTypes.string,
+    monitor_cosmos_rest: PropTypes.bool.isRequired,
     prometheus_url: PropTypes.string,
     monitor_prometheus: PropTypes.bool.isRequired,
     exporter_url: PropTypes.string,
@@ -474,6 +496,11 @@ NodesForm.propTypes = {
     monitor_node: PropTypes.bool.isRequired,
     is_archive_node: PropTypes.bool.isRequired,
     use_as_data_source: PropTypes.bool.isRequired,
+    governance_addresses: PropTypes.arrayOf(PropTypes.string.isRequired),
+    monitor_network: PropTypes.bool.isRequired,
+    operator_address: PropTypes.string,
+    tendermint_rpc_url: PropTypes.string,
+    monitor_tendermint_rpc: PropTypes.bool.isRequired,
   }).isRequired,
   handleChange: PropTypes.func.isRequired,
   setFieldValue: PropTypes.func.isRequired,
@@ -485,18 +512,22 @@ NodesForm.propTypes = {
       description: PropTypes.string.isRequired,
       nameHolder: PropTypes.string.isRequired,
       nameTip: PropTypes.string.isRequired,
-      tendermintHolder: PropTypes.string.isRequired,
-      tendermintTip: PropTypes.string.isRequired,
       sdkHolder: PropTypes.string.isRequired,
       sdkTip: PropTypes.string.isRequired,
       prometheusHolder: PropTypes.string.isRequired,
       prometheusTip: PropTypes.string.isRequired,
       exporterUrlHolder: PropTypes.string.isRequired,
       exporterUrlTip: PropTypes.string.isRequired,
+      tendermintRpcHolder: PropTypes.string.isRequired,
+      tendermintRpcTip: PropTypes.string.isRequired,
       isValidatorTip: PropTypes.string.isRequired,
       isArchiveTip: PropTypes.string.isRequired,
       monitorNodeTip: PropTypes.string.isRequired,
       useAsDataSourceTip: PropTypes.string.isRequired,
+      governanceAddressesHolder: PropTypes.string.isRequired,
+      operatorAddressHolder: PropTypes.string.isRequired,
+      operatorAddressTip: PropTypes.string.isRequired,
+      monitorNetworkTip: PropTypes.string.isRequired,
     }).isRequired,
   }).isRequired,
 };

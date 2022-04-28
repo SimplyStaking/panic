@@ -42,9 +42,9 @@ from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           CHANNELS_MANAGER_CONFIGS_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from src.utils.types import ChannelHandlerTypes, ChannelTypes
-from test.utils.utils import (infinite_fn, connect_to_rabbit,
-                              delete_queue_if_exists, delete_exchange_if_exists,
-                              disconnect_from_rabbit)
+from test.test_utils.utils import (
+    infinite_fn, connect_to_rabbit, delete_queue_if_exists,
+    delete_exchange_if_exists, disconnect_from_rabbit)
 
 
 class TestChannelsManager(unittest.TestCase):

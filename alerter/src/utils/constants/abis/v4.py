@@ -1783,5 +1783,3 @@ V4_PROXY = [
         'type': 'function'
     }
 ]
-
-# TODO: For v3 also

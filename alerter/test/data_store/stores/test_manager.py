@@ -12,23 +12,26 @@ from parameterized import parameterized
 
 from src.data_store.starters import (
     start_system_store, start_github_store, start_dockerhub_store,
-    start_chainlink_node_store, start_alert_store, start_evm_node_store,
-    start_cl_contract_store, start_monitorable_store)
+    start_chainlink_node_store, start_cosmos_node_store, start_alert_store,
+    start_monitorable_store, start_evm_node_store, start_cl_contract_store,
+    start_cosmos_network_store
+)
 from src.data_store.stores.manager import StoreManager
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (
     SYSTEM_STORE_NAME, GITHUB_STORE_NAME, DOCKERHUB_STORE_NAME,
-    ALERT_STORE_NAME, CL_NODE_STORE_NAME, EVM_NODE_STORE_NAME,
-    CL_CONTRACT_STORE_NAME, MONITORABLE_STORE_NAME)
+    ALERT_STORE_NAME, MONITORABLE_STORE_NAME, CL_NODE_STORE_NAME,
+    EVM_NODE_STORE_NAME, CL_CONTRACT_STORE_NAME, COSMOS_NODE_STORE_NAME,
+    COSMOS_NETWORK_STORE_NAME)
 from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
                                           PING_ROUTING_KEY,
                                           HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
-from test.utils.utils import (infinite_fn, connect_to_rabbit,
-                              delete_queue_if_exists, delete_exchange_if_exists,
-                              disconnect_from_rabbit)
+from test.test_utils.utils import (
+    infinite_fn, connect_to_rabbit, delete_queue_if_exists,
+    delete_exchange_if_exists, disconnect_from_rabbit)
 
 
 class TestStoreManager(unittest.TestCase):
@@ -79,6 +82,12 @@ class TestStoreManager(unittest.TestCase):
         self.dummy_process8 = multiprocessing.Process(target=infinite_fn,
                                                       args=())
         self.dummy_process8.daemon = True
+        self.dummy_process9 = multiprocessing.Process(target=infinite_fn,
+                                                      args=())
+        self.dummy_process9.daemon = True
+        self.dummy_process10 = multiprocessing.Process(target=infinite_fn,
+                                                       args=())
+        self.dummy_process10.daemon = True
         self.store_process_dict_example = {
             SYSTEM_STORE_NAME: self.dummy_process1,
             GITHUB_STORE_NAME: self.dummy_process2,
@@ -87,7 +96,9 @@ class TestStoreManager(unittest.TestCase):
             MONITORABLE_STORE_NAME: self.dummy_process5,
             CL_NODE_STORE_NAME: self.dummy_process6,
             EVM_NODE_STORE_NAME: self.dummy_process7,
-            CL_CONTRACT_STORE_NAME: self.dummy_process8
+            CL_CONTRACT_STORE_NAME: self.dummy_process8,
+            COSMOS_NODE_STORE_NAME: self.dummy_process9,
+            COSMOS_NETWORK_STORE_NAME: self.dummy_process10
         }
 
         # Test data store manager
@@ -114,6 +125,8 @@ class TestStoreManager(unittest.TestCase):
         self.dummy_process6 = None
         self.dummy_process7 = None
         self.dummy_process8 = None
+        self.dummy_process9 = None
+        self.dummy_process10 = None
         self.test_manager = None
         self.test_exception = None
         self.store_process_dict_example = None
@@ -209,6 +222,8 @@ class TestStoreManager(unittest.TestCase):
         (SYSTEM_STORE_NAME, start_system_store, {}, False,),
         (GITHUB_STORE_NAME, start_github_store, {}, False,),
         (DOCKERHUB_STORE_NAME, start_dockerhub_store, {}, False),
+        (COSMOS_NODE_STORE_NAME, start_cosmos_node_store, {}, False,),
+        (COSMOS_NETWORK_STORE_NAME, start_cosmos_network_store, {}, False,),
         (CL_NODE_STORE_NAME, start_chainlink_node_store, {}, False,),
         (EVM_NODE_STORE_NAME, start_evm_node_store, {}, False,),
         (CL_CONTRACT_STORE_NAME, start_cl_contract_store, {}, False,),
@@ -219,6 +234,10 @@ class TestStoreManager(unittest.TestCase):
         (GITHUB_STORE_NAME, start_github_store,
          'self.store_process_dict_example', True,),
         (DOCKERHUB_STORE_NAME, start_dockerhub_store,
+         'self.store_process_dict_example', True),
+        (COSMOS_NODE_STORE_NAME, start_cosmos_node_store,
+         'self.store_process_dict_example', True),
+        (COSMOS_NETWORK_STORE_NAME, start_cosmos_network_store,
          'self.store_process_dict_example', True),
         (CL_NODE_STORE_NAME, start_chainlink_node_store,
          'self.store_process_dict_example', True,),
@@ -262,12 +281,12 @@ class TestStoreManager(unittest.TestCase):
         # time run, and for when the related process is dead. For the second
         # case we will use the dummy state created in startUp as no dummy
         # process was started. Note that each time we will check that start is
-        # called 8 times, once for each store.
+        # called 10 times, once for each store.
         mock_start.return_value = None
         self.test_manager._store_process_dict = \
             eval(state) if state_is_str else state
         self.test_manager._start_stores_processes()
-        self.assertEqual(8, mock_start.call_count)
+        self.assertEqual(10, mock_start.call_count)
 
     @mock.patch.object(multiprocessing, "Process")
     @mock.patch.object(multiprocessing.Process, "is_alive")
@@ -319,7 +338,9 @@ class TestStoreManager(unittest.TestCase):
             'running_processes': [SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
                                   DOCKERHUB_STORE_NAME, ALERT_STORE_NAME,
                                   MONITORABLE_STORE_NAME, CL_NODE_STORE_NAME,
-                                  EVM_NODE_STORE_NAME, CL_CONTRACT_STORE_NAME],
+                                  EVM_NODE_STORE_NAME, CL_CONTRACT_STORE_NAME,
+                                  COSMOS_NODE_STORE_NAME,
+                                  COSMOS_NETWORK_STORE_NAME],
             'dead_processes': [],
             'timestamp': datetime.now().timestamp()
         }
@@ -338,7 +359,7 @@ class TestStoreManager(unittest.TestCase):
         # will assume that the second and third processes are dead, these
         # correspond to the github store and the alert store respectively.
         mock_is_alive.side_effect = [True, False, False, True, True, True,
-                                     True, True]
+                                     True, True, True, True]
         mock_send_hb.return_value = None
         mock_join.return_value = None
         mock_start_stores.return_value = None
@@ -362,7 +383,9 @@ class TestStoreManager(unittest.TestCase):
             'component_name': self.test_manager.name,
             'running_processes': [SYSTEM_STORE_NAME, ALERT_STORE_NAME,
                                   MONITORABLE_STORE_NAME, CL_NODE_STORE_NAME,
-                                  EVM_NODE_STORE_NAME, CL_CONTRACT_STORE_NAME],
+                                  EVM_NODE_STORE_NAME, CL_CONTRACT_STORE_NAME,
+                                  COSMOS_NODE_STORE_NAME,
+                                  COSMOS_NETWORK_STORE_NAME],
             'dead_processes': [GITHUB_STORE_NAME, DOCKERHUB_STORE_NAME],
             'timestamp': datetime.now().timestamp()
         }
@@ -406,20 +429,26 @@ class TestStoreManager(unittest.TestCase):
             'dead_processes': [SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
                                DOCKERHUB_STORE_NAME, ALERT_STORE_NAME,
                                MONITORABLE_STORE_NAME, CL_NODE_STORE_NAME,
-                               EVM_NODE_STORE_NAME, CL_CONTRACT_STORE_NAME],
+                               EVM_NODE_STORE_NAME, CL_CONTRACT_STORE_NAME,
+                               COSMOS_NODE_STORE_NAME,
+                               COSMOS_NETWORK_STORE_NAME],
             'timestamp': datetime.now().timestamp()
         }
         mock_send_hb.assert_called_once_with(expected_hb)
 
     @parameterized.expand([
-        ([True, True, True, True, True, True, True, False],),
-        ([True, True, True, True, True, True, False, False],),
-        ([True, True, True, True, True, False, False, False],),
-        ([True, True, True, True, False, False, False, False],),
-        ([True, True, True, False, False, False, False, False],),
-        ([True, True, False, False, False, False, False, False],),
-        ([True, False, False, False, False, False, False, False],),
-        ([False, False, False, False, False, False, False, False],),
+        ([True, True, True, True, True, True, True, True, True, False],),
+        ([True, True, True, True, True, True, True, True, False, False],),
+        ([True, True, True, True, True, True, True, False, False, False],),
+        ([True, True, True, True, True, True, False, False, False, False],),
+        ([True, True, True, True, True, False, False, False, False, False],),
+        ([True, True, True, True, False, False, False, False, False, False],),
+        ([True, True, True, False, False, False, False, False, False, False],),
+        ([True, True, False, False, False, False, False, False, False, False],),
+        ([True, False, False, False, False, False, False, False, False,
+          False],),
+        ([False, False, False, False, False, False, False, False, False,
+          False],),
     ])
     @freeze_time("2012-01-01")
     @mock.patch.object(StoreManager, "_send_heartbeat")

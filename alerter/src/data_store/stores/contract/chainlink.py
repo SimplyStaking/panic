@@ -208,18 +208,16 @@ class ChainlinkContractStore(Store):
                         proxy_address: {
                             'node_id': str(node_id),
                             'node_name': str(node_name),
-                            'contractVersion': str(contract_data[
-                                                       'contractVersion']),
-                            'aggregatorAddress': str(contract_data[
-                                                         'aggregatorAddress']),
-                            'latestRound': str(contract_data[
-                                                   'latestRound']),
-                            'latestAnswer': str(contract_data[
-                                                    'latestAnswer']),
-                            'latestTimestamp': str(contract_data[
-                                                       'latestTimestamp']),
-                            'answeredInRound': str(contract_data[
-                                                       'answeredInRound']),
+                            'contractVersion': str(
+                                contract_data['contractVersion']),
+                            'aggregatorAddress': str(
+                                contract_data['aggregatorAddress']),
+                            'latestRound': str(contract_data['latestRound']),
+                            'latestAnswer': str(contract_data['latestAnswer']),
+                            'latestTimestamp': str(
+                                contract_data['latestTimestamp']),
+                            'answeredInRound': str(
+                                contract_data['answeredInRound']),
                             payment_key: str(contract_data[
                                                  payment_key]),
                             'historicalRounds': json.dumps(

@@ -11,7 +11,9 @@ from src.data_transformers.contracts.chainlink import (
 from src.data_transformers.data_transformer import DataTransformer
 from src.data_transformers.dockerhub import DockerHubDataTransformer
 from src.data_transformers.github import GitHubDataTransformer
+from src.data_transformers.networks.cosmos import CosmosNetworkTransformer
 from src.data_transformers.node.chainlink import ChainlinkNodeDataTransformer
+from src.data_transformers.node.cosmos import CosmosNodeDataTransformer
 from src.data_transformers.node.evm import EVMNodeDataTransformer
 from src.data_transformers.system import SystemDataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -19,7 +21,8 @@ from src.utils import env
 from src.utils.constants.names import (
     SYSTEM_DATA_TRANSFORMER_NAME, GITHUB_DATA_TRANSFORMER_NAME,
     DOCKERHUB_DATA_TRANSFORMER_NAME, CL_NODE_DATA_TRANSFORMER_NAME,
-    EVM_NODE_DATA_TRANSFORMER_NAME, CL_CONTRACTS_DATA_TRANSFORMER_NAME)
+    EVM_NODE_DATA_TRANSFORMER_NAME, CL_CONTRACTS_DATA_TRANSFORMER_NAME,
+    COSMOS_NODE_DATA_TRANSFORMER_NAME, COSMOS_NETWORK_DATA_TRANSFORMER_NAME)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
                                           RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
@@ -137,6 +140,18 @@ def start_chainlink_contracts_data_transformer() -> None:
     chainlink_contracts_data_transformer = _initialise_data_transformer(
         ChainlinkContractsDataTransformer, CL_CONTRACTS_DATA_TRANSFORMER_NAME)
     start_transformer(chainlink_contracts_data_transformer)
+
+
+def start_cosmos_node_data_transformer() -> None:
+    cosmos_node_data_transformer = _initialise_data_transformer(
+        CosmosNodeDataTransformer, COSMOS_NODE_DATA_TRANSFORMER_NAME)
+    start_transformer(cosmos_node_data_transformer)
+
+
+def start_cosmos_network_data_transformer() -> None:
+    cosmos_network_data_transformer = _initialise_data_transformer(
+        CosmosNetworkTransformer, COSMOS_NETWORK_DATA_TRANSFORMER_NAME)
+    start_transformer(cosmos_network_data_transformer)
 
 
 def start_transformer(transformer: DataTransformer) -> None:

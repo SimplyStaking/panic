@@ -23,6 +23,9 @@ class TimedTaskLimiter:
     def last_time_that_did_task(self) -> datetime:
         return self._last_time_that_did_task
 
+    def set_time_interval(self, time_interval: timedelta) -> None:
+        self._time_interval = time_interval
+
     def can_do_task(self, start_time: datetime = None) -> bool:
         if start_time is None:
             start_time = datetime.now()
@@ -67,6 +70,9 @@ class TimedTaskTracker:
     @property
     def start_time(self) -> datetime:
         return self._start_time
+
+    def set_time_interval(self, time_interval: timedelta) -> None:
+        self._time_interval = time_interval
 
     def start_timer(self, start_time: datetime = None) -> None:
         if start_time is None:

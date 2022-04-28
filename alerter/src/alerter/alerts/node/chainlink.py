@@ -14,8 +14,8 @@ class NoChangeInHeightAlert(Alert):
                  last_processed_block: int) -> None:
         super().__init__(
             ChainlinkNodeAlertCode.NoChangeInHeightAlert,
-            "The latest block height processed by {} was at least {} "
-            "ago. Last processed block: {}.".format(origin_name, strfdelta(
+            "The block height of {} was updated at least {} ago. Last synced "
+            "block: {}.".format(origin_name, strfdelta(
                 timedelta(seconds=duration),
                 "{hours}h, {minutes}m, {seconds}s"), last_processed_block),
             severity, timestamp, parent_id, origin_id,
@@ -28,8 +28,8 @@ class BlockHeightUpdatedAlert(Alert):
                  last_processed_block: int) -> None:
         super().__init__(
             ChainlinkNodeAlertCode.BlockHeightUpdatedAlert,
-            "{} is now processing blocks again. Last processed block: "
-            "{}.".format(origin_name, last_processed_block),
+            "{} is now receiving blocks again. Last synced block: {}.".format(
+                origin_name, last_processed_block),
             severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight)
 

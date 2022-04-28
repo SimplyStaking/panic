@@ -17,14 +17,11 @@ from src.utils.configs import (get_newly_added_configs, get_modified_configs,
                                get_removed_configs)
 from src.utils.constants.monitorables import MonitorableType
 from src.utils.constants.names import GITHUB_MONITOR_NAME_TEMPLATE
-from src.utils.constants.rabbitmq import (CONFIG_EXCHANGE,
-                                          HEALTH_CHECK_EXCHANGE,
-                                          GH_MON_MAN_CONFIGS_QUEUE_NAME,
-                                          GH_MON_MAN_HEARTBEAT_QUEUE_NAME,
-                                          PING_ROUTING_KEY,
-                                          GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS,
-                                          GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
-                                          TOPIC)
+from src.utils.constants.rabbitmq import (
+    CONFIG_EXCHANGE, HEALTH_CHECK_EXCHANGE, GH_MON_MAN_CONFIGS_QUEUE_NAME,
+    GH_MON_MAN_HEARTBEAT_QUEUE_NAME, PING_ROUTING_KEY,
+    GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS, GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN,
+    TOPIC, MONITORABLE_EXCHANGE)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
 from src.utils.types import str_to_bool
@@ -84,6 +81,10 @@ class GitHubMonitorsManager(MonitorsManager):
                                     self._process_configs, False, False, None)
 
         # Declare publishing intentions
+        self.logger.info("Creating exchange '%s'", MONITORABLE_EXCHANGE)
+        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
+                                       False, False)
+
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")
         self.rabbitmq.confirm_delivery()
 

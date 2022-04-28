@@ -19,7 +19,7 @@ from src.alerter.managers.manager import AlertersManager
 from src.configs.alerts.contract.chainlink import (
     ChainlinkContractAlertsConfig)
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
-from src.configs.factory.node.chainlink_alerts import (
+from src.configs.factory.alerts.chainlink_alerts import (
     ChainlinkNodeAlertsConfigsFactory, ChainlinkContractAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (CHAINLINK_NODE_ALERTER_NAME,

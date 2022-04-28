@@ -22,8 +22,6 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
 
     async componentWillLoad() {
         try {
-            this.baseChains = await ChainsAPI.getAllBaseChains();
-            this._filterStates = FilterStateAPI.getFilterStates(this.baseChains);
             await this.reRenderAction();
 
             this._updater = window.setInterval(async () => {
@@ -35,7 +33,9 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
     }
 
     async reRenderAction() {
-        this.baseChains = await ChainsAPI.updateBaseChainsWithAlerts(this.baseChains, this._filterStates);
+        const latestBaseChains = await ChainsAPI.getAllBaseChains();
+        this._filterStates = FilterStateAPI.getFilterStates(latestBaseChains, this._filterStates);
+        this.baseChains = await ChainsAPI.updateBaseChainsWithAlerts(latestBaseChains, this._filterStates);
     }
 
     async componentDidLoad() {

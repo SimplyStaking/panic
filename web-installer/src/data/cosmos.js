@@ -45,8 +45,12 @@ export default {
     tendermintTip: `This IP address will be used to monitor tendermint based
       statistics, if omitted they will not be monitored and alerted on.`,
     sdkHolder: 'http://IP:1317',
-    sdkTip: `This IP address will be used to monitor cosmos SDK based
-      statistics, if omitted they will not be monitored and alerted on.`,
+    sdkTip: `This endpoint is used to obtain validator metrics using Cosmos-Rest, namely jailed and bond statuses.
+      When possible, the data retrieval is done indirectly by means of a non-validator as data source.
+      However, the endpoint is ultimately required to determine whether the validator is reachable.
+      Apart from this, firewall rules can be set up to only allow PANIC to access this endpoint. 
+      Should this not be wanted, this endpoint can be safely disabled, however none of the mentioned
+      validator metrics will be obtained.`,
     prometheusHolder: 'http://IP:26660/metrics',
     prometheusTip: `This IP address will be used to monitor prometheus based
       statistics, if omitted they will not be monitored and alerted on.`,
@@ -55,10 +59,21 @@ export default {
       statistics, if omitted they will not be monitored and alerted on.`,
     isValidatorTip: 'Set True if the node you are setting up is a validator.',
     isArchiveTip: 'Set True if the node you are setting up is an archive node.',
+    monitorNetworkTip: 'Set True if you want the blockchain monitor for data such as governance proposals.',
     monitorNodeTip: 'Set True if you want to monitor this configured node.',
     useAsDataSourceTip: 'Set True if you want to retrieve blockchain data from this node.',
+    governanceAddressesHolder: 'cosmos1xn6ccr931loajcpg2rl0wue8jhwe8956ctvrae [Press Enter after each address].',
+    operatorAddressHolder: 'cosmosvaloper124maqmcqv8tquy764ktz7cu0gxnzfw54n3vww8',
+    operatorAddressTip: 'This is the validator address of the node you are monitoring.',
     backStep: CHAINS_STEP,
     nextStep: REPOSITORIES_STEP,
+    tendermintRpcHolder: 'http://nodeip:26657',
+    tendermintRpcTip: `This IP address will be used to obtain metrics from the
+    Tendermint endpoint. If ommitted they wil not be monitored and alerted on`,
+  },
+  monitorNodesForm: {
+    description: `Do you want to retrieve network metrics for <chain_name>?
+    Setting this to True will enable monitoring data such as governance proposals.`,
   },
   repoForm: {
     title: 'Github Repositories Setup',
@@ -99,7 +114,7 @@ export default {
       For the same chain, you can select as many channel configurations from as many
       channels as you want.`,
     empty: "You haven't setup any channels! You will not be alerted on this chain!",
-    backStep: CHANNELS_STEP,
+    backStep: DOCKER_STEP,
     nextStep: ALERTS_STEP,
   },
 };

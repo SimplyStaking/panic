@@ -22,8 +22,9 @@ from src.utils.constants.rabbitmq import (
     LOG_HANDLER_INPUT_ROUTING_KEY, CHAN_ALERTS_HAN_INPUT_QUEUE_NAME_TEMPLATE)
 from src.utils.data import RequestStatus
 from src.utils.exceptions import MessageWasNotDeliveredException
-from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
-                              delete_exchange_if_exists, disconnect_from_rabbit)
+from test.test_utils.utils import (
+    connect_to_rabbit, delete_queue_if_exists, delete_exchange_if_exists,
+    disconnect_from_rabbit)
 
 
 class TestLogAlertsHandler(unittest.TestCase):

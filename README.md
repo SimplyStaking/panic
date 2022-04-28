@@ -1,7 +1,7 @@
 # PANIC Monitoring and Alerting for Blockchains
 
 **DISCLAIMERS**: 
-- Substrate and Cosmos SDK blockchain monitoring and alerting are still in progress!
+- Substrate blockchain monitoring and alerting are still in progress!
 - Don't allow public access to PANIC UI as it might contain sensitive information about your infrastructure. UI authentication is still to be developed.
 
 ![PANIC Banner](./docs/images/PANIC_BANNER.png)

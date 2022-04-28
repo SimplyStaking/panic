@@ -32,7 +32,7 @@ from src.alerter.factory.chainlink_node_alerting_factory import (
 from src.alerter.grouped_alerts_metric_code.node.chainlink_node_metric_code \
     import GroupedChainlinkNodeAlertsMetricCode
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
-from src.configs.factory.node.chainlink_alerts import (
+from src.configs.factory.alerts.chainlink_alerts import (
     ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
@@ -41,8 +41,9 @@ from src.utils.constants.rabbitmq import (
     CL_NODE_ALERT_ROUTING_KEY)
 from src.utils.env import RABBIT_IP
 from src.utils.exceptions import PANICException, NodeIsDownException
-from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
-                              delete_exchange_if_exists, disconnect_from_rabbit)
+from test.test_utils.utils import (
+    connect_to_rabbit, delete_queue_if_exists, delete_exchange_if_exists,
+    disconnect_from_rabbit)
 
 
 class TestChainlinkNodeAlerter(unittest.TestCase):
@@ -429,13 +430,10 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         mock_get_parent_id.return_value = self.test_parent_id
 
         self.test_cl_node_alerter.rabbitmq.connect()
-        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
             routing_key=self.test_configs_routing_key)
         body = json.dumps(self.received_configurations)
-        properties = pika.spec.BasicProperties()
-        self.test_cl_node_alerter._process_configs(blocking_channel, method,
-                                                   properties, body)
+        self.test_cl_node_alerter._process_configs(method, body)
 
         parsed_routing_key = self.test_configs_routing_key.split('.')
         chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
@@ -464,13 +462,10 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         mock_get_parent_id.return_value = self.test_parent_id
 
         self.test_cl_node_alerter.rabbitmq.connect()
-        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
             routing_key=self.test_configs_routing_key)
         body = json.dumps({})
-        properties = pika.spec.BasicProperties()
-        self.test_cl_node_alerter._process_configs(blocking_channel, method,
-                                                   properties, body)
+        self.test_cl_node_alerter._process_configs(method, body)
 
         parsed_routing_key = self.test_configs_routing_key.split('.')
         chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
@@ -499,13 +494,10 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         mock_get_parent_id.return_value = None
 
         self.test_cl_node_alerter.rabbitmq.connect()
-        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
             routing_key=self.test_configs_routing_key)
         body = json.dumps({})
-        properties = pika.spec.BasicProperties()
-        self.test_cl_node_alerter._process_configs(blocking_channel, method,
-                                                   properties, body)
+        self.test_cl_node_alerter._process_configs(method, body)
 
         parsed_routing_key = self.test_configs_routing_key.split('.')
         chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
@@ -529,15 +521,12 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         mock_get_parent_id.side_effect = Exception('test')
 
         self.test_cl_node_alerter.rabbitmq.connect()
-        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
             routing_key=self.test_configs_routing_key)
         body = json.dumps(self.received_configurations)
-        properties = pika.spec.BasicProperties()
 
         # Secondly test for when processing fails successful
-        self.test_cl_node_alerter._process_configs(blocking_channel, method,
-                                                   properties, body)
+        self.test_cl_node_alerter._process_configs(method, body)
         mock_ack.assert_called_once()
 
     def test_place_latest_data_on_queue_places_data_on_queue_correctly(
@@ -1145,13 +1134,10 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             self, mock_basic_ack, mock_process_downtime, mock_helper) -> None:
         # Declare some fields for the process_transformed_data function
         self.test_cl_node_alerter._initialise_rabbitmq()
-        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
             routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
         body = json.dumps(self.transformed_data_example_result)
-        properties = pika.spec.BasicProperties()
-        self.test_cl_node_alerter._process_transformed_data(
-            blocking_channel, method, properties, body)
+        self.test_cl_node_alerter._process_transformed_data(method, body)
 
         mock_basic_ack.assert_called_once()
         mock_process_downtime.assert_called_once_with(
@@ -1180,13 +1166,10 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
 
         # Declare some fields for the process_transformed_data function
         self.test_cl_node_alerter._initialise_rabbitmq()
-        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
             routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
         body = json.dumps(self.transformed_data_example_result)
-        properties = pika.spec.BasicProperties()
-        self.test_cl_node_alerter._process_transformed_data(
-            blocking_channel, method, properties, body)
+        self.test_cl_node_alerter._process_transformed_data(method, body)
 
         mock_basic_ack.assert_called_once()
         mock_place_on_queue.assert_called_once()
@@ -1199,13 +1182,10 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
 
         # Declare some fields for the process_transformed_data function
         self.test_cl_node_alerter._initialise_rabbitmq()
-        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
             routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
         body = json.dumps(self.transformed_data_example_result)
-        properties = pika.spec.BasicProperties()
-        self.test_cl_node_alerter._process_transformed_data(
-            blocking_channel, method, properties, body)
+        self.test_cl_node_alerter._process_transformed_data(method, body)
 
         mock_basic_ack.assert_called_once()
         mock_place_on_queue.assert_not_called()
@@ -1222,14 +1202,11 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
 
         # Declare some fields for the process_transformed_data function
         self.test_cl_node_alerter._initialise_rabbitmq()
-        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
             routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
         body = json.dumps(self.transformed_data_example_result)
-        properties = pika.spec.BasicProperties()
         try:
-            self.test_cl_node_alerter._process_transformed_data(
-                blocking_channel, method, properties, body)
+            self.test_cl_node_alerter._process_transformed_data(method, body)
         except PANICException as e:
             self.fail('Did not expect {} to be raised.'.format(e))
 
@@ -1251,13 +1228,10 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
 
         # First do the test for when there are no processing errors
         self.test_cl_node_alerter._initialise_rabbitmq()
-        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
             routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
         body = json.dumps(self.transformed_data_example_result)
-        properties = pika.spec.BasicProperties()
-        self.test_cl_node_alerter._process_transformed_data(
-            blocking_channel, method, properties, body)
+        self.test_cl_node_alerter._process_transformed_data(method, body)
 
         mock_basic_ack.assert_called_once()
         mock_send_data.assert_called_once()
@@ -1268,8 +1242,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         mock_process_downtime.side_effect = self.test_exception
 
         # Declare some fields for the process_transformed_data function
-        self.test_cl_node_alerter._process_transformed_data(
-            blocking_channel, method, properties, body)
+        self.test_cl_node_alerter._process_transformed_data(method, body)
 
         mock_basic_ack.assert_called_once()
         mock_send_data.assert_called_once()
@@ -1292,13 +1265,10 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                                                  self.received_configurations)
 
         self.test_cl_node_alerter._initialise_rabbitmq()
-        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
             routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
         body = json.dumps(self.transformed_data_example_result)
-        properties = pika.spec.BasicProperties()
-        self.test_cl_node_alerter._process_transformed_data(
-            blocking_channel, method, properties, body)
+        self.test_cl_node_alerter._process_transformed_data(method, body)
 
         mock_basic_ack.assert_called_once()
         test_hb = {
@@ -1323,13 +1293,10 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         mock_process_downtime.side_effect = self.test_exception
 
         self.test_cl_node_alerter._initialise_rabbitmq()
-        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
             routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
         body = json.dumps(self.transformed_data_example_result)
-        properties = pika.spec.BasicProperties()
-        self.test_cl_node_alerter._process_transformed_data(
-            blocking_channel, method, properties, body)
+        self.test_cl_node_alerter._process_transformed_data(method, body)
 
         mock_basic_ack.assert_called_once()
         mock_send_hb.assert_not_called()
@@ -1358,14 +1325,12 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                                                  self.received_configurations)
 
         self.test_cl_node_alerter._initialise_rabbitmq()
-        blocking_channel = self.test_cl_node_alerter.rabbitmq.channel
         method = pika.spec.Basic.Deliver(
             routing_key=CL_NODE_TRANSFORMED_DATA_ROUTING_KEY)
         body = json.dumps(self.transformed_data_example_result)
-        properties = pika.spec.BasicProperties()
 
         self.assertRaises(exception_class,
                           self.test_cl_node_alerter._process_transformed_data,
-                          blocking_channel, method, properties, body)
+                          method, body)
 
         mock_basic_ack.assert_called_once()

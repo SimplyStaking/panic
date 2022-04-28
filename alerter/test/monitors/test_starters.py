@@ -13,21 +13,23 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.contracts.chainlink import ChainlinkContractsMonitor
 from src.monitors.dockerhub import DockerHubMonitor
 from src.monitors.github import GitHubMonitor
+from src.monitors.network.cosmos import CosmosNetworkMonitor
 from src.monitors.node.chainlink import ChainlinkNodeMonitor
+from src.monitors.node.cosmos import CosmosNodeMonitor
 from src.monitors.node.evm import EVMNodeMonitor
-from src.monitors.starters import (_initialise_monitor_logger,
-                                   _initialise_monitor, start_system_monitor,
-                                   start_github_monitor, start_node_monitor,
-                                   _initialise_chainlink_contracts_monitor,
-                                   start_chainlink_contracts_monitor,
-                                   start_dockerhub_monitor)
+from src.monitors.starters import (
+    _initialise_monitor_logger, _initialise_monitor, start_system_monitor,
+    start_github_monitor, start_node_monitor,
+    _initialise_chainlink_contracts_monitor, start_chainlink_contracts_monitor,
+    start_dockerhub_monitor, _initialise_cosmos_network_monitor,
+    start_cosmos_network_monitor)
 from src.monitors.system import SystemMonitor
 from src.utils import env
-from src.utils.constants.names import (SYSTEM_MONITOR_NAME_TEMPLATE,
-                                       GITHUB_MONITOR_NAME_TEMPLATE,
-                                       NODE_MONITOR_NAME_TEMPLATE,
-                                       CL_CONTRACTS_MONITOR_NAME_TEMPLATE,
-                                       DOCKERHUB_MONITOR_NAME_TEMPLATE)
+from src.utils.constants.names import (
+    SYSTEM_MONITOR_NAME_TEMPLATE, GITHUB_MONITOR_NAME_TEMPLATE,
+    NODE_MONITOR_NAME_TEMPLATE, CL_CONTRACTS_MONITOR_NAME_TEMPLATE,
+    DOCKERHUB_MONITOR_NAME_TEMPLATE, COSMOS_NETWORK_MONITOR_NAME_TEMPLATE)
+from test.utils.cosmos.cosmos import CosmosTestNodes
 
 
 class TestMonitorStarters(unittest.TestCase):
@@ -51,16 +53,12 @@ class TestMonitorStarters(unittest.TestCase):
         self.github_repo_name = 'test_github_repo'
         self.monitor_repo = True
         self.releases_page = 'test_releases_url'
-        self.github_repo_config = GitHubRepoConfig(self.github_repo_id,
-                                                   self.github_parent_id,
-                                                   self.github_repo_name,
-                                                   self.monitor_repo,
-                                                   self.releases_page)
-        self.test_github_monitor = GitHubMonitor(self.github_monitor_name,
-                                                 self.github_repo_config,
-                                                 self.dummy_logger,
-                                                 self.github_monitoring_period,
-                                                 self.rabbitmq)
+        self.github_repo_config = GitHubRepoConfig(
+            self.github_repo_id, self.github_parent_id, self.github_repo_name,
+            self.monitor_repo, self.releases_page)
+        self.test_github_monitor = GitHubMonitor(
+            self.github_monitor_name, self.github_repo_config,
+            self.dummy_logger, self.github_monitoring_period, self.rabbitmq)
 
         # DockerHub monitor
         self.dockerhub_monitor_name = 'test_dockerhub_monitor'
@@ -86,16 +84,14 @@ class TestMonitorStarters(unittest.TestCase):
         self.system_name = 'test_system'
         self.monitor_system = True
         self.node_exporter_url = 'test_url'
-        self.system_config = SystemConfig(self.system_id, self.system_parent_id,
-                                          self.system_name, self.monitor_system,
-                                          self.node_exporter_url)
-        self.test_system_monitor = SystemMonitor(self.system_monitor_name,
-                                                 self.system_config,
-                                                 self.dummy_logger,
-                                                 self.system_monitoring_period,
-                                                 self.rabbitmq)
+        self.system_config = SystemConfig(
+            self.system_id, self.system_parent_id, self.system_name,
+            self.monitor_system, self.node_exporter_url)
+        self.test_system_monitor = SystemMonitor(
+            self.system_monitor_name, self.system_config, self.dummy_logger,
+            self.system_monitoring_period, self.rabbitmq)
 
-        # Node Monitors
+        # Node monitoring variables
         self.node_monitor_name = 'test_node_monitor'
         self.node_monitoring_period = env.NODE_MONITOR_PERIOD_SECONDS
         self.node_id = 'test_node_id'
@@ -103,9 +99,13 @@ class TestMonitorStarters(unittest.TestCase):
         self.node_name = 'test_node'
         self.monitor_node = True
         self.monitor_prometheus = True
-        self.node_exporter_url = 'test_url'
         self.node_http_url = 'http_url_1'
         self.node_prometheus_urls = ['url1', 'url2', 'url3']
+        self.cosmos_test_nodes = CosmosTestNodes()
+        self.data_sources = [self.cosmos_test_nodes.pruned_non_validator,
+                             self.cosmos_test_nodes.archive_non_validator]
+
+        # Configs
         self.chainlink_node_config = ChainlinkNodeConfig(
             self.node_id, self.node_parent_id, self.node_name,
             self.monitor_node, self.monitor_prometheus,
@@ -113,12 +113,18 @@ class TestMonitorStarters(unittest.TestCase):
         self.evm_node_config = EVMNodeConfig(
             self.node_id, self.node_parent_id, self.node_name,
             self.monitor_node, self.node_http_url)
+        self.cosmos_node_config = self.cosmos_test_nodes.archive_validator
+
+        # Node Monitors
         self.test_chainlink_node_monitor = ChainlinkNodeMonitor(
             self.node_monitor_name, self.chainlink_node_config,
             self.dummy_logger, self.node_monitoring_period, self.rabbitmq)
         self.test_evm_node_monitor = EVMNodeMonitor(
             self.node_monitor_name, self.evm_node_config, self.dummy_logger,
             self.node_monitoring_period, self.rabbitmq)
+        self.test_cosmos_node_monitor = CosmosNodeMonitor(
+            self.node_monitor_name, self.cosmos_node_config, self.dummy_logger,
+            self.node_monitoring_period, self.rabbitmq, self.data_sources)
 
         # Chainlink Contracts Monitor
         self.cl_contracts_monitor_name = 'chainlink_contracts_monitor'
@@ -134,6 +140,22 @@ class TestMonitorStarters(unittest.TestCase):
             self.chainlink_contracts_monitoring_period, self.rabbitmq,
             self.cl_contracts_parent_id)
 
+        # Cosmos Network Monitor
+        self.cosmos_test_nodes = CosmosTestNodes()
+        self.cosmos_network_monitor_name = 'cosmos_network_monitor'
+        self.cosmos_data_sources = [
+            self.cosmos_test_nodes.pruned_non_validator,
+            self.cosmos_test_nodes.archive_non_validator,
+            self.cosmos_test_nodes.archive_validator
+        ]
+        self.cosmos_parent_id = 'test_parent_id'
+        self.cosmos_chain_name = 'cosmoshub'
+        self.network_monitoring_period = env.NETWORK_MONITOR_PERIOD_SECONDS
+        self.test_cosmos_network_monitor = CosmosNetworkMonitor(
+            self.cosmos_network_monitor_name, self.cosmos_data_sources,
+            self.cosmos_parent_id, self.cosmos_chain_name, self.dummy_logger,
+            self.network_monitoring_period, self.rabbitmq)
+
     def tearDown(self) -> None:
         self.dummy_logger = None
         self.github_repo_config = None
@@ -148,6 +170,11 @@ class TestMonitorStarters(unittest.TestCase):
         self.test_chainlink_node_monitor = None
         self.test_evm_node_monitor = None
         self.test_chainlink_contracts_monitor = None
+        self.cosmos_test_nodes.clear_attributes()
+        self.cosmos_test_nodes = None
+        self.test_cosmos_network_monitor = None
+        self.cosmos_node_config = None
+        self.test_cosmos_node_monitor = None
 
     @mock.patch("src.monitors.starters.create_logger")
     def test_initialise_monitor_logger_creates_and_returns_logger_correctly(
@@ -165,24 +192,31 @@ class TestMonitorStarters(unittest.TestCase):
 
     @parameterized.expand([
         (GitHubMonitor, 'self.github_monitor_name',
-         'self.github_monitoring_period', 'self.github_repo_config',),
+         'self.github_monitoring_period', 'self.github_repo_config', [],),
         (DockerHubMonitor, 'self.dockerhub_monitor_name',
-         'self.dockerhub_monitoring_period', 'self.dockerhub_repo_config',),
+         'self.dockerhub_monitoring_period', 'self.dockerhub_repo_config', [],),
         (SystemMonitor, 'self.system_monitor_name',
-         'self.system_monitoring_period', 'self.system_config',),
+         'self.system_monitoring_period', 'self.system_config', [],),
         (ChainlinkNodeMonitor, 'self.node_monitor_name',
-         'self.node_monitoring_period', 'self.chainlink_node_config',),
+         'self.node_monitoring_period', 'self.chainlink_node_config', [],),
         (EVMNodeMonitor, 'self.node_monitor_name',
-         'self.node_monitoring_period', 'self.evm_node_config',),
+         'self.node_monitoring_period', 'self.evm_node_config', [],),
+        (CosmosNodeMonitor, 'self.node_monitor_name',
+         'self.node_monitoring_period', 'self.cosmos_node_config',
+         ['self.data_sources'],),
     ])
     @mock.patch("src.monitors.starters._initialise_monitor_logger")
     def test_initialise_monitor_calls_initialise_logger_correctly(
             self, monitor_type, monitor_display_name, monitoring_period, config,
-            mock_init_logger) -> None:
+            other_args, mock_init_logger) -> None:
         mock_init_logger.return_value = self.dummy_logger
+        evaluated_args = []
+        for arg in other_args:
+            evaluated_args.append(eval(arg))
 
         _initialise_monitor(monitor_type, eval(monitor_display_name),
-                            eval(monitoring_period), eval(config))
+                            eval(monitoring_period), eval(config),
+                            *evaluated_args)
 
         mock_init_logger.assert_called_once_with(
             eval(monitor_display_name), monitor_type.__name__
@@ -204,35 +238,42 @@ class TestMonitorStarters(unittest.TestCase):
 
     @parameterized.expand([
         (GitHubMonitor, 'self.github_monitor_name',
-         'self.github_monitoring_period', 'self.github_repo_config',
-         'self.test_github_monitor'),
+         'self.github_monitoring_period', 'self.github_repo_config', [],
+         'self.test_github_monitor',),
         (DockerHubMonitor, 'self.dockerhub_monitor_name',
-         'self.dockerhub_monitoring_period', 'self.dockerhub_repo_config',
-         'self.test_dockerhub_monitor'),
+         'self.dockerhub_monitoring_period', 'self.dockerhub_repo_config', [],
+         'self.test_dockerhub_monitor',),
         (SystemMonitor, 'self.system_monitor_name',
-         'self.system_monitoring_period', 'self.system_config',
-         'self.test_system_monitor'),
+         'self.system_monitoring_period', 'self.system_config', [],
+         'self.test_system_monitor',),
         (ChainlinkNodeMonitor, 'self.node_monitor_name',
-         'self.node_monitoring_period', 'self.chainlink_node_config',
-         'self.test_chainlink_node_monitor'),
+         'self.node_monitoring_period', 'self.chainlink_node_config', [],
+         'self.test_chainlink_node_monitor',),
         (EVMNodeMonitor, 'self.node_monitor_name',
-         'self.node_monitoring_period', 'self.evm_node_config',
-         'self.test_evm_node_monitor'),
+         'self.node_monitoring_period', 'self.evm_node_config', [],
+         'self.test_evm_node_monitor',),
+        (CosmosNodeMonitor, 'self.node_monitor_name',
+         'self.node_monitoring_period', 'self.cosmos_node_config',
+         ['self.data_sources'], 'self.test_cosmos_node_monitor',),
     ])
     @mock.patch('src.monitors.node.evm.Web3')
     @mock.patch('src.monitors.starters.RabbitMQApi')
     @mock.patch("src.monitors.starters._initialise_monitor_logger")
     def test_initialise_monitor_creates_monitor_correctly(
             self, monitor_type, monitor_display_name, monitoring_period, config,
-            monitor, mock_init_logger, mock_rabbit, mock_web3) -> None:
+            other_args, monitor, mock_init_logger, mock_rabbit,
+            mock_web3) -> None:
         mock_init_logger.return_value = self.dummy_logger
         mock_web3.return_value = self.test_evm_node_monitor.w3_interface
         mock_rabbit.return_value = self.rabbitmq
         mock_rabbit.__name__ = RabbitMQApi.__name__
+        evaluated_args = []
+        for arg in other_args:
+            evaluated_args.append(eval(arg))
 
         actual_output = _initialise_monitor(
             monitor_type, eval(monitor_display_name), eval(monitoring_period),
-            eval(config))
+            eval(config), *evaluated_args)
 
         self.assertEqual(eval(monitor).__dict__, actual_output.__dict__)
 
@@ -250,6 +291,22 @@ class TestMonitorStarters(unittest.TestCase):
             self.chainlink_contracts_monitoring_period, self.weiwatchers_url,
             self.evm_nodes, self.node_configs, self.cl_contracts_parent_id)
         self.assertEqual(self.test_chainlink_contracts_monitor, actual_output)
+
+    @mock.patch('src.monitors.starters.CosmosNetworkMonitor')
+    @mock.patch("src.monitors.starters._initialise_monitor_logger")
+    def test_initialise_cosmos_network_monitor_creates_and_returns_monitor(
+            self, mock_init_logger, mock_cosmos_network_monitor) -> None:
+        mock_init_logger.return_value = self.dummy_logger
+        mock_cosmos_network_monitor.return_value = \
+            self.test_cosmos_network_monitor
+        mock_cosmos_network_monitor.__name__ = \
+            CosmosNetworkMonitor.__name__
+
+        actual_output = _initialise_cosmos_network_monitor(
+            self.cosmos_network_monitor_name, self.network_monitoring_period,
+            self.cosmos_data_sources, self.cosmos_parent_id,
+            self.cosmos_chain_name)
+        self.assertEqual(self.test_cosmos_network_monitor, actual_output)
 
     @mock.patch("src.monitors.starters._initialise_monitor")
     @mock.patch('src.monitors.starters.start_monitor')
@@ -305,25 +362,30 @@ class TestMonitorStarters(unittest.TestCase):
 
     @parameterized.expand([
         ('self.test_chainlink_node_monitor', 'self.chainlink_node_config',
-         ChainlinkNodeMonitor,),
+         ChainlinkNodeMonitor, [],),
         ('self.test_evm_node_monitor', 'self.evm_node_config',
-         EVMNodeMonitor,),
+         EVMNodeMonitor, [],),
+        ('self.test_cosmos_node_monitor', 'self.cosmos_node_config',
+         CosmosNodeMonitor, ['self.data_sources'],),
     ])
     @mock.patch("src.monitors.starters._initialise_monitor")
     @mock.patch('src.monitors.starters.start_monitor')
     def test_start_node_monitor_calls_sub_functions_correctly(
-            self, monitor, node_config, monitor_type, mock_start_monitor,
-            mock_initialise_monitor) -> None:
+            self, monitor, node_config, monitor_type, other_args,
+            mock_start_monitor, mock_initialise_monitor) -> None:
         mock_start_monitor.return_value = None
         mock_initialise_monitor.return_value = eval(monitor)
+        evaluated_args = []
+        for arg in other_args:
+            evaluated_args.append(eval(arg))
 
-        start_node_monitor(eval(node_config), monitor_type)
+        start_node_monitor(eval(node_config), monitor_type, *evaluated_args)
 
         mock_start_monitor.assert_called_once_with(eval(monitor))
         mock_initialise_monitor.assert_called_once_with(
             monitor_type, NODE_MONITOR_NAME_TEMPLATE.format(
                 eval(node_config).node_name), env.NODE_MONITOR_PERIOD_SECONDS,
-            eval(node_config)
+            eval(node_config), *evaluated_args
         )
 
     @mock.patch("src.monitors.starters._initialise_chainlink_contracts_monitor")
@@ -348,4 +410,28 @@ class TestMonitorStarters(unittest.TestCase):
             env.CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS,
             self.weiwatchers_url, self.evm_nodes, self.node_configs,
             self.cl_contracts_parent_id
+        )
+
+    @mock.patch("src.monitors.starters._initialise_cosmos_network_monitor")
+    @mock.patch('src.monitors.starters.start_monitor')
+    def test_start_cosmos_network_monitor_calls_sub_functions_correctly(
+            self, mock_start_monitor,
+            mock_initialise_cosmos_network_monitor) -> None:
+        mock_start_monitor.return_value = None
+        mock_initialise_cosmos_network_monitor.return_value = \
+            self.test_cosmos_network_monitor
+        monitor_display_name = COSMOS_NETWORK_MONITOR_NAME_TEMPLATE.format(
+            self.cosmos_chain_name)
+
+        start_cosmos_network_monitor(self.cosmos_data_sources,
+                                     self.cosmos_parent_id,
+                                     self.cosmos_chain_name)
+
+        mock_start_monitor.assert_called_once_with(
+            self.test_cosmos_network_monitor)
+        mock_initialise_cosmos_network_monitor.assert_called_once_with(
+            monitor_display_name,
+            env.NETWORK_MONITOR_PERIOD_SECONDS,
+            self.cosmos_data_sources, self.cosmos_parent_id,
+            self.cosmos_chain_name
         )

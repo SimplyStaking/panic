@@ -9,16 +9,19 @@ from src.data_store.stores.contract.chainlink import ChainlinkContractStore
 from src.data_store.stores.dockerhub import DockerhubStore
 from src.data_store.stores.github import GithubStore
 from src.data_store.stores.monitorable import MonitorableStore
+from src.data_store.stores.network.cosmos import CosmosNetworkStore
 from src.data_store.stores.node.chainlink import ChainlinkNodeStore
+from src.data_store.stores.node.cosmos import CosmosNodeStore
 from src.data_store.stores.node.evm import EVMNodeStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (
-    SYSTEM_STORE_NAME, GITHUB_STORE_NAME, DOCKERHUB_STORE_NAME,
-    ALERT_STORE_NAME, CL_NODE_STORE_NAME, EVM_NODE_STORE_NAME,
-    CL_CONTRACT_STORE_NAME, MONITORABLE_STORE_NAME)
+    MONITORABLE_STORE_NAME, SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
+    DOCKERHUB_STORE_NAME, ALERT_STORE_NAME, CL_NODE_STORE_NAME,
+    EVM_NODE_STORE_NAME, CL_CONTRACT_STORE_NAME, COSMOS_NODE_STORE_NAME,
+    COSMOS_NETWORK_STORE_NAME)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
                                           RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
@@ -99,6 +102,12 @@ def start_alert_store() -> None:
     start_store(alert_store)
 
 
+def start_cosmos_node_store() -> None:
+    cosmos_node_store = _initialise_store(CosmosNodeStore,
+                                          COSMOS_NODE_STORE_NAME)
+    start_store(cosmos_node_store)
+
+
 def start_chainlink_node_store() -> None:
     cl_node_store = _initialise_store(ChainlinkNodeStore, CL_NODE_STORE_NAME)
     start_store(cl_node_store)
@@ -113,6 +122,12 @@ def start_cl_contract_store() -> None:
     cl_contract_store = _initialise_store(ChainlinkContractStore,
                                           CL_CONTRACT_STORE_NAME)
     start_store(cl_contract_store)
+
+
+def start_cosmos_network_store() -> None:
+    cosmos_network_store = _initialise_store(CosmosNetworkStore,
+                                             COSMOS_NETWORK_STORE_NAME)
+    start_store(cosmos_network_store)
 
 
 def start_store(store: Store) -> None:

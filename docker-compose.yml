@@ -18,7 +18,7 @@ services:
     build:
       context: './'
       dockerfile: './web-installer/Dockerfile'
-    image: 'simplyvc/panic_installer:1.0.0'
+    image: 'simplyvc/panic_installer:1.1.0'
     logging:
       driver: "json-file"
       options:
@@ -114,12 +114,13 @@ services:
       - 'HEALTH_CHECKER_LOG_FILE_TEMPLATE=${HEALTH_CHECKER_LOG_FILE_TEMPLATE}'
       - 'NODE_MONITOR_PERIOD_SECONDS=${NODE_MONITOR_PERIOD_SECONDS}'
       - 'CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS=${CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS}'
+      - 'NETWORK_MONITOR_PERIOD_SECONDS=${NETWORK_MONITOR_PERIOD_SECONDS}'
       - 'DOCKERHUB_TAGS_TEMPLATE=${DOCKERHUB_TAGS_TEMPLATE}'
       - 'WAIT_HOSTS=${DB_IP}:${DB_PORT}, ${REDIS_IP}:${REDIS_PORT}, ${RABBIT_IP}:${RABBIT_PORT}'
     build:
       context: './'
       dockerfile: './alerter/Alerter_Dockerfile'
-    image: 'simplyvc/panic_alerter:1.0.0'
+    image: 'simplyvc/panic_alerter:1.1.0'
     logging:
       driver: "json-file"
       options:
@@ -174,12 +175,13 @@ services:
       - 'HEALTH_CHECKER_LOG_FILE_TEMPLATE=${HEALTH_CHECKER_LOG_FILE_TEMPLATE}'
       - 'NODE_MONITOR_PERIOD_SECONDS=${NODE_MONITOR_PERIOD_SECONDS}'
       - 'CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS=${CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS}'
+      - 'NETWORK_MONITOR_PERIOD_SECONDS=${NETWORK_MONITOR_PERIOD_SECONDS}'
       - 'DOCKERHUB_TAGS_TEMPLATE=${DOCKERHUB_TAGS_TEMPLATE}'
       - 'WAIT_HOSTS=${RABBIT_IP}:${RABBIT_PORT}'
     build:
       context: './'
       dockerfile: './alerter/Health_Checker_Dockerfile'
-    image: 'simplyvc/alerter_health_checker:1.0.0'
+    image: 'simplyvc/alerter_health_checker:1.1.0'
     logging:
       driver: "json-file"
       options:
@@ -212,7 +214,7 @@ services:
     build:
       context: './'
       dockerfile: './api/Dockerfile'
-    image: 'simplyvc/panic_api:1.0.0'
+    image: 'simplyvc/panic_api:1.1.0'
     volumes:
       - './config:/opt/panic/config'
       - './certificates:/opt/panic/certificates'
@@ -233,7 +235,7 @@ services:
       args:
         - API_PORT
         - UI_DASHBOARD_PORT
-    image: 'simplyvc/panic_ui:1.0.0'
+    image: 'simplyvc/panic_ui:1.1.0'
     volumes:
       - './certificates:/opt/panic/certificates'
     ports:

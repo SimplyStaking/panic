@@ -690,7 +690,7 @@ describe('Redis Alerts Overview POST Route', () => {
             {
                 result: {
                     unique_chain_id: {
-                        info: 17, critical: 0, warning: 0, error: 0,
+                        info: 36, critical: 0, warning: 0, error: 0,
                         problems: {}, releases: {}, tags: {}
                     }
                 }

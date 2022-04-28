@@ -79,18 +79,21 @@ class ChainlinkNodeAlertsConfigsFactory(ChainlinkAlertsConfigsFactory):
     def add_new_config(self, chain_name: str, sent_configs: Dict) -> None:
         # Check if all the parent_ids in the received configuration are the
         # same, if not there is some misconfiguration
-        parent_id = sent_configs['1']['parent_id']
-        for _, config in sent_configs.items():
-            if parent_id != config['parent_id']:
-                raise ParentIdsMissMatchInAlertsConfiguration(
-                    "{}: _process_configs".format(self))
+        parent_ids = {
+            configuration['parent_id']
+            for _, configuration in sent_configs.items()
+        }
+        if len(parent_ids) != 1:
+            raise ParentIdsMissMatchInAlertsConfiguration(
+                "{}: add_new_config".format(self))
 
-        filtered = {}
-        for _, config in sent_configs.items():
-            filtered[config['name']] = copy.deepcopy(config)
+        filtered = {
+            config['name']: copy.deepcopy(config)
+            for _, config in sent_configs.items()
+        }
 
         cl_node_alerts_config = ChainlinkNodeAlertsConfig(
-            parent_id=parent_id,
+            parent_id=parent_ids.pop(),
             head_tracker_current_head=filtered[
                 'head_tracker_current_head'],
             head_tracker_heads_received_total=filtered[
@@ -119,18 +122,21 @@ class ChainlinkContractAlertsConfigsFactory(ChainlinkAlertsConfigsFactory):
     def add_new_config(self, chain_name: str, sent_configs: Dict) -> None:
         # Check if all the parent_ids in the received configuration are the
         # same, if not there is some misconfiguration
-        parent_id = sent_configs['1']['parent_id']
-        for _, config in sent_configs.items():
-            if parent_id != config['parent_id']:
-                raise ParentIdsMissMatchInAlertsConfiguration(
-                    "{}: _process_configs".format(self))
+        parent_ids = {
+            configuration['parent_id']
+            for _, configuration in sent_configs.items()
+        }
+        if len(parent_ids) != 1:
+            raise ParentIdsMissMatchInAlertsConfiguration(
+                "{}: add_new_config".format(self))
 
-        filtered = {}
-        for _, config in sent_configs.items():
-            filtered[config['name']] = copy.deepcopy(config)
+        filtered = {
+            config['name']: copy.deepcopy(config)
+            for _, config in sent_configs.items()
+        }
 
         cl_contracts_alerts_config = ChainlinkContractAlertsConfig(
-            parent_id=parent_id,
+            parent_id=parent_ids.pop(),
             price_feed_not_observed=filtered['price_feed_not_observed'],
             price_feed_deviation=filtered['price_feed_deviation'],
             consensus_failure=filtered['consensus_failure'],

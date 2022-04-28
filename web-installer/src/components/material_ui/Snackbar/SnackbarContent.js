@@ -22,7 +22,7 @@ export default function SnackbarContent(props) {
       );
       break;
     case 'string':
-      snackIcon = <Icon className={classes.icon} style={{ color: iconColor }}>{props.icon}</Icon>;
+      snackIcon = <Icon className={classes.icon} style={{ color: iconColor }}>{icon}</Icon>;
       break;
     default:
       snackIcon = null;

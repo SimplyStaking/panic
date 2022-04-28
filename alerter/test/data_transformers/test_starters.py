@@ -11,20 +11,24 @@ from src.data_transformers.contracts.chainlink import (
     ChainlinkContractsDataTransformer)
 from src.data_transformers.dockerhub import DockerHubDataTransformer
 from src.data_transformers.github import GitHubDataTransformer
+from src.data_transformers.networks.cosmos import CosmosNetworkTransformer
 from src.data_transformers.node.chainlink import ChainlinkNodeDataTransformer
+from src.data_transformers.node.cosmos import CosmosNodeDataTransformer
 from src.data_transformers.node.evm import EVMNodeDataTransformer
 from src.data_transformers.starters import (
     _initialise_transformer_logger, _initialise_transformer_redis,
     _initialise_data_transformer, start_system_data_transformer,
     start_github_data_transformer, start_chainlink_node_data_transformer,
-    start_evm_node_data_transformer, start_chainlink_contracts_data_transformer)
+    start_evm_node_data_transformer, start_chainlink_contracts_data_transformer,
+    start_cosmos_node_data_transformer, start_cosmos_network_data_transformer)
 from src.data_transformers.system import SystemDataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (
     SYSTEM_DATA_TRANSFORMER_NAME, DOCKERHUB_DATA_TRANSFORMER_NAME,
     GITHUB_DATA_TRANSFORMER_NAME, CL_NODE_DATA_TRANSFORMER_NAME,
-    EVM_NODE_DATA_TRANSFORMER_NAME, CL_CONTRACTS_DATA_TRANSFORMER_NAME)
+    EVM_NODE_DATA_TRANSFORMER_NAME, CL_CONTRACTS_DATA_TRANSFORMER_NAME,
+    COSMOS_NODE_DATA_TRANSFORMER_NAME, COSMOS_NETWORK_DATA_TRANSFORMER_NAME)
 
 
 class TestDataTransformersStarters(unittest.TestCase):
@@ -119,6 +123,30 @@ class TestDataTransformersStarters(unittest.TestCase):
         self.test_cl_contracts_dt._publishing_queue = \
             self.publishing_queue_cl_contracts_dt
 
+        # Cosmos Node Data Transformer
+        self.cosmos_node_dt_name = 'test_cosmos_node_data_transformer'
+        self.cosmos_node_dt_publishing_queue_size = 1010
+        self.publishing_queue_cosmos_node_dt = Queue(
+            self.cosmos_node_dt_publishing_queue_size)
+        self.test_cosmos_node_dt = CosmosNodeDataTransformer(
+            self.cosmos_node_dt_name, self.dummy_logger, self.redis,
+            self.rabbitmq, self.cosmos_node_dt_publishing_queue_size
+        )
+        self.test_cosmos_node_dt._publishing_queue = \
+            self.publishing_queue_cosmos_node_dt
+
+        # Cosmos Network Data Transformer
+        self.cosmos_network_dt_name = 'test_cosmos_network_data_transformer'
+        self.cosmos_network_dt_publishing_queue_size = 1010
+        self.publishing_queue_cosmos_network_dt = Queue(
+            self.cosmos_network_dt_publishing_queue_size)
+        self.test_cosmos_network_dt = CosmosNetworkTransformer(
+            self.cosmos_network_dt_name, self.dummy_logger, self.redis,
+            self.rabbitmq, self.cosmos_network_dt_publishing_queue_size
+        )
+        self.test_cosmos_network_dt._publishing_queue = \
+            self.publishing_queue_cosmos_network_dt
+
     def tearDown(self) -> None:
         self.dummy_logger = None
         self.rabbitmq = None
@@ -128,12 +156,16 @@ class TestDataTransformersStarters(unittest.TestCase):
         self.publishing_queue_dockerhub_dt = None
         self.publishing_queue_cl_node_dt = None
         self.publishing_queue_cl_contracts_dt = None
+        self.publishing_queue_cosmos_node_dt = None
+        self.publishing_queue_cosmos_network_dt = None
         self.test_github_dt = None
         self.test_dockerhub_dt = None
         self.test_system_dt = None
         self.test_cl_node_dt = None
         self.test_evm_node_dt = None
         self.test_cl_contracts_dt = None
+        self.test_cosmos_node_dt = None
+        self.test_cosmos_network_dt = None
 
     @mock.patch("src.data_transformers.starters.create_logger")
     def test_initialise_transformer_logger_creates_and_returns_logger_correctly(
@@ -187,6 +219,10 @@ class TestDataTransformersStarters(unittest.TestCase):
          EVMNodeDataTransformer.__name__),
         (ChainlinkContractsDataTransformer, CL_CONTRACTS_DATA_TRANSFORMER_NAME,
          ChainlinkContractsDataTransformer.__name__),
+        (CosmosNodeDataTransformer, COSMOS_NODE_DATA_TRANSFORMER_NAME,
+         CosmosNodeDataTransformer.__name__),
+        (CosmosNetworkTransformer, COSMOS_NETWORK_DATA_TRANSFORMER_NAME,
+         CosmosNetworkTransformer.__name__),
     ])
     @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
     def test_initialise_data_transformer_calls_initialise_logger_correct(
@@ -208,6 +244,8 @@ class TestDataTransformersStarters(unittest.TestCase):
         (EVMNodeDataTransformer, EVM_NODE_DATA_TRANSFORMER_NAME,),
         (ChainlinkContractsDataTransformer,
          CL_CONTRACTS_DATA_TRANSFORMER_NAME,),
+        (CosmosNodeDataTransformer, COSMOS_NODE_DATA_TRANSFORMER_NAME,),
+        (CosmosNetworkTransformer, COSMOS_NETWORK_DATA_TRANSFORMER_NAME,),
     ])
     @mock.patch("src.data_transformers.starters._initialise_transformer_redis")
     @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
@@ -236,6 +274,11 @@ class TestDataTransformersStarters(unittest.TestCase):
          'self.publishing_queue_evm_node_dt', 'self.test_evm_node_dt'),
         (ChainlinkContractsDataTransformer, 'self.cl_contracts_dt_name',
          'self.publishing_queue_cl_contracts_dt', 'self.test_cl_contracts_dt'),
+        (CosmosNodeDataTransformer, 'self.cosmos_node_dt_name',
+         'self.publishing_queue_cosmos_node_dt', 'self.test_cosmos_node_dt'),
+        (CosmosNetworkTransformer, 'self.cosmos_network_dt_name',
+         'self.publishing_queue_cosmos_network_dt',
+         'self.test_cosmos_network_dt'),
     ])
     @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
     @mock.patch("src.data_transformers.starters._initialise_transformer_redis")
@@ -323,3 +366,29 @@ class TestDataTransformersStarters(unittest.TestCase):
         mock_initialise_dt.assert_called_once_with(
             ChainlinkContractsDataTransformer,
             CL_CONTRACTS_DATA_TRANSFORMER_NAME)
+
+    @mock.patch("src.data_transformers.starters._initialise_data_transformer")
+    @mock.patch('src.data_transformers.starters.start_transformer')
+    def test_start_cosmos_node_data_transformer_calls_sub_functions_correctly(
+            self, mock_start_transformer, mock_initialise_dt) -> None:
+        mock_start_transformer.return_value = None
+        mock_initialise_dt.return_value = self.test_cosmos_node_dt
+
+        start_cosmos_node_data_transformer()
+
+        mock_start_transformer.assert_called_once_with(self.test_cosmos_node_dt)
+        mock_initialise_dt.assert_called_once_with(
+            CosmosNodeDataTransformer, COSMOS_NODE_DATA_TRANSFORMER_NAME)
+
+    @mock.patch("src.data_transformers.starters._initialise_data_transformer")
+    @mock.patch('src.data_transformers.starters.start_transformer')
+    def test_start_cosmos_network_transformer_calls_sub_functions_correctly(
+            self, mock_start_transformer, mock_initialise_dt) -> None:
+        mock_start_transformer.return_value = None
+        mock_initialise_dt.return_value = self.test_cosmos_node_dt
+
+        start_cosmos_network_data_transformer()
+
+        mock_start_transformer.assert_called_once_with(self.test_cosmos_node_dt)
+        mock_initialise_dt.assert_called_once_with(
+            CosmosNetworkTransformer, COSMOS_NETWORK_DATA_TRANSFORMER_NAME)

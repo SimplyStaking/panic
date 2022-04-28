@@ -20,8 +20,9 @@ from src.utils.constants.rabbitmq import (
     DOCKERHUB_ALERT_ROUTING_KEY, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
     DOCKERHUB_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE)
 from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
-from test.utils.utils import (connect_to_rabbit, delete_queue_if_exists,
-                              disconnect_from_rabbit, delete_exchange_if_exists)
+from test.test_utils.utils import (
+    connect_to_rabbit, delete_queue_if_exists, disconnect_from_rabbit,
+    delete_exchange_if_exists)
 
 
 class TestDockerhubAlerter(unittest.TestCase):

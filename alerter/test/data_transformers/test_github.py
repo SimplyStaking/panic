@@ -28,7 +28,7 @@ from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from test.utils.utils import save_github_repo_to_redis
+from test.test_utils.utils import save_github_repo_to_redis
 
 
 class TestGitHubDataTransformer(unittest.TestCase):

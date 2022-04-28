@@ -4,11 +4,11 @@ import unittest
 from parameterized import parameterized
 
 from src.configs.alerts.node.evm import EVMNodeAlertsConfig
-from src.configs.factory.node.evm_alerts import EVMNodeAlertsConfigsFactory
+from src.configs.factory.alerts.evm_alerts import EVMNodeAlertsConfigsFactory
 from src.utils.exceptions import ParentIdsMissMatchInAlertsConfiguration
 
 
-class TestEVMNodeAlertsConfig(unittest.TestCase):
+class TestEVMAlertsConfigsFactory(unittest.TestCase):
     """
     Although currently there is only one type of EVM alerts config, the tests
     were conducted using parameterize.expand, just in case in the future we
@@ -26,20 +26,20 @@ class TestEVMNodeAlertsConfig(unittest.TestCase):
         First we will construct the received alerts configurations.
         """
 
-        evm_config_metrics = [
+        evm_node_config_metrics = [
             'evm_node_is_down', 'evm_block_syncing_block_height_difference',
             'evm_block_syncing_no_change_in_block_height',
         ]
-        self.received_config_example_1_evm = {}
-        self.received_config_example_2_evm = {}
+        self.received_config_example_1_evm_node = {}
+        self.received_config_example_2_evm_node = {}
 
-        for i in range(len(evm_config_metrics)):
-            self.received_config_example_1_evm[str(i)] = {
-                'name': evm_config_metrics[i],
+        for i in range(len(evm_node_config_metrics)):
+            self.received_config_example_1_evm_node[str(i)] = {
+                'name': evm_node_config_metrics[i],
                 'parent_id': self.test_parent_id_1
             }
-            self.received_config_example_2_evm[str(i)] = {
-                'name': evm_config_metrics[i],
+            self.received_config_example_2_evm_node[str(i)] = {
+                'name': evm_node_config_metrics[i],
                 'parent_id': self.test_parent_id_2
             }
 
@@ -47,44 +47,46 @@ class TestEVMNodeAlertsConfig(unittest.TestCase):
         Now we will construct the expected config objects
         """
 
-        filtered_1_evm = {}
-        for _, config in self.received_config_example_1_evm.items():
-            filtered_1_evm[config['name']] = copy.deepcopy(config)
+        filtered_1_evm_node = {}
+        for _, config in self.received_config_example_1_evm_node.items():
+            filtered_1_evm_node[config['name']] = copy.deepcopy(config)
 
-        filtered_2_evm = {}
-        for _, config in self.received_config_example_2_evm.items():
-            filtered_2_evm[config['name']] = copy.deepcopy(config)
+        filtered_2_evm_node = {}
+        for _, config in self.received_config_example_2_evm_node.items():
+            filtered_2_evm_node[config['name']] = copy.deepcopy(config)
 
-        self.alerts_config_1_evm = EVMNodeAlertsConfig(
+        self.alerts_config_1_evm_node = EVMNodeAlertsConfig(
             parent_id=self.test_parent_id_1,
-            evm_node_is_down=filtered_1_evm['evm_node_is_down'],
-            evm_block_syncing_block_height_difference=filtered_1_evm[
+            evm_node_is_down=filtered_1_evm_node['evm_node_is_down'],
+            evm_block_syncing_block_height_difference=filtered_1_evm_node[
                 'evm_block_syncing_block_height_difference'],
-            evm_block_syncing_no_change_in_block_height=filtered_1_evm[
+            evm_block_syncing_no_change_in_block_height=filtered_1_evm_node[
                 'evm_block_syncing_no_change_in_block_height']
         )
-        self.alerts_config_2_evm = EVMNodeAlertsConfig(
+        self.alerts_config_2_evm_node = EVMNodeAlertsConfig(
             parent_id=self.test_parent_id_2,
-            evm_node_is_down=filtered_2_evm['evm_node_is_down'],
-            evm_block_syncing_block_height_difference=filtered_2_evm[
+            evm_node_is_down=filtered_2_evm_node['evm_node_is_down'],
+            evm_block_syncing_block_height_difference=filtered_2_evm_node[
                 'evm_block_syncing_block_height_difference'],
-            evm_block_syncing_no_change_in_block_height=filtered_2_evm[
+            evm_block_syncing_no_change_in_block_height=filtered_2_evm_node[
                 'evm_block_syncing_no_change_in_block_height']
         )
 
-        self.evm_configs_factory = EVMNodeAlertsConfigsFactory()
+        self.evm_node_configs_factory = EVMNodeAlertsConfigsFactory()
 
     def tearDown(self) -> None:
-        self.received_config_example_1_evm = None
-        self.received_config_example_2_evm = None
-        self.alerts_config_1_evm = None
-        self.alerts_config_2_evm = None
-        self.evm_configs_factory = None
+        self.received_config_example_1_evm_node = None
+        self.received_config_example_2_evm_node = None
+        self.alerts_config_1_evm_node = None
+        self.alerts_config_2_evm_node = None
+        self.evm_node_configs_factory = None
 
     @parameterized.expand([
-        ('self.evm_configs_factory', 'self.received_config_example_1_evm',
-         'self.alerts_config_1_evm', 'self.received_config_example_2_evm',
-         'self.alerts_config_2_evm',)
+        ('self.evm_node_configs_factory',
+         'self.received_config_example_1_evm_node',
+         'self.alerts_config_1_evm_node',
+         'self.received_config_example_2_evm_node',
+         'self.alerts_config_2_evm_node',)
     ])
     def test_add_new_config_adds_a_new_config(
             self, configs_factory, received_config_1, alerts_config_1,
@@ -121,7 +123,8 @@ class TestEVMNodeAlertsConfig(unittest.TestCase):
         self.assertEqual(expected_state, configs_factory.configs)
 
     @parameterized.expand([
-        ('self.evm_configs_factory', 'self.received_config_example_1_evm',)
+        ('self.evm_node_configs_factory',
+         'self.received_config_example_1_evm_node',)
     ])
     def test_add_new_config_raises_ParentIdsMissMatch_if_parent_ids_not_equal(
             self, configs_factory, received_config) -> None:
@@ -142,8 +145,8 @@ class TestEVMNodeAlertsConfig(unittest.TestCase):
         self.assertEqual(old_state, configs_factory.configs)
 
     @parameterized.expand([
-        ('self.evm_configs_factory', 'self.alerts_config_1_evm',
-         'self.alerts_config_2_evm',)
+        ('self.evm_node_configs_factory', 'self.alerts_config_1_evm_node',
+         'self.alerts_config_2_evm_node',)
     ])
     def test_remove_config_removes_config_for_chain_if_chain_exists(
             self, configs_factory, alerts_config_1, alerts_config_2) -> None:
@@ -164,8 +167,8 @@ class TestEVMNodeAlertsConfig(unittest.TestCase):
         self.assertEqual(expected_state, configs_factory.configs)
 
     @parameterized.expand([
-        ('self.evm_configs_factory', 'self.alerts_config_1_evm',
-         'self.alerts_config_2_evm',)
+        ('self.evm_node_configs_factory', 'self.alerts_config_1_evm_node',
+         'self.alerts_config_2_evm_node',)
     ])
     def test_remove_config_does_nothing_if_no_config_exists_for_chain(
             self, configs_factory, alerts_config_1, alerts_config_2) -> None:
@@ -187,8 +190,8 @@ class TestEVMNodeAlertsConfig(unittest.TestCase):
         self.assertEqual(state, configs_factory.configs)
 
     @parameterized.expand([
-        ('self.evm_configs_factory', 'self.alerts_config_1_evm',
-         'self.alerts_config_2_evm',)
+        ('self.evm_node_configs_factory', 'self.alerts_config_1_evm_node',
+         'self.alerts_config_2_evm_node',)
     ])
     def test_config_exists_returns_true_if_config_exists(
             self, configs_factory, alerts_config_1, alerts_config_2) -> None:
@@ -204,7 +207,7 @@ class TestEVMNodeAlertsConfig(unittest.TestCase):
         self.assertTrue(configs_factory.config_exists(self.test_chain_name_1))
 
     @parameterized.expand([
-        ('self.evm_configs_factory', 'self.alerts_config_1_evm',)
+        ('self.evm_node_configs_factory', 'self.alerts_config_1_evm_node',)
     ])
     def test_config_exists_returns_false_if_config_does_not_exists(
             self, configs_factory, alerts_config_1) -> None:
@@ -224,8 +227,8 @@ class TestEVMNodeAlertsConfig(unittest.TestCase):
         self.assertFalse(configs_factory.config_exists(self.test_chain_name_2))
 
     @parameterized.expand([
-        ('self.evm_configs_factory', 'self.alerts_config_1_evm',
-         'self.alerts_config_2_evm',)
+        ('self.evm_node_configs_factory', 'self.alerts_config_1_evm_node',
+         'self.alerts_config_2_evm_node',)
     ])
     def test_get_parent_id_gets_id_from_stored_config_if_chain_exists_in_state(
             self, configs_factory, alerts_config_1, alerts_config_2) -> None:
@@ -243,7 +246,7 @@ class TestEVMNodeAlertsConfig(unittest.TestCase):
         self.assertEqual(self.test_parent_id_1, actual_output)
 
     @parameterized.expand([
-        ('self.evm_configs_factory', 'self.alerts_config_1_evm',)
+        ('self.evm_node_configs_factory', 'self.alerts_config_1_evm_node',)
     ])
     def test_get_parent_id_returns_none_if_chain_does_not_exist_in_state(
             self, configs_factory, alerts_config_1) -> None:
@@ -263,8 +266,8 @@ class TestEVMNodeAlertsConfig(unittest.TestCase):
         self.assertIsNone(configs_factory.get_parent_id('bad_chain'))
 
     @parameterized.expand([
-        ('self.evm_configs_factory', 'self.alerts_config_1_evm',
-         'self.alerts_config_2_evm',)
+        ('self.evm_node_configs_factory', 'self.alerts_config_1_evm_node',
+         'self.alerts_config_2_evm_node',)
     ])
     def test_get_chain_name_gets_name_given_the_parent_id_if_config_exists(
             self, configs_factory, alerts_config_1, alerts_config_2) -> None:
@@ -282,7 +285,7 @@ class TestEVMNodeAlertsConfig(unittest.TestCase):
         self.assertEqual(self.test_chain_name_1, actual_output)
 
     @parameterized.expand([
-        ('self.evm_configs_factory', 'self.alerts_config_1_evm',)
+        ('self.evm_node_configs_factory', 'self.alerts_config_1_evm_node',)
     ])
     def test_get_chain_name_returns_none_if_no_config_exists_for_parent_id(
             self, configs_factory, alerts_config_1) -> None:

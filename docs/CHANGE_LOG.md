@@ -1,5 +1,13 @@
 # Change Log
 
+## 1.1.0
+
+Released on 28th April 2022
+
+- Added Cosmos Node and Network alerting.
+- Updated API, UI and Web-Installer to be compatible with Cosmos alerting.
+- Updated alert messages for Chainlink/EVM block height alerts.
+
 ## 1.0.0
 
 Released on 30th March 2022

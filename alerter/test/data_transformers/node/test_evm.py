@@ -24,7 +24,7 @@ from src.utils.constants.rabbitmq import (
 from src.utils.exceptions import (PANICException, NodeIsDownException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from test.utils.utils import (
+from test.test_utils.utils import (
     connect_to_rabbit, delete_queue_if_exists, disconnect_from_rabbit,
     delete_exchange_if_exists, save_evm_node_to_redis)
 

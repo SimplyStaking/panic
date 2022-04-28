@@ -23,7 +23,7 @@ from src.alerter.managers.chainlink import ChainlinkAlertersManager
 from src.configs.alerts.contract.chainlink import (
     ChainlinkContractAlertsConfig)
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
-from src.configs.factory.node.chainlink_alerts import (
+from src.configs.factory.alerts.chainlink_alerts import (
     ChainlinkContractAlertsConfigsFactory, ChainlinkNodeAlertsConfigsFactory)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
@@ -36,11 +36,10 @@ from src.utils.constants.rabbitmq import (
     HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, CL_NODE_ALERT_ROUTING_KEY,
     CL_CONTRACT_ALERT_ROUTING_KEY)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
-from test.utils.utils import (
+from test.test_utils.utils import (
     delete_exchange_if_exists, delete_queue_if_exists, disconnect_from_rabbit,
-    connect_to_rabbit
+    connect_to_rabbit, infinite_fn
 )
-from test.utils.utils import infinite_fn
 
 
 class TestChainlinkAlertersManager(unittest.TestCase):

@@ -21,7 +21,7 @@ from src.utils.constants.rabbitmq import (
     MONITORABLE_STORE_INPUT_QUEUE_NAME, HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
     MONITORABLE_STORE_INPUT_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException)
-from test.utils.utils import (
+from test.test_utils.utils import (
     connect_to_rabbit, disconnect_from_rabbit, delete_exchange_if_exists,
     delete_queue_if_exists, process_monitorable_data)
 

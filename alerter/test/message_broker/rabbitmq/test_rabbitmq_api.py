@@ -14,7 +14,7 @@ from src.utils.exceptions import (
     MessageWasNotDeliveredException
 )
 from src.utils.timing import TimedTaskLimiter
-from test.utils.utils import TestConnection, dummy_function
+from test.test_utils.utils import TestConnection, dummy_function
 
 
 class TestRabbitMQApi(TestCase):

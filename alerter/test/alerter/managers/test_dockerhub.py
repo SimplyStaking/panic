@@ -25,9 +25,9 @@ from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
                                           DOCKERHUB_ALERT_ROUTING_KEY,
                                           ALERT_EXCHANGE)
 from src.utils.exceptions import PANICException
-from test.utils.utils import (infinite_fn, connect_to_rabbit,
-                              delete_queue_if_exists, disconnect_from_rabbit,
-                              delete_exchange_if_exists)
+from test.test_utils.utils import (
+    infinite_fn, connect_to_rabbit, delete_queue_if_exists,
+    disconnect_from_rabbit, delete_exchange_if_exists)
 
 
 # Tests adapted from Monitors managers

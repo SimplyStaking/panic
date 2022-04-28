@@ -30,6 +30,9 @@ class AlertingFactory(ABC):
                 Optional[error_sent]: {
                     GroupedAlertsMetricCode.value: bool
                 },
+                Optional[any_severity_sent]: {
+                    GroupedAlertsMetricCode.value: bool
+                },
                 Optional[warning_window_timer]: {
                     GroupedAlertsMetricCode.value: TimedTaskTracker
                 },
@@ -508,6 +511,32 @@ class AlertingFactory(ABC):
             data_for_alerting.append(alert.alert_data)
             self.component_logger.debug("Successfully classified alert %s",
                                         alert.alert_data)
+
+    def classify_solvable_conditional_alert_no_repetition(
+            self, parent_id: str, monitorable_id: str, metric_name: str,
+            condition_true_alert: Type[ConditionalAlert],
+            condition_function: Callable, condition_fn_args: List[Any],
+            true_alert_args: List[Any], data_for_alerting: List,
+            solved_alert: Type[ConditionalAlert], solved_alert_args: List[Any]
+    ) -> None:
+        alert_sent = self.alerting_state[parent_id][monitorable_id][
+            'any_severity_sent']
+        if condition_function(*condition_fn_args):
+            if not alert_sent[metric_name]:
+                alert = condition_true_alert(*true_alert_args)
+                data_for_alerting.append(alert.alert_data)
+                self.component_logger.debug("Successfully classified alert %s",
+                                            alert.alert_data)
+                self.alerting_state[parent_id][monitorable_id][
+                    'any_severity_sent'][metric_name] = True
+        else:
+            if alert_sent[metric_name]:
+                alert = solved_alert(*solved_alert_args)
+                data_for_alerting.append(alert.alert_data)
+                self.component_logger.debug("Successfully classified alert %s",
+                                            alert.alert_data)
+                self.alerting_state[parent_id][monitorable_id][
+                    'any_severity_sent'][metric_name] = False
 
     def classify_thresholded_alert(
             self, current: Any, config: Dict,

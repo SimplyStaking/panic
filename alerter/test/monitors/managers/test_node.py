@@ -13,8 +13,6 @@ from freezegun import freeze_time
 from parameterized import parameterized
 from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
-from src.abstract.publisher_subscriber import \
-    QueuingPublisherSubscriberComponent
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.configs.nodes.evm import EVMNodeConfig
 from src.configs.nodes.node import NodeConfig
@@ -22,6 +20,7 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.managers.node import NodeMonitorsManager
 from src.monitors.monitor import Monitor
 from src.monitors.node.chainlink import ChainlinkNodeMonitor
+from src.monitors.node.cosmos import CosmosNodeMonitor
 from src.monitors.node.evm import EVMNodeMonitor
 from src.monitors.starters import start_node_monitor
 from src.utils import env
@@ -29,12 +28,16 @@ from src.utils.constants.names import NODE_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, CONFIG_EXCHANGE, NODE_MON_MAN_HEARTBEAT_QUEUE_NAME,
     NODE_MON_MAN_CONFIGS_QUEUE_NAME, PING_ROUTING_KEY,
-    NODES_CONFIGS_ROUTING_KEY_CHAINS, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-    EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS, MONITORABLE_EXCHANGE, TOPIC)
+    NODES_CONFIGS_ROUTING_KEY_CHAINS, EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS,
+    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, MONITORABLE_EXCHANGE)
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
-from test.utils.utils import (infinite_fn, connect_to_rabbit,
-                              delete_queue_if_exists, disconnect_from_rabbit,
-                              delete_exchange_if_exists)
+from src.utils.types import str_to_bool
+from test.test_utils.utils import (
+    infinite_fn, connect_to_rabbit, delete_queue_if_exists,
+    disconnect_from_rabbit, delete_exchange_if_exists)
+from test.utils.chainlink.chainlink import ChainlinkTestNodes
+from test.utils.cosmos.cosmos import CosmosTestNodes
+from test.utils.evm.evm import EVMTestNodes
 
 
 class TestNodeMonitorsManager(unittest.TestCase):
@@ -56,6 +59,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.test_exception = PANICException('test_exception', 1)
+        self.empty_configs = {}
 
         # Some dummy processes
         self.dummy_process1 = Process(target=infinite_fn, args=())
@@ -68,215 +72,367 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.dummy_process4.daemon = True
         self.dummy_process5 = Process(target=infinite_fn, args=())
         self.dummy_process5.daemon = True
+        self.dummy_process6 = Process(target=infinite_fn, args=())
+        self.dummy_process6.daemon = True
+        self.dummy_process7 = Process(target=infinite_fn, args=())
+        self.dummy_process7.daemon = True
+        self.dummy_process8 = Process(target=infinite_fn, args=())
+        self.dummy_process8.daemon = True
 
         # Some dummy node configs
-        self.node_id_1 = 'config_id1'
-        self.parent_id_1 = 'chain_1'
-        self.node_name_1 = 'node_1'
-        self.chain_1 = 'chain1'
-        self.base_chain_1 = 'base_chain1'
-        self.sub_chain_1 = 'sub_chain1'
-        self.monitor_node_1 = True
-        self.monitor_prometheus_1 = True
-        self.node_prometheus_urls_1 = ['url1', 'url2', 'url3']
-        self.node_config_1 = ChainlinkNodeConfig(
-            self.node_id_1, self.parent_id_1, self.node_name_1,
-            self.monitor_node_1, self.monitor_prometheus_1,
-            self.node_prometheus_urls_1)
-        self.node_id_2 = 'config_id2'
-        self.parent_id_2 = 'chain_2'
-        self.node_name_2 = 'node_2'
-        self.chain_2 = 'chain_2'
-        self.base_chain_2 = 'base_chain2'
-        self.sub_chain_2 = 'sub_chain2'
-        self.monitor_node_2 = True
-        self.monitor_prometheus_2 = True
-        self.node_prometheus_urls_2 = ['url4', 'url5', 'url6']
-        self.node_config_2 = ChainlinkNodeConfig(
-            self.node_id_2, self.parent_id_2, self.node_name_2,
-            self.monitor_node_2, self.monitor_prometheus_2,
-            self.node_prometheus_urls_2)
-        self.node_id_3 = 'config_id3'
-        self.parent_id_3 = 'chain_3'
-        self.node_name_3 = 'node_3'
-        self.chain_3 = 'chain3'
-        self.base_chain_3 = 'base_chain3'
-        self.sub_chain_3 = 'sub_chain3'
-        self.monitor_node_3 = True
-        self.node_config_3 = NodeConfig(
-            self.node_id_3, self.parent_id_3, self.node_name_3,
-            self.monitor_node_3)
-        self.node_id_4 = 'config_id4'
-        self.parent_id_4 = 'chain_4'
-        self.node_name_4 = 'node_4'
-        self.chain_4 = 'chain4'
-        self.base_chain_4 = 'base_chain4'
-        self.sub_chain_4 = 'sub_chain4'
-        self.monitor_node_4 = True
-        self.node_http_url_4 = 'url4'
-        self.node_config_4 = EVMNodeConfig(
-            self.node_id_4, self.parent_id_4, self.node_name_4,
-            self.monitor_node_4, self.node_http_url_4)
-        self.node_id_5 = 'config_id5'
-        self.parent_id_5 = 'chain_5'
-        self.node_name_5 = 'node_5'
-        self.chain_5 = 'chain5'
-        self.base_chain_5 = 'base_chain5'
-        self.sub_chain_5 = 'sub_chain5'
-        self.monitor_node_5 = True
-        self.node_http_url_5 = 'url5'
-        self.node_config_5 = EVMNodeConfig(
-            self.node_id_5, self.parent_id_5, self.node_name_5,
-            self.monitor_node_5, self.node_http_url_5)
+        self.cl_test_nodes = ChainlinkTestNodes()
+        self.evm_test_nodes = EVMTestNodes()
+        self.cosmos_test_nodes = CosmosTestNodes()
+        self.node_config_1 = self.cl_test_nodes.node_1
+        self.node_config_2 = self.cl_test_nodes.node_2
+        self.node_config_3 = NodeConfig('node_id_3', 'parent_id_3',
+                                        'node_name_3', True)
+        self.node_config_4 = self.evm_test_nodes.create_custom_node(
+            'node_id_4', 'parent_id_4', 'node_name_4', True, 'node_http_url_4')
+        self.node_config_5 = self.evm_test_nodes.create_custom_node(
+            'node_id_5', 'parent_id_5', 'node_name_5', True, 'node_http_url_5')
+        self.node_config_6 = self.cosmos_test_nodes.create_custom_node(
+            'node_id_6', 'parent_id_6', 'node_name_6', True, True, 'prom_url_6',
+            True, 'cosmos_rest_url_6', True, 'tendermint_rpc_url_6', True, True,
+            True, 'operator_address_6'
+        )
+        self.node_config_7 = self.cosmos_test_nodes.create_custom_node(
+            'node_id_7', 'parent_id_7', 'node_name_7', True, True, 'prom_url_7',
+            True, 'cosmos_rest_url_7', True, 'tendermint_rpc_url_7', False,
+            False, True, 'operator_address_7'
+        )
+        self.node_config_8 = self.cosmos_test_nodes.create_custom_node(
+            'node_id_8', 'parent_id_8', 'node_name_8', True, True, 'prom_url_8',
+            True, 'cosmos_rest_url_8', True, 'tendermint_rpc_url_8', False,
+            False, False, 'operator_address_8'
+        )
 
         # Some config_process_dict, node_configs and sent_configs examples
         self.config_process_dict_example = {
-            'config_id1': {
+            self.node_config_1.node_id: {
                 'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
-                    self.node_name_1),
+                    self.node_config_1.node_name),
                 'process': self.dummy_process1,
                 'monitor_type': ChainlinkNodeMonitor,
                 'node_config': self.node_config_1,
-                'base_chain': self.base_chain_1,
-                'sub_chain': self.sub_chain_1,
-                'source_name': self.node_name_1,
-                'parent_id': self.chain_1,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_1.node_name,
+                'parent_id': self.node_config_1.parent_id,
+                'args': ()
             },
-            'config_id2': {
+            self.node_config_2.node_id: {
                 'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
-                    self.node_name_2),
+                    self.node_config_2.node_name),
                 'process': self.dummy_process2,
                 'monitor_type': ChainlinkNodeMonitor,
                 'node_config': self.node_config_2,
-                'base_chain': self.base_chain_2,
-                'sub_chain': self.sub_chain_2,
-                'source_name': self.node_name_2,
-                'parent_id': self.chain_2,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_2.node_name,
+                'parent_id': self.node_config_2.parent_id,
+                'args': ()
             },
-            'config_id3': {
+            self.node_config_3.node_id: {
                 'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
-                    self.node_name_3),
+                    self.node_config_3.node_name),
                 'process': self.dummy_process3,
                 'monitor_type': Monitor,
                 'node_config': self.node_config_3,
-                'base_chain': self.base_chain_3,
-                'sub_chain': self.sub_chain_3,
-                'source_name': self.node_name_3,
-                'parent_id': self.chain_3,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_3.node_name,
+                'parent_id': self.node_config_3.parent_id,
+                'args': ()
             },
-            'config_id4': {
+            self.node_config_4.node_id: {
                 'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
-                    self.node_name_4),
+                    self.node_config_4.node_name),
                 'process': self.dummy_process4,
                 'monitor_type': EVMNodeMonitor,
                 'node_config': self.node_config_4,
-                'base_chain': self.base_chain_4,
-                'sub_chain': self.sub_chain_4,
-                'source_name': self.node_name_4,
-                'parent_id': self.chain_4,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_4.node_name,
+                'parent_id': self.node_config_4.parent_id,
+                'args': ()
             },
-            'config_id5': {
+            self.node_config_5.node_id: {
                 'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
-                    self.node_name_5),
+                    self.node_config_5.node_name),
                 'process': self.dummy_process5,
                 'monitor_type': EVMNodeMonitor,
                 'node_config': self.node_config_5,
-                'base_chain': self.base_chain_5,
-                'sub_chain': self.sub_chain_5,
-                'source_name': self.node_name_5,
-                'parent_id': self.chain_5,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_5.node_name,
+                'parent_id': self.node_config_5.parent_id,
+                'args': ()
+            },
+            self.node_config_6.node_id: {
+                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
+                    self.node_config_6.node_name),
+                'process': self.dummy_process6,
+                'monitor_type': CosmosNodeMonitor,
+                'node_config': self.node_config_6,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_6.node_name,
+                'parent_id': self.node_config_6.parent_id,
+                'args': ([self.node_config_7, self.node_config_6],)
+            },
+            self.node_config_7.node_id: {
+                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
+                    self.node_config_7.node_name),
+                'process': self.dummy_process7,
+                'monitor_type': CosmosNodeMonitor,
+                'node_config': self.node_config_7,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_7.node_name,
+                'parent_id': self.node_config_7.parent_id,
+                'args': ([self.node_config_6, self.node_config_7],)
+            },
+            self.node_config_8.node_id: {
+                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
+                    self.node_config_8.node_name),
+                'process': self.dummy_process8,
+                'monitor_type': CosmosNodeMonitor,
+                'node_config': self.node_config_8,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_8.node_name,
+                'parent_id': self.node_config_8.parent_id,
+                'args': ([self.node_config_7, self.node_config_6,
+                          self.node_config_8],)
             },
         }
         self.nodes_configs_example = {
             'chainlink Binance Smart Chain': {
                 'nodes_config': {
-                    'config_id1': {
-                        'id': self.node_id_1,
-                        'parent_id': self.parent_id_1,
-                        'name': self.node_name_1,
-                        'node_prometheus_urls':
-                            ','.join(self.node_prometheus_urls_1),
-                        'monitor_node': str(self.monitor_node_1),
-                        'monitor_prometheus': str(self.monitor_prometheus_1)
+                    self.node_config_1.node_id: {
+                        'id': self.node_config_1.node_id,
+                        'parent_id': self.node_config_1.parent_id,
+                        'name': self.node_config_1.node_name,
+                        'node_prometheus_urls': ','.join(
+                            self.node_config_1.node_prometheus_urls),
+                        'monitor_node': str(self.node_config_1.monitor_node),
+                        'monitor_prometheus': str(
+                            self.node_config_1.monitor_prometheus)
                     },
-                    'config_id2': {
-                        'id': self.node_id_2,
-                        'parent_id': self.parent_id_2,
-                        'name': self.node_name_2,
-                        'node_prometheus_urls':
-                            ','.join(self.node_prometheus_urls_2),
-                        'monitor_node': str(self.monitor_node_2),
-                        'monitor_prometheus': str(self.monitor_prometheus_2)
+                    self.node_config_2.node_id: {
+                        'id': self.node_config_2.node_id,
+                        'parent_id': self.node_config_2.parent_id,
+                        'name': self.node_config_2.node_name,
+                        'node_prometheus_urls': ','.join(
+                            self.node_config_2.node_prometheus_urls),
+                        'monitor_node': str(self.node_config_2.monitor_node),
+                        'monitor_prometheus': str(
+                            self.node_config_2.monitor_prometheus)
                     },
                 },
                 'evm_nodes_config': {
-                    'config_id4': {
-                        'id': self.node_id_4,
-                        'parent_id': self.parent_id_4,
-                        'name': self.node_name_4,
-                        'node_http_url': self.node_http_url_4,
-                        'monitor_node': str(self.monitor_node_4),
+                    self.node_config_4.node_id: {
+                        'id': self.node_config_4.node_id,
+                        'parent_id': self.node_config_4.parent_id,
+                        'name': self.node_config_4.node_name,
+                        'node_http_url': self.node_config_4.node_http_url,
+                        'monitor_node': str(self.node_config_4.monitor_node),
                     },
-                    'config_id5': {
-                        'id': self.node_id_5,
-                        'parent_id': self.parent_id_5,
-                        'name': self.node_name_5,
-                        'node_http_url': self.node_http_url_5,
-                        'monitor_node': str(self.monitor_node_5),
+                    self.node_config_5.node_id: {
+                        'id': self.node_config_5.node_id,
+                        'parent_id': self.node_config_5.parent_id,
+                        'name': self.node_config_5.node_name,
+                        'node_http_url': self.node_config_5.node_http_url,
+                        'monitor_node': str(self.node_config_5.monitor_node),
                     },
                 }
             },
             'Substrate Kusama': {
                 'nodes_config': {
-                    'config_id3': {
-                        'id': self.node_id_3,
-                        'parent_id': self.parent_id_3,
-                        'name': self.node_name_3,
-                        'monitor_node': str(self.monitor_node_3),
+                    self.node_config_3.node_id: {
+                        'id': self.node_config_3.node_id,
+                        'parent_id': self.node_config_3.parent_id,
+                        'name': self.node_config_3.node_name,
+                        'monitor_node': str(self.node_config_3.monitor_node),
                     }
                 }
             },
+            'cosmos cosmos': {
+                'nodes_config': {
+                    self.node_config_6.node_id: {
+                        'id': self.node_config_6.node_id,
+                        'parent_id': self.node_config_6.parent_id,
+                        'name': self.node_config_6.node_name,
+                        'cosmos_rest_url': self.node_config_6.cosmos_rest_url,
+                        'monitor_cosmos_rest': str(
+                            self.node_config_6.monitor_cosmos_rest),
+                        'prometheus_url': self.node_config_6.prometheus_url,
+                        'monitor_prometheus': str(
+                            self.node_config_6.monitor_prometheus),
+                        'is_validator': str(self.node_config_6.is_validator),
+                        'monitor_node': str(self.node_config_6.monitor_node),
+                        'is_archive_node': str(
+                            self.node_config_6.is_archive_node),
+                        'use_as_data_source': str(
+                            self.node_config_6.use_as_data_source),
+                        'operator_address': self.node_config_6.operator_address,
+                        'monitor_tendermint_rpc': str(
+                            self.node_config_6.monitor_tendermint_rpc),
+                        'tendermint_rpc_url':
+                            self.node_config_6.tendermint_rpc_url
+                    },
+                    self.node_config_7.node_id: {
+                        'id': self.node_config_7.node_id,
+                        'parent_id': self.node_config_7.parent_id,
+                        'name': self.node_config_7.node_name,
+                        'cosmos_rest_url': self.node_config_7.cosmos_rest_url,
+                        'monitor_cosmos_rest': str(
+                            self.node_config_7.monitor_cosmos_rest),
+                        'prometheus_url': self.node_config_7.prometheus_url,
+                        'monitor_prometheus': str(
+                            self.node_config_7.monitor_prometheus),
+                        'is_validator': str(self.node_config_7.is_validator),
+                        'monitor_node': str(self.node_config_7.monitor_node),
+                        'is_archive_node': str(
+                            self.node_config_7.is_archive_node),
+                        'use_as_data_source': str(
+                            self.node_config_7.use_as_data_source),
+                        'operator_address': self.node_config_7.operator_address,
+                        'monitor_tendermint_rpc': str(
+                            self.node_config_7.monitor_tendermint_rpc),
+                        'tendermint_rpc_url':
+                            self.node_config_7.tendermint_rpc_url
+                    },
+                    self.node_config_8.node_id: {
+                        'id': self.node_config_8.node_id,
+                        'parent_id': self.node_config_8.parent_id,
+                        'name': self.node_config_8.node_name,
+                        'cosmos_rest_url': self.node_config_8.cosmos_rest_url,
+                        'monitor_cosmos_rest': str(
+                            self.node_config_8.monitor_cosmos_rest),
+                        'prometheus_url': self.node_config_8.prometheus_url,
+                        'monitor_prometheus': str(
+                            self.node_config_8.monitor_prometheus),
+                        'is_validator': str(self.node_config_8.is_validator),
+                        'monitor_node': str(self.node_config_8.monitor_node),
+                        'is_archive_node': str(
+                            self.node_config_8.is_archive_node),
+                        'use_as_data_source': str(
+                            self.node_config_8.use_as_data_source),
+                        'operator_address': self.node_config_8.operator_address,
+                        'monitor_tendermint_rpc': str(
+                            self.node_config_8.monitor_tendermint_rpc),
+                        'tendermint_rpc_url':
+                            self.node_config_8.tendermint_rpc_url
+                    }
+                }
+            }
         }
         self.sent_configs_example_chainlink = {
-            'config_id1': {
-                'id': self.node_id_1,
-                'parent_id': self.parent_id_1,
-                'name': self.node_name_1,
-                'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
-                'monitor_node': str(self.monitor_node_1),
-                'monitor_prometheus': str(self.monitor_prometheus_1),
+            self.node_config_1.node_id: {
+                'id': self.node_config_1.node_id,
+                'parent_id': self.node_config_1.parent_id,
+                'name': self.node_config_1.node_name,
+                'node_prometheus_urls': ','.join(
+                    self.node_config_1.node_prometheus_urls),
+                'monitor_node': str(self.node_config_1.monitor_node),
+                'monitor_prometheus': str(self.node_config_1.monitor_prometheus)
             },
-            'config_id2': {
-                'id': self.node_id_2,
-                'parent_id': self.parent_id_2,
-                'name': self.node_name_2,
-                'node_prometheus_urls': ','.join(self.node_prometheus_urls_2),
-                'monitor_node': str(self.monitor_node_2),
-                'monitor_prometheus': str(self.monitor_prometheus_2),
+            self.node_config_2.node_id: {
+                'id': self.node_config_2.node_id,
+                'parent_id': self.node_config_2.parent_id,
+                'name': self.node_config_2.node_name,
+                'node_prometheus_urls': ','.join(
+                    self.node_config_2.node_prometheus_urls),
+                'monitor_node': str(self.node_config_2.monitor_node),
+                'monitor_prometheus': str(self.node_config_2.monitor_prometheus)
             }
         }
         self.sent_configs_example_chainlink_evm = {
-            'config_id4': {
-                'id': self.node_id_4,
-                'parent_id': self.parent_id_4,
-                'name': self.node_name_4,
-                'node_http_url': self.node_http_url_4,
-                'monitor_node': str(self.monitor_node_4),
+            self.node_config_4.node_id: {
+                'id': self.node_config_4.node_id,
+                'parent_id': self.node_config_4.parent_id,
+                'name': self.node_config_4.node_name,
+                'node_http_url': self.node_config_4.node_http_url,
+                'monitor_node': str(self.node_config_4.monitor_node),
             },
-            'config_id5': {
-                'id': self.node_id_5,
-                'parent_id': self.parent_id_5,
-                'name': self.node_name_5,
-                'node_http_url': self.node_http_url_5,
-                'monitor_node': str(self.monitor_node_5),
+            self.node_config_5.node_id: {
+                'id': self.node_config_5.node_id,
+                'parent_id': self.node_config_5.parent_id,
+                'name': self.node_config_5.node_name,
+                'node_http_url': self.node_config_5.node_http_url,
+                'monitor_node': str(self.node_config_5.monitor_node),
             }
         }
         self.sent_configs_example_kusama = {
-            'config_id3': {
-                'id': self.node_id_3,
-                'parent_id': self.parent_id_3,
-                'name': self.node_name_3,
-                'monitor_node': str(self.monitor_node_3),
+            self.node_config_3.node_id: {
+                'id': self.node_config_3.node_id,
+                'parent_id': self.node_config_3.parent_id,
+                'name': self.node_config_3.node_name,
+                'monitor_node': str(self.node_config_3.monitor_node),
+            }
+        }
+        self.sent_configs_example_cosmos = {
+            self.node_config_6.node_id: {
+                'id': self.node_config_6.node_id,
+                'parent_id': self.node_config_6.parent_id,
+                'name': self.node_config_6.node_name,
+                'cosmos_rest_url': self.node_config_6.cosmos_rest_url,
+                'monitor_cosmos_rest': str(
+                    self.node_config_6.monitor_cosmos_rest),
+                'prometheus_url': self.node_config_6.prometheus_url,
+                'monitor_prometheus': str(
+                    self.node_config_6.monitor_prometheus),
+                'is_validator': str(self.node_config_6.is_validator),
+                'monitor_node': str(self.node_config_6.monitor_node),
+                'is_archive_node': str(self.node_config_6.is_archive_node),
+                'use_as_data_source': str(
+                    self.node_config_6.use_as_data_source),
+                'operator_address': self.node_config_6.operator_address,
+                'monitor_tendermint_rpc': str(
+                    self.node_config_6.monitor_tendermint_rpc),
+                'tendermint_rpc_url': self.node_config_6.tendermint_rpc_url
+            },
+            self.node_config_7.node_id: {
+                'id': self.node_config_7.node_id,
+                'parent_id': self.node_config_7.parent_id,
+                'name': self.node_config_7.node_name,
+                'cosmos_rest_url': self.node_config_7.cosmos_rest_url,
+                'monitor_cosmos_rest': str(
+                    self.node_config_7.monitor_cosmos_rest),
+                'prometheus_url': self.node_config_7.prometheus_url,
+                'monitor_prometheus': str(
+                    self.node_config_7.monitor_prometheus),
+                'is_validator': str(self.node_config_7.is_validator),
+                'monitor_node': str(self.node_config_7.monitor_node),
+                'is_archive_node': str(self.node_config_7.is_archive_node),
+                'use_as_data_source': str(
+                    self.node_config_7.use_as_data_source),
+                'operator_address': self.node_config_7.operator_address,
+                'monitor_tendermint_rpc': str(
+                    self.node_config_7.monitor_tendermint_rpc),
+                'tendermint_rpc_url': self.node_config_7.tendermint_rpc_url
+            },
+            self.node_config_8.node_id: {
+                'id': self.node_config_8.node_id,
+                'parent_id': self.node_config_8.parent_id,
+                'name': self.node_config_8.node_name,
+                'cosmos_rest_url': self.node_config_8.cosmos_rest_url,
+                'monitor_cosmos_rest': str(
+                    self.node_config_8.monitor_cosmos_rest),
+                'prometheus_url': self.node_config_8.prometheus_url,
+                'monitor_prometheus': str(
+                    self.node_config_8.monitor_prometheus),
+                'is_validator': str(self.node_config_8.is_validator),
+                'monitor_node': str(self.node_config_8.monitor_node),
+                'is_archive_node': str(self.node_config_8.is_archive_node),
+                'use_as_data_source': str(
+                    self.node_config_8.use_as_data_source),
+                'operator_address': self.node_config_8.operator_address,
+                'monitor_tendermint_rpc': str(
+                    self.node_config_8.monitor_tendermint_rpc),
+                'tendermint_rpc_url': self.node_config_8.tendermint_rpc_url
             }
         }
 
@@ -290,6 +446,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.chainlink_evm_routing_key = \
             'chains.chainlink.Binance Smart Chain.evm_nodes_config'
         self.kusama_routing_key = 'chains.Substrate.Kusama.nodes_config'
+        self.cosmos_routing_key = 'chains.cosmos.cosmos.nodes_config'
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
@@ -314,16 +471,29 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.dummy_process3 = None
         self.dummy_process4 = None
         self.dummy_process5 = None
+        self.dummy_process6 = None
+        self.dummy_process7 = None
+        self.dummy_process8 = None
+        self.cl_test_nodes.clear_attributes()
+        self.evm_test_nodes.clear_attributes()
+        self.cosmos_test_nodes.clear_attributes()
+        self.cl_test_nodes = None
+        self.evm_test_nodes = None
+        self.cosmos_test_nodes = None
         self.node_config_1 = None
         self.node_config_2 = None
         self.node_config_3 = None
         self.node_config_4 = None
         self.node_config_5 = None
+        self.node_config_6 = None
+        self.node_config_7 = None
+        self.node_config_8 = None
         self.config_process_dict_example = None
         self.nodes_configs_example = None
         self.sent_configs_example_chainlink = None
         self.sent_configs_example_chainlink_evm = None
         self.sent_configs_example_kusama = None
+        self.sent_configs_example_cosmos = None
         self.test_manager = None
         self.test_exception = None
 
@@ -351,10 +521,12 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.test_manager._listen_for_data()
         mock_start_consuming.assert_called_once()
 
+    @mock.patch.object(RabbitMQApi, 'basic_consume')
     def test_initialise_rabbitmq_initialises_everything_as_expected(
-            self) -> None:
-        # To make sure that there is no connection/channel already
-        # established
+            self, mock_basic_consume) -> None:
+        mock_basic_consume.return_value = None
+
+        # To make sure that there is no connection/channel already established
         self.assertIsNone(self.rabbitmq.connection)
         self.assertIsNone(self.rabbitmq.channel)
 
@@ -366,6 +538,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.test_manager.rabbitmq.queue_delete(NODE_MON_MAN_CONFIGS_QUEUE_NAME)
         self.test_manager.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
         self.test_manager.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+        self.test_manager.rabbitmq.exchange_delete(MONITORABLE_EXCHANGE)
         self.rabbitmq.disconnect()
 
         self.test_manager._initialise_rabbitmq()
@@ -378,14 +551,8 @@ class TestNodeMonitorsManager(unittest.TestCase):
             self.test_manager.rabbitmq.channel._delivery_confirmation)
 
         # Check whether the exchanges and queues have been creating by
-        # sending messages with the same routing keys as for the queues. We
-        # will also check if the size of the queues is 0 to confirm that
-        # basic_consume was called (it will store the msg in the component
-        # memory immediately). If one of the exchanges or queues is not
-        # created, then an exception will be thrown. Note when deleting the
-        # exchanges in the beginning we also released every binding, hence there
-        # is no other queue binded with the same routing key to any exchange at
-        # this point.
+        # sending messages with the same routing keys as for the queues, and
+        # checking what messages have been received if any.
         self.test_manager.rabbitmq.basic_publish_confirm(
             exchange=HEALTH_CHECK_EXCHANGE, routing_key=PING_ROUTING_KEY,
             body=self.test_data_str, is_body_dict=False,
@@ -398,16 +565,38 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.test_manager.rabbitmq.basic_publish_confirm(
             exchange=CONFIG_EXCHANGE,
             routing_key=EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS,
-            body=self.test_data_str, is_body_dict=False,
+            body=self.test_data_str,is_body_dict=False,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
 
-        # Re-declare queue to get the number of messages
+        # Re-declare queues to get the number of messages and the msgs received
         res = self.test_manager.rabbitmq.queue_declare(
             NODE_MON_MAN_HEARTBEAT_QUEUE_NAME, False, True, False, False)
-        self.assertEqual(0, res.method.message_count)
+        self.assertEqual(1, res.method.message_count)
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            NODE_MON_MAN_HEARTBEAT_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+
         res = self.test_manager.rabbitmq.queue_declare(
             NODE_MON_MAN_CONFIGS_QUEUE_NAME, False, True, False, False)
-        self.assertEqual(0, res.method.message_count)
+        self.assertEqual(2, res.method.message_count)
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            NODE_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+        _, _, body = self.test_manager.rabbitmq.basic_get(
+            NODE_MON_MAN_CONFIGS_QUEUE_NAME)
+        self.assertEqual(self.test_data_str, body.decode())
+
+        # Check that basic_consume was called twice, once for each consumer
+        # queue
+        calls = mock_basic_consume.call_args_list
+        self.assertEqual(2, len(calls))
+
+        # Check that the publishing exchanges were created by sending messages
+        # to them. If this fails an exception is raised hence the test fails.
+        self.test_manager.rabbitmq.basic_publish_confirm(
+            exchange=MONITORABLE_EXCHANGE, routing_key='test_key',
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=False)
 
     def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
         # This test creates a queue which receives messages with the same
@@ -437,8 +626,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.assertEqual(1, res.method.message_count)
 
         # Check that the message received is actually the HB
-        _, _, body = self.test_manager.rabbitmq.basic_get(
-            self.test_queue_name)
+        _, _, body = self.test_manager.rabbitmq.basic_get(self.test_queue_name)
         self.assertEqual(self.test_heartbeat, json.loads(body))
 
     @mock.patch.object(multiprocessing.Process, "start")
@@ -446,74 +634,25 @@ class TestNodeMonitorsManager(unittest.TestCase):
     def test_create_and_start_monitor_process_stores_the_correct_process_info(
             self, mock_init, mock_start) -> None:
         mock_start.return_value = None
-        mock_init.return_value = self.dummy_process2
-
-        # Assume that the node with id config_id2 was not added yet.
-        del self.config_process_dict_example[self.node_id_2]
-        self.test_manager._config_process_dict = \
-            self.config_process_dict_example
+        mock_init.return_value = self.dummy_process1
         expected_output = {
-            'config_id1': {
+            self.node_config_1.node_id: {
                 'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
-                    self.node_name_1),
+                    self.node_config_1.node_name),
                 'process': self.dummy_process1,
                 'monitor_type': ChainlinkNodeMonitor,
                 'node_config': self.node_config_1,
-                'base_chain': self.base_chain_1,
-                'sub_chain': self.sub_chain_1,
-                'source_name': self.node_name_1,
-                'parent_id': self.chain_1,
-            },
-            'config_id2': {
-                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
-                    self.node_name_2),
-                'process': self.dummy_process2,
-                'monitor_type': ChainlinkNodeMonitor,
-                'node_config': self.node_config_2,
-                'base_chain': self.base_chain_2,
-                'sub_chain': self.sub_chain_2,
-                'source_name': self.node_name_2,
-                'parent_id': self.chain_2,
-            },
-            'config_id3': {
-                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
-                    self.node_name_3),
-                'process': self.dummy_process3,
-                'monitor_type': Monitor,
-                'node_config': self.node_config_3,
-                'base_chain': self.base_chain_3,
-                'sub_chain': self.sub_chain_3,
-                'source_name': self.node_name_3,
-                'parent_id': self.chain_3,
-            },
-            'config_id4': {
-                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
-                    self.node_name_4),
-                'process': self.dummy_process4,
-                'monitor_type': EVMNodeMonitor,
-                'node_config': self.node_config_4,
-                'base_chain': self.base_chain_4,
-                'sub_chain': self.sub_chain_4,
-                'source_name': self.node_name_4,
-                'parent_id': self.chain_4,
-            },
-            'config_id5': {
-                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
-                    self.node_name_5),
-                'process': self.dummy_process5,
-                'monitor_type': EVMNodeMonitor,
-                'node_config': self.node_config_5,
-                'base_chain': self.base_chain_5,
-                'sub_chain': self.sub_chain_5,
-                'source_name': self.node_name_5,
-                'parent_id': self.chain_5,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_1.node_name,
+                'parent_id': self.node_config_1.parent_id,
+                'args': ('extra_arg1', 'extra_arg2')
             },
         }
 
         self.test_manager._create_and_start_monitor_process(
-            self.node_config_2, self.node_id_2, ChainlinkNodeMonitor,
-            self.base_chain_2, self.sub_chain_2)
-
+            self.node_config_1, self.node_config_1.node_id,
+            ChainlinkNodeMonitor, '', '', 'extra_arg1', 'extra_arg2')
         self.assertEqual(expected_output, self.test_manager.config_process_dict)
 
     @mock.patch.object(multiprocessing.Process, "start")
@@ -522,28 +661,432 @@ class TestNodeMonitorsManager(unittest.TestCase):
         mock_start.return_value = None
 
         self.test_manager._create_and_start_monitor_process(
-            self.node_config_2, self.node_id_2, ChainlinkNodeMonitor,
-            self.base_chain_2, self.sub_chain_2)
-
-        new_entry = self.test_manager.config_process_dict[self.node_id_2]
+            self.node_config_1, self.node_config_1.node_id,
+            ChainlinkNodeMonitor, '', '', 'extra_arg1', 'extra_arg2')
+        new_entry = self.test_manager.config_process_dict[
+            self.node_config_1.node_id]
         new_entry_process = new_entry['process']
         self.assertTrue(new_entry_process.daemon)
-        self.assertEqual(2, len(new_entry_process._args))
-        self.assertEqual(self.node_config_2, new_entry_process._args[0])
+        self.assertEqual(4, len(new_entry_process._args))
+        self.assertEqual(self.node_config_1, new_entry_process._args[0])
         self.assertEqual(ChainlinkNodeMonitor, new_entry_process._args[1])
+        self.assertEqual('extra_arg1', new_entry_process._args[2])
+        self.assertEqual('extra_arg2', new_entry_process._args[3])
         self.assertEqual(start_node_monitor, new_entry_process._target)
         mock_start.assert_called_once()
+
+    @parameterized.expand([
+        ("self.node_config_6", "self.sent_configs_example_cosmos",
+         ["self.node_config_7", "self.node_config_6"]),
+        ("self.node_config_7", "self.sent_configs_example_cosmos",
+         ["self.node_config_6", "self.node_config_7"]),
+        ("self.node_config_8", "self.sent_configs_example_cosmos",
+         ["self.node_config_7", "self.node_config_6", "self.node_config_8"]),
+        ("self.node_config_8", "self.empty_configs", ["self.node_config_8"]),
+    ])
+    def test_determine_data_sources_for_cosmos_monitor_returns_correctly(
+            self, node_config, sent_configs, expected_return_vars) -> None:
+        # eval creates a new scope, therefore we need to pass the scope from the
+        # outside
+        scope = locals()
+        expected_return = [
+            eval(variable, scope) for variable in expected_return_vars
+        ]
+        actual_return = \
+            self.test_manager._determine_data_sources_for_cosmos_monitor(
+                eval(node_config), eval(sent_configs))
+        self.assertEqual(expected_return, actual_return)
+
+    @parameterized.expand([
+        ("True", "False", "False", "False"),
+        ("False", "True", "False", "False"),
+        ("False", "False", "True", "False"),
+        ("False", "False", "False", "True"),
+        ("False", "True", "True", "True"),
+    ])
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
+    @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
+    def test_process_cosmos_node_configs_starts_monitors_for_new_configs(
+            self, monitor_node, monitor_prometheus, monitor_tendermint,
+            monitor_rest, startup_mock, mock_process_send_mon_data) -> None:
+        # We will check whether _create_and_start_monitor_process is called
+        # correctly on each newly added configuration if
+        # `monitor_node and monitor_<any_source> = True`. We will be also
+        # testing that if `monitor_node or monitor_<all_sources> = False` no new
+        # monitor is created. We will perform this test for both when the state
+        # is empty and non-empty
+        startup_mock.return_value = None
+        mock_process_send_mon_data.return_value = None
+
+        # First test for when current_configs is empty
+        sent_configs = copy.deepcopy(self.sent_configs_example_cosmos)
+        sent_configs[self.node_config_8.node_id]['monitor_node'] = monitor_node
+        sent_configs[self.node_config_8.node_id][
+            'monitor_prometheus'] = monitor_prometheus
+        sent_configs[self.node_config_8.node_id][
+            'monitor_cosmos_rest'] = monitor_rest
+        sent_configs[self.node_config_8.node_id][
+            'monitor_tendermint_rpc'] = monitor_tendermint
+        self.test_manager._process_cosmos_node_configs(sent_configs, {}, '', '')
+        expected_calls = [
+            call(self.node_config_6, self.node_config_6.node_id,
+                 CosmosNodeMonitor, '', '', [self.node_config_7,
+                                             self.node_config_6]),
+            call(self.node_config_7, self.node_config_7.node_id,
+                 CosmosNodeMonitor, '', '', [self.node_config_6,
+                                             self.node_config_7]),
+        ]
+        startup_mock.assert_has_calls(expected_calls, True)
+        self.assertEqual(2, startup_mock.call_count)
+
+        # Test when current_configs is non-empty
+        startup_mock.reset_mock()
+        current_configs = copy.deepcopy(self.sent_configs_example_cosmos)
+        del current_configs[self.node_config_7.node_id]
+        del current_configs[self.node_config_8.node_id]
+        self.test_manager._process_cosmos_node_configs(sent_configs,
+                                                       current_configs, '', '')
+        expected_calls = [
+            call(self.node_config_7, self.node_config_7.node_id,
+                 CosmosNodeMonitor, '', '', [self.node_config_6,
+                                             self.node_config_7]),
+        ]
+        startup_mock.assert_has_calls(expected_calls, True)
+        self.assertEqual(1, startup_mock.call_count)
+
+    @parameterized.expand([
+        ("True", "False", "False", "False"),
+        ("False", "True", "False", "False"),
+        ("False", "False", "True", "False"),
+        ("False", "False", "False", "True"),
+        ("False", "True", "True", "True"),
+    ])
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
+    @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
+    def test_process_cosmos_node_configs_return_if_valid_new_configurations(
+            self, monitor_node, monitor_prometheus, monitor_tendermint,
+            monitor_rest, startup_mock, mock_process_send_mon_data) -> None:
+        # In this test we will assume that all added configurations are valid.
+        # Thus we need to check that the function returns a dict containing all
+        # the configurations which have an associated running monitor process.
+        # We will perform this test for both when the state is empty and
+        # non-empty.
+        startup_mock.return_value = None
+        mock_process_send_mon_data.return_value = None
+
+        # First test for when current_configs is empty
+        sent_configs = copy.deepcopy(self.sent_configs_example_cosmos)
+        sent_configs[self.node_config_8.node_id]['monitor_node'] = monitor_node
+        sent_configs[self.node_config_8.node_id][
+            'monitor_prometheus'] = monitor_prometheus
+        sent_configs[self.node_config_8.node_id][
+            'monitor_cosmos_rest'] = monitor_rest
+        sent_configs[self.node_config_8.node_id][
+            'monitor_tendermint_rpc'] = monitor_tendermint
+        actual_return = self.test_manager._process_cosmos_node_configs(
+            sent_configs, {}, '', '')
+        expected_return = copy.deepcopy(sent_configs)
+        del expected_return[self.node_config_8.node_id]
+        self.assertEqual(expected_return, actual_return)
+
+        # Test when current_configs is non-empty
+        current_configs = copy.deepcopy(self.sent_configs_example_cosmos)
+        del current_configs[self.node_config_7.node_id]
+        del current_configs[self.node_config_8.node_id]
+        actual_return = self.test_manager._process_cosmos_node_configs(
+            sent_configs, current_configs, '', '')
+        self.assertEqual(expected_return, actual_return)
+
+    @parameterized.expand([
+        ("True", "False", "False", "False"),
+        ("False", "True", "False", "False"),
+        ("False", "False", "True", "False"),
+        ("False", "False", "False", "True"),
+        ("False", "True", "True", "True"),
+    ])
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
+    @mock.patch.object(multiprocessing.Process, "start")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(multiprocessing, 'Process')
+    def test_process_cosmos_node_configs_restarts_monitors_for_edited_confs(
+            self, monitor_node, monitor_prometheus, monitor_tendermint,
+            monitor_rest, mock_init, mock_terminate, mock_join,
+            mock_start, mock_process_send_mon_data) -> None:
+        # We will check that the running monitors associated with the modified
+        # configs are killed and started with the latest configuration as long
+        # as `monitor_node and monitor_<any_source>=True`.
+        mock_start.return_value = None
+        mock_join.return_value = None
+        mock_terminate.return_value = None
+        mock_process_send_mon_data.return_value = None
+        mock_init.side_effect = [self.dummy_process7, self.dummy_process8]
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+        self.test_manager._nodes_configs = self.nodes_configs_example
+
+        sent_configs = copy.deepcopy(self.sent_configs_example_cosmos)
+
+        # Assume that config_6, will be the configuration whose monitors will
+        # be killed but not started.
+        sent_configs[self.node_config_6.node_id]['monitor_node'] = monitor_node
+        sent_configs[self.node_config_6.node_id][
+            'monitor_prometheus'] = monitor_prometheus
+        sent_configs[self.node_config_6.node_id][
+            'monitor_cosmos_rest'] = monitor_rest
+        sent_configs[self.node_config_6.node_id][
+            'monitor_tendermint_rpc'] = monitor_tendermint
+
+        # Assume that for config_7 the name of the node was changed. Node 8
+        # will be restarted because there was a change in data sources.
+        sent_configs[self.node_config_7.node_id]['name'] = 'changed_node_name'
+
+        self.test_manager._process_cosmos_node_configs(
+            sent_configs,
+            self.nodes_configs_example['cosmos cosmos']['nodes_config'], '', '')
+
+        # Called once for terminating node 6 and twice for restarting nodes 7
+        # and 8 with the latest configuration
+        self.assertEqual(3, mock_terminate.call_count)
+        self.assertEqual(3, mock_join.call_count)
+        self.assertTrue(
+            self.node_config_8.node_id in self.test_manager.config_process_dict)
+        self.assertTrue(
+            self.node_config_7.node_id in self.test_manager.config_process_dict)
+        self.assertFalse(
+            self.node_config_6.node_id in self.test_manager.config_process_dict)
+
+        # Check that monitors for node 7 and 8 were restarted
+        modified_node_7_config = self.cosmos_test_nodes.create_custom_node(
+            'node_id_7', 'parent_id_7', 'changed_node_name', True, True,
+            'prom_url_7', True, 'cosmos_rest_url_7', True,
+            'tendermint_rpc_url_7', False, False, True, 'operator_address_7'
+        )
+        expected_node_6_config = self.cosmos_test_nodes.create_custom_node(
+            'node_id_6', 'parent_id_6', 'node_name_6',
+            str_to_bool(monitor_node), str_to_bool(monitor_prometheus),
+            'prom_url_6', str_to_bool(monitor_rest), 'cosmos_rest_url_6',
+            str_to_bool(monitor_tendermint), 'tendermint_rpc_url_6', True, True,
+            True, 'operator_address_6'
+        )
+
+        expected_config_process_dict = {
+            self.node_config_1.node_id: {
+                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
+                    self.node_config_1.node_name),
+                'process': self.dummy_process1,
+                'monitor_type': ChainlinkNodeMonitor,
+                'node_config': self.node_config_1,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_1.node_name,
+                'parent_id': self.node_config_1.parent_id,
+                'args': ()
+            },
+            self.node_config_2.node_id: {
+                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
+                    self.node_config_2.node_name),
+                'process': self.dummy_process2,
+                'monitor_type': ChainlinkNodeMonitor,
+                'node_config': self.node_config_2,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_2.node_name,
+                'parent_id': self.node_config_2.parent_id,
+                'args': ()
+            },
+            self.node_config_3.node_id: {
+                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
+                    self.node_config_3.node_name),
+                'process': self.dummy_process3,
+                'monitor_type': Monitor,
+                'node_config': self.node_config_3,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_3.node_name,
+                'parent_id': self.node_config_3.parent_id,
+                'args': ()
+            },
+            self.node_config_4.node_id: {
+                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
+                    self.node_config_4.node_name),
+                'process': self.dummy_process4,
+                'monitor_type': EVMNodeMonitor,
+                'node_config': self.node_config_4,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_4.node_name,
+                'parent_id': self.node_config_4.parent_id,
+                'args': ()
+            },
+            self.node_config_5.node_id: {
+                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
+                    self.node_config_5.node_name),
+                'process': self.dummy_process5,
+                'monitor_type': EVMNodeMonitor,
+                'node_config': self.node_config_5,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_5.node_name,
+                'parent_id': self.node_config_5.parent_id,
+                'args': ()
+            },
+            modified_node_7_config.node_id: {
+                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
+                    modified_node_7_config.node_name),
+                'process': self.dummy_process7,
+                'monitor_type': CosmosNodeMonitor,
+                'node_config': modified_node_7_config,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': 'changed_node_name',
+                'parent_id': self.node_config_7.parent_id,
+                'args': ([expected_node_6_config, modified_node_7_config],)
+            },
+            self.node_config_8.node_id: {
+                'component_name': NODE_MONITOR_NAME_TEMPLATE.format(
+                    self.node_config_8.node_name),
+                'process': self.dummy_process8,
+                'monitor_type': CosmosNodeMonitor,
+                'node_config': self.node_config_8,
+                'base_chain': '',
+                'sub_chain': '',
+                'source_name': self.node_config_8.node_name,
+                'parent_id': self.node_config_8.parent_id,
+                'args': ([modified_node_7_config, expected_node_6_config,
+                          self.node_config_8],)
+            },
+        }
+        self.assertEqual(expected_config_process_dict,
+                         self.test_manager.config_process_dict)
+
+    @parameterized.expand([
+        ("True", "False", "False", "False"),
+        ("False", "True", "False", "False"),
+        ("False", "False", "True", "False"),
+        ("False", "False", "False", "True"),
+        ("False", "True", "True", "True"),
+    ])
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
+    def test_process_cosmos_node_configs_return_if_valid_edited_confs(
+            self, monitor_node, monitor_prometheus, monitor_tendermint,
+            monitor_rest, startup_mock, mock_terminate, mock_join,
+            mock_process_send_mon_data) -> None:
+        # In this test we will assume that all edited configurations are valid.
+        # Thus we need to check that the function returns a dict containing all
+        # the configurations which have an associated running monitor process.
+        startup_mock.return_value = None
+        mock_terminate.return_value = None
+        mock_join.return_value = None
+        mock_process_send_mon_data.return_value = None
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+        self.test_manager._nodes_configs = self.nodes_configs_example
+
+        sent_configs = copy.deepcopy(self.sent_configs_example_cosmos)
+
+        # Assume that config_6, will be the configuration whose monitors will
+        # be killed but not started.
+        sent_configs[self.node_config_6.node_id]['monitor_node'] = monitor_node
+        sent_configs[self.node_config_6.node_id][
+            'monitor_prometheus'] = monitor_prometheus
+        sent_configs[self.node_config_6.node_id][
+            'monitor_cosmos_rest'] = monitor_rest
+        sent_configs[self.node_config_6.node_id][
+            'monitor_tendermint_rpc'] = monitor_tendermint
+
+        # Assume that for config_7 the name of the node was changed. Node 8
+        # will be restarted because there was a change in data sources.
+        sent_configs[self.node_config_7.node_id]['name'] = 'changed_node_name'
+
+        actual_return = self.test_manager._process_cosmos_node_configs(
+            sent_configs,
+            self.nodes_configs_example['cosmos cosmos']['nodes_config'], '', '')
+        expected_return = copy.deepcopy(sent_configs)
+        del expected_return[self.node_config_6.node_id]
+        self.assertEqual(expected_return, actual_return)
+
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
+    def test_process_cosmos_node_configs_deletes_monitors_for_deleted_confs(
+            self, startup_mock, mock_terminate, mock_join,
+            mock_process_send_mon_data) -> None:
+        # We will check that the running monitors associated with the modified
+        # configs are killed. Note that we also need to check that if the
+        # deleted node was a data source, the monitors using that data source
+        # are also restarted
+        startup_mock.return_value = None
+        mock_terminate.return_value = None
+        mock_join.return_value = None
+        mock_process_send_mon_data.return_value = None
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+        self.test_manager._nodes_configs = self.nodes_configs_example
+        sent_configs = copy.deepcopy(self.sent_configs_example_cosmos)
+        del sent_configs[self.node_config_6.node_id]
+
+        self.test_manager._process_cosmos_node_configs(
+            sent_configs,
+            self.nodes_configs_example['cosmos cosmos']['nodes_config'], '', '')
+
+        # Terminate and join were called once when deleting node 6 and twice for
+        # restarting the monitors of node 7 and 8
+        self.assertEqual(3, mock_terminate.call_count)
+        self.assertEqual(3, mock_join.call_count)
+        self.assertTrue(
+            self.node_config_8.node_id in self.test_manager.config_process_dict)
+        self.assertTrue(
+            self.node_config_7.node_id in self.test_manager.config_process_dict)
+        self.assertFalse(
+            self.node_config_6.node_id in self.test_manager.config_process_dict)
+
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
+    @mock.patch.object(multiprocessing.Process, "join")
+    @mock.patch.object(multiprocessing.Process, "terminate")
+    @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
+    def test_process_cosmos_node_configs_return_if_valid_deleted_confs(
+            self, startup_mock, mock_terminate, mock_join,
+            mock_process_send_mon_data) -> None:
+        # In this test we will assume that all sent configurations are valid.
+        # Thus we need to check that the function returns a dict containing all
+        # the configurations which have an associated running monitor process.
+        startup_mock.return_value = None
+        mock_terminate.return_value = None
+        mock_join.return_value = None
+        mock_process_send_mon_data.return_value = None
+        self.test_manager._config_process_dict = \
+            self.config_process_dict_example
+        self.test_manager._nodes_configs = self.nodes_configs_example
+        sent_configs = copy.deepcopy(self.sent_configs_example_cosmos)
+        del sent_configs[self.node_config_6.node_id]
+
+        actual_return = self.test_manager._process_cosmos_node_configs(
+            sent_configs,
+            self.nodes_configs_example['cosmos cosmos']['nodes_config'], '', '')
+        self.assertEqual(sent_configs, actual_return)
 
     @parameterized.expand([
         ("True", "False"),
         ("False", "True"),
         ("False", "False"),
     ])
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_chainlink_node_configs_starts_monitors_for_new_configs(
             self, third_conf_monitor_node, third_conf_monitor_prometheus,
-            mock_send_mon_data, startup_mock) -> None:
+            startup_mock, mock_process_send_mon_data) -> None:
         # We will check whether _create_and_start_monitor_process is called
         # correctly on each newly added configuration if
         # `monitor_node and monitor_<any_source> = True`.
@@ -551,18 +1094,15 @@ class TestNodeMonitorsManager(unittest.TestCase):
         # `monitor_node or monitor_<all_sources> = False` no new monitor
         # is created. We will perform this test for both when the state is empty
         # and non-empty
-        mock_send_mon_data.return_value = None
         startup_mock.return_value = None
-        self.test_manager._initialise_rabbitmq()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
+        mock_process_send_mon_data.return_value = None
 
         # First test for when current_configs is empty
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink)
-        sent_configs['config_id3'] = {
-            'id': self.node_id_3,
-            'parent_id': self.parent_id_3,
-            'name': self.node_name_3,
+        sent_configs[self.node_config_3.node_id] = {
+            'id': self.node_config_3.node_id,
+            'parent_id': self.node_config_3.parent_id,
+            'name': self.node_config_3.node_name,
             'node_prometheus_urls': 'url7,url8,url9',
             'monitor_node': third_conf_monitor_node,
             'monitor_prometheus': third_conf_monitor_prometheus
@@ -570,10 +1110,10 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.test_manager._process_chainlink_node_configs(
             sent_configs, {}, '', '')
         expected_calls = [
-            call(self.node_config_1, self.node_id_1, ChainlinkNodeMonitor,
-                 '', ''),
-            call(self.node_config_2, self.node_id_2, ChainlinkNodeMonitor,
-                 '', ''),
+            call(self.node_config_1, self.node_config_1.node_id,
+                 ChainlinkNodeMonitor, '', ''),
+            call(self.node_config_2, self.node_config_2.node_id,
+                 ChainlinkNodeMonitor, '', ''),
         ]
         startup_mock.assert_has_calls(expected_calls, True)
         self.assertEqual(2, startup_mock.call_count)
@@ -581,21 +1121,22 @@ class TestNodeMonitorsManager(unittest.TestCase):
         # Test when current_configs is non-empty
         startup_mock.reset_mock()
         current_configs = {
-            'config_id1': {
-                'id': self.node_id_1,
-                'parent_id': self.parent_id_1,
-                'name': self.node_name_1,
-                'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
-                'monitor_node': str(self.monitor_node_1),
-                'monitor_prometheus': str(self.monitor_prometheus_1)
+            self.node_config_1.node_id: {
+                'id': self.node_config_1.node_id,
+                'parent_id': self.node_config_1.parent_id,
+                'name': self.node_config_1.node_name,
+                'node_prometheus_urls':
+                    ','.join(self.node_config_1.node_prometheus_urls),
+                'monitor_node': str(self.node_config_1.monitor_node),
+                'monitor_prometheus': str(self.node_config_1.monitor_prometheus)
             }
         }
         self.test_manager._process_chainlink_node_configs(sent_configs,
                                                           current_configs,
                                                           '', '')
         expected_calls = [
-            call(self.node_config_2, self.node_id_2, ChainlinkNodeMonitor,
-                 '', ''),
+            call(self.node_config_2, self.node_config_2.node_id,
+                 ChainlinkNodeMonitor, '', ''),
         ]
         startup_mock.assert_has_calls(expected_calls, True)
         self.assertEqual(1, startup_mock.call_count)
@@ -605,53 +1146,52 @@ class TestNodeMonitorsManager(unittest.TestCase):
         ("False", "True"),
         ("False", "False"),
     ])
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_chainlink_node_configs_return_if_valid_new_configurations(
             self, third_conf_monitor_node, third_conf_monitor_prometheus,
-            mock_send_mon_data, startup_mock) -> None:
+            startup_mock, mock_process_send_mon_data) -> None:
         # In this test we will assume that all added configurations are valid.
         # Thus we need to check that the function returns a dict containing all
         # the configurations which have an associated running monitor process.
         # We will perform this test for both when the state is empty and
         # non-empty.
-        startup_mock.mock_send_mon_data = None
         startup_mock.return_value = None
-        self.test_manager._initialise_rabbitmq()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
+        mock_process_send_mon_data.return_value = None
 
         # First test for when current_configs is empty
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink)
-        sent_configs['config_id3'] = {
-            'id': self.node_id_3,
-            'parent_id': self.parent_id_3,
-            'name': self.node_name_3,
+        sent_configs[self.node_config_3.node_id] = {
+            'id': self.node_config_3.node_id,
+            'parent_id': self.node_config_3.parent_id,
+            'name': self.node_config_3.node_name,
             'node_prometheus_urls': 'url7,url8,url9',
             'monitor_node': third_conf_monitor_node,
             'monitor_prometheus': third_conf_monitor_prometheus
         }
         actual_return = self.test_manager._process_chainlink_node_configs(
-            sent_configs, {}, self.base_chain_3, self.sub_chain_3)
+            sent_configs, {}, '', '')
         expected_return = copy.deepcopy(sent_configs)
-        del expected_return['config_id3']
+        del expected_return[self.node_config_3.node_id]
         self.assertEqual(expected_return, actual_return)
 
         # Test when current_configs is non-empty
         current_configs = {
-            'config_id1': {
-                'id': self.node_id_1,
-                'parent_id': self.parent_id_1,
-                'name': self.node_name_1,
-                'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
-                'monitor_node': str(self.monitor_node_1),
-                'monitor_prometheus': str(self.monitor_prometheus_1)
+            self.node_config_1.node_id: {
+                'id': self.node_config_1.node_id,
+                'parent_id': self.node_config_1.parent_id,
+                'name': self.node_config_1.node_name,
+                'node_prometheus_urls':
+                    ','.join(self.node_config_1.node_prometheus_urls),
+                'monitor_node': str(self.node_config_1.monitor_node),
+                'monitor_prometheus': str(self.node_config_1.monitor_prometheus)
             }
         }
         actual_return = self.test_manager._process_chainlink_node_configs(
-            sent_configs, current_configs, self.base_chain_2, self.sub_chain_2)
+            sent_configs, current_configs, '', '')
         expected_return = copy.deepcopy(sent_configs)
-        del expected_return['config_id3']
+        del expected_return[self.node_config_3.node_id]
         self.assertEqual(expected_return, actual_return)
 
     @parameterized.expand([
@@ -659,220 +1199,217 @@ class TestNodeMonitorsManager(unittest.TestCase):
         ("False", "True"),
         ("False", "False"),
     ])
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_chainlink_node_configs_restarts_monitors_for_edited_confs(
             self, deleted_conf_monitor_node, deleted_conf_monitor_prometheus,
-            mock_send_data, startup_mock, mock_terminate, mock_join) -> None:
+            startup_mock, mock_terminate, mock_join,
+            mock_process_send_mon_data) -> None:
         # We will check that the running monitors associated with the modified
         # configs are killed and started with the latest configuration as long
         # as `monitor_node and monitor_<any_source>=True`.
-        mock_send_data.return_value = None
         startup_mock.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
-        self.test_manager._initialise_rabbitmq()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
+        mock_process_send_mon_data.return_value = None
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         self.test_manager._nodes_configs = self.nodes_configs_example
 
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink)
 
-        # Assume that config_id1, will be the configuration whose monitors will
+        # Assume that config_1, will be the configuration whose monitors will
         # be killed but not started.
-        sent_configs['config_id1'] = {
-            'id': self.node_id_1,
-            'parent_id': self.parent_id_1,
-            'name': self.node_name_1,
-            'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
+        sent_configs[self.node_config_1.node_id] = {
+            'id': self.node_config_1.node_id,
+            'parent_id': self.node_config_1.parent_id,
+            'name': self.node_config_1.node_name,
+            'node_prometheus_urls':
+                ','.join(self.node_config_1.node_prometheus_urls),
             'monitor_node': deleted_conf_monitor_node,
             'monitor_prometheus': deleted_conf_monitor_prometheus
         }
-        # Assume that for config_id2 the name of the node was changed
-        sent_configs['config_id2'] = {
-            'id': self.node_id_2,
-            'parent_id': self.parent_id_2,
+        # Assume that for config_2 the name of the node was changed
+        sent_configs[self.node_config_2.node_id] = {
+            'id': self.node_config_2.node_id,
+            'parent_id': self.node_config_2.parent_id,
             'name': 'changed_node_name',
-            'node_prometheus_urls': ','.join(self.node_prometheus_urls_2),
-            'monitor_node': str(self.monitor_node_2),
-            'monitor_prometheus': str(self.monitor_prometheus_2)
+            'node_prometheus_urls':
+                ','.join(self.node_config_2.node_prometheus_urls),
+            'monitor_node': str(self.node_config_2.monitor_node),
+            'monitor_prometheus': str(self.node_config_2.monitor_prometheus)
         }
 
         self.test_manager._process_chainlink_node_configs(
             sent_configs, self.nodes_configs_example[
                 'chainlink Binance Smart Chain']['nodes_config'],
-            self.base_chain_2, self.sub_chain_2)
+            '', '')
         modified_node_2_config = ChainlinkNodeConfig(
-            self.node_id_2, self.parent_id_2, 'changed_node_name',
-            self.monitor_node_2, self.monitor_prometheus_2,
-            self.node_prometheus_urls_2)
+            self.node_config_2.node_id, self.node_config_2.parent_id,
+            'changed_node_name', self.node_config_2.monitor_node,
+            self.node_config_2.monitor_prometheus,
+            self.node_config_2.node_prometheus_urls)
         startup_mock.assert_called_once_with(modified_node_2_config,
-                                             self.node_id_2,
+                                             self.node_config_2.node_id,
                                              ChainlinkNodeMonitor,
-                                             self.base_chain_2,
-                                             self.sub_chain_2)
+                                             '',
+                                             '')
         self.assertEqual(2, mock_terminate.call_count)
         self.assertEqual(2, mock_join.call_count)
-        self.assertTrue('config_id2' in self.test_manager.config_process_dict)
-        self.assertFalse('config_id1' in self.test_manager.config_process_dict)
+        self.assertTrue(
+            self.node_config_2.node_id in self.test_manager.config_process_dict)
+        self.assertFalse(
+            self.node_config_1.node_id in self.test_manager.config_process_dict)
 
     @parameterized.expand([
         ("True", "False"),
         ("False", "True"),
         ("False", "False"),
     ])
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_chainlink_node_configs_return_if_valid_edited_confs(
             self, deleted_conf_monitor_node, deleted_conf_monitor_prometheus,
-            mock_send_mon_data, startup_mock, mock_terminate, mock_join
+            startup_mock, mock_terminate, mock_join, mock_process_send_mon_data
     ) -> None:
         # In this test we will assume that all edited configurations are valid.
         # Thus we need to check that the function returns a dict containing all
         # the configurations which have an associated running monitor process.
-        self.test_manager._initialise_rabbitmq()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
-        mock_send_mon_data.return_value = None
         startup_mock.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
+        mock_process_send_mon_data.return_value = None
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         self.test_manager._nodes_configs = self.nodes_configs_example
 
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink)
 
-        # Assume config_id1 will be the config whose monitor will be killed and
+        # Assume config_1 will be the config whose monitor will be killed and
         # not restarted.
-        sent_configs['config_id1'] = {
-            'id': self.node_id_1,
-            'parent_id': self.parent_id_1,
-            'name': self.node_name_1,
-            'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
+        sent_configs[self.node_config_1.node_id] = {
+            'id': self.node_config_1.node_id,
+            'parent_id': self.node_config_1.parent_id,
+            'name': self.node_config_1.node_name,
+            'node_prometheus_urls':
+                ','.join(self.node_config_1.node_prometheus_urls),
             'monitor_node': deleted_conf_monitor_node,
             'monitor_prometheus': deleted_conf_monitor_prometheus
         }
-        # Assume that for config_id2 the name of the node was changed
-        sent_configs['config_id2'] = {
-            'id': self.node_id_2,
-            'parent_id': self.parent_id_2,
+        # Assume that for config_2 the name of the node was changed
+        sent_configs[self.node_config_2.node_id] = {
+            'id': self.node_config_2.node_id,
+            'parent_id': self.node_config_2.parent_id,
             'name': 'changed_node_name',
-            'node_prometheus_urls': ','.join(self.node_prometheus_urls_2),
-            'monitor_node': str(self.monitor_node_2),
-            'monitor_prometheus': str(self.monitor_prometheus_2)
+            'node_prometheus_urls':
+                ','.join(self.node_config_2.node_prometheus_urls),
+            'monitor_node': str(self.node_config_2.monitor_node),
+            'monitor_prometheus': str(self.node_config_2.monitor_prometheus)
         }
 
         actual_return = self.test_manager._process_chainlink_node_configs(
             sent_configs,
             self.nodes_configs_example['chainlink Binance Smart Chain'][
-                'nodes_config'], self.base_chain_2, self.sub_chain_2)
+                'nodes_config'], '', '')
         expected_return = copy.deepcopy(sent_configs)
-        del expected_return['config_id1']
+        del expected_return[self.node_config_1.node_id]
         self.assertEqual(expected_return, actual_return)
 
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_chainlink_node_configs_deletes_monitors_for_deleted_confs(
-            self, mock_send_mon_data, startup_mock, mock_terminate, mock_join
-    ) -> None:
+            self, startup_mock, mock_terminate, mock_join,
+            mock_process_send_mon_data) -> None:
         # We will check that the running monitors associated with the modified
         # configs are killed.
-        mock_send_mon_data.return_value = None
         startup_mock.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
-        self.test_manager._initialise_rabbitmq()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
+        mock_process_send_mon_data.return_value = None
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         self.test_manager._nodes_configs = self.nodes_configs_example
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink)
-        del sent_configs['config_id1']
+        del sent_configs[self.node_config_1.node_id]
 
         self.test_manager._process_chainlink_node_configs(
             sent_configs,
             self.nodes_configs_example['chainlink Binance Smart Chain'][
-                'nodes_config'], self.base_chain_1, self.sub_chain_1)
+                'nodes_config'], '', '')
         startup_mock.assert_not_called()
         self.assertEqual(1, mock_terminate.call_count)
         self.assertEqual(1, mock_join.call_count)
-        self.assertTrue('config_id2' in self.test_manager.config_process_dict)
-        self.assertFalse('config_id1' in self.test_manager.config_process_dict)
+        self.assertTrue(
+            self.node_config_2.node_id in self.test_manager.config_process_dict)
+        self.assertFalse(
+            self.node_config_1.node_id in self.test_manager.config_process_dict)
 
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_chainlink_node_configs_return_if_valid_deleted_confs(
-            self, mock_send_mon_data, startup_mock, mock_terminate, mock_join
-    ) -> None:
+            self, startup_mock, mock_terminate, mock_join,
+            mock_process_send_mon_data) -> None:
         # In this test we will assume that all sent configurations are valid.
         # Thus we need to check that the function returns a dict containing all
         # the configurations which have an associated running monitor process.
-        mock_send_mon_data.return_value = None
         startup_mock.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
-        startup_mock.return_value = None
-        mock_terminate.return_value = None
-        mock_join.return_value = None
-        self.test_manager._initialise_rabbitmq()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
+        mock_process_send_mon_data.return_value = None
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         self.test_manager._nodes_configs = self.nodes_configs_example
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink)
-        del sent_configs['config_id1']
+        del sent_configs[self.node_config_1.node_id]
 
         actual_return = self.test_manager._process_chainlink_node_configs(
             sent_configs,
             self.nodes_configs_example['chainlink Binance Smart Chain'][
-                'nodes_config'], self.base_chain_2, self.sub_chain_2)
+                'nodes_config'], '', '')
         self.assertEqual(sent_configs, actual_return)
 
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_evm_node_configs_starts_monitors_for_new_configs(
-            self, mock_send_mon_data, startup_mock) -> None:
+            self, startup_mock, mock_process_send_mon_data) -> None:
         # We will check whether _create_and_start_monitor_process is called
         # correctly on each newly added configuration if `monitor_node = True`.
         # We will be also testing that if `monitor_node = False` no new monitor
         # is created. We will perform this test for both when the state is empty
         # and non-empty
-        mock_send_mon_data.return_value = None
         startup_mock.return_value = None
-        self.test_manager._initialise_rabbitmq()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
+        mock_process_send_mon_data.return_value = None
 
         # First test for when current_configs is empty
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_evm)
-        sent_configs['config_id3'] = {
-            'id': self.node_id_3,
-            'parent_id': self.parent_id_3,
-            'name': self.node_name_3,
+        sent_configs[self.node_config_3.node_id] = {
+            'id': self.node_config_3.node_id,
+            'parent_id': self.node_config_3.parent_id,
+            'name': self.node_config_3.node_name,
             'node_http_url': 'url3',
             'monitor_node': "False",
         }
         self.test_manager._process_evm_node_configs(sent_configs, {},
-                                                    self.base_chain_2,
-                                                    self.sub_chain_2)
+                                                    '',
+                                                    '')
         expected_calls = [
-            call(self.node_config_4, self.node_id_4, EVMNodeMonitor,
-                 self.base_chain_2, self.sub_chain_2),
-            call(self.node_config_5, self.node_id_5, EVMNodeMonitor,
-                 self.base_chain_2, self.sub_chain_2),
+            call(self.node_config_4, self.node_config_4.node_id,
+                 EVMNodeMonitor, '', ''),
+            call(self.node_config_5, self.node_config_5.node_id,
+                 EVMNodeMonitor, '', ''),
         ]
         startup_mock.assert_has_calls(expected_calls, True)
         self.assertEqual(2, startup_mock.call_count)
@@ -880,238 +1417,230 @@ class TestNodeMonitorsManager(unittest.TestCase):
         # Test when current_configs is non-empty
         startup_mock.reset_mock()
         current_configs = {
-            'config_id4': {
-                'id': self.node_id_4,
-                'parent_id': self.parent_id_4,
-                'name': self.node_name_4,
-                'node_http_url': self.node_http_url_4,
-                'monitor_node': str(self.monitor_node_4),
+            self.node_config_4.node_id: {
+                'id': self.node_config_4.node_id,
+                'parent_id': self.node_config_4.parent_id,
+                'name': self.node_config_4.node_name,
+                'node_http_url': self.node_config_4.node_http_url,
+                'monitor_node': str(self.node_config_4.monitor_node),
             }
         }
         self.test_manager._process_evm_node_configs(sent_configs,
                                                     current_configs,
-                                                    self.base_chain_2,
-                                                    self.sub_chain_2)
+                                                    '',
+                                                    '')
         expected_calls = [
-            call(self.node_config_5, self.node_id_5, EVMNodeMonitor,
-                 self.base_chain_2, self.sub_chain_2),
+            call(self.node_config_5, self.node_config_5.node_id,
+                 EVMNodeMonitor, '', ''),
         ]
         startup_mock.assert_has_calls(expected_calls, True)
         self.assertEqual(1, startup_mock.call_count)
 
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_evm_node_configs_return_if_valid_new_configurations(
-            self, mock_send_mon_data, startup_mock) -> None:
+            self, startup_mock, mock_process_send_mon_data) -> None:
         # In this test we will assume that all added configurations are valid.
         # Thus we need to check that the function returns a dict containing all
         # the configurations which have an associated running monitor process.
         # We will perform this test for both when the state is empty and
         # non-empty.
-        mock_send_mon_data.return_value = None
         startup_mock.return_value = None
-        self.test_manager._initialise_rabbitmq()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
+        mock_process_send_mon_data.return_value = None
 
         # First test for when current_configs is empty
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_evm)
-        sent_configs['config_id3'] = {
-            'id': self.node_id_3,
-            'parent_id': self.parent_id_3,
-            'name': self.node_name_3,
+        sent_configs[self.node_config_3.node_id] = {
+            'id': self.node_config_3.node_id,
+            'parent_id': self.node_config_3.parent_id,
+            'name': self.node_config_3.node_name,
             'node_http_url': 'url3',
             'monitor_node': 'False',
         }
         actual_return = self.test_manager._process_evm_node_configs(
-            sent_configs, {}, self.base_chain_2, self.sub_chain_2)
+            sent_configs, {}, '', '')
         expected_return = copy.deepcopy(sent_configs)
-        del expected_return['config_id3']
+        del expected_return[self.node_config_3.node_id]
         self.assertEqual(expected_return, actual_return)
 
         # Test when current_configs is non-empty
         current_configs = {
-            'config_id4': {
-                'id': self.node_id_4,
-                'parent_id': self.parent_id_4,
-                'name': self.node_name_4,
-                'node_http_url': self.node_http_url_4,
-                'monitor_node': str(self.monitor_node_4),
+            self.node_config_4.node_id: {
+                'id': self.node_config_4.node_id,
+                'parent_id': self.node_config_4.parent_id,
+                'name': self.node_config_4.node_name,
+                'node_http_url': self.node_config_4.node_http_url,
+                'monitor_node': str(self.node_config_4.monitor_node),
             }
         }
         actual_return = self.test_manager._process_evm_node_configs(
-            sent_configs, current_configs, self.base_chain_2, self.sub_chain_2)
+            sent_configs, current_configs, '', '')
         expected_return = copy.deepcopy(sent_configs)
-        del expected_return['config_id3']
+        del expected_return[self.node_config_3.node_id]
         self.assertEqual(expected_return, actual_return)
 
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_evm_node_configs_restarts_monitors_for_edited_confs(
-            self, mock_send_mon_data, startup_mock, mock_terminate, mock_join
-    ) -> None:
+            self, startup_mock, mock_terminate, mock_join,
+            mock_process_send_mon_data) -> None:
         # We will check that the running monitors associated with the modified
         # configs are killed and started with the latest configuration as long
         # as `monitor_node=True`.
-        mock_send_mon_data.return_value = None
         startup_mock.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
-        self.test_manager._initialise_rabbitmq()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
+        mock_process_send_mon_data.return_value = None
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         self.test_manager._nodes_configs = self.nodes_configs_example
 
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_evm)
 
-        # Assume that config_id4, will be the configuration whose monitors will
+        # Assume that config_4, will be the configuration whose monitors will
         # be killed but not started.
-        sent_configs['config_id4'] = {
-            'id': self.node_id_4,
-            'parent_id': self.parent_id_4,
-            'name': self.node_name_4,
-            'node_http_url': self.node_http_url_4,
+        sent_configs[self.node_config_4.node_id] = {
+            'id': self.node_config_4.node_id,
+            'parent_id': self.node_config_4.parent_id,
+            'name': self.node_config_4.node_name,
+            'node_http_url': self.node_config_4.node_http_url,
             'monitor_node': 'False'
         }
-        # Assume that for config_id5 the name of the node was changed
-        sent_configs['config_id5'] = {
-            'id': self.node_id_5,
-            'parent_id': self.parent_id_5,
+        # Assume that for config_5 the name of the node was changed
+        sent_configs[self.node_config_5.node_id] = {
+            'id': self.node_config_5.node_id,
+            'parent_id': self.node_config_5.parent_id,
             'name': 'changed_node_name',
-            'node_http_url': self.node_http_url_5,
-            'monitor_node': str(self.monitor_node_5),
+            'node_http_url': self.node_config_5.node_http_url,
+            'monitor_node': str(self.node_config_5.monitor_node),
         }
 
         self.test_manager._process_evm_node_configs(
             sent_configs,
             self.nodes_configs_example['chainlink Binance Smart Chain'][
-                'evm_nodes_config'], self.base_chain_2, self.sub_chain_2)
+                'evm_nodes_config'], '', '')
         modified_node_5_config = EVMNodeConfig(
-            self.node_id_5, self.parent_id_5, 'changed_node_name',
-            self.monitor_node_5, self.node_http_url_5)
+            self.node_config_5.node_id, self.node_config_5.parent_id,
+            'changed_node_name', self.node_config_5.monitor_node,
+            self.node_config_5.node_http_url)
         startup_mock.assert_called_once_with(
-            modified_node_5_config, self.node_id_5, EVMNodeMonitor,
-            self.base_chain_2, self.sub_chain_2)
+            modified_node_5_config, self.node_config_5.node_id, EVMNodeMonitor,
+            '', '')
         self.assertEqual(2, mock_terminate.call_count)
         self.assertEqual(2, mock_join.call_count)
-        self.assertTrue('config_id5' in self.test_manager.config_process_dict)
-        self.assertFalse('config_id4' in self.test_manager.config_process_dict)
+        self.assertTrue(
+            self.node_config_5.node_id in self.test_manager.config_process_dict)
+        self.assertFalse(
+            self.node_config_4.node_id in self.test_manager.config_process_dict)
 
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_evm_node_configs_return_if_valid_edited_confs(
-            self, mock_send_mon_data, startup_mock, mock_terminate, mock_join
-    ) -> None:
+            self, startup_mock, mock_terminate, mock_join,
+            mock_process_send_mon_data) -> None:
         # In this test we will assume that all edited configurations are valid.
         # Thus we need to check that the function returns a dict containing all
         # the configurations which have an associated running monitor process.
-        mock_send_mon_data.return_value = None
         startup_mock.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
-        self.test_manager._initialise_rabbitmq()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
+        mock_process_send_mon_data.return_value = None
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         self.test_manager._nodes_configs = self.nodes_configs_example
 
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_evm)
 
-        # Assume config_id4 will be the config whose monitor will be killed and
+        # Assume config_4 will be the config whose monitor will be killed and
         # not restarted.
-        sent_configs['config_id4'] = {
-            'id': self.node_id_4,
-            'parent_id': self.parent_id_4,
-            'name': self.node_name_4,
-            'node_http_url': self.node_http_url_4,
+        sent_configs[self.node_config_4.node_id] = {
+            'id': self.node_config_4.node_id,
+            'parent_id': self.node_config_4.parent_id,
+            'name': self.node_config_4.node_name,
+            'node_http_url': self.node_config_4.node_http_url,
             'monitor_node': 'False',
         }
-        # Assume that for config_id5 the name of the node was changed
-        sent_configs['config_id5'] = {
-            'id': self.node_id_5,
-            'parent_id': self.parent_id_5,
+        # Assume that for config_5 the name of the node was changed
+        sent_configs[self.node_config_5.node_id] = {
+            'id': self.node_config_5.node_id,
+            'parent_id': self.node_config_5.parent_id,
             'name': 'changed_node_name',
-            'node_http_url': self.node_http_url_5,
-            'monitor_node': str(self.monitor_node_5),
+            'node_http_url': self.node_config_5.node_http_url,
+            'monitor_node': str(self.node_config_5.monitor_node),
         }
 
         actual_return = self.test_manager._process_evm_node_configs(
             sent_configs,
             self.nodes_configs_example['chainlink Binance Smart Chain'][
-                'evm_nodes_config'], self.base_chain_2, self.sub_chain_2)
+                'evm_nodes_config'], '', '')
         expected_return = copy.deepcopy(sent_configs)
-        del expected_return['config_id4']
+        del expected_return[self.node_config_4.node_id]
         self.assertEqual(expected_return, actual_return)
 
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_evm_node_configs_deletes_monitors_for_deleted_confs(
-            self, mock_send_mon_data, startup_mock, mock_terminate, mock_join
-    ) -> None:
+            self, startup_mock, mock_terminate, mock_join,
+            mock_process_send_mon_data) -> None:
         # We will check that the running monitors associated with the modified
         # configs are killed.
-        mock_send_mon_data.return_value = None
         startup_mock.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
-        self.test_manager._initialise_rabbitmq()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
+        mock_process_send_mon_data.return_value = None
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         self.test_manager._nodes_configs = self.nodes_configs_example
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_evm)
-        del sent_configs['config_id4']
+        del sent_configs[self.node_config_4.node_id]
 
         self.test_manager._process_evm_node_configs(
             sent_configs,
             self.nodes_configs_example['chainlink Binance Smart Chain'][
-                'evm_nodes_config'], self.base_chain_4, self.sub_chain_4)
+                'evm_nodes_config'], '', '')
         startup_mock.assert_not_called()
         self.assertEqual(1, mock_terminate.call_count)
         self.assertEqual(1, mock_join.call_count)
-        self.assertTrue('config_id5' in self.test_manager.config_process_dict)
-        self.assertFalse('config_id4' in self.test_manager.config_process_dict)
+        self.assertTrue(
+            self.node_config_5.node_id in self.test_manager.config_process_dict)
+        self.assertFalse(
+            self.node_config_4.node_id in self.test_manager.config_process_dict)
 
+    @mock.patch.object(NodeMonitorsManager,
+                       "process_and_send_monitorable_data")
     @mock.patch.object(multiprocessing.Process, "join")
     @mock.patch.object(multiprocessing.Process, "terminate")
     @mock.patch.object(NodeMonitorsManager, "_create_and_start_monitor_process")
-    @mock.patch.object(QueuingPublisherSubscriberComponent, "_send_data")
     def test_process_evm_node_configs_return_if_valid_deleted_confs(
-            self, mock_send_mon_data, startup_mock, mock_terminate, mock_join
-    ) -> None:
+            self, startup_mock, mock_terminate, mock_join,
+            mock_process_send_mon_data) -> None:
         # In this test we will assume that all sent configurations are valid.
         # Thus we need to check that the function returns a dict containing all
         # the configurations which have an associated running monitor process.
-        mock_send_mon_data.return_value = None
         startup_mock.return_value = None
         mock_terminate.return_value = None
         mock_join.return_value = None
-        startup_mock.return_value = None
-        mock_terminate.return_value = None
-        mock_join.return_value = None
-        self.test_manager._initialise_rabbitmq()
-        self.rabbitmq.exchange_declare(MONITORABLE_EXCHANGE, TOPIC, False, True,
-                                       False, False)
+        mock_process_send_mon_data.return_value = None
         self.test_manager._config_process_dict = \
             self.config_process_dict_example
         self.test_manager._nodes_configs = self.nodes_configs_example
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink_evm)
-        del sent_configs['config_id4']
+        del sent_configs[self.node_config_4.node_id]
 
         actual_return = self.test_manager._process_chainlink_node_configs(
             sent_configs,
             self.nodes_configs_example['chainlink Binance Smart Chain'][
-                'evm_nodes_config'], self.base_chain_2, self.sub_chain_2)
+                'evm_nodes_config'], '', '')
         self.assertEqual(sent_configs, actual_return)
 
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -1128,12 +1657,13 @@ class TestNodeMonitorsManager(unittest.TestCase):
         # prevent processing errors from happening.
         sent_configs = copy.deepcopy(self.sent_configs_example_chainlink)
         sent_configs['DEFAULT'] = {
-            'id': self.node_id_1,
-            'parent_id': self.parent_id_1,
-            'name': self.node_name_1,
-            'node_prometheus_urls': ','.join(self.node_prometheus_urls_1),
-            'monitor_node': str(self.monitor_node_1),
-            'monitor_prometheus': str(self.monitor_prometheus_1)
+            'id': self.node_config_1.node_id,
+            'parent_id': self.node_config_1.parent_id,
+            'name': self.node_config_1.node_name,
+            'node_prometheus_urls':
+                ','.join(self.node_config_1.node_prometheus_urls),
+            'monitor_node': str(self.node_config_1.monitor_node),
+            'monitor_prometheus': str(self.node_config_1.monitor_prometheus)
         }
 
         # Must create a connection so that the blocking channel is passed
@@ -1152,6 +1682,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         ('self.chainlink_routing_key', 'self.sent_configs_example_chainlink'),
         ('self.chainlink_evm_routing_key',
          'self.sent_configs_example_chainlink_evm',),
+        ('self.cosmos_routing_key', 'self.sent_configs_example_cosmos',),
     ])
     @mock.patch.object(multiprocessing.Process, 'start')
     @mock.patch.object(RabbitMQApi, "basic_ack")
@@ -1216,10 +1747,10 @@ class TestNodeMonitorsManager(unittest.TestCase):
         mock_ack.assert_called_once()
 
     @parameterized.expand([
-        ([True, True, True, True, True], [],),
-        ([True, False, True, True, True], ['config_id2'],),
-        ([False, False, False, True, True], ['config_id1', 'config_id2',
-                                             'config_id3'],),
+        ([True, True, True, True, True, True, True, True], [],),
+        ([True, False, True, True, True, True, True, True], ['node_id_2'],),
+        ([False, False, False, True, True, True, False, True],
+         ['node_id_1', 'node_id_2', 'node_id_3', 'node_id_7'],),
     ])
     @freeze_time("2012-01-01")
     @mock.patch.object(multiprocessing.Process, "join")
@@ -1264,10 +1795,10 @@ class TestNodeMonitorsManager(unittest.TestCase):
         mock_send_hb.assert_called_once_with(expected_hb)
 
     @parameterized.expand([
-        ([True, True, True, True, True], [],),
-        ([True, False, True, True, True], ['config_id2'],),
-        ([False, False, False, True, True], ['config_id1', 'config_id2',
-                                             'config_id3'],),
+        ([True, True, True, True, True, True, True, True], [],),
+        ([True, False, True, True, True, True, True, True], ['node_id_2'],),
+        ([False, False, False, True, True, True, False, True],
+         ['node_id_1', 'node_id_2', 'node_id_3', 'node_id_7'],),
     ])
     @freeze_time("2012-01-01")
     @mock.patch.object(multiprocessing.Process, "join")
@@ -1300,7 +1831,8 @@ class TestNodeMonitorsManager(unittest.TestCase):
                  config_id,
                  self.config_process_dict_example[config_id]['monitor_type'],
                  self.config_process_dict_example[config_id]['base_chain'],
-                 self.config_process_dict_example[config_id]['sub_chain'])
+                 self.config_process_dict_example[config_id]['sub_chain'],
+                 *self.config_process_dict_example[config_id]['args'])
             for config_id in self.config_process_dict_example
             if config_id in dead_configs
         ]

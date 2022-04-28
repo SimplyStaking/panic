@@ -1,10 +1,11 @@
 import logging
 import time
-from typing import TypeVar, Type, Union, List
+from typing import TypeVar, Type, List
 
 import pika.exceptions
 
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
+from src.configs.nodes.cosmos import CosmosNodeConfig
 from src.configs.nodes.node import NodeConfig
 from src.configs.repo import GitHubRepoConfig, DockerHubRepoConfig
 from src.configs.system import SystemConfig
@@ -13,18 +14,21 @@ from src.monitors.contracts.chainlink import ChainlinkContractsMonitor
 from src.monitors.dockerhub import DockerHubMonitor
 from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
+from src.monitors.network.cosmos import CosmosNetworkMonitor
 from src.monitors.system import SystemMonitor
 from src.utils import env
 from src.utils.constants.names import (SYSTEM_MONITOR_NAME_TEMPLATE,
                                        GITHUB_MONITOR_NAME_TEMPLATE,
                                        DOCKERHUB_MONITOR_NAME_TEMPLATE,
                                        NODE_MONITOR_NAME_TEMPLATE,
-                                       CL_CONTRACTS_MONITOR_NAME_TEMPLATE)
+                                       CL_CONTRACTS_MONITOR_NAME_TEMPLATE,
+                                       COSMOS_NETWORK_MONITOR_NAME_TEMPLATE)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
                                           RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
 from src.utils.starters import (get_initialisation_error_message,
                                 get_stopped_message)
+from src.utils.types import MonitorableConfig
 
 # Restricts the generic to Monitor or subclasses
 T = TypeVar('T', bound=Monitor)
@@ -54,9 +58,7 @@ def _initialise_monitor_logger(monitor_display_name: str,
 
 def _initialise_monitor(
         monitor_type: Type[T], monitor_display_name: str,
-        monitoring_period: int,
-        config: Union[SystemConfig, GitHubRepoConfig, DockerHubRepoConfig,
-                      NodeConfig]) -> T:
+        monitoring_period: int, config: MonitorableConfig, *args) -> T:
     monitor_logger = _initialise_monitor_logger(monitor_display_name,
                                                 monitor_type.__name__)
 
@@ -67,7 +69,7 @@ def _initialise_monitor(
                 logger=monitor_logger.getChild(RabbitMQApi.__name__),
                 host=env.RABBIT_IP)
             monitor = monitor_type(monitor_display_name, config, monitor_logger,
-                                   monitoring_period, rabbitmq)
+                                   monitoring_period, rabbitmq, *args)
             log_and_print("Successfully initialised {}".format(
                 monitor_display_name), monitor_logger)
             break
@@ -96,6 +98,34 @@ def _initialise_chainlink_contracts_monitor(
             monitor = ChainlinkContractsMonitor(
                 monitor_display_name, weiwatchers_url, evm_nodes, node_configs,
                 monitor_logger, monitoring_period, rabbitmq, parent_id)
+            log_and_print("Successfully initialised {}".format(
+                monitor_display_name), monitor_logger)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(monitor_display_name, e)
+            log_and_print(msg, monitor_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return monitor
+
+
+def _initialise_cosmos_network_monitor(
+        monitor_display_name: str, monitoring_period: int,
+        data_sources: List[CosmosNodeConfig], parent_id: str,
+        chain_name: str) -> CosmosNetworkMonitor:
+    monitor_logger = _initialise_monitor_logger(
+        monitor_display_name, CosmosNetworkMonitor.__name__)
+
+    # Try initialising the monitor until successful
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=monitor_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+            monitor = CosmosNetworkMonitor(
+                monitor_display_name, data_sources, parent_id, chain_name,
+                monitor_logger, monitoring_period, rabbitmq)
             log_and_print("Successfully initialised {}".format(
                 monitor_display_name), monitor_logger)
             break
@@ -140,13 +170,14 @@ def start_dockerhub_monitor(repo_config: DockerHubRepoConfig) -> None:
     start_monitor(dockerhub_monitor)
 
 
-def start_node_monitor(node_config: NodeConfig, monitor_type: Type[T]) -> None:
+def start_node_monitor(node_config: NodeConfig, monitor_type: Type[T],
+                       *args) -> None:
     # Monitor display name based on node
     monitor_display_name = NODE_MONITOR_NAME_TEMPLATE.format(
         node_config.node_name)
     node_monitor = _initialise_monitor(monitor_type, monitor_display_name,
                                        env.NODE_MONITOR_PERIOD_SECONDS,
-                                       node_config)
+                                       node_config, *args)
     start_monitor(node_monitor)
 
 
@@ -158,6 +189,17 @@ def start_chainlink_contracts_monitor(
         CL_CONTRACTS_MONITOR_NAME_TEMPLATE.format(sub_chain),
         env.CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS, weiwatchers_url,
         evm_nodes, node_configs, parent_id)
+    start_monitor(node_monitor)
+
+
+def start_cosmos_network_monitor(
+        data_sources: List[CosmosNodeConfig], parent_id: str,
+        chain_name: str) -> None:
+    monitor_display_name = COSMOS_NETWORK_MONITOR_NAME_TEMPLATE.format(
+        chain_name)
+    node_monitor = _initialise_cosmos_network_monitor(
+        monitor_display_name, env.NETWORK_MONITOR_PERIOD_SECONDS, data_sources,
+        parent_id, chain_name)
     start_monitor(node_monitor)
 
 

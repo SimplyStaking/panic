@@ -42,6 +42,25 @@ _key_evm_node_went_down_at = 'evm2'
 _key_evm_node_last_monitored = 'evm3'
 _key_evm_node_syncing = 'evm4'
 
+# CosmosNodeX_<cosmos_node_id>
+_key_cosmos_node_current_height = 'CosmosNode1'
+_key_cosmos_node_voting_power = 'CosmosNode2'
+_key_cosmos_node_is_syncing = 'CosmosNode3'
+_key_cosmos_node_bond_status = 'CosmosNode4'
+_key_cosmos_node_jailed = 'CosmosNode5'
+_key_cosmos_node_slashed = 'CosmosNode6'
+_key_cosmos_node_missed_blocks = 'CosmosNode7'
+_key_cosmos_node_went_down_at_prometheus = 'CosmosNode8'
+_key_cosmos_node_went_down_at_cosmos_rest = 'CosmosNode9'
+_key_cosmos_node_went_down_at_tendermint_rpc = 'CosmosNode10'
+_key_cosmos_node_last_monitored_prometheus = 'CosmosNode11'
+_key_cosmos_node_last_monitored_cosmos_rest = 'CosmosNode12'
+_key_cosmos_node_last_monitored_tendermint_rpc = 'CosmosNode13'
+
+# CosmosNetworkX_<cosmos_network_id>
+_key_cosmos_network_proposals = 'CosmosNetwork1'
+_key_cosmos_network_last_monitored_cosmos_rest = 'CosmosNetwork2'
+
 # ChainlinkContractX_<cl_node_id>_<contract_proxy_address>
 _key_cl_contract_version = 'ChainlinkContract1'
 _key_cl_contract_aggregator_address = 'ChainlinkContract2'
@@ -104,6 +123,34 @@ _key_alert_cl_invalid_url = 'alert_cl_node10'
 _key_alert_cl_metric_not_found = 'alert_cl_node11'
 _key_alert_cl_node_is_down = 'alert_cl_node12'
 _key_alert_cl_prometheus_is_down = 'alert_cl_node13'
+
+# alert_cosmos_nodeX_<origin_id>
+_key_alert_cosmos_node_is_down = 'alert_cosmos_node1'
+_key_alert_cosmos_node_slashed = 'alert_cosmos_node2'
+_key_alert_cosmos_node_syncing = 'alert_cosmos_node3'
+_key_alert_cosmos_node_active = 'alert_cosmos_node4'
+_key_alert_cosmos_node_jailed = 'alert_cosmos_node5'
+_key_alert_cosmos_node_blocks_missed = 'alert_cosmos_node6'
+_key_alert_cosmos_node_change_in_height = 'alert_cosmos_node7'
+_key_alert_cosmos_node_height_difference = 'alert_cosmos_node8'
+_key_alert_cosmos_node_prometheus_url_invalid = 'alert_cosmos_node9'
+_key_alert_cosmos_node_cosmos_rest_url_invalid = 'alert_cosmos_node10'
+_key_alert_cosmos_node_tendermint_rpc_url_invalid = 'alert_cosmos_node11'
+_key_alert_cosmos_node_prometheus_is_down = 'alert_cosmos_node12'
+_key_alert_cosmos_node_cosmos_rest_is_down = 'alert_cosmos_node13'
+_key_alert_cosmos_node_tendermint_rpc_is_down = 'alert_cosmos_node14'
+_key_alert_cosmos_node_no_synced_cosmos_rest_source = 'alert_cosmos_node15'
+_key_alert_cosmos_node_no_synced_tendermint_rpc_source = 'alert_cosmos_node16'
+_key_alert_cosmos_node_cosmos_rest_data_not_obtained = 'alert_cosmos_node17'
+_key_alert_cosmos_node_tendermint_rpc_data_not_obtained = 'alert_cosmos_node18'
+_key_alert_cosmos_node_metric_not_found = 'alert_cosmos_node19'
+
+# alert_cosmos_networkX
+_key_alert_cosmos_network_proposals_submitted = 'alert_cosmos_network1'
+_key_alert_cosmos_network_concluded_proposals = 'alert_cosmos_network2'
+_key_alert_cosmos_network_no_synced_cosmos_rest_source = 'alert_cosmos_network3'
+_key_alert_cosmos_network_cosmos_network_data_not_obtained = (
+    'alert_cosmos_network4')
 
 # alert_cl_contractX_<cl_node_id>_<contract_proxy_address>
 _key_alert_cl_contract_price_feed_not_observed = 'alert_cl_contract1'
@@ -279,6 +326,74 @@ class Keys:
     @staticmethod
     def get_evm_node_syncing(evm_node_id: str) -> str:
         return Keys._as_prefix(_key_evm_node_syncing) + evm_node_id
+
+    @staticmethod
+    def get_cosmos_node_current_height(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(_key_cosmos_node_current_height) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_voting_power(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(_key_cosmos_node_voting_power) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_is_syncing(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(_key_cosmos_node_is_syncing) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_bond_status(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(_key_cosmos_node_bond_status) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_jailed(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(_key_cosmos_node_jailed) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_slashed(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(_key_cosmos_node_slashed) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_missed_blocks(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(_key_cosmos_node_missed_blocks) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_went_down_at_prometheus(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_cosmos_node_went_down_at_prometheus) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_went_down_at_cosmos_rest(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_cosmos_node_went_down_at_cosmos_rest) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_went_down_at_tendermint_rpc(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_cosmos_node_went_down_at_tendermint_rpc) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_last_monitored_prometheus(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_cosmos_node_last_monitored_prometheus) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_last_monitored_cosmos_rest(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_cosmos_node_last_monitored_cosmos_rest) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_last_monitored_tendermint_rpc(
+            cosmos_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_cosmos_node_last_monitored_tendermint_rpc) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_network_proposals(parent_id: str) -> str:
+        return Keys._as_prefix(_key_cosmos_network_proposals) + parent_id
+
+    @staticmethod
+    def get_cosmos_network_last_monitored_cosmos_rest(parent_id: str) -> str:
+        return Keys._as_prefix(
+            _key_cosmos_network_last_monitored_cosmos_rest) + parent_id
 
     @staticmethod
     def get_cl_contract_version(cl_node_id: str,
@@ -494,6 +609,122 @@ class Keys:
     def get_alert_cl_head_tracker_current_head(origin_id: str) -> str:
         return Keys._as_prefix(
             _key_alert_cl_head_tracker_current_head) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_is_down(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_is_down) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_slashed(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_slashed) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_syncing(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_syncing) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_active(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_active) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_jailed(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_jailed) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_blocks_missed(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_blocks_missed) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_change_in_height(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_change_in_height) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_height_difference(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_height_difference) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_prometheus_url_invalid(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_prometheus_url_invalid) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_cosmos_rest_url_invalid(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_cosmos_rest_url_invalid) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_tendermint_rpc_url_invalid(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_tendermint_rpc_url_invalid
+        ) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_prometheus_is_down(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_prometheus_is_down) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_cosmos_rest_is_down(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_cosmos_rest_is_down) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_tendermint_rpc_is_down(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_tendermint_rpc_is_down) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_no_synced_cosmos_rest_source(
+            origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_no_synced_cosmos_rest_source) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_no_synced_tendermint_rpc_source(
+            origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_no_synced_tendermint_rpc_source) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_cosmos_rest_data_not_obtained(
+            origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_cosmos_rest_data_not_obtained) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_tendermint_rpc_data_not_obtained(
+            origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_tendermint_rpc_data_not_obtained) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_node_metric_not_found(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_cosmos_node_metric_not_found) + origin_id
+
+    @staticmethod
+    def get_alert_cosmos_network_proposals_submitted() -> str:
+        return _key_alert_cosmos_network_proposals_submitted
+
+    @staticmethod
+    def get_alert_cosmos_network_concluded_proposals() -> str:
+        return _key_alert_cosmos_network_concluded_proposals
+
+    @staticmethod
+    def get_alert_cosmos_network_no_synced_cosmos_rest_source() -> str:
+        return _key_alert_cosmos_network_no_synced_cosmos_rest_source
+
+    @staticmethod
+    def get_alert_cosmos_network_cosmos_network_data_not_obtained() -> str:
+        return _key_alert_cosmos_network_cosmos_network_data_not_obtained
 
     @staticmethod
     def get_alert_cl_contract_price_feed_not_observed(

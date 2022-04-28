@@ -51,6 +51,7 @@ import {
     alertKeysChainSourced,
     alertKeysClContractPrefix,
     alertKeysClNodePrefix,
+    alertKeysCosmosNodePrefix,
     alertKeysDockerHubPrefix,
     alertKeysEvmNodePrefix,
     alertKeysGitHubPrefix,
@@ -659,6 +660,8 @@ app.post('/server/redis/alertsOverview',
                                 if (!found && key.includes(nodeId) &&
                                     (key.includes(alertKeysClNodePrefix)
                                         || key.includes(alertKeysEvmNodePrefix)
+                                        || (key.includes(
+                                            alertKeysCosmosNodePrefix))
                                         || (key.includes(
                                             alertKeysClContractPrefix)))
                                 ) {

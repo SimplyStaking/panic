@@ -19,14 +19,12 @@ from src.alerter.managers.github import (GithubAlerterManager)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import GITHUB_ALERTER_NAME
-from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
-                                          GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
-                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                          PING_ROUTING_KEY,
-                                          GITHUB_ALERT_ROUTING_KEY,
-                                          ALERT_EXCHANGE, TOPIC)
+from src.utils.constants.rabbitmq import (
+    HEALTH_CHECK_EXCHANGE, GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME,
+    HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY, PING_ROUTING_KEY,
+    GITHUB_ALERT_ROUTING_KEY, ALERT_EXCHANGE, TOPIC)
 from src.utils.exceptions import PANICException
-from test.utils.utils import infinite_fn
+from test.test_utils.utils import infinite_fn
 
 
 # Tests adapted from Monitors managers

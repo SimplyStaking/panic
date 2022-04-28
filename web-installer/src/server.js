@@ -990,12 +990,12 @@ app.post('/server/common/prometheus', verify, async (req, res) => {
 
 // ---------------------------------------- Cosmos
 
-app.post('/server/cosmos/tendermint', verify, async (req, res) => {
+app.post('/server/cosmos/rest', verify, async (req, res) => {
   console.log('Received POST request for %s', req.url);
-  const { tendermintRpcUrl } = req.body;
+  const { restUrl } = req.body;
 
-  // Check if tendermintRpcUrl is missing.
-  const missingParamsList = utils.missingValues({ tendermintRpcUrl });
+  // Check if restUrl is missing.
+  const missingParamsList = utils.missingValues({ restUrl });
 
   // If some required parameters are missing inform the user.
   if (missingParamsList.length !== 0) {
@@ -1004,20 +1004,72 @@ app.post('/server/cosmos/tendermint', verify, async (req, res) => {
     return;
   }
 
-  if (blackList.find((a) => tendermintRpcUrl.includes(a))) {
-    const error = new errors.BlackListError(tendermintRpcUrl);
+  if (blackList.find((a) => restUrl.includes(a))) {
+    const error = new errors.BlackListError(restUrl);
     console.log(error);
     res.status(error.code).send(utils.errorJson(error.message));
     return;
   }
 
-  const url = `${tendermintRpcUrl}/health?`;
+  const url = `${restUrl}/node_info`;
 
   axios
     .get(url, { params: {} })
-    .then((_) => {
-      const msg = new msgs.MessagePong();
-      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+    .then((response) => {
+      if ('node_info' in response.data) {
+        const msg = new msgs.MessagePong();
+        res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.code === 'ECONNREFUSED') {
+        const msg = new msgs.MessageNoConnection();
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        // Connection made but error occurred (typically means node is missing)
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+      }
+    });
+});
+
+app.post('/server/cosmos/tendermint', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { httpUrl } = req.body;
+
+  // Check if httpUrl is missing.
+  const missingParamsList = utils.missingValues({ httpUrl });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+
+  if (blackList.find((a) => httpUrl.includes(a))) {
+    const error = new errors.BlackListError(httpUrl);
+    console.log(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
+  const url = `${httpUrl}/abci_info?`;
+
+  axios
+    .get(url, { params: {} })
+    .then((response) => {
+      if ('jsonrpc' in response.data) {
+        const msg = new msgs.MessagePong();
+        res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+      }
     })
     .catch((err) => {
       console.error(err);
@@ -1064,8 +1116,6 @@ app.post('/server/dockerhub/repository', verify, async (req, res) => {
         console.error(err);
         res.status(err.code).send(utils.errorJson(err.message));
       }
-      const msg = new msgs.MessagePong();
-      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
     })
     .catch((err) => {
       console.error(err);

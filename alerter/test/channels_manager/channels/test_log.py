@@ -10,7 +10,7 @@ from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert)
 from src.channels_manager.channels.log import LogChannel
 from src.utils.data import RequestStatus
-from test.utils.utils import assert_not_called_with
+from test.test_utils.utils import assert_not_called_with
 
 
 class TestLogChannel(unittest.TestCase):

@@ -26,7 +26,7 @@ from src.utils.constants.rabbitmq import (
 from src.utils.exceptions import (PANICException, SystemIsDownException,
                                   ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from test.utils.utils import save_system_to_redis
+from test.test_utils.utils import save_system_to_redis
 
 
 class TestSystemDataTransformer(unittest.TestCase):
