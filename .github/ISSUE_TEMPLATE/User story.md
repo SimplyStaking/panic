@@ -1,5 +1,5 @@
 ---
-name: Feature Request
+name: User Story
 about: Create a proposal to request a feature
 
 ---
