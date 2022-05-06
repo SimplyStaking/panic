@@ -1,6 +1,6 @@
 ---
 name: Technical Story
-about: Create a proposal to request a feature
+about: Create a proposal to request a technical feature/improvement
 
 ---
 
