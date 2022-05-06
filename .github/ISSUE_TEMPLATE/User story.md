@@ -12,7 +12,7 @@ v    Before smashing the submit button please review the template.
 
 ### User Story
 
-<!-- Concisely describe the required functionality/feature from the perspective of the user system user in question -->
+<!-- Concisely describe the required functionality/feature from the perspective of the system user in question -->
 <!-- As a USER TYPE, I want to DESCRIBE NEW FUNCTIONALITY/FEATURE, so that DESCRIBE USER TYPE INTERACTION WITH THE NEW FUNCTIONALITY   -->
 
 ### Description
