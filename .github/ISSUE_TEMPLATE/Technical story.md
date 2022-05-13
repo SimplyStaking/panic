@@ -1,5 +1,5 @@
 ---
-name: Technical Story
+name: Development task for a technical story
 about: Create a proposal to request a technical feature/improvement
 
 ---
