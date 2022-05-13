@@ -1,6 +1,6 @@
 ---
 name: Development task for a technical story
-about: Create a proposal to request a technical feature/improvement
+about: Create a a task for the development team which releates to a purely technical feature/improvement. 
 
 ---
 
