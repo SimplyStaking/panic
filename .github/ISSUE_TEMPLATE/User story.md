@@ -1,5 +1,5 @@
 ---
-name: User Story
+name: Development task for a user story
 about: Create a proposal to request a feature
 
 ---
