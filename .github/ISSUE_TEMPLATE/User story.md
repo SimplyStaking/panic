@@ -1,6 +1,6 @@
 ---
 name: Development task for a user story
-about: Create a proposal to request a feature
+about: Create a task for the development team which relates to a user action/outcome. 
 
 ---
 
