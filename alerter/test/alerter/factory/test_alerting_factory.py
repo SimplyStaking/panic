@@ -6,6 +6,9 @@ from datetime import timedelta
 from freezegun import freeze_time
 from parameterized import parameterized
 
+from src.alerter.alert_code.node.chainlink_alert_code import \
+    ChainlinkNodeAlertCode
+from src.alerter.alerts.alert import Alert
 from src.alerter.alerts.node.chainlink import (
     NoChangeInHeightAlert, BlockHeightUpdatedAlert,
     TotalErroredJobRunsIncreasedAboveThresholdAlert,
@@ -13,8 +16,7 @@ from src.alerter.alerts.node.chainlink import (
     MaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
     MaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
     ChangeInSourceNodeAlert, PrometheusSourceIsDownAlert,
-    PrometheusSourceBackUpAgainAlert, EthBalanceIncreasedAboveThresholdAlert,
-    EthBalanceDecreasedBelowThresholdAlert, InvalidUrlAlert, ValidUrlAlert,
+    PrometheusSourceBackUpAgainAlert, InvalidUrlAlert, ValidUrlAlert,
     NodeWentDownAtAlert, NodeBackUpAgainAlert, NodeStillDownAlert)
 from src.alerter.alerts.node.cosmos import (
     NodeIsSyncingAlert, NodeIsNoLongerSyncingAlert
@@ -45,6 +47,30 @@ because the implementation was conducted to be as general as possible.
 """
 
 
+class IncreasedAboveThresholdTestAlert(Alert):
+    def __init__(self, origin_name: str, current_value: float, severity: str,
+                 timestamp: float, threshold_severity: str, parent_id: str,
+                 origin_id: str) -> None:
+        super().__init__(
+            ChainlinkNodeAlertCode.BalanceIncreasedAboveThresholdAlert,
+            "{} has INCREASED above {} threshold. Current value: {}.".format(
+                origin_name, threshold_severity, current_value),
+            severity, timestamp, parent_id, origin_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold)
+
+
+class DecreasedBelowThresholdTestAlert(Alert):
+    def __init__(self, origin_name: str, current_value: float, severity: str,
+                 timestamp: float, threshold_severity: str, parent_id: str,
+                 origin_id: str) -> None:
+        super().__init__(
+            ChainlinkNodeAlertCode.BalanceDecreasedBelowThresholdAlert,
+            "{} has DECREASED below {} threshold. Current value: {}.".format(
+                origin_name, threshold_severity, current_value),
+            severity, timestamp, parent_id, origin_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold)
+
+
 class ChainlinkAlertingFactoryInstance(AlertingFactory):
     def __init__(self, component_logger: logging.Logger) -> None:
         super().__init__(component_logger)
@@ -67,7 +93,7 @@ class ChainlinkAlertingFactoryInstance(AlertingFactory):
                     TotalErroredJobRunsThreshold.value: False,
                 GroupedChainlinkNodeAlertsMetricCode.
                     MaxUnconfirmedBlocksThreshold.value: False,
-                GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value:
+                GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value:
                     False,
                 GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value: False,
                 GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown:
@@ -80,7 +106,7 @@ class ChainlinkAlertingFactoryInstance(AlertingFactory):
                     MaxUnconfirmedBlocksThreshold.value: False,
                 GroupedChainlinkNodeAlertsMetricCode.
                     TotalErroredJobRunsThreshold.value: False,
-                GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value:
+                GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value:
                     False,
                 GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value: False,
             }
@@ -91,8 +117,8 @@ class ChainlinkAlertingFactoryInstance(AlertingFactory):
             current_head_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold', 'critical_repeat'],
                 cl_node_alerts_config.head_tracker_current_head)
-            eth_balance_thresholds = parse_alert_time_thresholds(
-                ['critical_repeat'], cl_node_alerts_config.eth_balance_amount
+            balance_thresholds = parse_alert_time_thresholds(
+                ['critical_repeat'], cl_node_alerts_config.balance_amount
             )
             node_is_down_thresholds = parse_alert_time_thresholds(
                 ['warning_threshold', 'critical_threshold',
@@ -138,8 +164,8 @@ class ChainlinkAlertingFactoryInstance(AlertingFactory):
                 GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight.value:
                     TimedTaskLimiter(timedelta(
                         seconds=current_head_thresholds['critical_repeat'])),
-                GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value:
-                    TimedTaskLimiter(timedelta(seconds=eth_balance_thresholds[
+                GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value:
+                    TimedTaskLimiter(timedelta(seconds=balance_thresholds[
                         'critical_repeat'])),
                 GroupedChainlinkNodeAlertsMetricCode.NodeIsDown.value:
                     TimedTaskLimiter(timedelta(seconds=node_is_down_thresholds[
@@ -402,8 +428,8 @@ class TestAlertingFactory(unittest.TestCase):
             'warning_time_window': '3',
             'critical_time_window': '7',
         }
-        self.eth_balance_amount = {
-            'name': 'eth_balance_amount',
+        self.balance_amount = {
+            'name': 'balance_amount',
             'parent_id': self.test_parent_id,
             'enabled': 'true',
             'critical_threshold': '5',
@@ -433,8 +459,8 @@ class TestAlertingFactory(unittest.TestCase):
             tx_manager_gas_bump_exceeds_limit_total={},
             unconfirmed_transactions={},
             run_status_update_total=self.run_status_update_total,
-            eth_balance_amount=self.eth_balance_amount,
-            eth_balance_amount_increase={}, node_is_down=self.node_is_down,
+            balance_amount=self.balance_amount,
+            balance_amount_increase={}, node_is_down=self.node_is_down,
         )
         self.test_factory_instance = ChainlinkAlertingFactoryInstance(
             self.dummy_logger)
@@ -1882,308 +1908,6 @@ class TestAlertingFactory(unittest.TestCase):
 
         self.assertEqual([], data_for_alerting)
 
-    def test_classify_thresholded_reverse_does_nothing_warning_critical_disabled(
-            self) -> None:
-        """
-        In this test we will check that no alert is raised whenever both warning
-        and critical alerts are disabled. We will perform this test for both
-        when current <= critical and current <= warning. For an alert to be
-        raised when current > critical or current > warning it must be that one
-        of the severities is enabled.
-        """
-        self.test_alerts_config.eth_balance_amount[
-            'warning_enabled'] = 'False'
-        self.test_alerts_config.eth_balance_amount[
-            'critical_enabled'] = 'False'
-
-        data_for_alerting = []
-        current = float(self.test_alerts_config.eth_balance_amount[
-                            'critical_threshold']) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, datetime.now().timestamp()
-        )
-
-        self.assertEqual([], data_for_alerting)
-
-    @parameterized.expand([
-        ('WARNING', 'warning_threshold'),
-        ('CRITICAL', 'critical_threshold'),
-    ])
-    @freeze_time("2012-01-01")
-    def test_classify_thresholded_reverse_raises_alert_if_below_threshold(
-            self, severity, threshold_var) -> None:
-        """
-        In this test we will check that a warning/critical below threshold alert
-        is raised if the current value goes below the warning/critical
-        threshold.
-        """
-        data_for_alerting = []
-
-        current = float(
-            self.test_alerts_config.eth_balance_amount[threshold_var]) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, datetime.now().timestamp()
-        )
-        expected_alert = EthBalanceDecreasedBelowThresholdAlert(
-            self.test_node_name, current, severity, datetime.now().timestamp(),
-            severity, self.test_parent_id, self.test_node_id)
-        self.assertEqual(1, len(data_for_alerting))
-        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
-
-    @freeze_time("2012-01-01")
-    def test_classify_thresholded_reverse_no_warning_if_warning_already_sent(
-            self) -> None:
-        """
-        In this test we will check that no warning alert is raised if a warning
-        alert has already been sent
-        """
-        data_for_alerting = []
-
-        # Send first warning alert
-        current = float(
-            self.test_alerts_config.eth_balance_amount['warning_threshold']) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, datetime.now().timestamp()
-        )
-        self.assertEqual(1, len(data_for_alerting))
-        data_for_alerting.clear()
-
-        # Classify again to check if a warning alert is raised
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, datetime.now().timestamp() + 1
-        )
-        self.assertEqual([], data_for_alerting)
-
-    @freeze_time("2012-01-01")
-    def test_classify_thresholded_reverse_raises_critical_if_repeat_elapsed(
-            self) -> None:
-        """
-        In this test we will check that a critical below threshold alert is
-        re-raised if the critical repeat window elapses. We will also check that
-        if the critical window does not elapse, a critical alert is not
-        re-raised.
-        """
-        data_for_alerting = []
-
-        # First critical below threshold alert
-        current = float(self.test_alerts_config.eth_balance_amount[
-                            'critical_threshold']) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, datetime.now().timestamp()
-        )
-        self.assertEqual(1, len(data_for_alerting))
-        data_for_alerting.clear()
-
-        # Classify with not elapsed repeat to confirm that no critical alert is
-        # raised.
-        pad = float(self.test_alerts_config.eth_balance_amount[
-                        'critical_repeat']) - 1
-        alert_timestamp = datetime.now().timestamp() + pad
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, alert_timestamp
-        )
-        self.assertEqual([], data_for_alerting)
-
-        # Let repeat time to elapse and check that a critical alert is
-        # re-raised
-        pad = float(self.test_alerts_config.eth_balance_amount[
-                        'critical_repeat'])
-        alert_timestamp = datetime.now().timestamp() + pad
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, alert_timestamp
-        )
-        expected_alert = EthBalanceDecreasedBelowThresholdAlert(
-            self.test_node_name, current, "CRITICAL", alert_timestamp,
-            "CRITICAL", self.test_parent_id, self.test_node_id)
-        self.assertEqual(1, len(data_for_alerting))
-        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
-
-    @freeze_time("2012-01-01")
-    def test_classify_threshold_reverse_only_1_critical_if_below_and_no_repeat(
-            self) -> None:
-        """
-        In this test we will check that if critical_repeat is disabled, a
-        decreased below critical alert is not re-raised.
-        """
-        self.test_alerts_config.eth_balance_amount[
-            'critical_repeat_enabled'] = "False"
-        data_for_alerting = []
-
-        # First critical below threshold alert
-        current = float(self.test_alerts_config.eth_balance_amount[
-                            'critical_threshold']) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, datetime.now().timestamp()
-        )
-        self.assertEqual(1, len(data_for_alerting))
-        data_for_alerting.clear()
-
-        # Let repeat time to elapse and check that a critical alert is not
-        # re-raised
-        pad = float(self.test_alerts_config.eth_balance_amount[
-                        'critical_repeat'])
-        alert_timestamp = datetime.now().timestamp() + pad
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, alert_timestamp
-        )
-        self.assertEqual([], data_for_alerting)
-
-    @parameterized.expand([
-        ('critical_threshold', 'CRITICAL',),
-        ('warning_threshold', 'WARNING',)
-    ])
-    @freeze_time("2012-01-01")
-    def test_classify_thresh_reverse_info_alert_if_above_thresh_and_alert_sent(
-            self, threshold_var, threshold_severity) -> None:
-        """
-        In this test we will check that once the current value is greater than a
-        threshold, an increased above threshold info alert is sent. We will
-        perform this test for both warning and critical.
-        """
-        data_for_alerting = []
-
-        # First below threshold alert
-        current = float(self.test_alerts_config.eth_balance_amount[
-                            threshold_var]) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, datetime.now().timestamp()
-        )
-        self.assertEqual(1, len(data_for_alerting))
-        data_for_alerting.clear()
-
-        # Check that an above threshold INFO alert is raised. Current is set to
-        # warning + 1 to not trigger a warning alert as it is expected that
-        # critical <= warning.
-        current = float(self.test_alerts_config.eth_balance_amount[
-                            'warning_threshold']) + 1
-        alert_timestamp = datetime.now().timestamp()
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, alert_timestamp
-        )
-        expected_alert = EthBalanceIncreasedAboveThresholdAlert(
-            self.test_node_name, current, 'INFO', alert_timestamp,
-            threshold_severity, self.test_parent_id, self.test_node_id)
-        self.assertEqual(1, len(data_for_alerting))
-        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
-
-    @freeze_time("2012-01-01")
-    def test_classify_thresh_reverse_warn_alert_if_above_critical_below_warn(
-            self) -> None:
-        """
-        In this test we will check that whenever
-        warning >= current >= critical >= previous, a warning alert is raised to
-        inform that the current value is smaller than the warning value. Note
-        we will perform this test for the case when we first alert warning, then
-        critical and not immediately critical, as the warning alerting would be
-        obvious.
-        """
-        data_for_alerting = []
-
-        # Send warning decrease below threshold alert
-        current = float(self.test_alerts_config.eth_balance_amount[
-                            'warning_threshold']) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, datetime.now().timestamp()
-        )
-        self.assertEqual(1, len(data_for_alerting))
-
-        # Send critical decrease below threshold alert
-        current = float(self.test_alerts_config.eth_balance_amount[
-                            'critical_threshold']) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, datetime.now().timestamp()
-        )
-        self.assertEqual(2, len(data_for_alerting))
-        data_for_alerting.clear()
-
-        # Check that 2 alerts are raised, above critical and below warning
-        current = float(self.test_alerts_config.eth_balance_amount[
-                            'critical_threshold']) + 1
-        alert_timestamp = datetime.now().timestamp() + 10
-        self.test_factory_instance.classify_thresholded_alert_reverse(
-            current, self.test_alerts_config.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
-            self.test_parent_id, self.test_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
-            self.test_node_name, alert_timestamp
-        )
-
-        expected_alert_1 = EthBalanceIncreasedAboveThresholdAlert(
-            self.test_node_name, current, 'INFO', alert_timestamp,
-            'CRITICAL', self.test_parent_id, self.test_node_id)
-        expected_alert_2 = EthBalanceDecreasedBelowThresholdAlert(
-            self.test_node_name, current, 'WARNING', alert_timestamp,
-            'WARNING', self.test_parent_id, self.test_node_id)
-        self.assertEqual(2, len(data_for_alerting))
-        self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
-        self.assertEqual(expected_alert_2.alert_data, data_for_alerting[1])
-
     def test_classify_thresholded_does_nothing_warning_critical_disabled(
             self) -> None:
         """
@@ -3064,3 +2788,305 @@ class TestAlertingFactory(unittest.TestCase):
         )
 
         self.assertEqual([], data_for_alerting)
+
+    def test_classify_thresholded_reverse_does_nothing_warning_critical_disabled(
+            self) -> None:
+        """
+        In this test we will check that no alert is raised whenever both warning
+        and critical alerts are disabled. We will perform this test for both
+        when current <= critical and current <= warning. For an alert to be
+        raised when current > critical or current > warning it must be that one
+        of the severities is enabled.
+        """
+        self.test_alerts_config.balance_amount[
+            'warning_enabled'] = 'False'
+        self.test_alerts_config.balance_amount[
+            'critical_enabled'] = 'False'
+
+        data_for_alerting = []
+        current = float(self.test_alerts_config.balance_amount[
+                            'critical_threshold']) - 1
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold,
+            self.test_node_name, datetime.now().timestamp()
+        )
+
+        self.assertEqual([], data_for_alerting)
+
+    @parameterized.expand([
+        ('WARNING', 'warning_threshold'),
+        ('CRITICAL', 'critical_threshold'),
+    ])
+    @freeze_time("2012-01-01")
+    def test_classify_thresholded_reverse_raises_alert_if_below_threshold(
+            self, severity, threshold_var) -> None:
+        """
+        In this test we will check that a warning/critical below threshold alert
+        is raised if the current value goes below the warning/critical
+        threshold.
+        """
+        data_for_alerting = []
+
+        current = float(
+            self.test_alerts_config.balance_amount[threshold_var]) - 1
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold,
+            self.test_node_name, datetime.now().timestamp()
+        )
+        expected_alert = DecreasedBelowThresholdTestAlert(
+            self.test_node_name, current, severity, datetime.now().timestamp(),
+            severity, self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_thresholded_reverse_no_warning_if_warning_already_sent(
+            self) -> None:
+        """
+        In this test we will check that no warning alert is raised if a warning
+        alert has already been sent
+        """
+        data_for_alerting = []
+
+        # Send first warning alert
+        current = float(
+            self.test_alerts_config.balance_amount['warning_threshold']) - 1
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold,
+            self.test_node_name, datetime.now().timestamp()
+        )
+        self.assertEqual(1, len(data_for_alerting))
+        data_for_alerting.clear()
+
+        # Classify again to check if a warning alert is raised
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold,
+            self.test_node_name, datetime.now().timestamp() + 1
+        )
+        self.assertEqual([], data_for_alerting)
+
+    @freeze_time("2012-01-01")
+    def test_classify_thresholded_reverse_raises_critical_if_repeat_elapsed(
+            self) -> None:
+        """
+        In this test we will check that a critical below threshold alert is
+        re-raised if the critical repeat window elapses. We will also check that
+        if the critical window does not elapse, a critical alert is not
+        re-raised.
+        """
+        data_for_alerting = []
+
+        # First critical below threshold alert
+        current = float(self.test_alerts_config.balance_amount[
+                            'critical_threshold']) - 1
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value,
+            self.test_node_name, datetime.now().timestamp()
+        )
+        self.assertEqual(1, len(data_for_alerting))
+        data_for_alerting.clear()
+
+        # Classify with not elapsed repeat to confirm that no critical alert is
+        # raised.
+        pad = float(self.test_alerts_config.balance_amount[
+                        'critical_repeat']) - 1
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value,
+            self.test_node_name, alert_timestamp
+        )
+        self.assertEqual([], data_for_alerting)
+
+        # Let repeat time to elapse and check that a critical alert is
+        # re-raised
+        pad = float(self.test_alerts_config.balance_amount[
+                        'critical_repeat'])
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value,
+            self.test_node_name, alert_timestamp
+        )
+        expected_alert = DecreasedBelowThresholdTestAlert(
+            self.test_node_name, current, "CRITICAL", alert_timestamp,
+            "CRITICAL", self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_threshold_reverse_only_1_critical_if_below_and_no_repeat(
+            self) -> None:
+        """
+        In this test we will check that if critical_repeat is disabled, a
+        decreased below critical alert is not re-raised.
+        """
+        self.test_alerts_config.balance_amount[
+            'critical_repeat_enabled'] = "False"
+        data_for_alerting = []
+
+        # First critical below threshold alert
+        current = float(self.test_alerts_config.balance_amount[
+                            'critical_threshold']) - 1
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value,
+            self.test_node_name, datetime.now().timestamp()
+        )
+        self.assertEqual(1, len(data_for_alerting))
+        data_for_alerting.clear()
+
+        # Let repeat time to elapse and check that a critical alert is not
+        # re-raised
+        pad = float(self.test_alerts_config.balance_amount[
+                        'critical_repeat'])
+        alert_timestamp = datetime.now().timestamp() + pad
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value,
+            self.test_node_name, alert_timestamp
+        )
+        self.assertEqual([], data_for_alerting)
+
+    @parameterized.expand([
+        ('critical_threshold', 'CRITICAL',),
+        ('warning_threshold', 'WARNING',)
+    ])
+    @freeze_time("2012-01-01")
+    def test_classify_thresh_reverse_info_alert_if_above_thresh_and_alert_sent(
+            self, threshold_var, threshold_severity) -> None:
+        """
+        In this test we will check that once the current value is greater than a
+        threshold, an increased above threshold info alert is sent. We will
+        perform this test for both warning and critical.
+        """
+        data_for_alerting = []
+
+        # First below threshold alert
+        current = float(self.test_alerts_config.balance_amount[
+                            threshold_var]) - 1
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value,
+            self.test_node_name, datetime.now().timestamp()
+        )
+        self.assertEqual(1, len(data_for_alerting))
+        data_for_alerting.clear()
+
+        # Check that an above threshold INFO alert is raised. Current is set to
+        # warning + 1 to not trigger a warning alert as it is expected that
+        # critical <= warning.
+        current = float(self.test_alerts_config.balance_amount[
+                            'warning_threshold']) + 1
+        alert_timestamp = datetime.now().timestamp()
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value,
+            self.test_node_name, alert_timestamp
+        )
+        expected_alert = IncreasedAboveThresholdTestAlert(
+            self.test_node_name, current, 'INFO', alert_timestamp,
+            threshold_severity, self.test_parent_id, self.test_node_id)
+        self.assertEqual(1, len(data_for_alerting))
+        self.assertEqual(expected_alert.alert_data, data_for_alerting[0])
+
+    @freeze_time("2012-01-01")
+    def test_classify_thresh_reverse_warn_alert_if_above_critical_below_warn(
+            self) -> None:
+        """
+        In this test we will check that whenever
+        warning >= current >= critical >= previous, a warning alert is raised to
+        inform that the current value is smaller than the warning value. Note
+        we will perform this test for the case when we first alert warning, then
+        critical and not immediately critical, as the warning alerting would be
+        obvious.
+        """
+        data_for_alerting = []
+
+        # Send warning decrease below threshold alert
+        current = float(self.test_alerts_config.balance_amount[
+                            'warning_threshold']) - 1
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value,
+            self.test_node_name, datetime.now().timestamp()
+        )
+        self.assertEqual(1, len(data_for_alerting))
+
+        # Send critical decrease below threshold alert
+        current = float(self.test_alerts_config.balance_amount[
+                            'critical_threshold']) - 1
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value,
+            self.test_node_name, datetime.now().timestamp()
+        )
+        self.assertEqual(2, len(data_for_alerting))
+        data_for_alerting.clear()
+
+        # Check that 2 alerts are raised, above critical and below warning
+        current = float(self.test_alerts_config.balance_amount[
+                            'critical_threshold']) + 1
+        alert_timestamp = datetime.now().timestamp() + 10
+        self.test_factory_instance.classify_thresholded_alert_reverse(
+            current, self.test_alerts_config.balance_amount,
+            IncreasedAboveThresholdTestAlert,
+            DecreasedBelowThresholdTestAlert, data_for_alerting,
+            self.test_parent_id, self.test_node_id,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value,
+            self.test_node_name, alert_timestamp
+        )
+
+        expected_alert_1 = IncreasedAboveThresholdTestAlert(
+            self.test_node_name, current, 'INFO', alert_timestamp, 'CRITICAL',
+            self.test_parent_id, self.test_node_id)
+        expected_alert_2 = DecreasedBelowThresholdTestAlert(
+            self.test_node_name, current, 'WARNING', alert_timestamp, 'WARNING',
+            self.test_parent_id, self.test_node_id)
+        self.assertEqual(2, len(data_for_alerting))
+        self.assertEqual(expected_alert_1.alert_data, data_for_alerting[0])
+        self.assertEqual(expected_alert_2.alert_data, data_for_alerting[1])

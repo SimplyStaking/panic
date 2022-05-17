@@ -20,7 +20,7 @@ RAW_TO_TRANSFORMED_CHAINLINK_METRICS = {
     'tx_manager_gas_bump_exceeds_limit_total': 'total_gas_bumps_exceeds_limit',
     'unconfirmed_transactions': 'no_of_unconfirmed_txs',
     'gas_updater_set_gas_price': 'current_gas_price_info',
-    'eth_balance': 'eth_balance_info',
+    'balance': 'balance_info',
     'run_status_update_total_errors': 'total_errored_job_runs',
 }
 RAW_TO_TRANSFORMED_COSMOS_NODE_PROM_METRICS = {
@@ -36,7 +36,7 @@ INT_COSMOS_NODE_PROM_METRICS = ['current_height', 'voting_power']
 EXPIRE_METRICS = [
     GroupedChainlinkNodeAlertsMetricCode.ChangeInSourceNode,
     GroupedChainlinkNodeAlertsMetricCode.GasBumpIncreasedOverNodeGasPriceLimit,
-    GroupedChainlinkNodeAlertsMetricCode.EthBalanceTopUp,
+    GroupedChainlinkNodeAlertsMetricCode.BalanceTopUp,
     GroupedCosmosNodeAlertsMetricCode.ValidatorWasSlashed,
     GroupedCosmosNetworkAlertsMetricCode.NewProposalSubmitted,
     GroupedCosmosNetworkAlertsMetricCode.ProposalConcluded,
@@ -56,3 +56,5 @@ CHAIN_SOURCED_METRICS = [
     GroupedCosmosNetworkAlertsMetricCode.NoSyncedCosmosRestSource,
     GroupedCosmosNetworkAlertsMetricCode.CosmosNetworkDataNotObtained,
 ]
+
+CHAINLINK_CHAINS_URL = 'https://chainid.network/chains_mini.json'

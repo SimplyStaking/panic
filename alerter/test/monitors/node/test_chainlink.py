@@ -11,6 +11,7 @@ from unittest import mock
 from unittest.mock import call
 
 import pika
+from dateutil import parser
 from freezegun import freeze_time
 from parameterized import parameterized
 from pika.exceptions import AMQPConnectionError, AMQPChannelError
@@ -62,6 +63,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             'test_key_1': 'test_val_1',
             'test_key_2': 'test_val_2',
         }
+        self.test_symbol = 'TEST'
         self.test_heartbeat = {
             'component_name': 'Test Component',
             'is_alive': True,
@@ -166,9 +168,10 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                 'percentile': '20%',
                 'price': 5000000000.0
             },
-            'eth_balance': {
+            'balance': {
                 'address': 'eth_add_1',
-                'balance': 26.043292035081947
+                'balance': 26.043292035081947,
+                'symbol': self.test_symbol
             },
             'run_status_update_total_errors': 8
         }
@@ -407,7 +410,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             "tx_manager_num_gas_bumps_total={}, " \
             "tx_manager_gas_bump_exceeds_limit_total={}, " \
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
-            "eth_balance={}, run_status_update_total_errors={}" \
+            "balance={}, run_status_update_total_errors={}" \
             "".format(
                 self.processed_prometheus_data_example[
                     'head_tracker_current_head'],
@@ -425,7 +428,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                     'unconfirmed_transactions'],
                 self.processed_prometheus_data_example[
                     'gas_updater_set_gas_price'],
-                self.processed_prometheus_data_example['eth_balance'],
+                self.processed_prometheus_data_example['balance'],
                 self.processed_prometheus_data_example[
                     'run_status_update_total_errors']
             )
@@ -443,7 +446,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             "tx_manager_num_gas_bumps_total={}, " \
             "tx_manager_gas_bump_exceeds_limit_total={}, " \
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
-            "eth_balance={}, run_status_update_total_errors={}" \
+            "balance={}, run_status_update_total_errors={}" \
             "".format(
                 self.processed_prometheus_data_example_optionals_none[
                     'head_tracker_current_head'],
@@ -462,7 +465,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                 self.processed_prometheus_data_example_optionals_none[
                     'gas_updater_set_gas_price'],
                 self.processed_prometheus_data_example_optionals_none[
-                    'eth_balance'],
+                    'balance'],
                 self.processed_prometheus_data_example_optionals_none[
                     'run_status_update_total_errors']
             )
@@ -475,7 +478,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             self) -> None:
         # Test when optionals are not None
         del self.processed_prometheus_data_example['head_tracker_current_head']
-        del self.processed_prometheus_data_example['eth_balance']
+        del self.processed_prometheus_data_example['balance']
         expected_output = \
             "head_tracker_current_head={}, " \
             "head_tracker_heads_received_total={}, " \
@@ -483,7 +486,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             "tx_manager_num_gas_bumps_total={}, " \
             "tx_manager_gas_bump_exceeds_limit_total={}, " \
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
-            "eth_balance={}, run_status_update_total_errors={}" \
+            "balance={}, run_status_update_total_errors={}" \
             "".format(
                 "Disabled",
                 self.processed_prometheus_data_example[
@@ -512,8 +515,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         # Test when optionals are None
         del self.processed_prometheus_data_example_optionals_none[
             'head_tracker_current_head']
-        del self.processed_prometheus_data_example_optionals_none[
-            'eth_balance']
+        del self.processed_prometheus_data_example_optionals_none['balance']
         expected_output = \
             "head_tracker_current_head={}, " \
             "head_tracker_heads_received_total={}, " \
@@ -521,7 +523,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             "tx_manager_num_gas_bumps_total={}, " \
             "tx_manager_gas_bump_exceeds_limit_total={}, " \
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, " \
-            "eth_balance={}, run_status_update_total_errors={}" \
+            "balance={}, run_status_update_total_errors={}" \
             "".format(
                 "Disabled",
                 self.processed_prometheus_data_example_optionals_none[
@@ -896,8 +898,11 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
          "self.retrieved_prometheus_data_example_optionals_none"),
     ])
     @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_currency_symbol")
     def test_process_retrieved_prometheus_data_returns_expected_data(
-            self, expected_data_output, retrieved_data) -> None:
+            self, expected_data_output, retrieved_data, mock_get_symbol
+    ) -> None:
+        mock_get_symbol.return_value = self.test_symbol
         expected_output = {
             'result': {
                 'meta_data': {
@@ -959,9 +964,11 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
                          json.loads(body))
 
     @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_currency_symbol")
     @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
     def test_monitor_sends_data_and_hb_if_data_retrieve_and_processing_success(
-            self, mock_get_data) -> None:
+            self, mock_get_data, mock_get_symbol) -> None:
+        mock_get_symbol.return_value = self.test_symbol
         # Here we are assuming that all sources are enabled.
         expected_output_data = {
             'prometheus': {
@@ -1253,11 +1260,13 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.assertEqual(0, res.method.message_count)
 
     @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_currency_symbol")
     @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
     def test_monitor_raises_msg_not_del_except_if_hb_not_routed_and_sends_data(
-            self, mock_get_data) -> None:
+            self, mock_get_data, mock_get_symbol) -> None:
         mock_get_data.return_value = \
             self.received_retrieval_info_all_source_types_enabled
+        mock_get_symbol.return_value = self.test_symbol
         expected_output_data = {
             'prometheus': {
                 'result': {
@@ -1311,13 +1320,15 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         (Exception, Exception('test'),),
     ])
     @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_currency_symbol")
     @mock.patch.object(ChainlinkNodeMonitor, "_send_heartbeat")
     @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
     def test_monitor_raises_error_if_raised_by_send_hb_and_sends_data(
             self, exception_class, exception_instance, mock_get_data,
-            mock_send_hb) -> None:
+            mock_send_hb, mock_get_symbol) -> None:
         mock_get_data.return_value = \
             self.received_retrieval_info_all_source_types_enabled
+        mock_get_symbol.return_value = self.test_symbol
         expected_output_data = {
             'prometheus': {
                 'result': {
@@ -1369,17 +1380,19 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
             self.test_queue_name)
         self.assertEqual(expected_output_data, json.loads(body))
 
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_currency_symbol")
     @mock.patch.object(logging.Logger, "debug")
     @mock.patch.object(ChainlinkNodeMonitor, "_send_heartbeat")
     @mock.patch.object(ChainlinkNodeMonitor, "_send_data")
     @mock.patch.object(ChainlinkNodeMonitor, "_get_data")
     def test_monitor_logs_data_if_all_sources_enabled_and_no_retrieval_error(
             self, mock_get_data, mock_send_data, mock_send_hb,
-            mock_log) -> None:
+            mock_log, mock_get_symbol) -> None:
         mock_send_data.return_value = None
         mock_send_hb.return_value = None
         mock_get_data.return_value = \
             self.received_retrieval_info_all_source_types_enabled
+        mock_get_symbol.return_value = self.test_symbol
 
         self.test_monitor._monitor()
 
@@ -1424,6 +1437,84 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.test_monitor._monitor()
         assert_not_called_with(mock_log,
                                self.test_monitor._display_data(processed_data))
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_currency_symbol")
+    def test_process_ret_prom_data_does_not_call_get_currency_symbol_if_found(
+            self, mock_get_symbol) -> None:
+        mock_get_symbol.return_value = self.test_symbol
+        self.test_monitor.currency_symbol_limiter.reset()
+
+        self.assertTrue(self.test_monitor.currency_symbol_limiter.can_do_task())
+
+        self.test_monitor._process_retrieved_prometheus_data(
+            self.retrieved_prometheus_data_example)
+
+        self.assertFalse(
+            self.test_monitor.currency_symbol_limiter.can_do_task())
+        self.assertEqual(self.test_monitor.currency_symbol, self.test_symbol)
+
+        self.test_monitor._process_retrieved_prometheus_data(
+            self.retrieved_prometheus_data_example)
+
+        self.assertEqual(mock_get_symbol.call_count, 1)
+        self.assertEqual(self.test_monitor.currency_symbol, self.test_symbol)
+
+    @freeze_time("2012-01-01")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_currency_symbol")
+    def test_process_ret_prom_data_gets_curr_symbol_correctly_if_not_found(
+            self, mock_get_symbol) -> None:
+        mock_get_symbol.return_value = ''
+        self.test_monitor.currency_symbol_limiter.reset()
+
+        self.assertTrue(self.test_monitor.currency_symbol_limiter.can_do_task())
+
+        self.test_monitor._process_retrieved_prometheus_data(
+            self.retrieved_prometheus_data_example)
+
+        self.assertTrue(
+            self.test_monitor.currency_symbol_limiter.can_do_task())
+        self.assertEqual(self.test_monitor.currency_symbol, '')
+
+        mock_get_symbol.return_value = self.test_symbol
+
+        self.test_monitor._process_retrieved_prometheus_data(
+            self.retrieved_prometheus_data_example)
+
+        self.assertEqual(mock_get_symbol.call_count, 2)
+        self.assertFalse(
+            self.test_monitor.currency_symbol_limiter.can_do_task())
+        self.assertEqual(self.test_monitor.currency_symbol, self.test_symbol)
+
+    @freeze_time("2012-01-02 10:00")
+    @mock.patch.object(ChainlinkNodeMonitor, "_get_currency_symbol")
+    def test_process_ret_prom_data_calls_get_currency_symbol_if_can_do_task(
+            self, mock_get_symbol) -> None:
+        mock_get_symbol.return_value = self.test_symbol
+        self.test_monitor.currency_symbol_limiter.reset()
+
+        self.assertTrue(self.test_monitor.currency_symbol_limiter.can_do_task())
+
+        self.test_monitor._process_retrieved_prometheus_data(
+            self.retrieved_prometheus_data_example)
+
+        self.assertFalse(
+            self.test_monitor.currency_symbol_limiter.can_do_task())
+        self.assertEqual(mock_get_symbol.call_count, 1)
+        self.assertEqual(self.test_monitor.currency_symbol, self.test_symbol)
+
+        self.test_monitor.currency_symbol_limiter\
+            .set_last_time_that_did_task(parser.parse("2012-01-01 10:00"))
+
+        self.assertTrue(self.test_monitor.currency_symbol_limiter.can_do_task())
+
+        self.test_monitor._process_retrieved_prometheus_data(
+            self.retrieved_prometheus_data_example)
+
+        self.assertFalse(
+            self.test_monitor.currency_symbol_limiter.can_do_task())
+        self.assertEqual(mock_get_symbol.call_count, 2)
+        self.assertEqual(self.test_monitor.currency_symbol, self.test_symbol)
 
     # TODO: When more sources are added we need to test for when some sources
     #     : are enabled and some disabled

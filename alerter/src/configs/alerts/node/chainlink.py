@@ -8,8 +8,8 @@ class ChainlinkNodeAlertsConfig:
                  process_start_time_seconds: Dict,
                  tx_manager_gas_bump_exceeds_limit_total: Dict,
                  unconfirmed_transactions: Dict,
-                 run_status_update_total: Dict, eth_balance_amount: Dict,
-                 eth_balance_amount_increase: Dict, node_is_down: Dict) -> None:
+                 run_status_update_total: Dict, balance_amount: Dict,
+                 balance_amount_increase: Dict, node_is_down: Dict) -> None:
         self._parent_id = parent_id
         self._head_tracker_current_head = head_tracker_current_head
         self._head_tracker_heads_received_total = \
@@ -20,8 +20,8 @@ class ChainlinkNodeAlertsConfig:
             tx_manager_gas_bump_exceeds_limit_total
         self._unconfirmed_transactions = unconfirmed_transactions
         self._run_status_update_total = run_status_update_total
-        self._eth_balance_amount = eth_balance_amount
-        self._eth_balance_amount_increase = eth_balance_amount_increase
+        self._balance_amount = balance_amount
+        self._balance_amount_increase = balance_amount_increase
         self._node_is_down = node_is_down
 
     def __eq__(self, other: Any) -> bool:
@@ -60,12 +60,12 @@ class ChainlinkNodeAlertsConfig:
         return self._run_status_update_total
 
     @property
-    def eth_balance_amount(self) -> Dict:
-        return self._eth_balance_amount
+    def balance_amount(self) -> Dict:
+        return self._balance_amount
 
     @property
-    def eth_balance_amount_increase(self) -> Dict:
-        return self._eth_balance_amount_increase
+    def balance_amount_increase(self) -> Dict:
+        return self._balance_amount_increase
 
     @property
     def node_is_down(self) -> Dict:

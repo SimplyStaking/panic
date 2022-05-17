@@ -1443,7 +1443,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         mock_select_node.return_value = {'consensus_hex_address':
                                              self.test_consensus_address,
                                          'is_syncing':
-                                            self.test_is_syncing}
+                                             self.test_is_syncing}
         actual_ret = self.test_monitor._get_tendermint_rpc_data()
         self.assertEqual(
             ({}, True, NoSyncedDataSourceWasAccessibleException(

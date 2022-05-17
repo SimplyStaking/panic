@@ -393,8 +393,8 @@ class ChainlinkContractAlerter(Alerter):
 
         try:
             # Checking if the configuration is empty. If it is empty, remove the
-            # stored config (if it exists), and if it not add it to the list of
-            # configurations.
+            # stored config (if it exists), and if it is not, add it to the
+            # list of configurations.
             if bool(sent_configs):
                 self.alerts_configs_factory.add_new_config(chain, sent_configs)
 

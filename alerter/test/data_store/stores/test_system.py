@@ -18,10 +18,9 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.system import SystemStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
-from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                          SYSTEM_STORE_INPUT_QUEUE_NAME,
-                                          HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
-                                          SYSTEM_STORE_INPUT_ROUTING_KEY, TOPIC)
+from src.utils.constants.rabbitmq import (
+    STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_INPUT_QUEUE_NAME, TOPIC,
+    HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, SYSTEM_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (PANICException,
                                   ReceivedUnexpectedDataException)
 from test.test_utils.utils import (
@@ -67,7 +66,7 @@ class TestSystemStore(unittest.TestCase):
                                       self.rabbitmq)
 
         self.heartbeat_routing_key = HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY
-        self._input_routing_key = 'transformed_data.system.test_system'
+        self._input_routing_key = SYSTEM_TRANSFORMED_DATA_ROUTING_KEY
         self.test_queue_name = 'test queue'
 
         connect_to_rabbit(self.rabbitmq)
@@ -78,7 +77,7 @@ class TestSystemStore(unittest.TestCase):
         self.rabbitmq.queue_declare(SYSTEM_STORE_INPUT_QUEUE_NAME, False, True,
                                     False, False)
         self.rabbitmq.queue_bind(SYSTEM_STORE_INPUT_QUEUE_NAME, STORE_EXCHANGE,
-                                 SYSTEM_STORE_INPUT_ROUTING_KEY)
+                                 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY)
 
         connect_to_rabbit(self.test_rabbit_manager)
         self.test_rabbit_manager.queue_declare(self.test_queue_name, False,

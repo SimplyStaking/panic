@@ -12,9 +12,9 @@ from unittest.mock import call
 import pika
 from freezegun import freeze_time
 from parameterized import parameterized
-from requests.exceptions import (ConnectionError as ReqConnectionError,
-                                 ReadTimeout, ChunkedEncodingError,
-                                 MissingSchema, InvalidSchema, InvalidURL)
+from requests.exceptions import (
+    ConnectionError as ReqConnectionError, ReadTimeout, ChunkedEncodingError,
+    MissingSchema, InvalidSchema, InvalidURL)
 from urllib3.exceptions import ProtocolError
 from web3 import Web3
 from web3.contract import ContractFunction, ContractEvent
@@ -31,11 +31,10 @@ from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE,
     HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
     CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY)
-from src.utils.exceptions import (PANICException,
-                                  ComponentNotGivenEnoughDataSourcesException,
-                                  MetricNotFoundException,
-                                  CouldNotRetrieveContractsException,
-                                  NoSyncedDataSourceWasAccessibleException)
+from src.utils.exceptions import (
+    PANICException, ComponentNotGivenEnoughDataSourcesException,
+    MetricNotFoundException, CouldNotRetrieveContractsException,
+    NoSyncedDataSourceWasAccessibleException)
 from test.test_utils.utils import (
     connect_to_rabbit, delete_queue_if_exists, delete_exchange_if_exists,
     disconnect_from_rabbit)
@@ -87,23 +86,23 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             'timestamp': datetime(2012, 1, 1).timestamp(),
         }
         self.test_queue_name = 'Test Queue'
-        self.eth_address_1 = "0x4562845f37813a201b9ddb52e57a902659b7ae6a"
+        self.address_1 = "0x4562845f37813a201b9ddb52e57a902659b7ae6a"
         self.retrieved_prom_data_1 = {
             'eth_balance': {
                 '{"account": "0x4562845f37813a201b9ddb52e57a902659b7ae6a"}':
                     26.043292035081947
             },
         }
-        self.eth_address_2 = "0x2607e6f021922a5483d64935f87e15ea797fe8d4"
+        self.address_2 = "0x2607e6f021922a5483d64935f87e15ea797fe8d4"
         self.retrieved_prom_data_2 = {
             'eth_balance': {
                 '{"account": "0x2607e6f021922a5483d64935f87e15ea797fe8d4"}':
                     45.043292035081947
             },
         }
-        self.node_eth_address_example = {
-            self.node_id_1: self.eth_address_1,
-            self.node_id_2: self.eth_address_2
+        self.node_address_example = {
+            self.node_id_1: self.address_1,
+            self.node_id_2: self.address_2
         }
         self.proxy_address_1 = '0xFDF9EB5fafc11Efa65f6FD144898da39a7920Ae8'
         self.proxy_address_2 = '0x678df3415fc31947dA4324eC63212874be5a82f8'
@@ -144,16 +143,16 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             }
         ]
         self.contract_1_oracles = [
-            self.eth_address_1, self.eth_address_2, 'irrelevant_address_1',
+            self.address_1, self.address_2, 'irrelevant_address_1',
             'irrelevant_address_2']
         self.contract_2_oracles = [
-            self.eth_address_1, 'irrelevant_address_1', 'irrelevant_address_2']
+            self.address_1, 'irrelevant_address_1', 'irrelevant_address_2']
         self.contract_3_transmitters = [
-            self.eth_address_2, self.eth_address_1, 'irrelevant_address_1',
+            self.address_2, self.address_1, 'irrelevant_address_1',
             'irrelevant_address_2'
         ]
         self.contract_4_transmitters = [
-            self.eth_address_2, 'irrelevant_address_1', 'irrelevant_address_2'
+            self.address_2, 'irrelevant_address_1', 'irrelevant_address_2'
         ]
         self.filtered_contracts_example = {
             self.node_id_1: {
@@ -230,10 +229,9 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
     def test_contracts_url_returns_wei_watchers_url(self) -> None:
         self.assertEqual(self.weiwatchers_url, self.test_monitor.contracts_url)
 
-    def test_node_eth_address_returns_node_eth_address(self) -> None:
-        self.test_monitor._node_eth_address = self.test_data_dict
-        self.assertEqual(self.test_data_dict,
-                         self.test_monitor.node_eth_address)
+    def test_node_address_returns_node_address(self) -> None:
+        self.test_monitor._node_address = self.test_data_dict
+        self.assertEqual(self.test_data_dict, self.test_monitor.node_address)
 
     def test_contracts_data_returns_contracts_data(self) -> None:
         self.test_monitor._contracts_data = self.test_data_dict
@@ -261,11 +259,11 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         self.assertEqual(self.test_data_dict,
                          self.test_monitor.wei_watchers_retrieval_limiter)
 
-    def test_eth_address_retrieval_limiter_returns_eth_address_limiter(
+    def test_address_retrieval_limiter_returns_address_limiter(
             self) -> None:
-        self.test_monitor._eth_address_retrieval_limiter = self.test_data_dict
+        self.test_monitor._address_retrieval_limiter = self.test_data_dict
         self.assertEqual(self.test_data_dict,
-                         self.test_monitor.eth_address_retrieval_limiter)
+                         self.test_monitor.address_retrieval_limiter)
 
     def test_ChainlinkContractsMonitor_init_raises_except_if_nodes_lists_empty(
             self) -> None:
@@ -410,7 +408,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
                          self.test_monitor.contracts_data)
 
     @mock.patch("src.monitors.contracts.chainlink.get_prometheus_metrics_data")
-    def test_get_nodes_eth_address_returns_correctly_if_no_errors(
+    def test_get_nodes_address_returns_correctly_if_no_errors(
             self, mock_get_prom_metrics_data) -> None:
         """
         In this test we will assume that the prometheus metrics will be returned
@@ -418,11 +416,11 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         """
         mock_get_prom_metrics_data.side_effect = [self.retrieved_prom_data_1,
                                                   self.retrieved_prom_data_2]
-        actual = self.test_monitor._get_nodes_eth_address()
+        actual = self.test_monitor._get_nodes_address()
         expected = (
             {
-                self.node_id_1: self.eth_address_1,
-                self.node_id_2: self.eth_address_2,
+                self.node_id_1: self.address_1,
+                self.node_id_2: self.address_2,
             }, False
         )
         self.assertEqual(expected, actual)
@@ -435,7 +433,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         (MetricNotFoundException('test_metric', 'test_endpoint'),),
     ])
     @mock.patch("src.monitors.contracts.chainlink.get_prometheus_metrics_data")
-    def test_get_nodes_eth_address_returns_correctly_if_prom_retrieval_errors(
+    def test_get_nodes_address_returns_correctly_if_prom_retrieval_errors(
             self, error_instance, mock_get_prom_metrics_data) -> None:
         """
         This test will be performed for 3 scenarios, for when the first
@@ -450,8 +448,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             if type(error_instance) == MetricNotFoundException \
             else [self.retrieved_prom_data_1, error_instance, error_instance,
                   error_instance]
-        actual = self.test_monitor._get_nodes_eth_address()
-        expected = ({self.node_id_1: self.eth_address_1}, True)
+        actual = self.test_monitor._get_nodes_address()
+        expected = ({self.node_id_1: self.address_1}, True)
         self.assertEqual(expected, actual)
         mock_get_prom_metrics_data.reset_mock()
 
@@ -461,8 +459,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             if type(error_instance) == MetricNotFoundException \
             else [error_instance, error_instance, error_instance,
                   self.retrieved_prom_data_2]
-        actual = self.test_monitor._get_nodes_eth_address()
-        expected = ({self.node_id_2: self.eth_address_2}, True)
+        actual = self.test_monitor._get_nodes_address()
+        expected = ({self.node_id_2: self.address_2}, True)
         self.assertEqual(expected, actual)
         mock_get_prom_metrics_data.reset_mock()
 
@@ -472,15 +470,15 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             if type(error_instance) == MetricNotFoundException \
             else [error_instance, error_instance, error_instance,
                   error_instance, error_instance, error_instance]
-        actual = self.test_monitor._get_nodes_eth_address()
+        actual = self.test_monitor._get_nodes_address()
         expected = ({}, True)
         self.assertEqual(expected, actual)
 
-    def test_store_nodes_eth_addresses_stores_node_eth_address(self) -> None:
-        self.assertEqual({}, self.test_monitor.node_eth_address)
-        self.test_monitor._store_nodes_eth_addresses(self.test_data_dict)
+    def test_store_nodes_addresses_stores_node_address(self) -> None:
+        self.assertEqual({}, self.test_monitor.node_address)
+        self.test_monitor._store_nodes_addresses(self.test_data_dict)
         self.assertEqual(self.test_data_dict,
-                         self.test_monitor.node_eth_address)
+                         self.test_monitor.node_address)
 
     @mock.patch.object(BaseEth, '_is_syncing')
     @mock.patch.object(Web3, 'isConnected')
@@ -583,9 +581,9 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         one declared in the setUp function. This is used to check if contracts
         are filtered according to which nodes are participating on them.
         """
-        self.test_monitor._node_eth_address = self.node_eth_address_example
+        self.test_monitor._node_address = self.node_address_example
         self.test_monitor._contracts_data = self.retrieved_contracts_example
-        mock_to_checksum.side_effect = [self.eth_address_1, self.eth_address_2]
+        mock_to_checksum.side_effect = [self.address_1, self.address_2]
         mock_call.side_effect = [
             self.contract_1_oracles, self.contract_2_oracles,
             self.contract_3_transmitters, self.contract_4_transmitters,
@@ -612,7 +610,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         selected_node = self.evm_nodes[0]
         actual = self.test_monitor._get_v3_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_1, self.node_id_1)
+            self.address_1, self.node_id_1)
         self.assertEqual({}, actual)
 
     @mock.patch.object(ContractFunction, "call")
@@ -628,7 +626,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         (the first block to query is the current). For this test we will use
         the first node, which has 2 v3 contracts associated with it.
         """
-        mock_to_checksum.return_value = self.eth_address_1
+        mock_to_checksum.return_value = self.address_1
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
@@ -646,13 +644,13 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
         self.test_monitor._get_v3_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_1, self.node_id_1)
+            self.address_1, self.node_id_1)
         actual_calls = mock_create_filter.call_args_list
         expected_calls = [
             call(fromBlock=self.current_block, toBlock=self.current_block,
-                 argument_filters={'oracle': self.eth_address_1}),
+                 argument_filters={'oracle': self.address_1}),
             call(fromBlock=self.current_block, toBlock=self.current_block,
-                 argument_filters={'oracle': self.eth_address_1})
+                 argument_filters={'oracle': self.address_1})
         ]
         self.assertEqual(expected_calls, actual_calls)
 
@@ -675,7 +673,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_1] = self.current_block - 2
         self.test_monitor._last_block_monitored[self.node_id_1][
             self.proxy_address_2] = self.current_block - 2
-        mock_to_checksum.return_value = self.eth_address_1
+        mock_to_checksum.return_value = self.address_1
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
@@ -693,13 +691,13 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
         self.test_monitor._get_v3_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_1, self.node_id_1)
+            self.address_1, self.node_id_1)
         actual_calls = mock_create_filter.call_args_list
         expected_calls = [
             call(fromBlock=self.current_block - 1, toBlock=self.current_block,
-                 argument_filters={'oracle': self.eth_address_1}),
+                 argument_filters={'oracle': self.address_1}),
             call(fromBlock=self.current_block - 1, toBlock=self.current_block,
-                 argument_filters={'oracle': self.eth_address_1})
+                 argument_filters={'oracle': self.address_1})
         ]
         self.assertEqual(expected_calls, actual_calls)
 
@@ -714,7 +712,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         This test covers the scenario where no round answers were submitted
         by the node in-between blocks
         """
-        mock_to_checksum.return_value = self.eth_address_1
+        mock_to_checksum.return_value = self.address_1
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
@@ -732,7 +730,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
         actual_return = self.test_monitor._get_v3_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_1, self.node_id_1)
+            self.address_1, self.node_id_1)
         expected_return = {
             self.proxy_address_1: {
                 'contractVersion': 3,
@@ -773,7 +771,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         by the node in-between blocks, and a round consensus was reached
         already.
         """
-        mock_to_checksum.return_value = self.eth_address_1
+        mock_to_checksum.return_value = self.address_1
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([
             {
@@ -812,7 +810,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
         actual_return = self.test_monitor._get_v3_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_1, self.node_id_1)
+            self.address_1, self.node_id_1)
         expected_return = {
             self.proxy_address_1: {
                 'contractVersion': 3,
@@ -883,7 +881,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         by the node in-between blocks, and a round consensus has not been
         reached yet.
         """
-        mock_to_checksum.return_value = self.eth_address_1
+        mock_to_checksum.return_value = self.address_1
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([
             {
@@ -909,7 +907,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
         actual_return = self.test_monitor._get_v3_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_1, self.node_id_1)
+            self.address_1, self.node_id_1)
         expected_return = {
             self.proxy_address_1: {
                 'contractVersion': 3,
@@ -968,7 +966,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         selected_node = self.evm_nodes[0]
         actual = self.test_monitor._get_v4_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_2, self.node_id_2)
+            self.address_2, self.node_id_2)
         self.assertEqual({}, actual)
 
     @mock.patch.object(ContractFunction, "call")
@@ -984,7 +982,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         (the first block to query is the current). For this test we will use
         the second node, which has 2 v4 contracts associated with it.
         """
-        mock_to_checksum.return_value = self.eth_address_2
+        mock_to_checksum.return_value = self.address_2
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
@@ -1002,7 +1000,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
         self.test_monitor._get_v4_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_2, self.node_id_2)
+            self.address_2, self.node_id_2)
         actual_calls = mock_create_filter.call_args_list
         expected_calls = [
             call(fromBlock=self.current_block, toBlock=self.current_block),
@@ -1029,7 +1027,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
             self.proxy_address_3] = self.current_block - 2
         self.test_monitor._last_block_monitored[self.node_id_2][
             self.proxy_address_4] = self.current_block - 2
-        mock_to_checksum.return_value = self.eth_address_2
+        mock_to_checksum.return_value = self.address_2
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
@@ -1047,7 +1045,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
         self.test_monitor._get_v4_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_2, self.node_id_2)
+            self.address_2, self.node_id_2)
         actual_calls = mock_create_filter.call_args_list
         expected_calls = [
             call(fromBlock=self.current_block - 1, toBlock=self.current_block),
@@ -1066,7 +1064,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         This test covers the scenario where no round results were transmitted
         yet in-between blocks
         """
-        mock_to_checksum.return_value = self.eth_address_2
+        mock_to_checksum.return_value = self.address_2
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
@@ -1084,7 +1082,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
         actual_return = self.test_monitor._get_v4_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_2, self.node_id_2)
+            self.address_2, self.node_id_2)
         expected_return = {
             self.proxy_address_3: {
                 'contractVersion': 4,
@@ -1124,8 +1122,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         In this test we will check that if a node is no longer a participant of
         a contract, then it is ignored such that no data is returned for it.
         """
-        self.contract_3_transmitters.remove(self.eth_address_2)
-        mock_to_checksum.return_value = self.eth_address_2
+        self.contract_3_transmitters.remove(self.address_2)
+        mock_to_checksum.return_value = self.address_2
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([])
         mock_call.side_effect = [
@@ -1143,7 +1141,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
         actual_return = self.test_monitor._get_v4_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_2, self.node_id_2)
+            self.address_2, self.node_id_2)
         expected_return = {
             self.proxy_address_4: {
                 'contractVersion': 4,
@@ -1171,7 +1169,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         This test covers the scenario where round answers were transmitted
         in-between blocks, and the node has submitted an answer.
         """
-        mock_to_checksum.return_value = self.eth_address_2
+        mock_to_checksum.return_value = self.address_2
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([
             {
@@ -1214,7 +1212,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
         actual_return = self.test_monitor._get_v4_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_2, self.node_id_2)
+            self.address_2, self.node_id_2)
         expected_return = {
             self.proxy_address_3: {
                 'contractVersion': 4,
@@ -1292,7 +1290,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         This test covers the scenario where round answers were transmitted
         in-between blocks, and the node did not submit its answer.
         """
-        mock_to_checksum.return_value = self.eth_address_2
+        mock_to_checksum.return_value = self.address_2
         mock_get_block.return_value = {'number': self.current_block}
         mock_create_filter.return_value = TestEventsClass([
             {
@@ -1335,7 +1333,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
         actual_return = self.test_monitor._get_v4_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_2, self.node_id_2)
+            self.address_2, self.node_id_2)
         expected_return = {
             self.proxy_address_3: {
                 'contractVersion': 4,
@@ -1417,7 +1415,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
 
         actual_return = self.test_monitor._get_data(
             self.test_monitor.evm_node_w3_interface[selected_node],
-            self.eth_address_1, self.node_id_1)
+            self.address_1, self.node_id_1)
         expected_return = {
             'v3_data_key': 'v3_data_value',
             'v4_data_key': 'v4_data_value'
@@ -1513,12 +1511,12 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
     @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
     @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
     @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
-    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_address')
     @mock.patch.object(ChainlinkContractsMonitor, '_store_chain_contracts')
     @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_retrieves_data_from_weiwatchers_periodically(
             self, mock_get_chain_contracts, mock_store_chain_contracts,
-            mock_get_nodes_eth_address, mock_select_node, mock_send_data,
+            mock_get_nodes_address, mock_select_node, mock_send_data,
             mock_send_heartbeat) -> None:
         """
         In this test we will check that wei-watchers data is retrieved
@@ -1527,7 +1525,7 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         """
         mock_get_chain_contracts.return_value = self.test_data_dict
         mock_store_chain_contracts.return_value = None
-        mock_get_nodes_eth_address.return_value = (None, True)
+        mock_get_nodes_address.return_value = (None, True)
         mock_select_node.return_value = None
         mock_send_data.return_value = None
         mock_send_heartbeat.return_value = None
@@ -1564,13 +1562,13 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
     @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
     @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
     @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
-    @mock.patch.object(ChainlinkContractsMonitor, '_store_nodes_eth_addresses')
-    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_nodes_addresses')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_address')
     @mock.patch.object(ChainlinkContractsMonitor, '_store_chain_contracts')
     @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
-    def test_monitor_retrieves_nodes_eth_address_periodically(
+    def test_monitor_retrieves_nodes_address_periodically(
             self, mock_get_chain_contracts, mock_store_chain_contracts,
-            mock_get_nodes_eth_address, mock_store_nodes_eth_addresses,
+            mock_get_nodes_address, mock_store_nodes_addresses,
             mock_select_node, mock_send_data, mock_send_heartbeat) -> None:
         """
         In this test we will check that prometheus data is retrieved
@@ -1579,8 +1577,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         """
         mock_get_chain_contracts.return_value = None
         mock_store_chain_contracts.return_value = None
-        mock_get_nodes_eth_address.return_value = (self.test_data_dict, False)
-        mock_store_nodes_eth_addresses.return_value = None
+        mock_get_nodes_address.return_value = (self.test_data_dict, False)
+        mock_store_nodes_addresses.return_value = None
         mock_select_node.return_value = None
         mock_send_data.return_value = None
         mock_send_heartbeat.return_value = None
@@ -1589,43 +1587,43 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         # Check that data from prometheus is retrieved and stored first time
         # round
         self.test_monitor._monitor()
-        mock_get_nodes_eth_address.assert_called_once()
-        mock_store_nodes_eth_addresses.assert_called_once_with(
+        mock_get_nodes_address.assert_called_once()
+        mock_store_nodes_addresses.assert_called_once_with(
             self.test_data_dict)
-        mock_get_nodes_eth_address.reset_mock()
-        mock_store_nodes_eth_addresses.reset_mock()
+        mock_get_nodes_address.reset_mock()
+        mock_store_nodes_addresses.reset_mock()
 
         # Check that data from prometheus is not retrieved if not enough time
         # passes
-        self.test_monitor.eth_address_retrieval_limiter. \
+        self.test_monitor.address_retrieval_limiter. \
             _last_time_that_did_task = \
             datetime.fromtimestamp(datetime.now().timestamp() - period + 1)
         self.test_monitor._monitor()
-        mock_get_nodes_eth_address.assert_not_called()
-        mock_store_nodes_eth_addresses.assert_not_called()
-        mock_get_nodes_eth_address.reset_mock()
-        mock_store_nodes_eth_addresses.reset_mock()
+        mock_get_nodes_address.assert_not_called()
+        mock_store_nodes_addresses.assert_not_called()
+        mock_get_nodes_address.reset_mock()
+        mock_store_nodes_addresses.reset_mock()
 
         # Check that data from prometheus is retrieved if enough time passes
-        self.test_monitor.eth_address_retrieval_limiter. \
+        self.test_monitor.address_retrieval_limiter. \
             _last_time_that_did_task = \
             datetime.fromtimestamp(datetime.now().timestamp() - period - 1)
         self.test_monitor._monitor()
-        mock_get_nodes_eth_address.assert_called_once()
-        mock_store_nodes_eth_addresses.assert_called_once_with(
+        mock_get_nodes_address.assert_called_once()
+        mock_store_nodes_addresses.assert_called_once_with(
             self.test_data_dict)
 
     @freeze_time("2012-01-01")
     @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
     @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
     @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
-    @mock.patch.object(ChainlinkContractsMonitor, '_store_nodes_eth_addresses')
-    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_nodes_addresses')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_address')
     @mock.patch.object(ChainlinkContractsMonitor, '_store_chain_contracts')
     @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_retrieves_prometheus_data_if_previous_retrieval_failed(
             self, mock_get_chain_contracts, mock_store_chain_contracts,
-            mock_get_nodes_eth_address, mock_store_nodes_eth_addresses,
+            mock_get_nodes_address, mock_store_nodes_addresses,
             mock_select_node, mock_send_data, mock_send_heartbeat) -> None:
         """
         In this test we will check that if the self._monitor function fails in
@@ -1634,8 +1632,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         """
         mock_get_chain_contracts.return_value = None
         mock_store_chain_contracts.return_value = None
-        mock_get_nodes_eth_address.return_value = (self.test_data_dict, True)
-        mock_store_nodes_eth_addresses.return_value = None
+        mock_get_nodes_address.return_value = (self.test_data_dict, True)
+        mock_store_nodes_addresses.return_value = None
         mock_select_node.return_value = None
         mock_send_data.return_value = None
         mock_send_heartbeat.return_value = None
@@ -1643,20 +1641,20 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         # Check that data from prometheus is retrieved and stored first time
         # round
         self.test_monitor._monitor()
-        mock_get_nodes_eth_address.assert_called_once()
-        mock_store_nodes_eth_addresses.assert_called_once_with(
+        mock_get_nodes_address.assert_called_once()
+        mock_store_nodes_addresses.assert_called_once_with(
             self.test_data_dict)
-        mock_get_nodes_eth_address.reset_mock()
-        mock_store_nodes_eth_addresses.reset_mock()
+        mock_get_nodes_address.reset_mock()
+        mock_store_nodes_addresses.reset_mock()
 
         # Check that data from prometheus is retrieved again since retrieval
         # has failed
         self.test_monitor._monitor()
-        mock_get_nodes_eth_address.assert_called_once()
-        mock_store_nodes_eth_addresses.assert_called_once_with(
+        mock_get_nodes_address.assert_called_once()
+        mock_store_nodes_addresses.assert_called_once_with(
             self.test_data_dict)
-        mock_get_nodes_eth_address.reset_mock()
-        mock_store_nodes_eth_addresses.reset_mock()
+        mock_get_nodes_address.reset_mock()
+        mock_store_nodes_addresses.reset_mock()
 
     @parameterized.expand([
         (ReqConnectionError('test'),), (ReadTimeout('test'),),
@@ -1668,14 +1666,14 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
     @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
     @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
     @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
-    @mock.patch.object(ChainlinkContractsMonitor, '_store_nodes_eth_addresses')
-    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_nodes_addresses')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_address')
     @mock.patch.object(ChainlinkContractsMonitor, '_store_chain_contracts')
     @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_processes_and_sends_error_and_hb_if_weiwatchers_exception(
             self, exception, mock_get_chain_contracts,
-            mock_store_chain_contracts, mock_get_nodes_eth_address,
-            mock_store_nodes_eth_addresses, mock_select_node, mock_send_data,
+            mock_store_chain_contracts, mock_get_nodes_address,
+            mock_store_nodes_addresses, mock_select_node, mock_send_data,
             mock_send_heartbeat) -> None:
         """
         In this test we will check that if data from wei-watchers could not be
@@ -1684,8 +1682,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         """
         mock_get_chain_contracts.side_effect = exception
         mock_store_chain_contracts.return_value = None
-        mock_get_nodes_eth_address.return_value = (self.test_data_dict, False)
-        mock_store_nodes_eth_addresses.return_value = None
+        mock_get_nodes_address.return_value = (self.test_data_dict, False)
+        mock_store_nodes_addresses.return_value = None
         mock_select_node.return_value = None
         mock_send_data.return_value = None
         mock_send_heartbeat.return_value = None
@@ -1716,13 +1714,13 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
     @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
     @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
     @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
-    @mock.patch.object(ChainlinkContractsMonitor, '_store_nodes_eth_addresses')
-    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_store_nodes_addresses')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_address')
     @mock.patch.object(ChainlinkContractsMonitor, '_store_chain_contracts')
     @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_processes_and_sends_error_and_hb_if_no_evm_node_selected(
             self, mock_get_chain_contracts, mock_store_chain_contracts,
-            mock_get_nodes_eth_address, mock_store_nodes_eth_addresses,
+            mock_get_nodes_address, mock_store_nodes_addresses,
             mock_select_node, mock_send_data, mock_send_heartbeat) -> None:
         """
         In this test we will check that if no evm node is selected, then a
@@ -1731,8 +1729,8 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
         """
         mock_get_chain_contracts.return_value = None
         mock_store_chain_contracts.return_value = None
-        mock_get_nodes_eth_address.return_value = (self.test_data_dict, False)
-        mock_store_nodes_eth_addresses.return_value = None
+        mock_get_nodes_address.return_value = (self.test_data_dict, False)
+        mock_store_nodes_addresses.return_value = None
         mock_select_node.return_value = None
         mock_send_data.return_value = None
         mock_send_heartbeat.return_value = None
@@ -1765,15 +1763,15 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
     @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
     @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
     @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
-    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_address')
     @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_gets_data_for_each_node_processes_it_and_sends_it_and_hb(
-            self, mock_get_chain_contracts, mock_get_nodes_eth_address,
+            self, mock_get_chain_contracts, mock_get_nodes_address,
             mock_select_node, mock_send_data, mock_send_heartbeat,
             mock_get_data, mock_filter_contracts_by_node) -> None:
         mock_get_chain_contracts.return_value = self.retrieved_contracts_example
-        mock_get_nodes_eth_address.return_value = (
-            self.node_eth_address_example,
+        mock_get_nodes_address.return_value = (
+            self.node_address_example,
             False
         )
         mock_select_node.return_value = self.evm_nodes[0]
@@ -1822,15 +1820,15 @@ class TestChainlinkContractsMonitor(unittest.TestCase):
     @mock.patch.object(ChainlinkContractsMonitor, '_send_heartbeat')
     @mock.patch.object(ChainlinkContractsMonitor, '_send_data')
     @mock.patch.object(ChainlinkContractsMonitor, '_select_node')
-    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_eth_address')
+    @mock.patch.object(ChainlinkContractsMonitor, '_get_nodes_address')
     @mock.patch.object(ChainlinkContractsMonitor, '_get_chain_contracts')
     def test_monitor_skips_node_if_data_retrieval_fails_for_node(
-            self, mock_get_chain_contracts, mock_get_nodes_eth_address,
+            self, mock_get_chain_contracts, mock_get_nodes_address,
             mock_select_node, mock_send_data, mock_send_heartbeat,
             mock_get_data, mock_filter_contracts_by_node) -> None:
         mock_get_chain_contracts.return_value = self.retrieved_contracts_example
-        mock_get_nodes_eth_address.return_value = (
-            self.node_eth_address_example,
+        mock_get_nodes_address.return_value = (
+            self.node_address_example,
             False
         )
         mock_select_node.return_value = self.evm_nodes[0]

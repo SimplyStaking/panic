@@ -21,16 +21,16 @@ from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerters.node.cosmos import CosmosNodeAlerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
-from src.configs.alerts.system import SystemAlertsConfig
 from src.configs.factory.alerts.chainlink_alerts import (
     ChainlinkNodeAlertsConfigsFactory, ChainlinkContractAlertsConfigsFactory)
 from src.configs.factory.alerts.cosmos_alerts import (
     CosmosNodeAlertsConfigsFactory, CosmosNetworkAlertsConfigsFactory)
 from src.configs.factory.alerts.evm_alerts import EVMNodeAlertsConfigsFactory
+from src.configs.factory.alerts.system_alerts import SystemAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (
-    SYSTEM_ALERTER_NAME_TEMPLATE, CHAINLINK_NODE_ALERTER_NAME,
+    SYSTEM_ALERTER_NAME, CHAINLINK_NODE_ALERTER_NAME,
     CHAINLINK_CONTRACT_ALERTER_NAME, EVM_NODE_ALERTER_NAME,
     COSMOS_NODE_ALERTER_NAME, COSMOS_NETWORK_ALERTER_NAME)
 
@@ -92,19 +92,12 @@ class TestAlertersStarters(unittest.TestCase):
         # Similarly for Dockerhub
         self.dockerhub_alerter_name = "DockerHub Alerter"
 
-        self.system_alerts_config = SystemAlertsConfig(
-            self.parent_id,
-            self.open_file_descriptors,
-            self.system_cpu_usage,
-            self.system_storage_usage,
-            self.system_ram_usage,
-            self.system_is_down
-        )
+        self.system_alerts_configs_factory = SystemAlertsConfigsFactory()
 
         self.test_system_alerter = SystemAlerter(
             self.alerter_name,
-            self.system_alerts_config,
             self.dummy_logger,
+            self.system_alerts_configs_factory,
             self.rabbitmq,
             env.ALERTER_PUBLISHING_QUEUE_SIZE
         )
@@ -173,7 +166,7 @@ class TestAlertersStarters(unittest.TestCase):
         self.test_github_alerter = None
         self.test_dockerhub_alerter = None
         self.rabbitmq = None
-        self.system_alerts_config = None
+        self.system_alerts_configs_factory = None
         self.test_system_alerter = None
         self.evm_node_alerts_configs_factory = None
         self.chainlink_node_alerts_configs_factory = None
@@ -191,13 +184,10 @@ class TestAlertersStarters(unittest.TestCase):
             self, mock_create_logger) -> None:
         mock_create_logger.return_value = None
 
-        _initialise_alerter_logger(
-            SYSTEM_ALERTER_NAME_TEMPLATE.format(self.chain_name),
-            self.alerter_name)
+        _initialise_alerter_logger(SYSTEM_ALERTER_NAME, self.alerter_name)
 
         mock_create_logger.assert_called_once_with(
-            env.ALERTERS_LOG_FILE_TEMPLATE.format(
-                SYSTEM_ALERTER_NAME_TEMPLATE.format(self.chain_name)),
+            env.ALERTERS_LOG_FILE_TEMPLATE.format(SYSTEM_ALERTER_NAME),
             self.alerter_name, env.LOGGING_LEVEL, rotating=True
         )
 
@@ -206,9 +196,8 @@ class TestAlertersStarters(unittest.TestCase):
             self, mock_create_logger) -> None:
         mock_create_logger.return_value = self.dummy_logger
 
-        actual_output = _initialise_alerter_logger(
-            SYSTEM_ALERTER_NAME_TEMPLATE.format(self.chain_name),
-            self.alerter_name)
+        actual_output = _initialise_alerter_logger(SYSTEM_ALERTER_NAME,
+                                                   self.alerter_name)
 
         self.assertEqual(self.dummy_logger, actual_output)
 
@@ -217,13 +206,10 @@ class TestAlertersStarters(unittest.TestCase):
             self, mock_init_logger) -> None:
         mock_init_logger.return_value = self.dummy_logger
 
-        _initialise_system_alerter(self.system_alerts_config,
-                                   self.parent_id)
+        _initialise_system_alerter(self.system_alerts_configs_factory)
 
-        mock_init_logger.assert_called_once_with(
-            SYSTEM_ALERTER_NAME_TEMPLATE.format(self.parent_id),
-            SystemAlerter.__name__
-        )
+        mock_init_logger.assert_called_once_with(SYSTEM_ALERTER_NAME,
+                                                 SystemAlerter.__name__)
 
     @mock.patch("src.alerter.alerter_starters._initialise_alerter_logger")
     def test_initialise_github_alerter_calls_initialise_logger_correctly(
@@ -318,14 +304,12 @@ class TestAlertersStarters(unittest.TestCase):
         mock_init_logger.return_value = self.dummy_logger
         mock_system_alerter.__name__ = "system_alerter_name"
 
-        _initialise_system_alerter(self.system_alerts_config,
-                                   self.parent_id)
+        _initialise_system_alerter(self.system_alerts_configs_factory)
 
         args, _ = mock_system_alerter.call_args
-        self.assertEqual(SYSTEM_ALERTER_NAME_TEMPLATE.format(self.parent_id),
-                         args[0])
-        self.assertEqual(self.system_alerts_config, args[1])
-        self.assertEqual(self.dummy_logger, args[2])
+        self.assertEqual(SYSTEM_ALERTER_NAME, args[0])
+        self.assertEqual(self.dummy_logger, args[1])
+        self.assertEqual(self.system_alerts_configs_factory, args[2])
         self.assertEqual(type(self.rabbitmq), type(args[3]))
         self.assertEqual(env.ALERTER_PUBLISHING_QUEUE_SIZE, args[4])
 
@@ -451,14 +435,13 @@ class TestAlertersStarters(unittest.TestCase):
         mock_start_alerter.return_value = None
         mock_initialise_alerter.return_value = self.test_system_alerter
 
-        start_system_alerter(self.system_alerts_config,
-                             self.parent_id)
+        start_system_alerter(self.system_alerts_configs_factory)
 
         mock_start_alerter.assert_called_once_with(
             self.test_system_alerter
         )
         mock_initialise_alerter.assert_called_once_with(
-            self.system_alerts_config, self.parent_id
+            self.system_alerts_configs_factory
         )
 
     @mock.patch("src.alerter.alerter_starters._initialise_github_alerter")

@@ -6,6 +6,9 @@ ARG UI_DASHBOARD_PORT
 ENV API_PORT=$API_PORT
 ENV UI_DASHBOARD_PORT=$UI_DASHBOARD_PORT
 
+# This should be set to false for development on non-ARM systems
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
 # Create app directory
 WORKDIR /opt/panic
 

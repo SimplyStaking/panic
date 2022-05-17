@@ -33,9 +33,9 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
 
         chainlink_node_config_metrics = [
             'head_tracker_current_head', 'head_tracker_heads_received_total',
-            'tx_manager_gas_bump_exceeds_limit_total', 'eth_balance_amount',
+            'tx_manager_gas_bump_exceeds_limit_total', 'balance_amount',
             'unconfirmed_transactions', 'run_status_update_total',
-            'max_unconfirmed_blocks', 'eth_balance_amount_increase',
+            'max_unconfirmed_blocks', 'balance_amount_increase',
             'process_start_time_seconds', 'node_is_down'
         ]
         chainlink_contracts_config_metrics = [
@@ -103,9 +103,9 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
                 'unconfirmed_transactions'],
             run_status_update_total=filtered_1_cl_node[
                 'run_status_update_total'],
-            eth_balance_amount=filtered_1_cl_node['eth_balance_amount'],
-            eth_balance_amount_increase=filtered_1_cl_node[
-                'eth_balance_amount_increase'],
+            balance_amount=filtered_1_cl_node['balance_amount'],
+            balance_amount_increase=filtered_1_cl_node[
+                'balance_amount_increase'],
             node_is_down=filtered_1_cl_node['node_is_down']
         )
         self.alerts_config_2_cl_node = ChainlinkNodeAlertsConfig(
@@ -124,9 +124,9 @@ class TestChainlinkAlertsConfigsFactory(unittest.TestCase):
                 'unconfirmed_transactions'],
             run_status_update_total=filtered_2_cl_node[
                 'run_status_update_total'],
-            eth_balance_amount=filtered_2_cl_node['eth_balance_amount'],
-            eth_balance_amount_increase=filtered_2_cl_node[
-                'eth_balance_amount_increase'],
+            balance_amount=filtered_2_cl_node['balance_amount'],
+            balance_amount_increase=filtered_2_cl_node[
+                'balance_amount_increase'],
             node_is_down=filtered_2_cl_node['node_is_down']
         )
         self.alerts_config_1_cl_contract = ChainlinkContractAlertsConfig(

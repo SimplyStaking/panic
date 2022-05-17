@@ -78,14 +78,6 @@ class TestEVMNodeAlertingFactory(unittest.TestCase):
                 self.test_dummy_node_id2: self.test_dummy_state
             }
         }
-        self.evm_node_alerting_factory._nodes_configs = {
-            self.test_parent_id: {
-                self.test_dummy_node_id1: None
-            },
-            self.test_dummy_parent_id1: {
-                self.test_dummy_node_id2: None
-            }
-        }
         warning_critical_sent_dict = {
             MetricCode.NoChangeInBlockHeight.value: False,
             MetricCode.BlockHeightDifference.value: False,
@@ -206,14 +198,6 @@ class TestEVMNodeAlertingFactory(unittest.TestCase):
             },
             self.test_dummy_parent_id1: {
                 self.test_dummy_node_id2: self.test_dummy_state
-            }
-        }
-        self.evm_node_alerting_factory._nodes_configs = {
-            self.test_parent_id: {
-                self.test_node_id: None,
-            },
-            self.test_dummy_parent_id1: {
-                self.test_dummy_node_id2: None
             }
         }
         expected_state = copy.deepcopy(

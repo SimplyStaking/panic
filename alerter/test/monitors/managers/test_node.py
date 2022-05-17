@@ -565,7 +565,7 @@ class TestNodeMonitorsManager(unittest.TestCase):
         self.test_manager.rabbitmq.basic_publish_confirm(
             exchange=CONFIG_EXCHANGE,
             routing_key=EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS,
-            body=self.test_data_str,is_body_dict=False,
+            body=self.test_data_str, is_body_dict=False,
             properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
 
         # Re-declare queues to get the number of messages and the msgs received

@@ -125,6 +125,14 @@ right-hand side of the header, and choosing the desired base-chain.
   Firefox you must accept the certificates on both `https://{UI_ACCESS_IP}:UI_PORT` and
   `https://{UI_ACCESS_IP}:API_PORT`. More information regarding this issue can be found 
   [here](https://stackoverflow.com/questions/51831652/cors-request-across-different-ports-did-not-succeed-on-firefox-but-works-on-chro).
+- Similarly to the above, certificate validation cannot be bypassed in some cases when accessing
+  PANIC UI from Chromium-based browsers. To bypass this check, click anywhere on the screen and 
+  type `thisisunsafe`. More information regarding this issue can be found 
+  [here](https://stackoverflow.com/questions/58802767/no-proceed-anyway-option-on-neterr-cert-invalid-in-chrome-on-macos).
+- Due to an unavailable arm64 chromium binary used by puppeteer, by default, we 
+  set the `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` ENV variable to `true` in the 
+  Dockerfile for PANIC UI. This should be set to `false` for UI development on
+  non-ARM systems while chromium should be manually installed on ARM systems.
 
 ---
 [Back to front page](../README.md)

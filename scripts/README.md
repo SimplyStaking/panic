@@ -55,3 +55,15 @@ scripts/clean_ui.sh
 ```
 scripts/reset_rabbit.sh
 ```
+
+## Reset Redis
+
+```
+scripts/reset_redis.sh
+```
+
+## Upgrade to version 1.1.1 from an older version
+
+```
+scripts/upgrade_to_1_1_1.sh
+```

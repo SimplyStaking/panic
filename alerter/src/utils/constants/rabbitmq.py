@@ -37,7 +37,7 @@ COSMOS_NODE_DT_INPUT_QUEUE_NAME = 'cosmos_node_data_transformer_input_queue'
 COSMOS_NETWORK_DT_INPUT_QUEUE_NAME = \
     'cosmos_network_data_transformer_input_queue'
 DT_MAN_HEARTBEAT_QUEUE_NAME = 'data_transformers_manager_heartbeat_queue'
-SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE = "system_alerter_input_queue_{}"
+SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME = "system_alerter_input_configs_queue"
 GITHUB_ALERTER_INPUT_QUEUE_NAME = 'github_alerter_input_queue'
 EVM_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME = \
     'evm_node_alerter_input_configs_queue'
@@ -51,8 +51,7 @@ COSMOS_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME = \
     'cosmos_network_alerter_input_configs_queue'
 SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = \
     'system_alerters_manager_heartbeat_queue'
-SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME = \
-    'system_alerters_manager_configs_queue'
+SYS_ALERTERS_MAN_CONFIGS_QUEUE_NAME = 'system_alerters_manager_configs_queue'
 GH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = 'github_alerters_manager_heartbeat_queue'
 DH_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = \
     'dockerhub_alerters_manager_heartbeat_queue'
@@ -103,7 +102,7 @@ NODES_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.nodes_config'
 EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.evm_nodes_config'
 GITHUB_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.github'
 DOCKERHUB_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.dockerhub'
-SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE = 'transformed_data.system.{}'
+SYSTEM_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.system'
 CL_NODE_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.node.chainlink'
 COSMOS_NODE_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.node.cosmos'
 COSMOS_NETWORK_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.network.cosmos'
@@ -126,7 +125,6 @@ ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'
 ALERT_ROUTER_INPUT_ROUTING_KEY = 'alert.#'
 ALERT_STORE_INPUT_ROUTING_KEY = 'alert'
 MONITORABLE_STORE_INPUT_ROUTING_KEY = '*.*'
-SYSTEM_STORE_INPUT_ROUTING_KEY = 'transformed_data.system.*'
 CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE = 'channel.{}'
 CONSOLE_HANDLER_INPUT_ROUTING_KEY = "channel.console"
 LOG_HANDLER_INPUT_ROUTING_KEY = 'channel.log'

@@ -175,40 +175,43 @@ class TotalErroredJobRunsDecreasedBelowThresholdAlert(Alert):
             GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold)
 
 
-class EthBalanceIncreasedAboveThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
-                 timestamp: float, threshold_severity: str, parent_id: str,
-                 origin_id: str) -> None:
+class BalanceIncreasedAboveThresholdAlert(Alert):
+    def __init__(self, origin_name: str, current_value: float, symbol: str,
+                 severity: str, timestamp: float, threshold_severity: str,
+                 parent_id: str, origin_id: str) -> None:
         super().__init__(
-            ChainlinkNodeAlertCode.EthBalanceIncreasedAboveThresholdAlert,
-            "{} Ethereum balance has INCREASED above {} threshold. Current "
-            "value: {}.".format(origin_name, threshold_severity, current_value),
+            ChainlinkNodeAlertCode.BalanceIncreasedAboveThresholdAlert,
+            "{} account balance has INCREASED above {} threshold. Current "
+            "value: {} {}.".format(
+                origin_name, threshold_severity, current_value, symbol),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold)
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold)
 
 
-class EthBalanceDecreasedBelowThresholdAlert(Alert):
-    def __init__(self, origin_name: str, current_value: float, severity: str,
-                 timestamp: float, threshold_severity: str, parent_id: str,
-                 origin_id: str) -> None:
+class BalanceDecreasedBelowThresholdAlert(Alert):
+    def __init__(self, origin_name: str, current_value: float, symbol: str,
+                 severity: str, timestamp: float, threshold_severity: str,
+                 parent_id: str, origin_id: str) -> None:
         super().__init__(
-            ChainlinkNodeAlertCode.EthBalanceDecreasedBelowThresholdAlert,
-            "{} Ethereum balance has DECREASED below {} threshold. Current "
-            "value: {}.".format(origin_name, threshold_severity, current_value),
+            ChainlinkNodeAlertCode.BalanceDecreasedBelowThresholdAlert,
+            "{} account balance has DECREASED below {} threshold. Current "
+            "value: {} {}.".format(
+                origin_name, threshold_severity, current_value, symbol),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold)
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold)
 
 
-class EthBalanceToppedUpAlert(Alert):
+class BalanceToppedUpAlert(Alert):
     def __init__(self, origin_name: str, current_value: float, increase: float,
-                 severity: str, timestamp: float, parent_id: str,
+                 symbol: str, severity: str, timestamp: float, parent_id: str,
                  origin_id: str) -> None:
         super().__init__(
-            ChainlinkNodeAlertCode.EthBalanceToppedUpAlert,
-            "{} Ethereum balance has been topped up by {} ETH. Current "
-            "value: {}.".format(origin_name, increase, current_value),
+            ChainlinkNodeAlertCode.BalanceToppedUpAlert,
+            "{} account balance has been topped up by {} {}. Current "
+            "value: {} {}.".format(
+                origin_name, increase, symbol, current_value, symbol),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceTopUp)
+            GroupedChainlinkNodeAlertsMetricCode.BalanceTopUp)
 
 
 class InvalidUrlAlert(Alert):

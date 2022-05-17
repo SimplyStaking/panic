@@ -106,9 +106,8 @@ class ChainlinkNodeAlertsConfigsFactory(ChainlinkAlertsConfigsFactory):
             unconfirmed_transactions=filtered[
                 'unconfirmed_transactions'],
             run_status_update_total=filtered['run_status_update_total'],
-            eth_balance_amount=filtered['eth_balance_amount'],
-            eth_balance_amount_increase=filtered[
-                'eth_balance_amount_increase'],
+            balance_amount=filtered['balance_amount'],
+            balance_amount_increase=filtered['balance_amount_increase'],
             node_is_down=filtered['node_is_down'],
         )
 

@@ -175,12 +175,12 @@ const chainlinkThresholdAlerts = {
       enabled: true,
     },
     8: {
-      name: 'Chainlink node: ETH Balance',
-      identifier: 'eth_balance_amount',
+      name: 'Chainlink node: Account Balance',
+      identifier: 'balance_amount',
       description:
-        'If the amount of ETH is less than the threshold an alert '
+        'If the account balance is less than the threshold an alert '
         + 'will be raised. This applies to all EVM networks e.g BNB.',
-      adornment: 'ETH Balance',
+      adornment: 'Balance',
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
@@ -413,9 +413,9 @@ const chainlinkSeverityAlerts = {
       enabled: true,
     },
     19: {
-      name: 'Ethereum Balance Topped Up',
-      identifier: 'eth_balance_amount_increase',
-      description: 'Whenever the ethereum balance of a node is topped up you will get alerted.',
+      name: 'Account Balance Topped Up',
+      identifier: 'balance_amount_increase',
+      description: 'Whenever the account balance of a node is topped up you will get alerted.',
       severity: INFO,
       parent_id: '',
       enabled: true,

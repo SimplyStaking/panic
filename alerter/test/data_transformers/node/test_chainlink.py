@@ -91,8 +91,9 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             'percentile': 50.5,
             'price': 22.0,
         }
-        self.test_eth_balance_info = {
+        self.test_balance_info = {
             'address': 'address1', 'balance': 34.4, 'latest_usage': 5.0,
+            'symbol': 'TEST'
         }
         self.test_last_prometheus_source_used = "prometheus_source_1"
         self.test_last_monitored_prometheus = 45.666786
@@ -115,8 +116,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_chainlink_node.set_current_gas_price_info(
             self.test_current_gas_price_info['percentile'],
             self.test_current_gas_price_info['price'])
-        self.test_chainlink_node.set_eth_balance_info(
-            self.test_eth_balance_info)
+        self.test_chainlink_node.set_balance_info(
+            self.test_balance_info)
         self.test_chainlink_node.set_last_prometheus_source_used(
             self.test_last_prometheus_source_used)
         self.test_chainlink_node.set_last_monitored_prometheus(
@@ -139,8 +140,9 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
             'percentile': 52.5,
             'price': 24.0,
         }
-        self.test_eth_balance_info_new = {
+        self.test_balance_info_new = {
             'address': 'address1', 'balance': 44.4, 'latest_usage': 0.0,
+            'symbol': 'TEST'
         }
         self.test_last_prometheus_source_used_new = "prometheus_source_2"
         self.test_last_monitored_prometheus_new = 47.666786
@@ -165,8 +167,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.test_chainlink_node_new.set_current_gas_price_info(
             self.test_current_gas_price_info_new['percentile'],
             self.test_current_gas_price_info_new['price'])
-        self.test_chainlink_node_new.set_eth_balance_info(
-            self.test_eth_balance_info_new)
+        self.test_chainlink_node_new.set_balance_info(
+            self.test_balance_info_new)
         self.test_chainlink_node_new.set_last_prometheus_source_used(
             self.test_last_prometheus_source_used_new)
         self.test_chainlink_node_new.set_last_monitored_prometheus(
@@ -200,8 +202,8 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
         self.loaded_cl_node_trans_data.set_current_gas_price_info(
             self.test_current_gas_price_info['percentile'],
             self.test_current_gas_price_info['price'])
-        self.loaded_cl_node_trans_data.set_eth_balance_info(
-            self.test_eth_balance_info)
+        self.loaded_cl_node_trans_data.set_balance_info(
+            self.test_balance_info)
         self.loaded_cl_node_trans_data.set_last_prometheus_source_used(
             self.test_last_prometheus_source_used)
         self.loaded_cl_node_trans_data.set_last_monitored_prometheus(
@@ -246,10 +248,10 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                                     self.test_current_gas_price_info_new[
                                         'price']
                             },
-                        'eth_balance': {
+                        'balance': {
                             'address': 'address1',
-                            'balance': self.test_eth_balance_info_new[
-                                'balance'],
+                            'balance': self.test_balance_info_new['balance'],
+                            'symbol': self.test_balance_info_new['symbol']
                         },
                     },
                 }
@@ -327,7 +329,7 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                             self.test_total_errored_job_runs_new,
                         'current_gas_price_info':
                             self.test_current_gas_price_info_new,
-                        'eth_balance_info': self.test_eth_balance_info_new,
+                        'balance_info': self.test_balance_info_new,
                     },
                 }
             }
@@ -433,9 +435,9 @@ class TestChainlinkNodeDataTransformer(unittest.TestCase):
                             'current': self.test_current_gas_price_info_new,
                             'previous': self.test_current_gas_price_info
                         },
-                        'eth_balance_info': {
-                            'current': self.test_eth_balance_info_new,
-                            'previous': self.test_eth_balance_info
+                        'balance_info': {
+                            'current': self.test_balance_info_new,
+                            'previous': self.test_balance_info
                         },
                     },
                 }

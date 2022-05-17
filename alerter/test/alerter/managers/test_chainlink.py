@@ -101,11 +101,11 @@ class TestChainlinkAlertersManager(unittest.TestCase):
                 "parent_id": self.parent_id_1,
             },
             "8": {
-                "name": "eth_balance_amount",
+                "name": "balance_amount",
                 "parent_id": self.parent_id_1,
             },
             "9": {
-                "name": "eth_balance_amount_increase",
+                "name": "balance_amount_increase",
                 "parent_id": self.parent_id_1,
             },
             "10": {
@@ -595,8 +595,8 @@ class TestChainlinkAlertersManager(unittest.TestCase):
                 tx_manager_gas_bump_exceeds_limit_total=self.config_1['5'],
                 unconfirmed_transactions=self.config_1['6'],
                 run_status_update_total=self.config_1['7'],
-                eth_balance_amount=self.config_1['8'],
-                eth_balance_amount_increase=self.config_1['9'],
+                balance_amount=self.config_1['8'],
+                balance_amount_increase=self.config_1['9'],
                 node_is_down=self.config_1['10']
             )
         }
@@ -666,8 +666,8 @@ class TestChainlinkAlertersManager(unittest.TestCase):
                 tx_manager_gas_bump_exceeds_limit_total=self.config_1['5'],
                 unconfirmed_transactions=self.config_1['6'],
                 run_status_update_total=self.config_1['7'],
-                eth_balance_amount=self.config_1['8'],
-                eth_balance_amount_increase=self.config_1['9'],
+                balance_amount=self.config_1['8'],
+                balance_amount_increase=self.config_1['9'],
                 node_is_down=self.config_1['10']
             )
         }

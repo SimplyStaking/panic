@@ -25,7 +25,7 @@ class ChainlinkNode(Node):
             'percentile': None,
             'price': None,
         }
-        self._eth_balance_info = {}
+        self._balance_info = {}
 
         # This variable stores the url of the source used to get prometheus node
         # data. Note that this had to be done because multiple prometheus
@@ -81,8 +81,8 @@ class ChainlinkNode(Node):
         return self._current_gas_price_info
 
     @property
-    def eth_balance_info(self) -> Dict[str, Union[str, float]]:
-        return self._eth_balance_info
+    def balance_info(self) -> Dict[str, Union[str, float]]:
+        return self._balance_info
 
     @property
     def last_prometheus_source_used(self) -> Optional[str]:
@@ -123,7 +123,7 @@ class ChainlinkNode(Node):
         :return: A list of all variable names representing dict prometheus
                : metrics.
         """
-        return ['current_gas_price_info', 'eth_balance_info']
+        return ['current_gas_price_info', 'balance_info']
 
     @staticmethod
     def get_str_prometheus_metric_attributes() -> List[str]:
@@ -261,11 +261,11 @@ class ChainlinkNode(Node):
         self._current_gas_price_info['price'] = new_price
 
     @staticmethod
-    def _new_eth_balance_info_valid(new_eth_balance_info: Dict) -> bool:
+    def _new_balance_info_valid(new_balance_info: Dict) -> bool:
         """
-        This method checks that the new eth_balance_info dict obeys the required
+        This method checks that the new balance_info dict obeys the required
         schema.
-        :param new_eth_balance_info: The dict to check
+        :param new_balance_info: The dict to check
         :return: True if the dict obeys the required schema
                : False otherwise
         """
@@ -273,22 +273,23 @@ class ChainlinkNode(Node):
             'address': str,
             'balance': float,
             'latest_usage': float,
+            'symbol': str,
         }, {}))
-        return schema.is_valid(new_eth_balance_info)
+        return schema.is_valid(new_balance_info)
 
-    def set_eth_balance_info(
-            self, new_eth_balance_info: Dict[str, Union[str, float]]) -> None:
+    def set_balance_info(
+            self, new_balance_info: Dict[str, Union[str, float]]) -> None:
         """
-        This method sets the new_eth_balance_info. It first checks that the new
+        This method sets the new_balance_info. It first checks that the new
         dict obeys the required schema. If not, an InvalidDictSchemaException is
         raised.
-        :param new_eth_balance_info: The new eth_balance_info to store. 
+        :param new_balance_info: The new balance_info to store. 
         :return: None
         """""
-        if self._new_eth_balance_info_valid(new_eth_balance_info):
-            self._eth_balance_info = new_eth_balance_info
+        if self._new_balance_info_valid(new_balance_info):
+            self._balance_info = new_balance_info
         else:
-            raise InvalidDictSchemaException('new_eth_balance_info')
+            raise InvalidDictSchemaException('new_balance_info')
 
     def set_last_prometheus_source_used(
             self, new_last_prometheus_source_used: Optional[str]) -> None:
@@ -313,6 +314,6 @@ class ChainlinkNode(Node):
         self.set_no_of_unconfirmed_txs(None)
         self.set_total_errored_job_runs(None)
         self.set_current_gas_price_info(None, None)
-        self.set_eth_balance_info({})
+        self.set_balance_info({})
         self.set_last_prometheus_source_used(None)
         self.set_last_monitored_prometheus(None)

@@ -127,7 +127,7 @@ class ChainlinkNodeStore(Store):
             "_max_pending_tx_delay=%s, _process_start_time_seconds=%s, "
             "_total_gas_bumps=%s, _total_gas_bumps_exceeds_limit=%s, "
             "_no_of_unconfirmed_txs=%s, _total_errored_job_runs=%s, "
-            "_current_gas_price_info=%s, _eth_balance_info=%s, "
+            "_current_gas_price_info=%s, _balance_info=%s, "
             "_last_monitored_prometheus=%s, _last_prometheus_source_used=%s, "
             "_went_down_at_prometheus=%s", node_name, metrics['current_height'],
             metrics['total_block_headers_received'],
@@ -135,7 +135,7 @@ class ChainlinkNodeStore(Store):
             metrics['process_start_time_seconds'], metrics['total_gas_bumps'],
             metrics['total_gas_bumps_exceeds_limit'],
             metrics['no_of_unconfirmed_txs'], metrics['total_errored_job_runs'],
-            metrics['current_gas_price_info'], metrics['eth_balance_info'],
+            metrics['current_gas_price_info'], metrics['balance_info'],
             meta_data['last_monitored'], meta_data['last_source_used'],
             metrics['went_down_at'])
 
@@ -161,8 +161,8 @@ class ChainlinkNodeStore(Store):
             Keys.get_cl_node_current_gas_price_info(node_id):
                 'None' if metrics['current_gas_price_info'] is None
                 else json.dumps(metrics['current_gas_price_info']),
-            Keys.get_cl_node_eth_balance_info(node_id):
-                json.dumps(metrics['eth_balance_info']),
+            Keys.get_cl_node_balance_info(node_id):
+                json.dumps(metrics['balance_info']),
             Keys.get_cl_node_last_prometheus_source_used(node_id):
                 str(meta_data['last_source_used']),
             Keys.get_cl_node_last_monitored_prometheus(node_id):
@@ -258,8 +258,8 @@ class ChainlinkNodeStore(Store):
                         'current_gas_price_info':
                             'None' if metrics['current_gas_price_info'] is None
                             else json.dumps(metrics['current_gas_price_info']),
-                        'eth_balance_info':
-                            json.dumps(metrics['eth_balance_info']),
+                        'balance_info':
+                            json.dumps(metrics['balance_info']),
                         'went_down_at_prometheus': str(metrics['went_down_at']),
                         'last_prometheus_source_used':
                             str(meta_data['last_source_used']),

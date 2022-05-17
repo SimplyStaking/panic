@@ -1,4 +1,5 @@
 # Component names/name templates/ids
+SYSTEM_ALERTER_NAME = 'System Alerter'
 GITHUB_ALERTER_NAME = 'GitHub Alerter'
 DOCKERHUB_ALERTER_NAME = 'DockerHub Alerter'
 CHAINLINK_NODE_ALERTER_NAME = 'Chainlink Node Alerter'
@@ -50,7 +51,6 @@ LOG_CHANNEL_NAME = 'LOG'
 TELEGRAM_COMMAND_HANDLERS_NAME = 'Telegram Command Handlers'
 SLACK_COMMAND_HANDLERS_NAME = 'Slack Command Handlers'
 LOG_CHANNEL_ID = 'LOG'
-SYSTEM_ALERTER_NAME_TEMPLATE = 'System alerter ({})'
 GITHUB_MONITOR_NAME_TEMPLATE = 'GitHub monitor ({})'
 DOCKERHUB_MONITOR_NAME_TEMPLATE = 'DockerHub monitor ({})'
 SYSTEM_MONITOR_NAME_TEMPLATE = 'System monitor ({})'

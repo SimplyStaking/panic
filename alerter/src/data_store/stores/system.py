@@ -10,8 +10,8 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-                                          SYSTEM_STORE_INPUT_QUEUE_NAME,
-                                          SYSTEM_STORE_INPUT_ROUTING_KEY, TOPIC)
+                                          SYSTEM_STORE_INPUT_QUEUE_NAME, TOPIC,
+                                          SYSTEM_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   SystemIsDownException,
                                   MessageWasNotDeliveredException)
@@ -47,9 +47,9 @@ class SystemStore(Store):
         self.rabbitmq.queue_declare(SYSTEM_STORE_INPUT_QUEUE_NAME,
                                     passive=False, durable=True,
                                     exclusive=False, auto_delete=False)
-        self.rabbitmq.queue_bind(queue=SYSTEM_STORE_INPUT_QUEUE_NAME,
-                                 exchange=STORE_EXCHANGE,
-                                 routing_key=SYSTEM_STORE_INPUT_ROUTING_KEY)
+        self.rabbitmq.queue_bind(
+            queue=SYSTEM_STORE_INPUT_QUEUE_NAME, exchange=STORE_EXCHANGE,
+            routing_key=SYSTEM_TRANSFORMED_DATA_ROUTING_KEY)
 
         # Set producing configuration for heartbeat
         self.logger.info("Setting delivery confirmation on RabbitMQ channel")

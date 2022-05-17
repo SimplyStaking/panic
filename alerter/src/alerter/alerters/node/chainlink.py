@@ -274,31 +274,32 @@ class ChainlinkNodeAlerter(Alerter):
                         MetricCode.TotalErroredJobRunsThreshold.value,
                         meta_data['node_name'], meta_data['last_monitored']
                     )
-            if str_to_bool(configs.eth_balance_amount['enabled']):
-                current = data['eth_balance_info']['current']
-                sub_config = configs.eth_balance_amount
+            if str_to_bool(configs.balance_amount['enabled']):
+                current = data['balance_info']['current']
+                sub_config = configs.balance_amount
                 if current != {}:
-                    self.alerting_factory.classify_thresholded_alert_reverse(
-                        current['balance'], sub_config,
-                        cl_alerts.EthBalanceIncreasedAboveThresholdAlert,
-                        cl_alerts.EthBalanceDecreasedBelowThresholdAlert,
+                    self.alerting_factory. \
+                        classify_thresholded_alert_reverse_chainlink_node(
+                        current['balance'], sub_config, current['symbol'],
+                        cl_alerts.BalanceIncreasedAboveThresholdAlert,
+                        cl_alerts.BalanceDecreasedBelowThresholdAlert,
                         data_for_alerting, meta_data['node_parent_id'],
                         meta_data['node_id'],
-                        MetricCode.EthBalanceThreshold.value,
+                        MetricCode.BalanceThreshold.value,
                         meta_data['node_name'], meta_data['last_monitored']
                     )
-            if str_to_bool(configs.eth_balance_amount_increase['enabled']):
-                current = data['eth_balance_info']['current']
-                previous = data['eth_balance_info']['previous']
-                sub_config = configs.eth_balance_amount_increase
+            if str_to_bool(configs.balance_amount_increase['enabled']):
+                current = data['balance_info']['current']
+                previous = data['balance_info']['previous']
+                sub_config = configs.balance_amount_increase
                 if current != {} and previous != {}:
                     increase = current['balance'] - previous['balance']
                     self.alerting_factory.classify_conditional_alert(
-                        cl_alerts.EthBalanceToppedUpAlert,
+                        cl_alerts.BalanceToppedUpAlert,
                         self._greater_than_condition_function,
                         [current['balance'], previous['balance']], [
                             meta_data['node_name'], current['balance'],
-                            increase, sub_config['severity'],
+                            increase, current['symbol'], sub_config['severity'],
                             meta_data['last_monitored'],
                             meta_data['node_parent_id'], meta_data['node_id']
                         ], data_for_alerting
@@ -555,8 +556,8 @@ class ChainlinkNodeAlerter(Alerter):
 
         try:
             # Checking if the configuration is empty. If it is empty, remove the
-            # stored config (if it exists), and if it not add it to the list of
-            # configurations.
+            # stored config (if it exists), and if it is not, add it to the
+            # list of configurations.
             if bool(sent_configs):
                 self.alerts_configs_factory.add_new_config(chain, sent_configs)
 

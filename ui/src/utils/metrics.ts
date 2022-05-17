@@ -139,6 +139,7 @@ async function getMetricAlerts(chains: SubChain[]): Promise<any> {
     let chainSources = {parentIds: {}};
     for (const chain of chains) {
         chainSources.parentIds[chain.id] = {
+            include_chain_sourced_alerts: false,
             systems: chain.systems.map((source) => {return source.id}),
             nodes: [],
             github_repos: [],
@@ -181,11 +182,11 @@ function parseMetricAlerts(problems: any): MetricAlert[] {
     for (const source in problems) {
         for (const alert of problems[source]) {
             if (alert.severity in Severity) {
-                if (alert.metric in SystemMetricKeys) {
+                if (alert.metric.toUpperCase() in SystemMetricKeys) {
                     metricAlerts.push({
                         origin: source,
                         severity: alert.severity as Severity,
-                        metric: alert.metric as SystemMetricKeys
+                        metric: alert.metric.toUpperCase() as SystemMetricKeys
                     });
                 }
             } else {
