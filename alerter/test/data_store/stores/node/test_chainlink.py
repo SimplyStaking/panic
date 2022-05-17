@@ -91,7 +91,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
             'percentile': 50.5,
             'price': 22.0,
         }
-        self.test_eth_balance_info = {
+        self.test_balance_info = {
             'address': 'address1', 'balance': 34.4, 'latest_usage': 5.0,
         }
         self.test_last_prometheus_source_used = "prometheus_source_1"
@@ -124,7 +124,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
                             self.test_total_errored_job_runs,
                         "current_gas_price_info":
                             self.test_current_gas_price_info,
-                        "eth_balance_info": self.test_eth_balance_info,
+                        "balance_info": self.test_balance_info,
                     }
                 }
             }
@@ -167,11 +167,11 @@ class TestChainlinkNodeStore(unittest.TestCase):
                             'price': self.test_current_gas_price_info[
                                          'price'] + self.pad,
                         },
-                        "eth_balance_info": {
+                        "balance_info": {
                             'address': 'address1',
-                            'balance': self.test_eth_balance_info[
-                                           'balance'] + self.pad,
-                            'latest_usage': self.test_eth_balance_info[
+                            'balance': self.test_balance_info['balance'] +
+                                       self.pad,
+                            'latest_usage': self.test_balance_info[
                                                 'latest_usage'] + self.pad
                         },
                     }
@@ -544,10 +544,10 @@ class TestChainlinkNodeStore(unittest.TestCase):
                 Keys.get_cl_node_total_errored_job_runs(self.node_id)
             ).decode("utf-8"), 'bad_val'))
         self.assertEqual(
-            data['data']['eth_balance_info'],
+            data['data']['balance_info'],
             json.loads(self.redis.hget(
                 redis_hash,
-                Keys.get_cl_node_eth_balance_info(self.node_id)
+                Keys.get_cl_node_balance_info(self.node_id)
             ).decode("utf-8")))
         self.assertEqual(
             data['meta_data']['last_source_used'],
@@ -624,7 +624,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
         )
         self.assertEqual(
             None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_eth_balance_info(
+                                  Keys.get_cl_node_balance_info(
                                       self.node_id))
         )
         self.assertEqual(
@@ -695,7 +695,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
         )
         self.assertEqual(
             None, self.redis.hget(redis_hash,
-                                  Keys.get_cl_node_eth_balance_info(
+                                  Keys.get_cl_node_balance_info(
                                       self.node_id))
         )
         self.assertEqual(
@@ -762,7 +762,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
             metrics['no_of_unconfirmed_txs'],
             metrics['total_errored_job_runs'],
             metrics['current_gas_price_info'],
-            metrics['eth_balance_info'],
+            metrics['balance_info'],
             metrics['went_down_at'],
             meta_data['last_source_used'],
             meta_data['last_monitored'],
@@ -787,7 +787,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
                            'bad_val'),
             None if document[node_id][0]['current_gas_price_info'] == 'None'
             else json.loads(document[node_id][0]['current_gas_price_info']),
-            json.loads(document[node_id][0]['eth_balance_info']),
+            json.loads(document[node_id][0]['balance_info']),
             None if document[node_id][0]['went_down_at_prometheus'] == 'None'
             else convert_to_float(
                 document[node_id][0]['went_down_at_prometheus'], 'bad_val'),
@@ -826,7 +826,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
             metrics['no_of_unconfirmed_txs'],
             metrics['total_errored_job_runs'],
             metrics['current_gas_price_info'],
-            metrics['eth_balance_info'],
+            metrics['balance_info'],
             metrics['went_down_at'],
             meta_data['last_source_used'],
             meta_data['last_monitored'],
@@ -851,7 +851,7 @@ class TestChainlinkNodeStore(unittest.TestCase):
                            'bad_val'),
             None if document[node_id][0]['current_gas_price_info'] == 'None'
             else json.loads(document[node_id][0]['current_gas_price_info']),
-            json.loads(document[node_id][0]['eth_balance_info']),
+            json.loads(document[node_id][0]['balance_info']),
             None if document[node_id][0]['went_down_at_prometheus'] == 'None'
             else convert_to_float(
                 document[node_id][0]['went_down_at_prometheus'], 'bad_val'),

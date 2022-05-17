@@ -313,15 +313,15 @@ class EVMNodeAlerter(Alerter):
 
         try:
             # Checking if the configuration is empty. If it is empty, remove the
-            # stored config (if it exists), and if it not add it to the list of
-            # configurations.
+            # stored config (if it exists), and if it is not, add it to the
+            # list of configurations.
             if bool(sent_configs):
                 self.alerts_configs_factory.add_new_config(chain, sent_configs)
 
                 # We must reset the state since some thresholds might have
                 # changed. A node's state will be recreated in the next
                 # monitoring round automatically. Note we are sure that a
-                # parent_id is to be returned, as we have just added the config
+                # parent_id is to be returned, as we have just added the config.
                 parent_id = self.alerts_configs_factory.get_parent_id(chain)
                 self.alerting_factory.remove_chain_alerting_state(parent_id)
             else:
@@ -332,8 +332,7 @@ class EVMNodeAlerter(Alerter):
                 # no storing took place, therefore in that case do nothing.
                 parent_id = self.alerts_configs_factory.get_parent_id(chain)
                 if parent_id:
-                    self.alerting_factory.remove_chain_alerting_state(
-                        parent_id)
+                    self.alerting_factory.remove_chain_alerting_state(parent_id)
                     self.alerts_configs_factory.remove_config(chain)
         except Exception as e:
             # Otherwise log and reject the message

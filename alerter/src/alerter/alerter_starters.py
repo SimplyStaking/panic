@@ -12,15 +12,15 @@ from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerters.node.cosmos import CosmosNodeAlerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
-from src.configs.alerts.system import SystemAlertsConfig
 from src.configs.factory.alerts.chainlink_alerts import (
     ChainlinkNodeAlertsConfigsFactory, ChainlinkContractAlertsConfigsFactory)
 from src.configs.factory.alerts.cosmos_alerts import (
     CosmosNodeAlertsConfigsFactory, CosmosNetworkAlertsConfigsFactory)
 from src.configs.factory.alerts.evm_alerts import EVMNodeAlertsConfigsFactory
+from src.configs.factory.alerts.system_alerts import SystemAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (
-    SYSTEM_ALERTER_NAME_TEMPLATE, GITHUB_ALERTER_NAME, DOCKERHUB_ALERTER_NAME,
+    SYSTEM_ALERTER_NAME, GITHUB_ALERTER_NAME, DOCKERHUB_ALERTER_NAME,
     CHAINLINK_NODE_ALERTER_NAME, CHAINLINK_CONTRACT_ALERTER_NAME,
     EVM_NODE_ALERTER_NAME, COSMOS_NODE_ALERTER_NAME,
     COSMOS_NETWORK_ALERTER_NAME)
@@ -56,10 +56,11 @@ def _initialise_alerter_logger(alerter_display_name: str,
     return alerter_logger
 
 
-def _initialise_system_alerter(system_alerts_config: SystemAlertsConfig,
-                               chain: str) -> SystemAlerter:
+def _initialise_system_alerter(
+        system_alerts_configs_factory: SystemAlertsConfigsFactory
+) -> SystemAlerter:
     # Alerter display name based on system
-    alerter_display_name = SYSTEM_ALERTER_NAME_TEMPLATE.format(chain)
+    alerter_display_name = SYSTEM_ALERTER_NAME
 
     system_alerter_logger = _initialise_alerter_logger(alerter_display_name,
                                                        SystemAlerter.__name__)
@@ -70,12 +71,11 @@ def _initialise_system_alerter(system_alerts_config: SystemAlertsConfig,
             rabbitmq = RabbitMQApi(
                 logger=system_alerter_logger.getChild(RabbitMQApi.__name__),
                 host=RABBIT_IP)
-            system_alerter = SystemAlerter(alerter_display_name,
-                                           system_alerts_config,
-                                           system_alerter_logger,
-                                           rabbitmq,
-                                           ALERTER_PUBLISHING_QUEUE_SIZE
-                                           )
+            system_alerter = SystemAlerter(
+                alerter_display_name, system_alerter_logger,
+                system_alerts_configs_factory, rabbitmq,
+                ALERTER_PUBLISHING_QUEUE_SIZE
+            )
             log_and_print("Successfully initialised {}".format(
                 alerter_display_name), system_alerter_logger)
             break
@@ -100,11 +100,10 @@ def _initialise_github_alerter() -> GithubAlerter:
             rabbitmq = RabbitMQApi(
                 logger=github_alerter_logger.getChild(RabbitMQApi.__name__),
                 host=RABBIT_IP)
-            github_alerter = GithubAlerter(alerter_display_name,
-                                           github_alerter_logger,
-                                           rabbitmq,
-                                           ALERTER_PUBLISHING_QUEUE_SIZE
-                                           )
+            github_alerter = GithubAlerter(
+                alerter_display_name, github_alerter_logger, rabbitmq,
+                ALERTER_PUBLISHING_QUEUE_SIZE
+            )
             log_and_print("Successfully initialised {}".format(
                 alerter_display_name), github_alerter_logger)
             break
@@ -129,11 +128,10 @@ def _initialise_dockerhub_alerter() -> DockerhubAlerter:
             rabbitmq = RabbitMQApi(
                 logger=dockerhub_alerter_logger.getChild(RabbitMQApi.__name__),
                 host=RABBIT_IP)
-            dockerhub_alerter = DockerhubAlerter(alerter_display_name,
-                                                 dockerhub_alerter_logger,
-                                                 rabbitmq,
-                                                 ALERTER_PUBLISHING_QUEUE_SIZE
-                                                 )
+            dockerhub_alerter = DockerhubAlerter(
+                alerter_display_name, dockerhub_alerter_logger, rabbitmq,
+                ALERTER_PUBLISHING_QUEUE_SIZE
+            )
             log_and_print("Successfully initialised {}".format(
                 alerter_display_name), dockerhub_alerter_logger)
             break
@@ -161,10 +159,8 @@ def _initialise_chainlink_node_alerter(
                 logger=chainlink_alerter_logger.getChild(RabbitMQApi.__name__),
                 host=RABBIT_IP)
             chainlink_alerter = ChainlinkNodeAlerter(
-                alerter_display_name,
-                chainlink_alerter_logger,
-                rabbitmq,
-                chainlink_alerts_configs_factory,
+                alerter_display_name, chainlink_alerter_logger,
+                rabbitmq, chainlink_alerts_configs_factory,
                 ALERTER_PUBLISHING_QUEUE_SIZE
             )
             log_and_print("Successfully initialised {}".format(
@@ -194,11 +190,8 @@ def _initialise_chainlink_contract_alerter(
                 logger=chainlink_alerter_logger.getChild(RabbitMQApi.__name__),
                 host=RABBIT_IP)
             chainlink_alerter = ChainlinkContractAlerter(
-                alerter_display_name,
-                chainlink_alerter_logger,
-                rabbitmq,
-                chainlink_alerts_configs_factory,
-                ALERTER_PUBLISHING_QUEUE_SIZE
+                alerter_display_name, chainlink_alerter_logger, rabbitmq,
+                chainlink_alerts_configs_factory, ALERTER_PUBLISHING_QUEUE_SIZE
             )
             log_and_print("Successfully initialised {}".format(
                 alerter_display_name), chainlink_alerter_logger)
@@ -227,10 +220,8 @@ def _initialise_evm_node_alerter(
                 logger=evm_node_alerter_logger.getChild(RabbitMQApi.__name__),
                 host=RABBIT_IP)
             evm_node_alerter = EVMNodeAlerter(
-                alerter_display_name,
-                evm_node_alerter_logger,
-                evm_alerts_configs_factory,
-                rabbitmq,
+                alerter_display_name, evm_node_alerter_logger,
+                evm_alerts_configs_factory, rabbitmq,
                 ALERTER_PUBLISHING_QUEUE_SIZE
             )
             log_and_print("Successfully initialised {}".format(
@@ -305,9 +296,9 @@ def _initialise_cosmos_network_alerter(
     return cosmos_alerter
 
 
-def start_system_alerter(system_alerts_config: SystemAlertsConfig,
-                         chain: str) -> None:
-    system_alerter = _initialise_system_alerter(system_alerts_config, chain)
+def start_system_alerter(
+        system_alerts_configs_factory: SystemAlertsConfigsFactory) -> None:
+    system_alerter = _initialise_system_alerter(system_alerts_configs_factory)
     start_alerter(system_alerter)
 
 

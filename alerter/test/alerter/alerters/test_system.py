@@ -3,8 +3,8 @@ import datetime
 import json
 import logging
 import unittest
-from queue import Queue
 from unittest import mock
+from unittest.mock import call
 
 import pika
 import pika.exceptions
@@ -12,2801 +12,827 @@ from freezegun import freeze_time
 from parameterized import parameterized
 
 from src.alerter.alerters.system import SystemAlerter
-from src.alerter.alerts.system_alerts import (
-    OpenFileDescriptorsIncreasedAboveThresholdAlert)
-from src.alerter.grouped_alerts_metric_code import GroupedSystemAlertsMetricCode
-from src.configs.alerts.system import SystemAlertsConfig
+from src.alerter.alerts import system_alerts
+from src.alerter.factory.system_alerting_factory import SystemAlertingFactory
+from src.alerter.grouped_alerts_metric_code.system \
+    import GroupedSystemAlertsMetricCode as MetricCode
+from src.configs.factory.alerts.system_alerts import SystemAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.rabbitmq import (
-    ALERT_EXCHANGE, HEALTH_CHECK_EXCHANGE,
-    SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE, SYSTEM_ALERT_ROUTING_KEY,
-    SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
-    HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
-from src.utils.env import ALERTER_PUBLISHING_QUEUE_SIZE, RABBIT_IP
+    CONFIG_EXCHANGE, SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+    HEALTH_CHECK_EXCHANGE, ALERT_EXCHANGE,
+    SYSTEM_TRANSFORMED_DATA_ROUTING_KEY,
+    SYSTEM_ALERT_ROUTING_KEY, ALERTS_CONFIGS_ROUTING_KEY_GEN)
+from src.utils.env import RABBIT_IP
+from src.utils.exceptions import (
+    PANICException, SystemIsDownException, InvalidUrlException,
+    MetricNotFoundException)
+from test.test_utils.utils import (
+    connect_to_rabbit, delete_queue_if_exists, delete_exchange_if_exists,
+    disconnect_from_rabbit)
 
 
 class TestSystemAlerter(unittest.TestCase):
     def setUp(self) -> None:
-        self.dummy_logger = logging.getLogger('Dummy')
+        # Some dummy values and objects
+        self.test_alerter_name = 'test_alerter'
+        self.dummy_logger = logging.getLogger('dummy')
         self.dummy_logger.disabled = True
-        self.rabbit_ip = RABBIT_IP
-        self.alert_input_exchange = ALERT_EXCHANGE
         self.connection_check_time_interval = datetime.timedelta(seconds=0)
-
         self.rabbitmq = RabbitMQApi(
-            self.dummy_logger, self.rabbit_ip,
-            connection_check_time_interval=self.connection_check_time_interval)
-
-        self.test_rabbit_manager = RabbitMQApi(
             self.dummy_logger, RABBIT_IP,
             connection_check_time_interval=self.connection_check_time_interval)
+        self.test_queue_size = 5
+        self.test_parent_id = 'test_parent_id'
+        self.test_queue_name = 'Test Queue'
+        self.test_data_str = 'test_data_str'
+        self.test_configs_routing_key = 'chains.cosmos.cosmos.alerts_config'
+        self.test_configs_routing_key_gen = ALERTS_CONFIGS_ROUTING_KEY_GEN
+        self.test_system_name = 'test_system'
+        self.test_system_id = 'test_system_id345834t8h3r5893h8'
 
-        self.alerter_name = 'test_alerter'
-        self.system_id = 'test_system_id'
-        self.parent_id = 'test_parent_id'
-        self.system_name = 'test_system'
-        self.last_monitored = 1611619200
-        self.publishing_queue = Queue(ALERTER_PUBLISHING_QUEUE_SIZE)
-        self.test_output_routing_key = 'test_alert.system'
-        self.queue_used = SYS_ALERTER_INPUT_QUEUE_NAME_TEMPLATE.format(
-            self.parent_id)
-        self.target_queue_used = "alert_router_queue"
-        self.input_routing_key = \
-            SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE.format(self.parent_id)
-        self.bad_output_routing_key = "alert.system.not_real"
-        self.output_routing_key = SYSTEM_ALERT_ROUTING_KEY.format(
-            self.parent_id)
-        self.heartbeat_queue = 'heartbeat queue'
+        # Some test metrics
+        self.test_went_down_at = None
+        self.test_last_monitored = datetime.datetime(2012, 1, 1).timestamp()
+        self.test_system_is_down_exception = SystemIsDownException(
+            self.test_system_name)
 
-        self.heartbeat_test = {
-            'component_name': self.alerter_name,
-            'is_alive': True,
-            'timestamp': datetime.datetime(2012, 1, 1).timestamp()
+        # Construct received configurations
+        self.received_configurations = {
+            'DEFAULT': 'testing_if_will_be_deleted'
         }
+        all_metrics = [
+            'open_file_descriptors',
+            'system_cpu_usage',
+            'system_storage_usage',
+            'system_ram_usage',
+            'system_is_down'
+        ]
 
-        """
-        ############# Alerts config base configuration ######################
-        """
-        self.enabled_alert = "True"
-        self.critical_threshold_percentage = 95
-        self.critical_threshold_seconds = 300
-        self.critical_repeat_seconds = 300
-        self.critical_enabled = "True"
-        self.critical_repeat_enabled = "True"
-        self.warning_threshold_percentage = 85
-        self.warning_threshold_seconds = 200
-        self.warning_enabled = "True"
-
-        self.base_config = {
-            "name": "base_percent_config",
-            "enabled": self.enabled_alert,
-            "parent_id": self.parent_id,
-            "critical_threshold": self.critical_threshold_percentage,
-            "critical_repeat": self.critical_repeat_seconds,
-            "critical_repeat_enabled": self.critical_repeat_enabled,
-            "critical_enabled": self.critical_enabled,
-            "warning_threshold": self.warning_threshold_percentage,
-            "warning_enabled": self.warning_enabled
-        }
-
-        self.open_file_descriptors = copy.deepcopy(self.base_config)
-        self.open_file_descriptors['name'] = "open_file_descriptors"
-
-        self.system_cpu_usage = copy.deepcopy(self.base_config)
-        self.system_cpu_usage['name'] = "system_cpu_usage"
-
-        self.system_storage_usage = copy.deepcopy(self.base_config)
-        self.system_storage_usage['name'] = "system_storage_usage"
-
-        self.system_ram_usage = copy.deepcopy(self.base_config)
-        self.system_ram_usage['name'] = "system_ram_usage"
-
-        self.system_is_down = copy.deepcopy(self.base_config)
-        self.system_is_down['name'] = "system_is_down"
-        self.system_is_down['critical_threshold'] = \
-            self.critical_threshold_seconds
-        self.system_is_down['warning_threshold'] = \
-            self.warning_threshold_seconds
-
-        self.system_alerts_config = SystemAlertsConfig(
-            self.parent_id,
-            self.open_file_descriptors,
-            self.system_cpu_usage,
-            self.system_storage_usage,
-            self.system_ram_usage,
-            self.system_is_down
-        )
-        self.test_system_alerter = SystemAlerter(
-            self.alerter_name,
-            self.system_alerts_config,
-            self.dummy_logger,
-            self.rabbitmq,
-            ALERTER_PUBLISHING_QUEUE_SIZE
-        )
-
-        """
-        ############# Alerts config warning alerts disabled ####################
-        """
-
-        self.base_config['warning_enabled'] = str(
-            not bool(self.warning_enabled))
-        self.open_file_descriptors = copy.deepcopy(self.base_config)
-        self.open_file_descriptors['name'] = "open_file_descriptors"
-
-        self.system_cpu_usage = copy.deepcopy(self.base_config)
-        self.system_cpu_usage['name'] = "system_cpu_usage"
-
-        self.system_storage_usage = copy.deepcopy(self.base_config)
-        self.system_storage_usage['name'] = "system_storage_usage"
-
-        self.system_ram_usage = copy.deepcopy(self.base_config)
-        self.system_ram_usage['name'] = "system_ram_usage"
-
-        self.system_is_down = copy.deepcopy(self.base_config)
-        self.system_is_down['name'] = "system_is_down"
-        self.system_is_down['critical_threshold'] = \
-            self.critical_threshold_seconds
-        self.system_is_down['warning_threshold'] = \
-            self.warning_threshold_seconds
-
-        self.system_alerts_config_warnings_disabled = SystemAlertsConfig(
-            self.parent_id,
-            self.open_file_descriptors,
-            self.system_cpu_usage,
-            self.system_storage_usage,
-            self.system_ram_usage,
-            self.system_is_down
-        )
-        self.test_system_alerter_warnings_disabled = SystemAlerter(
-            self.alerter_name,
-            self.system_alerts_config_warnings_disabled,
-            self.dummy_logger,
-            self.rabbitmq,
-            ALERTER_PUBLISHING_QUEUE_SIZE
-        )
-
-        """
-        ############# Alerts config critical alerts disabled ###################
-        """
-        self.base_config['warning_enabled'] = self.warning_enabled
-        self.base_config['critical_enabled'] = str(
-            not bool(self.critical_enabled))
-        self.open_file_descriptors = copy.deepcopy(self.base_config)
-        self.open_file_descriptors['name'] = "open_file_descriptors"
-
-        self.system_cpu_usage = copy.deepcopy(self.base_config)
-        self.system_cpu_usage['name'] = "system_cpu_usage"
-
-        self.system_storage_usage = copy.deepcopy(self.base_config)
-        self.system_storage_usage['name'] = "system_storage_usage"
-
-        self.system_ram_usage = copy.deepcopy(self.base_config)
-        self.system_ram_usage['name'] = "system_ram_usage"
-
-        self.system_is_down = copy.deepcopy(self.base_config)
-        self.system_is_down['name'] = "system_is_down"
-        self.system_is_down['critical_threshold'] = \
-            self.critical_threshold_seconds
-        self.system_is_down['warning_threshold'] = \
-            self.warning_threshold_seconds
-
-        self.system_alerts_config_critical_disabled = SystemAlertsConfig(
-            self.parent_id,
-            self.open_file_descriptors,
-            self.system_cpu_usage,
-            self.system_storage_usage,
-            self.system_ram_usage,
-            self.system_is_down
-        )
-
-        self.test_system_alerter_critical_disabled = SystemAlerter(
-            self.alerter_name,
-            self.system_alerts_config_critical_disabled,
-            self.dummy_logger,
-            self.rabbitmq,
-            ALERTER_PUBLISHING_QUEUE_SIZE
-        )
-
-        """
-        ########## Alerts config critical repeat alerts disabled ###############
-        """
-        self.base_config['warning_enabled'] = self.warning_enabled
-        self.base_config['critical_enabled'] = self.critical_enabled
-        self.base_config['critical_repeat_enabled'] = str(
-            not bool(self.critical_repeat_enabled))
-        self.open_file_descriptors = copy.deepcopy(self.base_config)
-        self.open_file_descriptors['name'] = "open_file_descriptors"
-
-        self.system_cpu_usage = copy.deepcopy(self.base_config)
-        self.system_cpu_usage['name'] = "system_cpu_usage"
-
-        self.system_storage_usage = copy.deepcopy(self.base_config)
-        self.system_storage_usage['name'] = "system_storage_usage"
-
-        self.system_ram_usage = copy.deepcopy(self.base_config)
-        self.system_ram_usage['name'] = "system_ram_usage"
-
-        self.system_is_down = copy.deepcopy(self.base_config)
-        self.system_is_down['name'] = "system_is_down"
-        self.system_is_down['critical_threshold'] = \
-            self.critical_threshold_seconds
-        self.system_is_down['warning_threshold'] = \
-            self.warning_threshold_seconds
-
-        self.system_alerts_config_critical_repeat_disabled = SystemAlertsConfig(
-            self.parent_id,
-            self.open_file_descriptors,
-            self.system_cpu_usage,
-            self.system_storage_usage,
-            self.system_ram_usage,
-            self.system_is_down
-        )
-
-        self.test_system_alerter_critical_repeat_disabled = SystemAlerter(
-            self.alerter_name,
-            self.system_alerts_config_critical_repeat_disabled,
-            self.dummy_logger,
-            self.rabbitmq,
-            ALERTER_PUBLISHING_QUEUE_SIZE
-        )
-
-        """
-        ############# Alerts config all alerts disabled ######################
-        """
-        self.base_config['warning_enabled'] = self.warning_enabled
-        self.base_config['critical_enabled'] = self.critical_enabled
-        self.base_config['enabled'] = str(not bool(self.enabled_alert))
-        self.open_file_descriptors = copy.deepcopy(self.base_config)
-        self.open_file_descriptors['name'] = "open_file_descriptors"
-
-        self.system_cpu_usage = copy.deepcopy(self.base_config)
-        self.system_cpu_usage['name'] = "system_cpu_usage"
-
-        self.system_storage_usage = copy.deepcopy(self.base_config)
-        self.system_storage_usage['name'] = "system_storage_usage"
-
-        self.system_ram_usage = copy.deepcopy(self.base_config)
-        self.system_ram_usage['name'] = "system_ram_usage"
-
-        self.system_is_down = copy.deepcopy(self.base_config)
-        self.system_is_down['name'] = "system_is_down"
-        self.system_is_down['critical_threshold'] = \
-            self.critical_threshold_seconds
-        self.system_is_down['warning_threshold'] = \
-            self.warning_threshold_seconds
-
-        self.system_alerts_config_all_disabled = SystemAlertsConfig(
-            self.parent_id,
-            self.open_file_descriptors,
-            self.system_cpu_usage,
-            self.system_storage_usage,
-            self.system_ram_usage,
-            self.system_is_down
-        )
-
-        self.test_system_alerter_all_disabled = SystemAlerter(
-            self.alerter_name,
-            self.system_alerts_config_all_disabled,
-            self.dummy_logger,
-            self.rabbitmq,
-            ALERTER_PUBLISHING_QUEUE_SIZE
-        )
-
-        """
-        ################# Metrics Received from Data Transformer ############
-        """
-        self.warning = "WARNING"
-        self.info = "INFO"
-        self.critical = "CRITICAL"
-        self.error = "ERROR"
-        self.none = None
-        # Process CPU Seconds Total
-        self.current_cpu_sec = 42420.88
-        self.previous_cpu_sec = 42400.42
-        # Process Memory Usage
-        self.current_mem_use = 20.00
-        self.previous_mem_use = 10.23
-        # Virtual Memory Usage
-        self.current_v_mem_use = 735047680.0
-        self.previous_v_mem_use = 723312578.0
-        self.percent_usage = 40
-
-        self.data_received_error_data = {
-            "error": {
-                "meta_data": {
-                    "system_name": self.system_name,
-                    "system_id": self.system_id,
-                    "system_parent_id": self.parent_id,
-                    "time": self.last_monitored
-                },
-                "data": {
-                    "went_down_at": {
-                        "current": self.last_monitored,
-                        "previous": self.none
-                    }
-                },
-                "message": "Error message",
-                "code": 5004,
+        for i in range(len(all_metrics)):
+            self.received_configurations[str(i)] = {
+                'name': all_metrics[i],
+                'parent_id': self.test_parent_id,
+                'enabled': 'true',
+                'critical_threshold': '95',
+                'critical_repeat': '300',
+                'critical_enabled': 'true',
+                'critical_repeat_enabled': 'true',
+                'warning_threshold': '85',
+                'warning_enabled': 'true',
             }
+
+        self.test_result_data = {
+            'meta_data': {
+                'system_name': self.test_system_name,
+                'system_id': self.test_system_id,
+                'system_parent_id': self.test_parent_id,
+                'last_monitored': self.test_last_monitored
+            },
+            'data': {
+                'open_file_descriptors': {
+                    'current': 96,
+                    'previous': 96
+                },
+                'system_cpu_usage': {
+                    'current': 96,
+                    'previous': 96
+                },
+                'system_ram_usage': {
+                    'current': 96,
+                    'previous': 96,
+                },
+                'system_storage_usage': {
+                    'current': 96,
+                    'previous': 96,
+                },
+            },
         }
 
-        self.data_received_initially_no_alert = {
-            "result": {
-                "meta_data": {
-                    "system_name": self.system_name,
-                    "system_id": self.system_id,
-                    "system_parent_id": self.parent_id,
-                    "last_monitored": self.last_monitored
-                },
-                "data": {
-                    "process_cpu_seconds_total": {
-                        "current": self.current_cpu_sec,
-                        "previous": self.none
-                    },
-                    "process_memory_usage": {
-                        "current": self.current_mem_use,
-                        "previous": self.none
-                    },
-                    "virtual_memory_usage": {
-                        "current": self.current_v_mem_use,
-                        "previous": self.none
-                    },
-                    "open_file_descriptors": {
-                        "current": self.percent_usage,
-                        "previous": self.none
-                    },
-                    "system_cpu_usage": {
-                        "current": self.percent_usage,
-                        "previous": self.none
-                    },
-                    "system_ram_usage": {
-                        "current": self.percent_usage,
-                        "previous": self.none
-                    },
-                    "system_storage_usage": {
-                        "current": self.percent_usage,
-                        "previous": self.none
-                    },
-                    "network_receive_bytes_total": {
-                        "current": self.none,
-                        "previous": self.none,
-                    },
-                    "network_transmit_bytes_total": {
-                        "current": self.none,
-                        "previous": self.none
-                    },
-                    "disk_io_time_seconds_total": {
-                        "current": self.none,
-                        "previous": self.none,
-                    },
-                    "network_transmit_bytes_per_second": {
-                        "current": self.none,
-                        "previous": self.none,
-                    },
-                    "network_receive_bytes_per_second": {
-                        "current": self.none,
-                        "previous": self.none
-                    },
-                    "disk_io_time_seconds_in_interval": {
-                        "current": self.none,
-                        "previous": self.none,
-                    },
-                    "went_down_at": {
-                        "current": self.none,
-                        "previous": self.none
-                    }
+        self.test_system_down_error = {
+            'meta_data': {
+                'system_name': self.test_system_name,
+                'system_id': self.test_system_id,
+                'system_parent_id': self.test_parent_id,
+                'time': self.test_last_monitored
+            },
+            'message': self.test_system_is_down_exception.message,
+            'code': self.test_system_is_down_exception.code,
+            'data': {
+                'went_down_at': {
+                    'current': self.test_last_monitored + 60,
+                    'previous': None
                 }
             }
         }
 
-        self.data_received_initially_warning_alert = \
-            copy.deepcopy(self.data_received_initially_no_alert)
+        self.transformed_data_example_result = {
+            'result': copy.deepcopy(self.test_result_data)
+        }
 
-        self.data_received_initially_warning_alert[
-            'result']['data']['open_file_descriptors']['current'] = \
-            self.percent_usage + 46
-        self.data_received_initially_warning_alert[
-            'result']['data']['system_cpu_usage']['current'] = \
-            self.percent_usage + 46
-        self.data_received_initially_warning_alert[
-            'result']['data']['system_ram_usage']['current'] = \
-            self.percent_usage + 46
-        self.data_received_initially_warning_alert[
-            'result']['data']['system_storage_usage']['current'] = \
-            self.percent_usage + 46
-
-        self.data_received_below_warning_threshold = \
-            copy.deepcopy(self.data_received_initially_no_alert)
-
-        self.data_received_below_warning_threshold[
-            'result']['data']['open_file_descriptors']['previous'] = \
-            self.percent_usage + 46
-        self.data_received_below_warning_threshold[
-            'result']['data']['system_cpu_usage']['previous'] = \
-            self.percent_usage + 46
-        self.data_received_below_warning_threshold[
-            'result']['data']['system_ram_usage']['previous'] = \
-            self.percent_usage + 46
-        self.data_received_below_warning_threshold[
-            'result']['data']['system_storage_usage']['previous'] = \
-            self.percent_usage + 46
-
-        self.data_received_initially_critical_alert = \
-            copy.deepcopy(self.data_received_initially_no_alert)
-
-        self.data_received_initially_critical_alert[
-            'result']['data']['open_file_descriptors']['current'] = \
-            self.percent_usage + 56
-        self.data_received_initially_critical_alert[
-            'result']['data']['system_cpu_usage']['current'] = \
-            self.percent_usage + 56
-        self.data_received_initially_critical_alert[
-            'result']['data']['system_ram_usage']['current'] = \
-            self.percent_usage + 56
-        self.data_received_initially_critical_alert[
-            'result']['data']['system_storage_usage']['current'] = \
-            self.percent_usage + 56
-
-        self.data_received_below_critical_above_warning = \
-            copy.deepcopy(self.data_received_initially_warning_alert)
-
-        self.data_received_below_critical_above_warning[
-            'result']['data']['open_file_descriptors']['previous'] = \
-            self.percent_usage + 56
-        self.data_received_below_critical_above_warning[
-            'result']['data']['system_cpu_usage']['previous'] = \
-            self.percent_usage + 56
-        self.data_received_below_critical_above_warning[
-            'result']['data']['system_ram_usage']['previous'] = \
-            self.percent_usage + 56
-        self.data_received_below_critical_above_warning[
-            'result']['data']['system_storage_usage']['previous'] = \
-            self.percent_usage + 56
-
-        # Alert used for rabbitMQ testing
-        self.alert = OpenFileDescriptorsIncreasedAboveThresholdAlert(
-            self.system_name, self.percent_usage + 46, self.warning,
-            self.last_monitored, self.warning, self.parent_id,
-            self.system_id
-        )
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            self.test_system_alerter.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
-            self.test_system_alerter.rabbitmq.exchange_declare(
-                ALERT_EXCHANGE, TOPIC, False, True, False, False)
-        except Exception as e:
-            print("Setup failed: {}".format(e))
+        # Test object
+        self.test_configs_factory = SystemAlertsConfigsFactory()
+        self.test_alerting_factory = SystemAlertingFactory(self.dummy_logger)
+        self.test_system_alerter = SystemAlerter(
+            self.test_alerter_name, self.dummy_logger,
+            self.test_configs_factory,
+            self.rabbitmq, self.test_queue_size)
 
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            self.test_rabbit_manager.connect()
-            # Declare the queues incase they aren't there, not to error
-            self.test_system_alerter.rabbitmq.queue_declare(
-                queue=self.target_queue_used, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-            self.test_system_alerter.rabbitmq.queue_declare(
-                queue=self.queue_used, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-
-            self.test_system_alerter.rabbitmq.queue_purge(self.queue_used)
-            self.test_system_alerter.rabbitmq.queue_purge(
-                self.target_queue_used)
-            self.test_system_alerter.rabbitmq.queue_delete(self.queue_used)
-            self.test_system_alerter.rabbitmq.queue_delete(
-                self.target_queue_used)
-            self.test_system_alerter.rabbitmq.exchange_delete(
-                HEALTH_CHECK_EXCHANGE)
-            self.test_system_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
-            self.test_system_alerter.rabbitmq.disconnect()
-            self.test_rabbit_manager.disconnect()
-        except Exception as e:
-            print("Test failed: {}".format(e))
+        connect_to_rabbit(self.test_system_alerter.rabbitmq)
+        delete_queue_if_exists(self.test_system_alerter.rabbitmq,
+                               self.test_queue_name)
+        delete_queue_if_exists(self.test_system_alerter.rabbitmq,
+                               SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME)
+        delete_exchange_if_exists(self.test_system_alerter.rabbitmq,
+                                  HEALTH_CHECK_EXCHANGE)
+        delete_exchange_if_exists(self.test_system_alerter.rabbitmq,
+                                  ALERT_EXCHANGE)
+        delete_exchange_if_exists(self.test_system_alerter.rabbitmq,
+                                  CONFIG_EXCHANGE)
+        disconnect_from_rabbit(self.test_system_alerter.rabbitmq)
 
         self.dummy_logger = None
+        self.connection_check_time_interval = None
         self.rabbitmq = None
-        self.publishing_queue = None
+        self.test_configs_factory = None
+        self.alerting_factory = None
         self.test_system_alerter = None
-        self.test_system_alerter_warnings_disabled = None
-        self.test_system_alerter_critical_disabled = None
-        self.test_system_alerter_all_disabled = None
-        self.test_system_alerter_critical_repeat_disabled = None
-        self.system_alerts_config = None
-        self.system_alerts_config_warnings_disabled = None
-        self.system_alerts_config_critical_disabled = None
-        self.system_alerts_config_all_disabled = None
-        self.system_alerts_config_critical_repeat_disabled = None
-        self.test_system_alerter = None
+        self.test_system_is_down_exception = None
 
-    def test_returns_alerter_name_as_str(self) -> None:
-        self.assertEqual(self.alerter_name, self.test_system_alerter.__str__())
-
-    def test_returns_alerter_name(self) -> None:
-        self.assertEqual(self.alerter_name,
-                         self.test_system_alerter.alerter_name)
-
-    def test_returns_logger(self) -> None:
-        self.assertEqual(self.dummy_logger, self.test_system_alerter.logger)
-
-    def test_returns_publishing_queue_size(self) -> None:
-        self.assertEqual(self.publishing_queue.qsize(),
-                         self.test_system_alerter.publishing_queue.qsize())
-
-    def test_returns_alerts_configs_from_alerter(self) -> None:
-        self.assertEqual(self.system_alerts_config,
-                         self.test_system_alerter.alerts_configs)
-
-    """
-    ###################### Tests without using RabbitMQ #######################
-    """
-
-    @mock.patch.object(SystemAlerter, "_classify_alert")
-    def test_alerts_initial_run_no_alerts_count_classify_alert(
-            self, mock_classify_alert) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            self.assertEqual(4, mock_classify_alert.call_count)
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_initial_run_no_increase_alerts_or_decrease_alerts(
-            self, mock_storage_usage_decrease, mock_storage_usage_increase,
-            mock_ram_usage_decrease, mock_ram_usage_increase,
-            mock_cpu_usage_decrease, mock_cpu_usage_increase,
-            mock_ofd_decrease, mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_storage_usage_increase.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_ram_usage_increase.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_cpu_usage_increase.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            mock_ofd_increase.assert_not_called()
-
-            self.assertEqual(0, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_initial_run_no_alerts_second_run_no_alerts(
-            self, mock_storage_usage_decrease, mock_storage_usage_increase,
-            mock_ram_usage_decrease, mock_ram_usage_increase,
-            mock_cpu_usage_decrease, mock_cpu_usage_increase,
-            mock_ofd_decrease, mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_storage_usage_increase.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_ram_usage_increase.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_cpu_usage_increase.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            mock_ofd_increase.assert_not_called()
-
-            self.assertEqual(0, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_storage_usage_increase.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_ram_usage_increase.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_cpu_usage_increase.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            mock_ofd_increase.assert_not_called()
-
-            self.assertEqual(0, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase', '46', 'self.warning'),
-        ('open_file_descriptors', 'mock_ofd_increase', '56', 'self.critical'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase', '46', 'self.warning'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase', '56', 'self.critical'),
-        ('system_ram_usage', 'mock_ram_usage_increase', '46', 'self.warning'),
-        ('system_ram_usage', 'mock_ram_usage_increase', '56', 'self.critical'),
-        ('system_storage_usage', 'mock_storage_usage_increase', '46',
-         'self.warning'),
-        ('system_storage_usage', 'mock_storage_usage_increase', '56',
-         'self.critical'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_initial_run_no_increase_or_decrease_alerts_then_warning_or_critical_alert(
-            self, metric_param, mock_param, mock_pad, mock_severity,
-            mock_storage_usage_decrease, mock_storage_usage_increase,
-            mock_ram_usage_decrease, mock_ram_usage_increase,
-            mock_cpu_usage_decrease, mock_cpu_usage_increase,
-            mock_ofd_decrease, mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_storage_usage_increase.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_ram_usage_increase.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_cpu_usage_increase.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            mock_ofd_increase.assert_not_called()
-
-            self.assertEqual(0, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data[metric_param]['current'] = self.percent_usage + int(mock_pad)
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                eval(mock_severity), meta_data['last_monitored'],
-                eval(mock_severity),
-                self.parent_id, self.system_id
-            )
-
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch.object(SystemAlerter, "_classify_alert")
-    def test_alerts_initial_run_warning_alerts_count_classify_alert(
-            self, mock_classify_alert) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_warning_alert['result']['data']
-        meta_data = self.data_received_initially_warning_alert['result'][
-            'meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            self.assertEqual(4, mock_classify_alert.call_count)
-            self.assertEqual(0, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase', '46', 'self.warning'),
-        ('open_file_descriptors', 'mock_ofd_increase', '56', 'self.critical'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase', '46', 'self.warning'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase', '56', 'self.critical'),
-        ('system_ram_usage', 'mock_ram_usage_increase', '46', 'self.warning'),
-        ('system_ram_usage', 'mock_ram_usage_increase', '56', 'self.critical'),
-        ('system_storage_usage', 'mock_storage_usage_increase', '46',
-         'self.warning'),
-        ('system_storage_usage', 'mock_storage_usage_increase', '56',
-         'self.critical'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_initial_run_alerts_above_warning_and_critical_threshold(
-            self, metric_param, mock_param, mock_pad, mock_severity,
-            mock_storage_usage_decrease, mock_storage_usage_increase,
-            mock_ram_usage_decrease, mock_ram_usage_increase,
-            mock_cpu_usage_decrease, mock_cpu_usage_increase,
-            mock_ofd_decrease, mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + int(mock_pad)
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                eval(mock_severity), meta_data['last_monitored'],
-                eval(mock_severity), self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase', 'mock_ofd_decrease'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase',
-         'mock_cpu_usage_decrease'),
-        ('system_ram_usage', 'mock_ram_usage_increase',
-         'mock_ram_usage_decrease'),
-        ('system_storage_usage', 'mock_storage_usage_increase',
-         'mock_storage_usage_decrease'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_initial_run_warning_alert_then_info_alert_on_decrease(
-            self, metric_param, mock_param, mock_param_2,
-            mock_storage_usage_decrease, mock_storage_usage_increase,
-            mock_ram_usage_decrease, mock_ram_usage_increase,
-            mock_cpu_usage_decrease, mock_cpu_usage_increase,
-            mock_ofd_decrease, mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + 46
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                self.warning, meta_data['last_monitored'], self.warning,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data[metric_param]['current'] = self.percent_usage + 36
-        data[metric_param]['previous'] = self.percent_usage + 46
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            eval(mock_param_2).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                self.info, meta_data['last_monitored'], self.warning,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(2, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase'),
-        ('system_ram_usage', 'mock_ram_usage_increase'),
-        ('system_storage_usage', 'mock_storage_usage_increase'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_initial_run_warning_alert_then_critical_alert(
-            self, metric_param, mock_param, mock_storage_usage_decrease,
-            mock_storage_usage_increase, mock_ram_usage_decrease,
-            mock_ram_usage_increase, mock_cpu_usage_decrease,
-            mock_cpu_usage_increase, mock_ofd_decrease,
-            mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + 46
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                self.warning, meta_data['last_monitored'], self.warning,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data[metric_param]['current'] = self.percent_usage + 56
-        data[metric_param]['previous'] = self.percent_usage + 46
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            eval(mock_param).assert_called_with(
-                self.system_name, data[metric_param]['current'],
-                self.critical, meta_data['last_monitored'], self.critical,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(2, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase'),
-        ('system_ram_usage', 'mock_ram_usage_increase'),
-        ('system_storage_usage', 'mock_storage_usage_increase'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_initial_run_warning_alerts_then_increase_in_warning_no_alert(
-            self, metric_param, mock_param, mock_storage_usage_decrease,
-            mock_storage_usage_increase, mock_ram_usage_decrease,
-            mock_ram_usage_increase, mock_cpu_usage_decrease,
-            mock_cpu_usage_increase, mock_ofd_decrease,
-            mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + 46
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                self.warning, meta_data['last_monitored'], self.warning,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data[metric_param]['current'] = self.percent_usage + 47
-        data[metric_param]['previous'] = self.percent_usage + 46
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['previous'],
-                self.warning, meta_data['last_monitored'], self.warning,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase', 'mock_ofd_decrease'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase',
-         'mock_cpu_usage_decrease'),
-        ('system_ram_usage', 'mock_ram_usage_increase',
-         'mock_ram_usage_decrease'),
-        ('system_storage_usage', 'mock_storage_usage_increase',
-         'mock_storage_usage_decrease'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_critical_alerts_then_no_increase_alerts_on_decrease_between_critical_and_warning(
-            self, metric_param, mock_param, mock_param_2,
-            mock_storage_usage_decrease, mock_storage_usage_increase,
-            mock_ram_usage_decrease, mock_ram_usage_increase,
-            mock_cpu_usage_decrease, mock_cpu_usage_increase,
-            mock_ofd_decrease, mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + 56
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                self.critical, meta_data['last_monitored'], self.critical,
-                self.parent_id, self.system_id
-            )
-
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data[metric_param]['current'] = self.percent_usage + 50
-        data[metric_param]['previous'] = self.percent_usage + 56
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            eval(mock_param_2).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                self.info, meta_data['last_monitored'], self.critical,
-                self.parent_id, self.system_id
-            )
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['previous'],
-                self.critical, meta_data['last_monitored'], self.critical,
-                self.parent_id, self.system_id
-            )
-
-            self.assertEqual(2, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase'),
-        ('system_ram_usage', 'mock_ram_usage_increase'),
-        ('system_storage_usage', 'mock_storage_usage_increase'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
-        autospec=True)
-    def test_critical_alerts_then_no_alerts_before_repeat_timer_elapsed(
-            self, metric_param, mock_param, mock_last_time_that_did_task,
-            mock_storage_usage_decrease, mock_storage_usage_increase,
-            mock_ram_usage_decrease, mock_ram_usage_increase,
-            mock_cpu_usage_decrease, mock_cpu_usage_increase,
-            mock_ofd_decrease, mock_ofd_increase) -> None:
-        mock_last_time_that_did_task.return_value = self.last_monitored
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + 56
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                self.critical, meta_data['last_monitored'], self.critical,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data[metric_param]['current'] = self.percent_usage + 58
-        data[metric_param]['previous'] = self.percent_usage + 56
-        meta_data['last_monitored'] = self.last_monitored + \
-                                      self.critical_repeat_seconds - 1
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['previous'],
-                self.critical, self.last_monitored, self.critical,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase'),
-        ('system_ram_usage', 'mock_ram_usage_increase'),
-        ('system_storage_usage', 'mock_storage_usage_increase'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
-        autospec=True)
-    def test_critical_alerts_then_critical_alert_on_same_value_after_repeat_timer_elapsed(
-            self, metric_param, mock_param, mock_last_time_that_did_task,
-            mock_storage_usage_decrease, mock_storage_usage_increase,
-            mock_ram_usage_decrease, mock_ram_usage_increase,
-            mock_cpu_usage_decrease, mock_cpu_usage_increase,
-            mock_ofd_decrease, mock_ofd_increase) -> None:
-        mock_last_time_that_did_task.return_value = self.last_monitored
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + 56
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                self.critical, meta_data['last_monitored'], self.critical,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        meta_data['last_monitored'] = self.last_monitored + \
-                                      self.critical_repeat_seconds
-        data[metric_param]['current'] = self.percent_usage + 56
-        data[metric_param]['previous'] = self.percent_usage + 56
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-            eval(mock_param).assert_called_with(
-                self.system_name, data[metric_param]['current'],
-                self.critical, meta_data['last_monitored'], self.critical,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(2, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase'),
-        ('system_ram_usage', 'mock_ram_usage_increase'),
-        ('system_storage_usage', 'mock_storage_usage_increase'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
-        autospec=True)
-    def test_critical_alerts_then_critical_alert_on_lower_value_after_repeat_timer_elapsed(
-            self, metric_param, mock_param, mock_last_time_that_did_task,
-            mock_storage_usage_decrease, mock_storage_usage_increase,
-            mock_ram_usage_decrease, mock_ram_usage_increase,
-            mock_cpu_usage_decrease, mock_cpu_usage_increase,
-            mock_ofd_decrease, mock_ofd_increase) -> None:
-        mock_last_time_that_did_task.return_value = self.last_monitored
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + 57
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                self.critical, meta_data['last_monitored'], self.critical,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        meta_data['last_monitored'] = self.last_monitored + \
-                                      self.critical_repeat_seconds
-        data[metric_param]['current'] = self.percent_usage + 56
-        data[metric_param]['previous'] = self.percent_usage + 57
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(data, meta_data,
-                                                  data_for_alerting)
-        try:
-            eval(mock_param).assert_called_with(
-                self.system_name, data[metric_param]['current'],
-                self.critical, meta_data['last_monitored'], self.critical,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(2, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemBackUpAgainAlert",
-                autospec=True)
-    def test_system_back_up_no_alert(self, mock_system_back_up) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_system_back_up.assert_not_called()
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemBackUpAgainAlert",
-                autospec=True)
-    def test_system_back_up_alert(self, mock_system_back_up) -> None:
-        data_for_alerting = []
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._system_initial_alert_sent[
-            self.system_id][
-            GroupedSystemAlertsMetricCode.SystemIsDown.value] = True
-        data = self.data_received_initially_no_alert['result']['data']
-        data['went_down_at']['previous'] = self.last_monitored
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_system_back_up.assert_called_once_with(
-                self.system_name, self.info, self.last_monitored,
-                self.parent_id, self.system_id
-            )
-            # There are extra alerts due to initial start-up alerts
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.TimedTaskLimiter.reset",
-                autospec=True)
-    def test_system_back_up_timed_task_limiter_reset(self, mock_reset) -> None:
-        data_for_alerting = []
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        # Set that the initial downtime alert was sent already
-        self.test_system_alerter._system_initial_alert_sent[
-            self.system_id][
-            GroupedSystemAlertsMetricCode.SystemIsDown.value] = True
-        data = self.data_received_initially_no_alert['result']['data']
-        data['went_down_at']['previous'] = self.last_monitored
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_reset.assert_called_once()
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
-                autospec=True)
-    def test_system_went_down_at_no_alert_below_warning_threshold(
-            self, mock_system_is_down) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_system_is_down.assert_not_called()
-            self.assertEqual(0, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    """
-    These tests assume that critical_threshold_seconds > 
-    warning_threshold_seconds
-    """
-
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
-                autospec=True)
-    def test_system_went_down_at_alert_above_warning_threshold(
-            self, mock_system_is_down) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        data['meta_data']['time'] = self.last_monitored + \
-                                    self.warning_threshold_seconds
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_system_is_down.assert_called_once_with(
-                self.system_name, self.warning, data['meta_data']['time'],
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
-                autospec=True)
-    def test_system_went_down_at_alert_above_critical_threshold(
-            self, mock_system_is_down) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        data['meta_data']['time'] = self.last_monitored + \
-                                    self.critical_threshold_seconds
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_system_is_down.assert_called_once_with(
-                self.system_name, self.critical, data['meta_data']['time'],
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemStillDownAlert",
-                autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
-                autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
-        autospec=True)
-    def test_system_went_down_at_alert_above_warning_threshold_then_no_critical_repeat(
-            self, mock_last_time_did_task, mock_system_is_down,
-            mock_system_still_down) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        past_warning_time = self.last_monitored + self.warning_threshold_seconds
-        mock_last_time_did_task.return_value = past_warning_time
-        data['meta_data']['time'] = past_warning_time
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(
-            data, data_for_alerting)
-        try:
-            mock_system_is_down.assert_called_once_with(
-                self.system_name, self.warning, past_warning_time,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data['meta_data'][
-            'time'] = past_warning_time + self.critical_repeat_seconds - 1
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(
-            data, data_for_alerting)
-        try:
-            mock_system_is_down.assert_called_once_with(
-                self.system_name, self.warning, past_warning_time,
-                self.parent_id, self.system_id
-            )
-            mock_system_still_down.assert_not_called()
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemStillDownAlert",
-                autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
-                autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
-        autospec=True)
-    def test_system_went_down_at_alert_above_warning_threshold_then_critical_repeat(
-            self, mock_last_time_did_task, mock_system_is_down,
-            mock_system_still_down) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        past_warning_time = self.last_monitored + self.warning_threshold_seconds
-        mock_last_time_did_task.return_value = past_warning_time
-        data['meta_data']['time'] = past_warning_time
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_system_is_down.assert_called_once_with(
-                self.system_name, self.warning, past_warning_time,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(2, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data['meta_data'][
-            'time'] = past_warning_time + self.critical_repeat_seconds
-        downtime = int(data['meta_data']['time'] - self.last_monitored)
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_system_is_down.assert_called_once_with(
-                self.system_name, self.warning, past_warning_time,
-                self.parent_id, self.system_id
-            )
-            mock_system_still_down.assert_called_once_with(
-                self.system_name, downtime, self.critical,
-                data['meta_data']['time'], self.parent_id,
-                self.system_id
-            )
-            self.assertEqual(3, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemStillDownAlert",
-                autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
-                autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
-        autospec=True)
-    def test_system_went_down_at_alert_above_critical_threshold_then_no_critical_repeat(
-            self, mock_last_time_did_task, mock_system_is_down,
-            mock_system_still_down) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        past_critical_time = self.last_monitored + \
-                             self.critical_threshold_seconds
-        mock_last_time_did_task.return_value = past_critical_time
-        data['meta_data']['time'] = past_critical_time
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_system_is_down.assert_called_once_with(
-                self.system_name, self.critical, past_critical_time,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data['meta_data'][
-            'time'] = past_critical_time + self.critical_repeat_seconds - 1
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_system_is_down.assert_called_once_with(
-                self.system_name, self.critical, past_critical_time,
-                self.parent_id, self.system_id
-            )
-            mock_system_still_down.assert_not_called()
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemStillDownAlert",
-                autospec=True)
-    @mock.patch("src.alerter.alerters.system.SystemWentDownAtAlert",
-                autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system.TimedTaskLimiter.last_time_that_did_task",
-        autospec=True)
-    def test_system_went_down_at_alert_above_warning_threshold_then_critical_repeat(
-            self, mock_last_time_did_task, mock_system_is_down,
-            mock_system_still_down) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        past_critical_time = self.last_monitored + \
-                             self.critical_threshold_seconds
-        mock_last_time_did_task.return_value = past_critical_time
-        data['meta_data']['time'] = past_critical_time
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_system_is_down.assert_called_once_with(
-                self.system_name, self.critical, past_critical_time,
-                self.parent_id, self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data['meta_data'][
-            'time'] = past_critical_time + self.critical_repeat_seconds
-        downtime = int(data['meta_data']['time'] - self.last_monitored)
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(
-            data, data_for_alerting)
-        try:
-            mock_system_is_down.assert_called_once_with(
-                self.system_name, self.critical, past_critical_time,
-                self.parent_id, self.system_id
-            )
-            mock_system_still_down.assert_called_once_with(
-                self.system_name, downtime, self.critical,
-                data['meta_data']['time'], self.parent_id,
-                self.system_id
-            )
-            self.assertEqual(2, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    """
-    Testing error alerts of MetricNotFound and InvalidURL
-    """
-
-    @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert",
-                autospec=True)
-    def test_process_errors_metric_not_found_alert(self, mock_alert) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        data['code'] = 5003
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_alert.assert_called_once_with(
-                self.system_name, data['message'], self.error,
-                data['meta_data']['time'], self.parent_id,
-                self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.MetricFoundAlert",
-                autospec=True)
-    @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert",
-                autospec=True)
-    def test_process_error_metric_not_found_alert_metric_found_alert(self,
-                                                                     mock_alert_not_found,
-                                                                     mock_alert_found) -> None:
-
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        data['code'] = 5003
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_alert_not_found.assert_called_once_with(
-                self.system_name, data['message'], self.error,
-                data['meta_data']['time'], self.parent_id,
-                self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data = self.data_received_error_data['error']
-        data['code'] = 600000000  # This code doesn't exist
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_alert_found.assert_called_once_with(
-                self.system_name, "Metrics have been found!", self.info,
-                data['meta_data']['time'], self.parent_id,
-                self.system_id
-            )
-            self.assertEqual(2, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.MetricFoundAlert",
-                autospec=True)
-    @mock.patch("src.alerter.alerters.system.MetricNotFoundErrorAlert",
-                autospec=True)
-    def test_process_error_metric_not_found_alert_process_result_metric_found_alert(
-            self,
-            mock_alert_not_found, mock_alert_found) -> None:
-
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        data['code'] = 5003
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_alert_not_found.assert_called_once_with(
-                self.system_name, data['message'], self.error,
-                data['meta_data']['time'], self.parent_id,
-                self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data = self.data_received_initially_no_alert['result']['data']
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._process_results(data, meta_data,
-                                                  data_for_alerting)
-        try:
-            mock_alert_found.assert_called_once_with(
-                self.system_name, "Metrics have been found!", self.info,
-                meta_data['last_monitored'], self.parent_id,
-                self.system_id
-            )
-            self.assertEqual(2, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.InvalidUrlAlert", autospec=True)
-    def test_process_errors_invalid_url_alert(self, mock_alert) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        data['code'] = 5009
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_alert.assert_called_once_with(
-                self.system_name, data['message'], self.error,
-                data['meta_data']['time'], self.parent_id,
-                self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.ValidUrlAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.InvalidUrlAlert", autospec=True)
-    def test_process_errors_invalid_url_alert_then_valid_url_alert(self,
-                                                                   mock_alert_invalid,
-                                                                   mock_alert_valid) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        data['code'] = 5009
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_alert_invalid.assert_called_once_with(
-                self.system_name, data['message'], self.error,
-                data['meta_data']['time'], self.parent_id,
-                self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-        data = self.data_received_error_data['error']
-        data['code'] = 600000000  # This code doesn't exist
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_alert_valid.assert_called_once_with(
-                self.system_name, "Url is valid!", self.info,
-                data['meta_data']['time'], self.parent_id,
-                self.system_id
-            )
-            self.assertEqual(2, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.ValidUrlAlert", autospec=True)
-    @mock.patch("src.alerter.alerters.system.InvalidUrlAlert", autospec=True)
-    def test_process_errors_invalid_url_alert_then_process_results_valid_url_alert(
-            self,
-            mock_alert_invalid, mock_alert_valid) -> None:
-        data_for_alerting = []
-        data = self.data_received_error_data['error']
-        data['code'] = 5009
-        self.test_system_alerter._create_state_for_system(self.system_id)
-        self.test_system_alerter._process_errors(data, data_for_alerting)
-        try:
-            mock_alert_invalid.assert_called_once_with(
-                self.system_name, data['message'], self.error,
-                data['meta_data']['time'], self.parent_id,
-                self.system_id
-            )
-            self.assertEqual(1, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-        data = self.data_received_initially_no_alert['result']['data']
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter._process_results(data, meta_data,
-                                                  data_for_alerting)
-        try:
-            mock_alert_valid.assert_called_once_with(
-                self.system_name, "Url is valid!", self.info,
-                meta_data['last_monitored'], self.parent_id,
-                self.system_id
-            )
-            self.assertEqual(2, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch.object(SystemAlerter, "_classify_alert")
-    def test_alerts_warning_alerts_disabled_metric_above_warning_threshold(
-            self, mock_classify_alert) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_warning_alert['result']['data']
-        meta_data = self.data_received_initially_warning_alert['result'][
-            'meta_data']
-        self.test_system_alerter_warnings_disabled._create_state_for_system(
-            self.system_id)
-        self.test_system_alerter_warnings_disabled._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            self.assertEqual(4, mock_classify_alert.call_count)
-            self.assertEqual(0, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase'),
-        ('system_ram_usage', 'mock_ram_usage_increase'),
-        ('system_storage_usage', 'mock_storage_usage_increase'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_warning_alerts_disabled_increase_above_warning_threshold_no_alerts_occur(
-            self, metric_param, mock_param, mock_storage_usage_decrease,
-            mock_storage_usage_increase, mock_ram_usage_decrease,
-            mock_ram_usage_increase, mock_cpu_usage_decrease,
-            mock_cpu_usage_increase, mock_ofd_decrease,
-            mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + 46
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_warnings_disabled._create_state_for_system(
-            self.system_id)
-        self.test_system_alerter_warnings_disabled._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            mock_storage_usage_decrease.assert_not_called()
-            mock_ram_usage_decrease.assert_not_called()
-            mock_cpu_usage_decrease.assert_not_called()
-            mock_ofd_decrease.assert_not_called()
-
-            eval(mock_param).assert_not_called()
-            self.assertEqual(0, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch.object(SystemAlerter, "_classify_alert")
-    def test_alerts_critical_alerts_disabled_metric_above_critical_threshold(
-            self, mock_classify_alert) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_warning_alert['result']['data']
-        meta_data = self.data_received_initially_warning_alert['result'][
-            'meta_data']
-        self.test_system_alerter_critical_disabled._create_state_for_system(
-            self.system_id)
-        self.test_system_alerter_critical_disabled._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            self.assertEqual(4, mock_classify_alert.call_count)
-            self.assertEqual(0, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase'),
-        ('system_ram_usage', 'mock_ram_usage_increase'),
-        ('system_storage_usage', 'mock_storage_usage_increase'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_critical_alerts_disabled_increase_above_critical_threshold_warning_alert(
-            self, metric_param, mock_param, mock_storage_usage_decrease,
-            mock_storage_usage_increase, mock_ram_usage_decrease,
-            mock_ram_usage_increase, mock_cpu_usage_decrease,
-            mock_cpu_usage_increase, mock_ofd_decrease,
-            mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + 56
-        data[metric_param]['previous'] = self.percent_usage + 46
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_critical_disabled._create_state_for_system(
-            self.system_id)
-        self.test_system_alerter_critical_disabled._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                self.warning, meta_data['last_monitored'],
-                self.warning, self.parent_id, self.system_id
-            )
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase'),
-        ('system_ram_usage', 'mock_ram_usage_increase'),
-        ('system_storage_usage', 'mock_storage_usage_increase'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_increase_above_critical_first_time_critical_repeat_disabled(
-            self, metric_param, mock_param, mock_storage_usage_decrease,
-            mock_storage_usage_increase, mock_ram_usage_decrease,
-            mock_ram_usage_increase, mock_cpu_usage_decrease,
-            mock_cpu_usage_increase, mock_ofd_decrease,
-            mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + 56
-        data[metric_param]['previous'] = self.percent_usage + 46
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_critical_repeat_disabled \
-            ._create_state_for_system(
-            self.system_id)
-        self.test_system_alerter_critical_repeat_disabled._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                self.critical, meta_data['last_monitored'],
-                self.critical, self.parent_id, self.system_id
-            )
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase'),
-        ('system_ram_usage', 'mock_ram_usage_increase'),
-        ('system_storage_usage', 'mock_storage_usage_increase'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_increase_above_critical_second_time_critical_repeat_disabled(
-            self, metric_param, mock_param, mock_storage_usage_decrease,
-            mock_storage_usage_increase, mock_ram_usage_decrease,
-            mock_ram_usage_increase, mock_cpu_usage_decrease,
-            mock_cpu_usage_increase, mock_ofd_decrease,
-            mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + 56
-        data[metric_param]['previous'] = self.percent_usage + 46
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_critical_repeat_disabled \
-            ._create_state_for_system(
-            self.system_id)
-        self.test_system_alerter_critical_repeat_disabled._process_results(
-            data, meta_data, data_for_alerting)
-
-        # process again to confirm that when critical_repeat is disabled, no
-        # critical alerts are sent even if the repeat time passes.
-        old_last_monitored = meta_data['last_monitored']
-        meta_data['last_monitored'] = \
-            old_last_monitored + self.critical_repeat_seconds
-        self.test_system_alerter_critical_repeat_disabled._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            eval(mock_param).assert_called_once_with(
-                self.system_name, data[metric_param]['current'],
-                self.critical, old_last_monitored,
-                self.critical, self.parent_id, self.system_id
-            )
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @parameterized.expand([
-        ('open_file_descriptors', 'mock_ofd_increase'),
-        ('system_cpu_usage', 'mock_cpu_usage_increase'),
-        ('system_ram_usage', 'mock_ram_usage_increase'),
-        ('system_storage_usage', 'mock_storage_usage_increase'),
-    ])
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".OpenFileDescriptorsDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemCPUUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemRAMUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageIncreasedAboveThresholdAlert",
-        autospec=True)
-    @mock.patch(
-        "src.alerter.alerters.system"
-        ".SystemStorageUsageDecreasedBelowThresholdAlert",
-        autospec=True)
-    def test_critical_alerts_and_warning_alerts_disabled_increase_above_critical_threshold_no_alerts(
-            self, metric_param, mock_param, mock_storage_usage_decrease,
-            mock_storage_usage_increase, mock_ram_usage_decrease,
-            mock_ram_usage_increase, mock_cpu_usage_decrease,
-            mock_cpu_usage_increase, mock_ofd_decrease,
-            mock_ofd_increase) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_no_alert['result']['data']
-        data[metric_param]['current'] = self.percent_usage + 56
-        data[metric_param]['previous'] = self.percent_usage + 46
-        meta_data = self.data_received_initially_no_alert['result']['meta_data']
-        self.test_system_alerter_all_disabled._create_state_for_system(
-            self.system_id)
-        self.test_system_alerter_all_disabled._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            eval(mock_param).assert_not_called()
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch.object(SystemAlerter, "_classify_alert")
-    def test_alerts_all_alerts_disabled_metric_above_critical_threshold_and_warning_threshold(
-            self, mock_classify_alert) -> None:
-        data_for_alerting = []
-        data = self.data_received_initially_critical_alert['result']['data']
-        meta_data = self.data_received_initially_critical_alert['result'][
-            'meta_data']
-        self.test_system_alerter_all_disabled._create_state_for_system(
-            self.system_id)
-        self.test_system_alerter_all_disabled._process_results(
-            data, meta_data, data_for_alerting)
-        try:
-            self.assertEqual(0, mock_classify_alert.call_count)
-            self.assertEqual(0, len(data_for_alerting))
-        except AssertionError as e:
-            self.fail("Test failed: {}".format(e))
-
-    """
-    ###################### Tests using RabbitMQ #######################
-    """
-
-    def test_initialise_rabbit_initialises_queues(self) -> None:
-        self.test_system_alerter._initialise_rabbitmq()
-        try:
-            self.rabbitmq.connect()
-            self.rabbitmq.queue_declare(self.queue_used, passive=True)
-        except pika.exceptions.ConnectionClosedByBroker:
-            self.fail("Queue {} was not declared".format(self.queue_used))
-
-    def test_initialise_rabbit_initialises_exchanges(self) -> None:
-        self.test_system_alerter._initialise_rabbitmq()
-
-        try:
-            self.rabbitmq.connect()
-            self.rabbitmq.exchange_declare(ALERT_EXCHANGE, passive=True)
-        except pika.exceptions.ConnectionClosedByBroker:
-            self.fail("Exchange {} was not declared".format(ALERT_EXCHANGE))
-
-    def test_send_warning_alerts_correctly(
+    def test_alerts_configs_factory_returns_alerts_configs_factory(
             self) -> None:
-        try:
-            self.test_system_alerter._initialise_rabbitmq()
-            self.test_system_alerter.rabbitmq.queue_delete(
-                self.target_queue_used)
-            self.test_system_alerter.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
-            res = self.test_system_alerter.rabbitmq.queue_declare(
-                queue=self.target_queue_used, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-            self.assertEqual(0, res.method.message_count)
-            self.test_system_alerter.rabbitmq.queue_bind(
-                queue=self.target_queue_used, exchange=ALERT_EXCHANGE,
-                routing_key=self.output_routing_key)
+        self.test_system_alerter._alerts_configs_factory = \
+            self.test_configs_factory
+        self.assertEqual(self.test_configs_factory,
+                         self.test_system_alerter.alerts_configs_factory)
 
-            self.test_system_alerter.rabbitmq.basic_publish_confirm(
-                exchange=ALERT_EXCHANGE,
-                routing_key=self.output_routing_key,
-                body=self.alert.alert_data, is_body_dict=True,
-                properties=pika.BasicProperties(delivery_mode=2),
-                mandatory=True)
+    def test_alerting_factory_returns_alerting_factory(self) -> None:
+        self.test_system_alerter._alerting_factory = self.test_alerting_factory
+        self.assertEqual(self.test_alerting_factory,
+                         self.test_system_alerter.alerting_factory)
 
-            res = self.test_system_alerter.rabbitmq.queue_declare(
-                queue=self.target_queue_used, durable=True, exclusive=False,
-                auto_delete=False, passive=True
-            )
-            self.assertEqual(1, res.method.message_count)
+    def test_initialise_rabbitmq_initialises_everything_as_expected(
+            self) -> None:
+        # To make sure that there is no connection/channel already
+        # established
+        self.assertIsNone(self.rabbitmq.connection)
+        self.assertIsNone(self.rabbitmq.channel)
 
-            _, _, body = self.test_system_alerter.rabbitmq.basic_get(
-                self.target_queue_used)
-            # For some reason during the conversion [] are swapped to ()
-            self.assertEqual(json.loads(json.dumps(self.alert.alert_data)),
-                             json.loads(body))
+        # To make sure that the exchanges and queues have not already been
+        # declared
+        connect_to_rabbit(self.rabbitmq)
+        self.rabbitmq.queue_delete(SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME)
+        self.rabbitmq.exchange_delete(CONFIG_EXCHANGE)
+        self.rabbitmq.exchange_delete(HEALTH_CHECK_EXCHANGE)
+        self.rabbitmq.exchange_delete(ALERT_EXCHANGE)
+        disconnect_from_rabbit(self.rabbitmq)
 
-            self.test_system_alerter.rabbitmq.queue_purge(
-                self.target_queue_used)
-            self.test_system_alerter.rabbitmq.queue_delete(
-                self.target_queue_used)
-            self.test_system_alerter.rabbitmq.exchange_delete(ALERT_EXCHANGE)
-            self.test_system_alerter.rabbitmq.exchange_delete(
-                HEALTH_CHECK_EXCHANGE)
-            self.test_system_alerter.rabbitmq.disconnect()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        self.test_system_alerter._initialise_rabbitmq()
 
-    # Same test that is in monitors tests
-    def test_send_heartbeat_sends_a_heartbeat_correctly(self) -> None:
-        try:
-            self.test_system_alerter._initialise_rabbitmq()
-            self.test_system_alerter.rabbitmq.exchange_declare(
-                HEALTH_CHECK_EXCHANGE, TOPIC, False, True, False, False)
+        # Perform checks that the connection has been opened, marked as open
+        # and that the delivery confirmation variable is set.
+        self.assertTrue(self.test_system_alerter.rabbitmq.is_connected)
+        self.assertTrue(self.test_system_alerter.rabbitmq.connection.is_open)
+        self.assertTrue(
+            self.test_system_alerter.rabbitmq.channel._delivery_confirmation)
 
-            self.test_system_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
+        # Check whether the producing exchanges have been created by using
+        # passive=True. If this check fails an exception is raised
+        # automatically.
+        self.test_system_alerter.rabbitmq.exchange_declare(
+            HEALTH_CHECK_EXCHANGE, passive=True)
 
-            res = self.test_system_alerter.rabbitmq.queue_declare(
-                queue=self.heartbeat_queue, durable=True, exclusive=False,
-                auto_delete=False, passive=False
-            )
-            self.assertEqual(0, res.method.message_count)
-            self.test_system_alerter.rabbitmq.queue_bind(
-                queue=self.heartbeat_queue, exchange=HEALTH_CHECK_EXCHANGE,
-                routing_key=HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY)
-            self.test_system_alerter._send_heartbeat(self.heartbeat_test)
+        # Check whether the consuming exchanges and queues have been created
+        # by sending messages to them. Since at this point these queues have
+        # only the bindings from _initialise_rabbit, it must be that if no
+        # exception is raised, then all queues and exchanges have been created
+        # and binded correctly.
+        self.test_system_alerter.rabbitmq.basic_publish_confirm(
+            exchange=ALERT_EXCHANGE,
+            routing_key=SYSTEM_TRANSFORMED_DATA_ROUTING_KEY,
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+        self.test_system_alerter.rabbitmq.basic_publish_confirm(
+            exchange=CONFIG_EXCHANGE, routing_key=self.test_configs_routing_key,
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
+        self.test_system_alerter.rabbitmq.basic_publish_confirm(
+            exchange=CONFIG_EXCHANGE,
+            routing_key=self.test_configs_routing_key_gen,
+            body=self.test_data_str, is_body_dict=False,
+            properties=pika.BasicProperties(delivery_mode=2), mandatory=True)
 
-            res = self.test_system_alerter.rabbitmq.queue_declare(
-                queue=self.heartbeat_queue, durable=True, exclusive=False,
-                auto_delete=False, passive=True
-            )
-            self.assertEqual(1, res.method.message_count)
+    @parameterized.expand([
+        (SYSTEM_TRANSFORMED_DATA_ROUTING_KEY, 'mock_proc_trans',),
+        ('chains.cosmos.cosmos.alerts_config', 'mock_proc_confs',),
+        ('unrecognized_routing_key', 'mock_basic_ack',),
+    ])
+    @mock.patch.object(SystemAlerter, "_process_transformed_data")
+    @mock.patch.object(SystemAlerter, "_process_configs")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_data_calls_the_correct_sub_function(
+            self, routing_key, called_mock, mock_basic_ack, mock_proc_confs,
+            mock_proc_trans) -> None:
+        """
+        In this test we will check that if a configs routing key is received,
+        the process_data function calls the process_configs fn, if a
+        transformed data routing key is received, the process_data function
+        calls the process_transformed_data fn, and if the routing key is
+        unrecognized, the process_data function calls the ack method.
+        """
+        mock_basic_ack.return_value = None
+        mock_proc_confs.return_value = None
+        mock_proc_trans.return_value = None
 
-            _, _, body = self.test_system_alerter.rabbitmq.basic_get(
-                self.heartbeat_queue)
-            self.assertEqual(self.heartbeat_test, json.loads(body))
+        self.test_system_alerter.rabbitmq.connect()
+        blocking_channel = self.test_system_alerter.rabbitmq.channel
+        method = pika.spec.Basic.Deliver(routing_key=routing_key)
+        body = json.dumps(self.test_data_str)
+        properties = pika.spec.BasicProperties()
+        self.test_system_alerter._process_data(blocking_channel, method,
+                                               properties, body)
 
-            self.test_system_alerter.rabbitmq.queue_purge(self.heartbeat_queue)
-            self.test_system_alerter.rabbitmq.queue_delete(self.heartbeat_queue)
-            self.test_system_alerter.rabbitmq.exchange_delete(
-                HEALTH_CHECK_EXCHANGE)
-            self.test_system_alerter.rabbitmq.disconnect()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        eval(called_mock).assert_called_once()
 
     """
-    Testing _process_data using RabbitMQ
+    In the majority of the tests below we will perform mocking. The tests for
+    config processing and alerting were performed in separate test files which
+    targeted the factory classes.
     """
 
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(SystemAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(SystemAlertsConfigsFactory, "add_new_config")
+    @mock.patch.object(SystemAlertingFactory, "remove_chain_alerting_state")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_result_data_no_alerts(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_results) -> None:
-
+    def test_process_confs_adds_new_conf_and_clears_alerting_state_if_new_confs(
+            self, mock_ack, mock_remove_alerting_state,
+            mock_add_new_conf, mock_get_parent_id) -> None:
+        """
+        In this test we will check that if new alert configs are received for
+        a new chain, the new config is added and the alerting state is cleared.
+        """
         mock_ack.return_value = None
+        mock_get_parent_id.return_value = self.test_parent_id
 
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.input_routing_key)
-            body = json.dumps(self.data_received_initially_no_alert)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_create_state_for_system.assert_called_with(self.system_id)
-            mock_process_results.assert_called_with(
-                self.data_received_initially_no_alert['result']['data'],
-                self.data_received_initially_no_alert['result']['meta_data'],
-                []
-            )
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        self.test_system_alerter.rabbitmq.connect()
+        method = pika.spec.Basic.Deliver(
+            routing_key=self.test_configs_routing_key)
+        body = json.dumps(self.received_configurations)
+        self.test_system_alerter._process_configs(method, body)
 
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        mock_add_new_conf.assert_called_once_with(chain,
+                                                  self.received_configurations)
+        mock_get_parent_id.assert_called_once_with(chain)
+        mock_remove_alerting_state.assert_called_once_with(self.test_parent_id)
+        mock_ack.assert_called_once()
+
+    @mock.patch.object(SystemAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(SystemAlertsConfigsFactory, "remove_config")
+    @mock.patch.object(SystemAlertingFactory, "remove_chain_alerting_state")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_error_data_no_alerts(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_errors) -> None:
-
+    def test_process_confs_removes_confs_and_alerting_state_if_conf_deleted(
+            self, mock_ack, mock_remove_alerting_state, mock_remove_config,
+            mock_get_parent_id) -> None:
+        """
+        In this test we will check that if alert configurations are deleted for
+        a chain, the configs are removed and the alerting state is reset. Here
+        we will assume that the configurations exist
+        """
         mock_ack.return_value = None
+        mock_get_parent_id.return_value = self.test_parent_id
 
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.input_routing_key)
-            body = json.dumps(self.data_received_error_data)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_create_state_for_system.assert_called_with(self.system_id)
-            mock_process_errors.assert_called_with(
-                self.data_received_error_data['error'],
-                []
-            )
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        self.test_system_alerter.rabbitmq.connect()
+        method = pika.spec.Basic.Deliver(
+            routing_key=self.test_configs_routing_key)
+        body = json.dumps({})
+        self.test_system_alerter._process_configs(method, body)
 
-    @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._send_heartbeat")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        mock_get_parent_id.assert_called_once_with(chain)
+        mock_remove_alerting_state.assert_called_once_with(self.test_parent_id)
+        mock_remove_config.assert_called_once_with(chain)
+        mock_ack.assert_called_once()
+
+    @mock.patch.object(SystemAlertsConfigsFactory, "add_new_config")
+    @mock.patch.object(SystemAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(SystemAlertsConfigsFactory, "remove_config")
+    @mock.patch.object(SystemAlertingFactory, "remove_chain_alerting_state")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_result_data_send_hb_no_proc_error(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_results, mock_send_heartbeat) -> None:
-
+    def test_process_confs_does_nothing_if_received_new_empty_configs(
+            self, mock_ack, mock_remove_alerting_state, mock_remove_conf,
+            mock_get_parent_id, mock_add_new_conf) -> None:
+        """
+        In this test we will check that if empty alert configurations are
+        received for a new chain, the function does nothing. We will mock that
+        the config does not exist by making get_parent_id return None.
+        """
         mock_ack.return_value = None
-        mock_create_state_for_system.return_value = None
-        mock_process_results.return_value = None
+        mock_get_parent_id.return_value = None
 
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.input_routing_key)
-            body = json.dumps(self.data_received_initially_no_alert)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            heartbeat_test = {
-                'component_name': self.alerter_name,
-                'is_alive': True,
-                'timestamp': datetime.datetime(2012, 1, 1).timestamp()
+        self.test_system_alerter.rabbitmq.connect()
+        method = pika.spec.Basic.Deliver(
+            routing_key=self.test_configs_routing_key)
+        body = json.dumps({})
+        self.test_system_alerter._process_configs(method, body)
+
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        mock_remove_alerting_state.assert_not_called()
+        mock_remove_conf.assert_not_called()
+        mock_add_new_conf.assert_not_called()
+        mock_get_parent_id.assert_called_once_with(chain)
+        mock_ack.assert_called_once()
+
+    @mock.patch.object(SystemAlertsConfigsFactory, "get_parent_id")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_configs_acknowledges_received_data(
+            self, mock_ack, mock_get_parent_id) -> None:
+        """
+        In this test we will check that if processing fails, the data is always
+        acknowledged. The case for when processing does not fail was performed
+        in each test above by checking that mock_ack has been called once.
+        """
+        mock_ack.return_value = None
+        mock_get_parent_id.side_effect = Exception('test')
+
+        self.test_system_alerter.rabbitmq.connect()
+        method = pika.spec.Basic.Deliver(
+            routing_key=self.test_configs_routing_key)
+        body = json.dumps(self.received_configurations)
+
+        # Secondly test for when processing fails successful
+        self.test_system_alerter._process_configs(method, body)
+        mock_ack.assert_called_once()
+
+    def test_place_latest_data_on_queue_places_data_on_queue_correctly(
+            self) -> None:
+        test_data = ['data_1', 'data_2']
+
+        self.assertTrue(self.test_system_alerter.publishing_queue.empty())
+
+        expected_data_1 = {
+            'exchange': ALERT_EXCHANGE,
+            'routing_key': SYSTEM_ALERT_ROUTING_KEY,
+            'data': 'data_1',
+            'properties': pika.BasicProperties(delivery_mode=2),
+            'mandatory': True
+        }
+        expected_data_2 = {
+            'exchange': ALERT_EXCHANGE,
+            'routing_key': SYSTEM_ALERT_ROUTING_KEY,
+            'data': 'data_2',
+            'properties': pika.BasicProperties(delivery_mode=2),
+            'mandatory': True
+        }
+        self.test_system_alerter._place_latest_data_on_queue(test_data)
+        self.assertEqual(2,
+                         self.test_system_alerter.publishing_queue.qsize())
+        self.assertEqual(expected_data_1,
+                         self.test_system_alerter.publishing_queue.get())
+        self.assertEqual(expected_data_2,
+                         self.test_system_alerter.publishing_queue.get())
+
+    def test_place_latest_data_on_queue_removes_old_data_if_full_then_places(
+            self) -> None:
+        # First fill the queue with the same data
+        test_data_1 = ['data_1']
+        for i in range(self.test_queue_size):
+            self.test_system_alerter._place_latest_data_on_queue(test_data_1)
+
+        # Now fill the queue with the second piece of data, and confirm that
+        # now only the second piece of data prevails.
+        test_data_2 = ['data_2']
+        for i in range(self.test_queue_size):
+            self.test_system_alerter._place_latest_data_on_queue(test_data_2)
+
+        for i in range(self.test_queue_size):
+            expected_data = {
+                'exchange': ALERT_EXCHANGE,
+                'routing_key': SYSTEM_ALERT_ROUTING_KEY,
+                'data': 'data_2',
+                'properties': pika.BasicProperties(delivery_mode=2),
+                'mandatory': True
             }
-            mock_send_heartbeat.assert_called_with(heartbeat_test)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+            self.assertEqual(expected_data,
+                             self.test_system_alerter.publishing_queue.get())
+
+    @mock.patch.object(SystemAlertingFactory, "classify_downtime_alert")
+    @mock.patch.object(SystemAlertingFactory, "classify_error_alert")
+    @mock.patch.object(SystemAlertingFactory, "classify_no_change_in_alert")
+    @mock.patch.object(SystemAlertingFactory,
+                       "classify_thresholded_time_window_alert")
+    @mock.patch.object(SystemAlertingFactory,
+                       "classify_thresholded_in_time_period_alert")
+    @mock.patch.object(SystemAlertingFactory,
+                       "classify_conditional_alert")
+    @mock.patch.object(SystemAlertingFactory,
+                       "classify_thresholded_alert_reverse")
+    def test_process_result_does_nothing_if_config_not_received(
+            self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
+            mock_thresh_win_alert, mock_no_change_alert,
+            mock_error_alert, mock_downtime_alert) -> None:
+        """
+        In this test we will check that no classification function is called
+        if data has been received for a system who's associated alerts
+        configuration is not received yet.
+        """
+        data_for_alerting = []
+        self.test_system_alerter._process_result(self.test_result_data,
+                                                 data_for_alerting)
+
+        mock_reverse.assert_not_called()
+        mock_cond_alert.assert_not_called()
+        mock_thresh_per_alert.assert_not_called()
+        mock_thresh_win_alert.assert_not_called()
+        mock_no_change_alert.assert_not_called()
+        mock_error_alert.assert_not_called()
+        mock_downtime_alert.assert_not_called()
+
+    @mock.patch.object(SystemAlertingFactory, "classify_thresholded_alert")
+    @mock.patch.object(SystemAlertingFactory, "classify_downtime_alert")
+    @mock.patch.object(SystemAlertingFactory, "classify_error_alert")
+    @mock.patch.object(SystemAlertingFactory, "classify_no_change_in_alert")
+    @mock.patch.object(SystemAlertingFactory,
+                       "classify_thresholded_time_window_alert")
+    @mock.patch.object(SystemAlertingFactory,
+                       "classify_thresholded_in_time_period_alert")
+    @mock.patch.object(SystemAlertingFactory,
+                       "classify_conditional_alert")
+    @mock.patch.object(SystemAlertingFactory,
+                       "classify_thresholded_alert_reverse")
+    def test_process_result_does_not_classify_if_metrics_disabled(
+            self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
+            mock_thresh_win_alert, mock_no_change_alert, mock_error_alert,
+            mock_downtime_alert, mock_thresh_alert) -> None:
+        """
+        In this test we will check that if a metric is disabled from the config,
+        there will be no alert classification for the associated alerts. Note
+        that for easier testing we will set every metric to be disabled. Again,
+        the only classification which would happen is for the error alerts.
+        """
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+
+        # Set each metric to disabled
+        for index, config in self.received_configurations.items():
+            config['enabled'] = 'False'
+        self.test_configs_factory.add_new_config(
+            chain, self.received_configurations)
+
+        data_for_alerting = []
+        self.test_system_alerter._process_result(self.test_result_data,
+                                                 data_for_alerting)
+
+        mock_reverse.assert_not_called()
+        mock_cond_alert.assert_not_called()
+        mock_thresh_per_alert.assert_not_called()
+        mock_thresh_win_alert.assert_not_called()
+        mock_no_change_alert.assert_not_called()
+        mock_downtime_alert.assert_not_called()
+        mock_thresh_alert.assert_not_called()
+
+        calls = mock_error_alert.call_args_list
+        self.assertEqual(2, mock_error_alert.call_count)
+        call_1 = call(
+            InvalidUrlException.code, system_alerts.InvalidUrlAlert,
+            system_alerts.ValidUrlAlert, data_for_alerting,
+            self.test_parent_id, self.test_system_id, self.test_system_name,
+            self.test_last_monitored, MetricCode.InvalidUrl.value, "",
+            "URL is now valid!.")
+        self.assertTrue(call_1 in calls)
+        call_2 = call(
+            MetricNotFoundException.code,
+            system_alerts.MetricNotFoundErrorAlert,
+            system_alerts.MetricFoundAlert, data_for_alerting,
+            self.test_parent_id, self.test_system_id, self.test_system_name,
+            self.test_last_monitored, MetricCode.MetricNotFound.value, "",
+            "Metrics have been found!.")
+        self.assertTrue(call_2 in calls)
+
+    @mock.patch.object(SystemAlertingFactory, "classify_downtime_alert")
+    @mock.patch.object(SystemAlertingFactory, "classify_error_alert")
+    @mock.patch.object(SystemAlertingFactory, "classify_no_change_in_alert")
+    @mock.patch.object(SystemAlertingFactory,
+                       "classify_thresholded_alert")
+    @mock.patch.object(SystemAlertingFactory,
+                       "classify_thresholded_in_time_period_alert")
+    @mock.patch.object(SystemAlertingFactory,
+                       "classify_conditional_alert")
+    @mock.patch.object(SystemAlertingFactory,
+                       "classify_thresholded_alert_reverse")
+    def test_process_result_classifies_correctly_if_data_valid(
+            self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
+            mock_thresh_alert, mock_no_change_alert,
+            mock_error_alert, mock_downtime_alert) -> None:
+        """
+        In this test we will check that the correct classification functions are
+        called correctly by the process_result function. Note that
+        the actual logic for these classification functions was tested in the
+        alert factory class.
+        """
+        # Add configs for the test data
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(
+            chain, self.received_configurations)
+        configs = self.test_configs_factory.configs[chain]
+
+        data_for_alerting = []
+        self.test_system_alerter._process_result(self.test_result_data,
+                                                 data_for_alerting)
+
+        calls = mock_error_alert.call_args_list
+        self.assertEqual(2, mock_error_alert.call_count)
+        call_1 = call(
+            InvalidUrlException.code, system_alerts.InvalidUrlAlert,
+            system_alerts.ValidUrlAlert, data_for_alerting,
+            self.test_parent_id, self.test_system_id, self.test_system_name,
+            self.test_last_monitored, MetricCode.InvalidUrl.value, "",
+            "URL is now valid!.")
+        self.assertTrue(call_1 in calls)
+        call_2 = call(
+            MetricNotFoundException.code,
+            system_alerts.MetricNotFoundErrorAlert,
+            system_alerts.MetricFoundAlert, data_for_alerting,
+            self.test_parent_id, self.test_system_id, self.test_system_name,
+            self.test_last_monitored, MetricCode.MetricNotFound.value, "",
+            "Metrics have been found!.")
+        self.assertTrue(call_2 in calls)
+
+        calls = mock_downtime_alert.call_args_list
+        self.assertEqual(1, mock_downtime_alert.call_count)
+        call_1 = call(
+            None, configs.system_is_down, system_alerts.SystemWentDownAtAlert,
+            system_alerts.SystemStillDownAlert,
+            system_alerts.SystemBackUpAgainAlert,
+            data_for_alerting, self.test_parent_id, self.test_system_id,
+            MetricCode.SystemIsDown.value,
+            self.test_system_name, self.test_last_monitored)
+        self.assertTrue(call_1 in calls)
+
+        calls = mock_thresh_alert.call_args_list
+        self.assertEqual(4, mock_thresh_alert.call_count)
+        call_1 = call(
+            self.test_result_data['data']['open_file_descriptors']['current'],
+            configs.open_file_descriptors,
+            system_alerts.OpenFileDescriptorsIncreasedAboveThresholdAlert,
+            system_alerts.OpenFileDescriptorsDecreasedBelowThresholdAlert,
+            data_for_alerting, self.test_parent_id, self.test_system_id,
+            MetricCode.OpenFileDescriptorsThreshold.value,
+            self.test_system_name, self.test_last_monitored)
+        self.assertTrue(call_1 in calls)
+        call_2 = call(
+            self.test_result_data['data']['system_cpu_usage']['current'],
+            configs.system_cpu_usage,
+            system_alerts.SystemCPUUsageIncreasedAboveThresholdAlert,
+            system_alerts.SystemCPUUsageDecreasedBelowThresholdAlert,
+            data_for_alerting, self.test_parent_id, self.test_system_id,
+            MetricCode.SystemCPUUsageThreshold.value,
+            self.test_system_name, self.test_last_monitored)
+        self.assertTrue(call_2 in calls)
+        call_3 = call(
+            self.test_result_data['data']['system_ram_usage']['current'],
+            configs.system_ram_usage,
+            system_alerts.SystemRAMUsageIncreasedAboveThresholdAlert,
+            system_alerts.SystemRAMUsageDecreasedBelowThresholdAlert,
+            data_for_alerting, self.test_parent_id, self.test_system_id,
+            MetricCode.SystemRAMUsageThreshold.value,
+            self.test_system_name, self.test_last_monitored)
+        self.assertTrue(call_3 in calls)
+        call_4 = call(
+            self.test_result_data['data']['system_storage_usage']['current'],
+            configs.system_storage_usage,
+            system_alerts.SystemStorageUsageIncreasedAboveThresholdAlert,
+            system_alerts.SystemStorageUsageDecreasedBelowThresholdAlert,
+            data_for_alerting, self.test_parent_id, self.test_system_id,
+            MetricCode.SystemStorageUsageThreshold.value,
+            self.test_system_name, self.test_last_monitored)
+        self.assertTrue(call_4 in calls)
+
+        mock_no_change_alert.assert_not_called()
+        mock_cond_alert.assert_not_called()
+        mock_reverse.assert_not_called()
+        mock_thresh_per_alert.assert_not_called()
+
+    @mock.patch.object(SystemAlertingFactory, "classify_downtime_alert")
+    @mock.patch.object(SystemAlertingFactory, "classify_error_alert")
+    def test_process_error_classifies_correctly_if_data_valid(
+            self, mock_error_alert, mock_downtime_alert) -> None:
+        """
+        In this test we will check that if we received an InvalidURL
+        Exception then we should generate an alert for it.
+        """
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(
+            chain, self.received_configurations)
+        configs = self.test_configs_factory.configs[chain]
+
+        data_for_alerting = []
+        self.test_system_alerter._process_error(
+            self.test_system_down_error, data_for_alerting)
+
+        calls = mock_error_alert.call_args_list
+        self.assertEqual(2, mock_error_alert.call_count)
+        call_1 = call(
+            InvalidUrlException.code, system_alerts.InvalidUrlAlert,
+            system_alerts.ValidUrlAlert, data_for_alerting, self.test_parent_id,
+            self.test_system_id, self.test_system_name,
+            self.test_last_monitored, MetricCode.InvalidUrl.value,
+            self.test_system_is_down_exception.message,
+            "URL is now valid!", self.test_system_is_down_exception.code)
+        self.assertTrue(call_1 in calls)
+        call_2 = call(
+            MetricNotFoundException.code,
+            system_alerts.MetricNotFoundErrorAlert,
+            system_alerts.MetricFoundAlert, data_for_alerting,
+            self.test_parent_id, self.test_system_id, self.test_system_name,
+            self.test_last_monitored,
+            MetricCode.MetricNotFound.value,
+            self.test_system_is_down_exception.message,
+            "Metrics have been found!",
+            self.test_system_is_down_exception.code)
+        self.assertTrue(call_2 in calls)
+
+        meta_data = self.test_system_down_error['meta_data']
+        mock_downtime_alert.assert_called_once_with(
+            self.test_system_down_error['data']['went_down_at']['current'],
+            configs.system_is_down, system_alerts.SystemWentDownAtAlert,
+            system_alerts.SystemStillDownAlert,
+            system_alerts.SystemBackUpAgainAlert, data_for_alerting,
+            meta_data['system_parent_id'], meta_data['system_id'],
+            MetricCode.SystemIsDown.value, meta_data['system_name'],
+            meta_data['time']
+        )
+
+    @mock.patch.object(SystemAlerter, "_place_latest_data_on_queue")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_transformed_data_does_not_place_alerts_on_queue_if_none(
+            self, mock_basic_ack, mock_place_on_queue) -> None:
+        # We will not be adding configs so that no alerts are generated
+
+        # Declare some fields for the process_transformed_data function
+        self.test_system_alerter._initialise_rabbitmq()
+        method = pika.spec.Basic.Deliver(
+            routing_key=SYSTEM_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        self.test_system_alerter._process_transformed_data(method, body)
+
+        mock_basic_ack.assert_called_once()
+        mock_place_on_queue.assert_not_called()
+
+    @mock.patch.object(SystemAlerter, "_process_result")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_transformed_data_does_not_raise_processing_error(
+            self, mock_basic_ack, mock_process_result) -> None:
+        """
+        In this test we will generate an exception from one of the processing
+        functions to see if an exception is raised.
+        """
+        mock_process_result.side_effect = self.test_system_is_down_exception
+
+        # Declare some fields for the process_transformed_data function
+        self.test_system_alerter._initialise_rabbitmq()
+        method = pika.spec.Basic.Deliver(
+            routing_key=SYSTEM_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        try:
+            self.test_system_alerter._process_transformed_data(method, body)
+        except PANICException as e:
+            self.fail('Did not expect {} to be raised.'.format(e))
+
+        mock_basic_ack.assert_called_once()
+
+    @mock.patch.object(SystemAlerter, "_send_data")
+    @mock.patch.object(SystemAlerter, "_process_result")
+    @mock.patch.object(RabbitMQApi, "basic_ack")
+    def test_process_transformed_data_attempts_to_send_data_from_queue(
+            self, mock_basic_ack, mock_process_result,
+            mock_send_data) -> None:
+        # Add configs so that the data can be classified. The test data used
+        # will generate an alert because it will obey the thresholds.
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(
+            chain, self.received_configurations)
+
+        # First do the test for when there are no processing errors
+        self.test_system_alerter._initialise_rabbitmq()
+        method = pika.spec.Basic.Deliver(
+            routing_key=SYSTEM_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        self.test_system_alerter._process_transformed_data(method, body)
+
+        mock_basic_ack.assert_called_once()
+        mock_send_data.assert_called_once()
+
+        # Now do the test for when there are processing errors
+        mock_basic_ack.reset_mock()
+        mock_send_data.reset_mock()
+        mock_process_result.side_effect = self.test_system_is_down_exception
+
+        # Declare some fields for the process_transformed_data function
+        self.test_system_alerter._process_transformed_data(method, body)
+
+        mock_basic_ack.assert_called_once()
+        mock_send_data.assert_called_once()
 
     @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._send_heartbeat")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(SystemAlerter, "_send_data")
+    @mock.patch.object(SystemAlerter, "_send_heartbeat")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_error_data_send_hb_no_proc_error(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_errors, mock_send_heartbeat) -> None:
+    def test_process_transformed_data_sends_hb_if_no_processing_errors(
+            self, mock_basic_ack, mock_send_hb, mock_send_data) -> None:
+        # To avoid sending data
+        mock_send_data.return_value = None
 
-        mock_ack.return_value = None
-        mock_create_state_for_system.return_value = None
-        mock_process_errors.return_value = None
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.input_routing_key)
-            body = json.dumps(self.data_received_error_data)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            heartbeat_test = {
-                'component_name': self.alerter_name,
-                'is_alive': True,
-                'timestamp': datetime.datetime(2012, 1, 1).timestamp()
-            }
-            mock_send_heartbeat.assert_called_with(heartbeat_test)
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        # Add configs so that the data can be classified. The test data used
+        # will generate an alert because it will obey the thresholds.
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(
+            chain, self.received_configurations)
+
+        self.test_system_alerter._initialise_rabbitmq()
+        method = pika.spec.Basic.Deliver(
+            routing_key=SYSTEM_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        self.test_system_alerter._process_transformed_data(method, body)
+
+        mock_basic_ack.assert_called_once()
+        test_hb = {
+            'component_name': self.test_alerter_name,
+            'is_alive': True,
+            'timestamp': datetime.datetime.now().timestamp()
+        }
+        mock_send_hb.assert_called_once_with(test_hb)
 
     @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._send_heartbeat")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+    @mock.patch.object(SystemAlerter, "_process_result")
+    @mock.patch.object(SystemAlerter, "_send_data")
+    @mock.patch.object(SystemAlerter, "_send_heartbeat")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_result_data_do_not_send_hb_on_proc_error_bad_routing_key(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_results, mock_send_heartbeat) -> None:
+    def test_process_transformed_data_does_not_send_hb_if_processing_error(
+            self, mock_basic_ack, mock_send_hb, mock_send_data,
+            mock_process_result) -> None:
+        # To avoid sending data
+        mock_send_data.return_value = None
 
-        mock_ack.return_value = None
-        mock_create_state_for_system.return_value = None
-        mock_process_results.return_value = None
+        # Generate error in processing
+        mock_process_result.side_effect = self.test_system_is_down_exception
 
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_output_routing_key)
-            body = json.dumps(self.data_received_initially_no_alert)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_send_heartbeat.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        self.test_system_alerter._initialise_rabbitmq()
+        method = pika.spec.Basic.Deliver(
+            routing_key=SYSTEM_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
+        self.test_system_alerter._process_transformed_data(method, body)
 
-    @freeze_time("2012-01-01")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._send_heartbeat")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
+        mock_basic_ack.assert_called_once()
+        mock_send_hb.assert_not_called()
+
+    @parameterized.expand([
+        (pika.exceptions.AMQPConnectionError,
+         pika.exceptions.AMQPConnectionError('test'),),
+        (pika.exceptions.AMQPChannelError,
+         pika.exceptions.AMQPChannelError('test'),),
+        (Exception, Exception('test'),),
+    ])
+    @mock.patch.object(SystemAlerter, "_send_data")
     @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_error_data_do_not_send_hb_on_proc_error_bad_routing_key(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_errors, mock_send_heartbeat) -> None:
+    def test_process_transformed_data_raises_unexpected_exception(
+            self, exception_class, exception_instance, mock_basic_ack,
+            mock_send_data) -> None:
+        # We will generate the error from the send_data fn
+        mock_send_data.side_effect = exception_instance
 
-        mock_ack.return_value = None
-        mock_create_state_for_system.return_value = None
-        mock_process_errors.return_value = None
+        # Add configs so that the data can be classified. The test data used
+        # will generate an alert because it will obey the thresholds.
+        parsed_routing_key = self.test_configs_routing_key.split('.')
+        chain = parsed_routing_key[1] + ' ' + parsed_routing_key[2]
+        del self.received_configurations['DEFAULT']
+        self.test_configs_factory.add_new_config(
+            chain, self.received_configurations)
 
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_output_routing_key)
-            body = json.dumps(self.data_received_error_data)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_send_heartbeat.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        self.test_system_alerter._initialise_rabbitmq()
+        method = pika.spec.Basic.Deliver(
+            routing_key=SYSTEM_TRANSFORMED_DATA_ROUTING_KEY)
+        body = json.dumps(self.transformed_data_example_result)
 
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._send_data")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_result_data_send_data_called(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_results, mock_send_data) -> None:
+        self.assertRaises(exception_class,
+                          self.test_system_alerter._process_transformed_data,
+                          method, body)
 
-        mock_ack.return_value = None
-        mock_create_state_for_system.return_value = None
-        mock_process_results.return_value = None
-
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.input_routing_key)
-            body = json.dumps(self.data_received_initially_no_alert)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_send_data.assert_called_once()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._send_data")
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_error_data_send_data_called(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_errors, mock_send_data) -> None:
-
-        mock_ack.return_value = None
-        mock_create_state_for_system.return_value = None
-        mock_process_errors.return_value = None
-
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.input_routing_key)
-            body = json.dumps(self.data_received_error_data)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_send_data.assert_called_once()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_result_data_not_processed_bad_routing_key(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_results) -> None:
-        mock_ack.return_value = None
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_output_routing_key)
-            body = json.dumps(self.data_received_initially_no_alert)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_create_state_for_system.assert_not_called()
-            mock_process_results.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_error_data_not_processed_bad_routing_key(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_errors) -> None:
-
-        mock_ack.return_value = None
-
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_output_routing_key)
-            body = json.dumps(self.data_received_error_data)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_create_state_for_system.assert_not_called()
-            mock_process_errors.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_results")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_result_data_not_processed_bad_data_received(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_results) -> None:
-        mock_ack.return_value = None
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_output_routing_key)
-            del self.data_received_initially_no_alert['result']['data']
-            body = json.dumps(self.data_received_initially_no_alert)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_create_state_for_system.assert_not_called()
-            mock_process_results.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch("src.alerter.alerters.system.SystemAlerter._process_errors")
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._create_state_for_system")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_error_data_not_processed_bad_data_received(
-            self, mock_ack, mock_create_state_for_system,
-            mock_process_errors) -> None:
-
-        mock_ack.return_value = None
-
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_output_routing_key)
-            del self.data_received_error_data['error']['meta_data']
-            body = json.dumps(self.data_received_error_data)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_create_state_for_system.assert_not_called()
-            mock_process_errors.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_place_latest_data_on_queue_not_called_bad_routing_key(
-            self, mock_ack, mock_place_latest_data_on_queue) -> None:
-        mock_ack.return_value = None
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_output_routing_key)
-            body = json.dumps(self.data_received_initially_no_alert)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_place_latest_data_on_queue.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_error_data_not_processed_bad_routing_key(
-            self, mock_ack, mock_place_latest_data_on_queue) -> None:
-
-        mock_ack.return_value = None
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_output_routing_key)
-            body = json.dumps(self.data_received_error_data)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_place_latest_data_on_queue.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_place_latest_data_on_queue_not_called_bad_data_received(
-            self, mock_ack, mock_place_latest_data_on_queue) -> None:
-        mock_ack.return_value = None
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_output_routing_key)
-            del self.data_received_initially_no_alert['result']['data']
-            body = json.dumps(self.data_received_initially_no_alert)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_place_latest_data_on_queue.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
-
-    @mock.patch(
-        "src.alerter.alerters.system.SystemAlerter._place_latest_data_on_queue")
-    @mock.patch.object(RabbitMQApi, "basic_ack")
-    def test_process_error_data_not_processed_bad_data_received(
-            self, mock_ack, mock_place_latest_data_on_queue) -> None:
-        mock_ack.return_value = None
-        try:
-            self.test_system_alerter.rabbitmq.connect()
-            blocking_channel = self.test_system_alerter.rabbitmq.channel
-            method = pika.spec.Basic.Deliver(
-                routing_key=self.bad_output_routing_key)
-            del self.data_received_error_data['error']['meta_data']
-            body = json.dumps(self.data_received_error_data)
-            properties = pika.spec.BasicProperties()
-            self.test_system_alerter._process_data(blocking_channel, method,
-                                                   properties, body)
-            mock_place_latest_data_on_queue.assert_not_called()
-        except Exception as e:
-            self.fail("Test failed: {}".format(e))
+        mock_basic_ack.assert_called_once()

@@ -15,7 +15,7 @@ from src.monitorables.system import System
 from src.utils.constants.rabbitmq import (
     ALERT_EXCHANGE, STORE_EXCHANGE, RAW_DATA_EXCHANGE, HEALTH_CHECK_EXCHANGE,
     SYSTEM_DT_INPUT_QUEUE_NAME, SYSTEM_RAW_DATA_ROUTING_KEY,
-    SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE, TOPIC)
+    SYSTEM_TRANSFORMED_DATA_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   SystemIsDownException,
                                   MessageWasNotDeliveredException)
@@ -41,8 +41,7 @@ class SystemDataTransformer(DataTransformer):
                                        False, False)
         self.logger.info("Creating queue '%s'", SYSTEM_DT_INPUT_QUEUE_NAME)
         self.rabbitmq.queue_declare(SYSTEM_DT_INPUT_QUEUE_NAME, False, True,
-                                    False,
-                                    False)
+                                    False, False)
         self.logger.info("Binding queue '%s' to exchange '%s' with routing "
                          "key '%s'", SYSTEM_DT_INPUT_QUEUE_NAME,
                          RAW_DATA_EXCHANGE,
@@ -545,22 +544,12 @@ class SystemDataTransformer(DataTransformer):
     def _place_latest_data_on_queue(self, transformed_data: Dict,
                                     data_for_alerting: Dict,
                                     data_for_saving: Dict) -> None:
-        # Compute the routing key for alerting. The routing key will be in
-        # the format `alerter.system.parent_id
-        response_index_key = 'result' if 'result' in transformed_data \
-            else 'error'
-        meta_data = transformed_data[response_index_key]['meta_data']
-        system_parent_id = meta_data['system_parent_id']
-        alerting_routing_key = \
-            SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE.format(
-                system_parent_id)
-
         self._push_to_queue(data_for_alerting, ALERT_EXCHANGE,
-                            alerting_routing_key,
+                            SYSTEM_TRANSFORMED_DATA_ROUTING_KEY,
                             pika.BasicProperties(delivery_mode=2), True)
 
         self._push_to_queue(data_for_saving, STORE_EXCHANGE,
-                            alerting_routing_key,
+                            SYSTEM_TRANSFORMED_DATA_ROUTING_KEY,
                             pika.BasicProperties(delivery_mode=2), True)
 
     def _process_raw_data(self, ch: BlockingChannel,

@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Any
 
 
 class SystemAlertsConfig:
@@ -14,6 +14,9 @@ class SystemAlertsConfig:
         self._system_storage_usage = system_storage_usage
         self._system_ram_usage = system_ram_usage
         self._system_is_down = system_is_down
+
+    def __eq__(self, other: Any) -> bool:
+        return self.__dict__ == other.__dict__
 
     @property
     def parent_id(self) -> str:

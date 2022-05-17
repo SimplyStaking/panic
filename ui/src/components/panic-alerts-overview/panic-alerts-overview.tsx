@@ -102,6 +102,10 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
         }
     }
 
+    disconnectedCallback() {
+        window.clearInterval(this._updater);
+    }
+
     render() {
         return (
             <Host>

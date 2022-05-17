@@ -21,7 +21,7 @@ from src.utils import env
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, RAW_DATA_EXCHANGE, STORE_EXCHANGE, ALERT_EXCHANGE,
     SYSTEM_DT_INPUT_QUEUE_NAME, SYSTEM_RAW_DATA_ROUTING_KEY,
-    SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE,
+    SYSTEM_TRANSFORMED_DATA_ROUTING_KEY,
     HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, TOPIC)
 from src.utils.exceptions import (PANICException, SystemIsDownException,
                                   ReceivedUnexpectedDataException,
@@ -966,16 +966,14 @@ class TestSystemDataTransformer(unittest.TestCase):
         )
         expected_data_for_alerting = {
             'exchange': ALERT_EXCHANGE,
-            'routing_key': SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE.format(
-                self.test_system_parent_id),
+            'routing_key': SYSTEM_TRANSFORMED_DATA_ROUTING_KEY,
             'data': eval(data_for_alerting),
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True
         }
         expected_data_for_saving = {
             'exchange': STORE_EXCHANGE,
-            'routing_key': SYSTEM_TRANSFORMED_DATA_ROUTING_KEY_TEMPLATE.format(
-                self.test_system_parent_id),
+            'routing_key': SYSTEM_TRANSFORMED_DATA_ROUTING_KEY,
             'data': eval(data_for_saving),
             'properties': pika.BasicProperties(delivery_mode=2),
             'mandatory': True
@@ -988,18 +986,6 @@ class TestSystemDataTransformer(unittest.TestCase):
         self.assertDictEqual(
             expected_data_for_saving,
             self.test_data_transformer.publishing_queue.queue[1])
-
-    @parameterized.expand([
-        ('result', 'self.transformed_data_example_result',),
-        ('error', 'self.transformed_data_example_general_error',),
-    ])
-    def test_place_latest_data_on_queue_raises_key_error_if_keys_missing(
-            self, response_index_key, transformed_data) -> None:
-        invalid_transformed_data = copy.deepcopy(eval(transformed_data))
-        del invalid_transformed_data[response_index_key]['meta_data']
-        self.assertRaises(
-            KeyError, self.test_data_transformer._place_latest_data_on_queue,
-            invalid_transformed_data, {}, {})
 
     @parameterized.expand([({}, False,), ('self.test_state', True), ])
     @mock.patch.object(SystemDataTransformer, "_transform_data")

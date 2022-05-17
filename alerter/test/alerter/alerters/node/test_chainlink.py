@@ -22,8 +22,8 @@ from src.alerter.alerts.node.chainlink import (
     NoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
     TotalErroredJobRunsIncreasedAboveThresholdAlert,
     TotalErroredJobRunsDecreasedBelowThresholdAlert,
-    EthBalanceIncreasedAboveThresholdAlert,
-    EthBalanceDecreasedBelowThresholdAlert, EthBalanceToppedUpAlert,
+    BalanceIncreasedAboveThresholdAlert,
+    BalanceDecreasedBelowThresholdAlert, BalanceToppedUpAlert,
     ChangeInSourceNodeAlert, GasBumpIncreasedOverNodeGasPriceLimitAlert,
     NodeWentDownAtAlert, NodeStillDownAlert, NodeBackUpAgainAlert,
     PrometheusSourceIsDownAlert, PrometheusSourceBackUpAgainAlert)
@@ -77,8 +77,9 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             'percentile': 50.5,
             'price': 22.0,
         }
-        self.test_eth_balance_info = {
+        self.test_balance_info = {
             'address': 'address1', 'balance': 34.4, 'latest_usage': 5.0,
+            'symbol': 'TEST'
         }
         self.test_last_prometheus_source_used = "prometheus_source_1"
         self.test_last_monitored_prometheus = 45.666786
@@ -95,8 +96,9 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
             'percentile': 52.5,
             'price': 24.0,
         }
-        self.test_eth_balance_info_new = {
+        self.test_balance_info_new = {
             'address': 'address1', 'balance': 44.4, 'latest_usage': 0.0,
+            'symbol': 'TEST'
         }
         self.test_last_prometheus_source_used_new = "prometheus_source_2"
         self.test_last_monitored_prometheus_new = 47.666786
@@ -110,7 +112,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         }
         metrics_without_time_window = [
             'head_tracker_current_head', 'head_tracker_heads_received_total',
-            'eth_balance_amount', 'node_is_down'
+            'balance_amount', 'node_is_down'
         ]
         metrics_with_time_window = [
             'max_unconfirmed_blocks',
@@ -119,7 +121,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         severity_metrics = [
             'process_start_time_seconds',
             'tx_manager_gas_bump_exceeds_limit_total',
-            'eth_balance_amount_increase'
+            'balance_amount_increase'
         ]
         all_metrics = (metrics_without_time_window
                        + metrics_with_time_window
@@ -212,9 +214,9 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
                     'current': self.test_current_gas_price_info_new,
                     'previous': self.test_current_gas_price_info
                 },
-                'eth_balance_info': {
-                    'current': self.test_eth_balance_info_new,
-                    'previous': self.test_eth_balance_info
+                'balance_info': {
+                    'current': self.test_balance_info_new,
+                    'previous': self.test_balance_info
                 },
             },
         }
@@ -687,7 +689,7 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
     @mock.patch.object(ChainlinkNodeAlertingFactory,
                        "classify_conditional_alert")
     @mock.patch.object(ChainlinkNodeAlertingFactory,
-                       "classify_thresholded_alert_reverse")
+                       "classify_thresholded_alert_reverse_chainlink_node")
     def test_process_prometheus_result_classifies_correctly_if_data_valid(
             self, mock_reverse, mock_cond_alert, mock_thresh_per_alert,
             mock_thresh_win_alert, mock_no_change_alert,
@@ -793,12 +795,13 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         calls = mock_reverse.call_args_list
         self.assertEqual(1, mock_reverse.call_count)
         call_1 = call(
-            self.test_eth_balance_info_new['balance'],
-            configs.eth_balance_amount,
-            EthBalanceIncreasedAboveThresholdAlert,
-            EthBalanceDecreasedBelowThresholdAlert, data_for_alerting,
+            self.test_balance_info_new['balance'],
+            configs.balance_amount,
+            self.test_balance_info_new['symbol'],
+            BalanceIncreasedAboveThresholdAlert,
+            BalanceDecreasedBelowThresholdAlert, data_for_alerting,
             self.test_parent_id, self.test_chainlink_node_id,
-            GroupedChainlinkNodeAlertsMetricCode.EthBalanceThreshold.value,
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold.value,
             self.test_chainlink_node_name,
             self.test_last_monitored_prometheus_new)
         self.assertTrue(call_1 in calls)
@@ -806,15 +809,16 @@ class TestChainlinkNodeAlerter(unittest.TestCase):
         calls = mock_cond_alert.call_args_list
         self.assertEqual(3, mock_cond_alert.call_count)
         call_1 = call(
-            EthBalanceToppedUpAlert,
+            BalanceToppedUpAlert,
             self.test_cl_node_alerter._greater_than_condition_function,
-            [self.test_eth_balance_info_new['balance'],
-             self.test_eth_balance_info['balance']], [
+            [self.test_balance_info_new['balance'],
+             self.test_balance_info['balance']], [
                 self.test_chainlink_node_name,
-                self.test_eth_balance_info_new['balance'],
-                self.test_eth_balance_info_new[
-                    'balance'] - self.test_eth_balance_info['balance'],
-                configs.eth_balance_amount_increase['severity'],
+                self.test_balance_info_new['balance'],
+                self.test_balance_info_new[
+                    'balance'] - self.test_balance_info['balance'],
+                self.test_balance_info_new['symbol'],
+                configs.balance_amount_increase['severity'],
                 self.test_last_monitored_prometheus_new, self.test_parent_id,
                 self.test_chainlink_node_id], data_for_alerting)
         call_2 = call(

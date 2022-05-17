@@ -66,9 +66,9 @@ class ChainlinkContractsMonitor(Monitor):
             w3_interface.middleware_onion.inject(geth_poa_middleware, layer=0)
             self._evm_node_w3_interface[evm_node_url] = w3_interface
 
-        # This dict stores the eth address of a chainlink node indexed by the
-        # node id. The eth address is obtained from prometheus.
-        self._node_eth_address = {}
+        # This dict stores the address of a chainlink node indexed by the
+        # node id. This address is obtained from prometheus.
+        self._node_address = {}
 
         # This list stores a list of chain contracts data obtained from the wei
         # watchers link
@@ -96,7 +96,7 @@ class ChainlinkContractsMonitor(Monitor):
         # Data retrieval limiters
         self._wei_watchers_retrieval_limiter = TimedTaskLimiter(
             timedelta(seconds=float(_WEI_WATCHERS_RETRIEVAL_TIME_PERIOD)))
-        self._eth_address_retrieval_limiter = TimedTaskLimiter(
+        self._address_retrieval_limiter = TimedTaskLimiter(
             timedelta(seconds=float(_PROMETHEUS_RETRIEVAL_TIME_PERIOD)))
 
     @property
@@ -112,8 +112,8 @@ class ChainlinkContractsMonitor(Monitor):
         return self._contracts_url
 
     @property
-    def node_eth_address(self) -> Dict[str, str]:
-        return self._node_eth_address
+    def node_address(self) -> Dict[str, str]:
+        return self._node_address
 
     @property
     def contracts_data(self) -> List[Dict]:
@@ -136,8 +136,8 @@ class ChainlinkContractsMonitor(Monitor):
         return self._wei_watchers_retrieval_limiter
 
     @property
-    def eth_address_retrieval_limiter(self) -> TimedTaskLimiter:
-        return self._eth_address_retrieval_limiter
+    def address_retrieval_limiter(self) -> TimedTaskLimiter:
+        return self._address_retrieval_limiter
 
     def _get_chain_contracts(self) -> List[Dict]:
         """
@@ -154,21 +154,21 @@ class ChainlinkContractsMonitor(Monitor):
         """
         self._contracts_data = contracts_data
 
-    def _get_nodes_eth_address(self) -> Tuple[Dict, bool]:
+    def _get_nodes_address(self) -> Tuple[Dict, bool]:
         """
-        This function attempts to get all the Ethereum addresses associated with
-        each node from the prometheus endpoints. For each node it attempts to
-        connect with the online source to get the eth address, however if the
+        This function attempts to get all the addresses associated with each
+        node from the prometheus endpoints. For each node it attempts to
+        connect with the online source to get the address, however if the
         required data cannot be obtained from any source, the node is not added
         to the output dict, and the second element in the tuple is set to True
         indicating that the dict does not contain all node ids.
         :return: A tuple with the following structure:
-                ({ node_id: node_eth_address }, bool)
+                ({ node_id: node_address }, bool)
         """
         metrics_to_retrieve = {
             'eth_balance': 'strict',
         }
-        node_eth_address = {}
+        node_address = {}
         error_occurred = False
         for node_config in self.node_configs:
             for prom_url in node_config.node_prometheus_urls:
@@ -178,8 +178,8 @@ class ChainlinkContractsMonitor(Monitor):
                         verify=False)
                     for _, data_subset in enumerate(metrics['eth_balance']):
                         if "account" in json.loads(data_subset):
-                            eth_address = json.loads(data_subset)['account']
-                            node_eth_address[node_config.node_id] = eth_address
+                            address = json.loads(data_subset)['account']
+                            node_address[node_config.node_id] = address
                             break
                     break
                 except (ReqConnectionError, ReadTimeout, InvalidURL,
@@ -198,22 +198,21 @@ class ChainlinkContractsMonitor(Monitor):
                     self.logger.exception(e)
                     break
 
-            # If no ethereum address was added for a node, then an error has
-            # occurred
-            if node_config.node_id not in node_eth_address:
+            # If no address was added for a node, then an error has occurred
+            if node_config.node_id not in node_address:
                 error_occurred = True
 
-        return node_eth_address, error_occurred
+        return node_address, error_occurred
 
-    def _store_nodes_eth_addresses(self, node_eth_address: Dict) -> None:
+    def _store_nodes_addresses(self, node_address: Dict) -> None:
         """
-        This function stores the node's associated ethereum addresses obtained
-        from prometheus in the state
-        :param node_eth_address: A dict associating a node's ID to it's ethereum
-                               : address obtained from prometheus
+        This function stores the node's associated addresses obtained from
+        prometheus in the state
+        :param node_address: A dict associating a node's ID to its address
+                           : obtained from prometheus.
         :return: None
         """
-        self._node_eth_address = node_eth_address
+        self._node_address = node_address
 
     def _select_node(self) -> Optional[str]:
         """
@@ -244,9 +243,8 @@ class ChainlinkContractsMonitor(Monitor):
         """
         w3_interface = self.evm_node_w3_interface[selected_node]
         node_contracts = {}
-        for node_id, eth_address in self._node_eth_address.items():
-            transformed_eth_address = w3_interface.toChecksumAddress(
-                eth_address)
+        for node_id, address in self._node_address.items():
+            transformed_address = w3_interface.toChecksumAddress(address)
             v3_participating_contracts = []
             v4_participating_contracts = []
             for contract_data in self._contracts_data:
@@ -257,14 +255,14 @@ class ChainlinkContractsMonitor(Monitor):
                     aggregator_contract = w3_interface.eth.contract(
                         address=aggregator_address, abi=V3_AGGREGATOR)
                     oracles = aggregator_contract.functions.getOracles().call()
-                    if transformed_eth_address in oracles:
+                    if transformed_address in oracles:
                         v3_participating_contracts.append(proxy_address)
                 elif contract_version == 4:
                     aggregator_contract = w3_interface.eth.contract(
                         address=aggregator_address, abi=V4_AGGREGATOR)
                     transmitters = (
                         aggregator_contract.functions.transmitters().call())
-                    if transformed_eth_address in transmitters:
+                    if transformed_address in transmitters:
                         v4_participating_contracts.append(proxy_address)
 
             node_contracts[node_id] = {}
@@ -281,14 +279,14 @@ class ChainlinkContractsMonitor(Monitor):
         """
         self._node_contracts = node_contracts
 
-    def _get_v3_data(self, w3_interface: Web3, node_eth_address: str,
+    def _get_v3_data(self, w3_interface: Web3, node_address: str,
                      node_id: str) -> Dict:
         """
         This function attempts to retrieve the v3 contract metrics for a node
         using an evm node as data source.
         :param w3_interface: The web3 interface used to get the data
-        :param node_eth_address: The ethereum address of the node the metrics
-                               : are associated with.
+        :param node_address: The address of the node the metrics
+                           : are associated with.
         :param node_id: The id of the node the metrics are associated with.
         :return: A dict with the following structure:
         {
@@ -339,8 +337,7 @@ class ChainlinkContractsMonitor(Monitor):
             description = proxy_contract.functions.description().call()
             aggregator_contract = w3_interface.eth.contract(
                 address=aggregator_address, abi=V3_AGGREGATOR)
-            transformed_eth_address = w3_interface.toChecksumAddress(
-                node_eth_address)
+            transformed_address = w3_interface.toChecksumAddress(node_address)
 
             # Get all SubmissionReceived events related to the node in question
             # from the last block height not monitored until the current block
@@ -359,7 +356,7 @@ class ChainlinkContractsMonitor(Monitor):
                 aggregator_contract.events.SubmissionReceived.createFilter(
                     fromBlock=first_block_to_monitor,
                     toBlock=current_block_height,
-                    argument_filters={'oracle': transformed_eth_address})
+                    argument_filters={'oracle': transformed_address})
             events = event_filter.get_all_entries()
             latest_round_data = (
                 aggregator_contract.functions.latestRoundData().call())
@@ -375,7 +372,7 @@ class ChainlinkContractsMonitor(Monitor):
                 'answeredInRound': latest_round_data[4],
                 'withdrawablePayment':
                     aggregator_contract.functions.withdrawablePayment(
-                        transformed_eth_address).call(),
+                        transformed_address).call(),
                 'historicalRounds': []
             }
 
@@ -439,14 +436,14 @@ class ChainlinkContractsMonitor(Monitor):
 
         return data
 
-    def _get_v4_data(self, w3_interface: Web3, node_eth_address: str,
+    def _get_v4_data(self, w3_interface: Web3, node_address: str,
                      node_id: str) -> Dict:
         """
         This function attempts to retrieve the v4 contract metrics for a node
         using an evm node as data source.
         :param w3_interface: The web3 interface used to get the data
-        :param node_eth_address: The ethereum address of the node the metrics
-                               : are associated with.
+        :param node_address: The address of the node the metrics are associated
+                           : with.
         :param node_id: The id of the node the metrics are associated with.
         :return: A dict with the following structure:
         {
@@ -496,8 +493,7 @@ class ChainlinkContractsMonitor(Monitor):
             description = proxy_contract.functions.description().call()
             aggregator_contract = w3_interface.eth.contract(
                 address=aggregator_address, abi=V4_AGGREGATOR)
-            transformed_eth_address = w3_interface.toChecksumAddress(
-                node_eth_address)
+            transformed_address = w3_interface.toChecksumAddress(node_address)
 
             # Get all NewTransmission events related to the node in question
             # from the last block height not monitored until the current block
@@ -522,8 +518,7 @@ class ChainlinkContractsMonitor(Monitor):
             transmitters = aggregator_contract.functions.transmitters().call()
 
             try:
-                node_transmitter_index = transmitters.index(
-                    transformed_eth_address)
+                node_transmitter_index = transmitters.index(transformed_address)
             except ValueError:
                 # If the node is no longer a transmitter of this contract,
                 # move on to the next contract
@@ -541,7 +536,7 @@ class ChainlinkContractsMonitor(Monitor):
                 'latestTimestamp': latest_round_data[3],
                 'answeredInRound': latest_round_data[4],
                 'owedPayment': aggregator_contract.functions.owedPayment(
-                    transformed_eth_address).call(),
+                    transformed_address).call(),
                 'historicalRounds': []
             }
 
@@ -588,19 +583,19 @@ class ChainlinkContractsMonitor(Monitor):
 
         return data
 
-    def _get_data(self, w3_interface: Web3, node_eth_address: str,
+    def _get_data(self, w3_interface: Web3, node_address: str,
                   node_id: str) -> Dict:
         """
         This function retrieves the contracts' v3 and v4 metrics data for a
         single node using an evm node as data source.
         :param w3_interface: The web3 interface associated with the evm node
-                           : used as data source
-        :param node_eth_address: The Ethereum address of the node
-        :param node_id: The identifier of the node
-        :return: A dict containing all contract metrics
+                           : used as data source.
+        :param node_address: The address of the node.
+        :param node_id: The identifier of the node.
+        :return: A dict containing all contract metrics.
         """
-        v3_data = self._get_v3_data(w3_interface, node_eth_address, node_id)
-        v4_data = self._get_v4_data(w3_interface, node_eth_address, node_id)
+        v3_data = self._get_v3_data(w3_interface, node_address, node_id)
+        v4_data = self._get_v4_data(w3_interface, node_address, node_id)
         return {**v3_data, **v4_data}
 
     def _display_data(self, data: Dict) -> str:
@@ -696,16 +691,16 @@ class ChainlinkContractsMonitor(Monitor):
             self.logger.error(data_retrieval_exception.message)
             self.logger.exception(e)
 
-        # Retrieve the eth address of the node every time period
-        if self.eth_address_retrieval_limiter.can_do_task():
-            node_eth_address, error_occurred = self._get_nodes_eth_address()
-            self._store_nodes_eth_addresses(node_eth_address)
+        # Retrieve the address of the node every time period
+        if self.address_retrieval_limiter.can_do_task():
+            node_address, error_occurred = self._get_nodes_address()
+            self._store_nodes_addresses(node_address)
             re_filter = True
 
-            # If an error occurred we want to get the eth address again in the
+            # If an error occurred we want to get the address again in the
             # next monitoring round
             if not error_occurred:
-                self.eth_address_retrieval_limiter.did_task()
+                self.address_retrieval_limiter.did_task()
 
         if not data_retrieval_failed:
             # Select an evm node for contract metrics retrieval if no data
@@ -735,8 +730,8 @@ class ChainlinkContractsMonitor(Monitor):
                 # If a url was selected, we need to retrieve the contract's
                 # metrics
                 if re_filter:
-                    # If contracts or eth addresses were retrieved in this
-                    # round, then we must do the re-filtering.
+                    # If contracts or addresses were retrieved in this round,
+                    # then we must do the re-filtering.
                     try:
                         node_contracts = self._filter_contracts_by_node(
                             selected_node_url)
@@ -746,9 +741,9 @@ class ChainlinkContractsMonitor(Monitor):
                                           "using %s", selected_node_url)
                         self.logger.exception(e)
                 w3_interface = self.evm_node_w3_interface[selected_node_url]
-                for node_id, node_eth_address in self.node_eth_address.items():
+                for node_id, node_address in self.node_address.items():
                     try:
-                        data = self._get_data(w3_interface, node_eth_address,
+                        data = self._get_data(w3_interface, node_address,
                                               node_id)
                     except (ReqConnectionError, ReadTimeout, IncompleteRead,
                             ChunkedEncodingError, ProtocolError, InvalidURL,

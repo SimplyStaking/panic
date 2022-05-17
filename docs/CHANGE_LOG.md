@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.1.1
+Released on 17th May 2022
+
+- Updated Chainlink Node Monitor/Alerts to use correct moniker for the balance of node accounts.
+- Integrated System Alerter with current factory classes.
+- Fixed colored severities in systems-overview page in UI.
+
 ## 1.1.0
 
 Released on 28th April 2022

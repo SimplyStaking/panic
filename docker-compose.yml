@@ -18,7 +18,7 @@ services:
     build:
       context: './'
       dockerfile: './web-installer/Dockerfile'
-    image: 'simplyvc/panic_installer:1.1.0'
+    image: 'simplyvc/panic_installer:1.1.1'
     logging:
       driver: "json-file"
       options:
@@ -120,7 +120,7 @@ services:
     build:
       context: './'
       dockerfile: './alerter/Alerter_Dockerfile'
-    image: 'simplyvc/panic_alerter:1.1.0'
+    image: 'simplyvc/panic_alerter:1.1.1'
     logging:
       driver: "json-file"
       options:
@@ -181,7 +181,7 @@ services:
     build:
       context: './'
       dockerfile: './alerter/Health_Checker_Dockerfile'
-    image: 'simplyvc/alerter_health_checker:1.1.0'
+    image: 'simplyvc/alerter_health_checker:1.1.1'
     logging:
       driver: "json-file"
       options:
@@ -214,7 +214,7 @@ services:
     build:
       context: './'
       dockerfile: './api/Dockerfile'
-    image: 'simplyvc/panic_api:1.1.0'
+    image: 'simplyvc/panic_api:1.1.1'
     volumes:
       - './config:/opt/panic/config'
       - './certificates:/opt/panic/certificates'
@@ -235,7 +235,7 @@ services:
       args:
         - API_PORT
         - UI_DASHBOARD_PORT
-    image: 'simplyvc/panic_ui:1.1.0'
+    image: 'simplyvc/panic_ui:1.1.1'
     volumes:
       - './certificates:/opt/panic/certificates'
     ports:

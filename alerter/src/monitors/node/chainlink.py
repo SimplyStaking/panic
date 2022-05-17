@@ -2,7 +2,7 @@ import copy
 import json
 import logging
 from collections import ChainMap, defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from http.client import IncompleteRead
 from typing import Dict, Callable
 
@@ -15,12 +15,14 @@ from urllib3.exceptions import ProtocolError
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitors.monitor import Monitor
+from src.utils.constants.data import CHAINLINK_CHAINS_URL
 from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
                                           CHAINLINK_NODE_RAW_DATA_ROUTING_KEY)
-from src.utils.data import get_prometheus_metrics_data
+from src.utils.data import get_prometheus_metrics_data, get_json
 from src.utils.exceptions import (NodeIsDownException, PANICException,
                                   DataReadingException, InvalidUrlException,
                                   MetricNotFoundException)
+from src.utils.timing import TimedTaskLimiter
 
 
 class ChainlinkNodeMonitor(Monitor):
@@ -44,6 +46,8 @@ class ChainlinkNodeMonitor(Monitor):
             'run_status_update_total': 'optional',
         }
         self._last_prometheus_source_used = node_config.node_prometheus_urls[0]
+        self._currency_symbol_limiter = TimedTaskLimiter(timedelta(hours=24))
+        self._currency_symbol = ''
 
     @property
     def node_config(self) -> ChainlinkNodeConfig:
@@ -56,6 +60,14 @@ class ChainlinkNodeMonitor(Monitor):
     @property
     def last_prometheus_source_used(self) -> str:
         return self._last_prometheus_source_used
+
+    @property
+    def currency_symbol_limiter(self) -> TimedTaskLimiter:
+        return self._currency_symbol_limiter
+
+    @property
+    def currency_symbol(self) -> str:
+        return self._currency_symbol
 
     def _display_data(self, data: Dict) -> str:
         # This function attempts to display all metric values. If a particular
@@ -71,7 +83,7 @@ class ChainlinkNodeMonitor(Monitor):
             "process_start_time_seconds={}, tx_manager_num_gas_bumps_total={}, "
             "tx_manager_gas_bump_exceeds_limit_total={}, "
             "unconfirmed_transactions={}, gas_updater_set_gas_price={}, "
-            "eth_balance={}, run_status_update_total_errors={}"
+            "balance={}, run_status_update_total_errors={}"
             "".format(
                 data_defaultdict['head_tracker_current_head'],
                 data_defaultdict['head_tracker_heads_received_total'],
@@ -81,7 +93,7 @@ class ChainlinkNodeMonitor(Monitor):
                 data_defaultdict['tx_manager_gas_bump_exceeds_limit_total'],
                 data_defaultdict['unconfirmed_transactions'],
                 data_defaultdict['gas_updater_set_gas_price'],
-                data_defaultdict['eth_balance'],
+                data_defaultdict['balance'],
                 data_defaultdict['run_status_update_total_errors'])
         )
 
@@ -256,20 +268,27 @@ class ChainlinkNodeMonitor(Monitor):
                           processed_data['result']['data'][
                               'gas_updater_set_gas_price'])
 
-        # Add the ethereum balance to the processed data. We will monitor the
-        # first account we find.
-        processed_data['result']['data']['eth_balance'] = {}
-        ethereum_balance_dict = processed_data['result']['data']['eth_balance']
+        # Add the balance to the processed data. We will monitor the first
+        # account we find.
+        processed_data['result']['data']['balance'] = {}
+        balance_dict = processed_data['result']['data']['balance']
         for _, data_subset in enumerate(data_copy['eth_balance']):
             data_subset_json = json.loads(data_subset)
             if "account" in data_subset_json:
-                eth_address = data_subset_json['account']
-                ethereum_balance_dict['address'] = eth_address
-                ethereum_balance_dict['balance'] = data_copy['eth_balance'][
-                    data_subset]
+                address = data_subset_json['account']
+                balance_dict['address'] = address
+                balance_dict['balance'] = data_copy['eth_balance'][data_subset]
+                if "evmChainID" in data_subset_json:
+                    evm_chain_id = int(data_subset_json['evmChainID'])
+                    if self.currency_symbol_limiter.can_do_task():
+                        self._currency_symbol = self._get_currency_symbol(
+                            evm_chain_id)
+                        if self.currency_symbol:
+                            self.currency_symbol_limiter.did_task()
+                balance_dict['symbol'] = self.currency_symbol
                 break
-        self.logger.debug("%s eth_balance: %s", self.node_config,
-                          processed_data['result']['data']['eth_balance'])
+        self.logger.debug("%s balance: %s", self.node_config,
+                          processed_data['result']['data']['balance'])
 
         # Add the number of error job runs to the processed data
         no_of_error_job_runs = 0
@@ -355,3 +374,27 @@ class ChainlinkNodeMonitor(Monitor):
             'timestamp': datetime.now().timestamp()
         }
         self._send_heartbeat(heartbeat)
+
+    def _get_currency_symbol(self, chain_id: int) -> str:
+        """
+        This function gets a list of chains from an endpoint, finds the chain
+        with the ID passed as a parameter and returns the currency symbol of
+        said chain.
+        :param chain_id: The ID of the chain of which we need to return the
+        currency symbol for.
+        :return: The currency symbol for the given chain ID
+        """
+        currency_symbol = ''
+
+        try:
+            chains = get_json(CHAINLINK_CHAINS_URL, self.logger)
+            self.logger.debug("Retrieved chains data from endpoint: %s",
+                              CHAINLINK_CHAINS_URL)
+
+            found_chain = next(chain for chain in chains
+                               if chain['chainId'] == chain_id)
+            currency_symbol = found_chain['nativeCurrency']['symbol']
+        except Exception as e:
+            self.logger.exception(e)
+
+        return currency_symbol

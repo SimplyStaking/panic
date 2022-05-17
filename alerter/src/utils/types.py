@@ -47,11 +47,11 @@ from src.alerter.alerts.node.chainlink import (
     ClNodeTotalErroredJobRunsDecreasedBelowThresholdAlert,
     TotalErroredJobRunsIncreasedAboveThresholdAlert as
     ClNodeTotalErroredJobRunsIncreasedAboveThresholdAlert,
-    EthBalanceIncreasedAboveThresholdAlert as
-    ClNodeEthBalanceIncreasedAboveThresholdAlert,
-    EthBalanceDecreasedBelowThresholdAlert as
-    ClNodeEthBalanceDecreasedBelowThresholdAlert,
-    EthBalanceToppedUpAlert as ClNodeEthBalanceToppedUpAlert,
+    BalanceIncreasedAboveThresholdAlert as
+    ClNodeBalanceIncreasedAboveThresholdAlert,
+    BalanceDecreasedBelowThresholdAlert as
+    ClNodeBalanceDecreasedBelowThresholdAlert,
+    BalanceToppedUpAlert as ClNodeBalanceToppedUpAlert,
     InvalidUrlAlert as ClNodeInvalidUrlAlert,
     ValidUrlAlert as ClNodeValidUrlAlert,
     MetricNotFoundErrorAlert as ClNodeMetricNotFoundErrorAlert,
@@ -134,7 +134,8 @@ from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsDecreasedBelowThresholdAlert,
     SystemCPUUsageDecreasedBelowThresholdAlert,
     SystemRAMUsageDecreasedBelowThresholdAlert,
-    SystemStorageUsageDecreasedBelowThresholdAlert
+    SystemStorageUsageDecreasedBelowThresholdAlert, SystemWentDownAtAlert,
+    SystemStillDownAlert, SystemBackUpAgainAlert
 )
 from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.configs.alerts.network.cosmos import CosmosNetworkAlertsConfig
@@ -157,8 +158,6 @@ Monitorable = Union[System, GitHubRepo, DockerHubRepo, ChainlinkNode, EVMNode,
                     CosmosNode, CosmosNetwork, V4ChainlinkContract,
                     V3ChainlinkContract]
 
-# TODO: The below system alerts must be refactored to the types beneath them
-#     : when the system alerter is refactored.
 IncreasedAboveThresholdSystemAlert = Union[
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -197,7 +196,7 @@ IncreasedAboveThresholdChainlinkNodeAlert = Union[
     ClNodeMaxUnconfirmedBlocksIncreasedAboveThresholdAlert,
     ClNodeNoOfUnconfirmedTxsIncreasedAboveThresholdAlert,
     ClNodeTotalErroredJobRunsIncreasedAboveThresholdAlert,
-    ClNodeEthBalanceIncreasedAboveThresholdAlert,
+    ClNodeBalanceIncreasedAboveThresholdAlert,
     ClContractPriceFeedObservationsMissedIncreasedAboveThreshold,
     ClContractPriceFeedDeviationIncreasedAboveThreshold,
     EVMNodeBlockHeightDifferenceIncreasedAboveThresholdAlert
@@ -206,7 +205,7 @@ DecreasedBelowThresholdChainlinkNodeAlert = Union[
     ClNodeMaxUnconfirmedBlocksDecreasedBelowThresholdAlert,
     ClNodeNoOfUnconfirmedTxsDecreasedBelowThresholdAlert,
     ClNodeTotalErroredJobRunsDecreasedBelowThresholdAlert,
-    ClNodeEthBalanceDecreasedBelowThresholdAlert,
+    ClNodeBalanceDecreasedBelowThresholdAlert,
     ClContractPriceFeedDeviationDecreasedBelowThreshold,
     EVMNodeBlockHeightDifferenceDecreasedBelowThresholdAlert
 ]
@@ -219,10 +218,12 @@ DecreasedBelowThresholdCosmosNodeAlert = Union[
     CosmosNodeBlocksMissedDecreasedBelowThresholdAlert
 ]
 IncreasedAboveThresholdAlert = Union[
+    IncreasedAboveThresholdSystemAlert,
     IncreasedAboveThresholdChainlinkNodeAlert,
     IncreasedAboveThresholdCosmosNodeAlert
 ]
 DecreasedBelowThresholdAlert = Union[
+    DecreasedBelowThresholdSystemAlert,
     DecreasedBelowThresholdChainlinkNodeAlert,
     DecreasedBelowThresholdCosmosNodeAlert
 ]
@@ -230,7 +231,7 @@ DecreasedBelowThresholdAlert = Union[
 ChainlinkNodeConditionalAlert = Union[
     ClNodeChangeInSourceNodeAlert,
     ClNodeGasBumpIncreasedOverNodeGasPriceLimitAlert,
-    ClNodeEthBalanceToppedUpAlert, ClNodePrometheusSourceIsDownAlert,
+    ClNodeBalanceToppedUpAlert, ClNodePrometheusSourceIsDownAlert,
     ClNodePrometheusSourceBackUpAgainAlert, ClContractPriceFeedObservedAgain,
     ClContractConsensusFailure
 ]
@@ -291,20 +292,20 @@ ErrorSolvedAlert = Union[
 ]
 
 DownAlert = Union[
-    ClNodeNodeWentDownAtAlert, CosmosNodeNodeWentDownAtAlert,
-    CosmosNodePrometheusSourceIsDownAlert,
+    SystemWentDownAtAlert, ClNodeNodeWentDownAtAlert,
+    CosmosNodeNodeWentDownAtAlert, CosmosNodePrometheusSourceIsDownAlert,
     CosmosNodeCosmosRestSourceIsDownAlert,
     CosmosNodeTendermintRPCSourceIsDownAlert
 ]
 StillDownAlert = Union[
-    ClNodeNodeStillDownAlert, CosmosNodeNodeStillDownAlert,
-    CosmosNodePrometheusSourceStillDownAlert,
+    SystemStillDownAlert, ClNodeNodeStillDownAlert,
+    CosmosNodeNodeStillDownAlert, CosmosNodePrometheusSourceStillDownAlert,
     CosmosNodeCosmosRestSourceStillDownAlert,
     CosmosNodeTendermintRPCSourceStillDownAlert
 ]
 BackUpAlert = Union[
-    ClNodeNodeBackUpAgainAlert, CosmosNodeNodeBackUpAgainAlert,
-    CosmosNodePrometheusSourceBackUpAgainAlert,
+    SystemBackUpAgainAlert, ClNodeNodeBackUpAgainAlert,
+    CosmosNodeNodeBackUpAgainAlert, CosmosNodePrometheusSourceBackUpAgainAlert,
     CosmosNodeCosmosRestSourceBackUpAgainAlert,
     CosmosNodeTendermintRPCSourceBackUpAgainAlert
 ]

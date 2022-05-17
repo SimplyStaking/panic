@@ -215,8 +215,8 @@ def save_chainlink_node_to_redis(redis: RedisApi,
         Keys.get_cl_node_current_gas_price_info(cl_node_id):
             'None' if cl_node.current_gas_price_info is None else json.dumps(
                 cl_node.current_gas_price_info),
-        Keys.get_cl_node_eth_balance_info(cl_node_id):
-            json.dumps(cl_node.eth_balance_info),
+        Keys.get_cl_node_balance_info(cl_node_id):
+            json.dumps(cl_node.balance_info),
         Keys.get_cl_node_last_prometheus_source_used(cl_node_id):
             str(cl_node.last_prometheus_source_used),
         Keys.get_cl_node_last_monitored_prometheus(cl_node_id):

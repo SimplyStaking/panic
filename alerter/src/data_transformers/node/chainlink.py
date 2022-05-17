@@ -158,14 +158,14 @@ class ChainlinkNodeDataTransformer(DataTransformer):
         cl_node.set_current_gas_price_info(current_gas_price_info['percentile'],
                                            current_gas_price_info['price'])
 
-        # Load eth_balance_info from Redis
-        state_eth_balance_info = cl_node.eth_balance_info
-        redis_eth_balance_info = self.redis.hget(
-            redis_hash, Keys.get_cl_node_eth_balance_info(cl_node_id),
-            bytes(json.dumps(state_eth_balance_info), 'utf-8'))
-        eth_balance_info = {} if redis_eth_balance_info is None \
-            else json.loads(redis_eth_balance_info.decode("utf-8"))
-        cl_node.set_eth_balance_info(eth_balance_info)
+        # Load balance_info from Redis
+        state_balance_info = cl_node.balance_info
+        redis_balance_info = self.redis.hget(
+            redis_hash, Keys.get_cl_node_balance_info(cl_node_id),
+            bytes(json.dumps(state_balance_info), 'utf-8'))
+        balance_info = {} if redis_balance_info is None \
+            else json.loads(redis_balance_info.decode("utf-8"))
+        cl_node.set_balance_info(balance_info)
 
     def load_state(self, cl_node: Monitorable) -> Monitorable:
         self.logger.debug("Loading the state of %s from Redis", cl_node)
@@ -181,14 +181,14 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             "_max_pending_tx_delay=%s, _process_start_time_seconds=%s, "
             "_total_gas_bumps=%s, _total_gas_bumps_exceeds_limit=%s, "
             "_no_of_unconfirmed_txs=%s, _total_errored_job_runs=%s, "
-            "_current_gas_price_info=%s, _eth_balance_info=%s, "
+            "_current_gas_price_info=%s, _balance_info=%s, "
             "_last_monitored_prometheus=%s, _last_prometheus_source_used=%s, "
             "_went_down_at_prometheus=%s", cl_node, cl_node.current_height,
             cl_node.total_block_headers_received,
             cl_node.max_pending_tx_delay, cl_node.process_start_time_seconds,
             cl_node.total_gas_bumps, cl_node.total_gas_bumps_exceeds_limit,
             cl_node.no_of_unconfirmed_txs, cl_node.total_errored_job_runs,
-            cl_node.current_gas_price_info, cl_node.eth_balance_info,
+            cl_node.current_gas_price_info, cl_node.balance_info,
             cl_node.last_monitored_prometheus,
             cl_node.last_prometheus_source_used,
             cl_node.went_down_at_prometheus)
@@ -424,27 +424,30 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                     'percentile'] = convert_to_float(
                     str_percentile.replace('%', ''), None)
 
-            # Add latest_usage to the eth_balance_info if not empty
-            if node_metrics['eth_balance']:
-                eth_address = node_metrics['eth_balance']['address']
-                new_balance = node_metrics['eth_balance']['balance']
-                if node.eth_balance_info and \
-                        eth_address == node.eth_balance_info['address']:
-                    previous_balance = node.eth_balance_info['balance']
-                    latest_usage = previous_balance - new_balance if \
-                        previous_balance > new_balance else 0.0
+            # Add latest_usage to the balance_info if not empty
+            if node_metrics['balance']:
+                address = node_metrics['balance']['address']
+                new_balance = node_metrics['balance']['balance']
+                symbol = node_metrics['balance']['symbol']
+                if (node.balance_info and
+                        address == node.balance_info['address']):
+                    previous_balance = node.balance_info['balance']
+                    latest_usage = previous_balance - new_balance if (
+                            previous_balance > new_balance) else 0.0
                     new_info_dict = {
                         'balance': new_balance,
                         'latest_usage': latest_usage,
-                        'address': eth_address,
+                        'address': address,
+                        'symbol': symbol,
                     }
                 else:
                     new_info_dict = {
                         'balance': new_balance,
                         'latest_usage': 0.0,
-                        'address': eth_address,
+                        'address': address,
+                        'symbol': symbol,
                     }
-                td_node_metrics['eth_balance_info'] = new_info_dict
+                td_node_metrics['balance_info'] = new_info_dict
 
             # Transform the meta_data by deleting the monitor_name and
             # changing the time key to last_monitored key

@@ -31,7 +31,7 @@ _key_cl_node_total_gas_bumps_exceeds_limit = 'cl6'
 _key_cl_node_no_of_unconfirmed_txs = 'cl7'
 _key_cl_node_total_errored_job_runs = 'cl8'
 _key_cl_node_current_gas_price_info = 'cl9'
-_key_cl_node_eth_balance_info = 'cl10'
+_key_cl_node_balance_info = 'cl10'
 _key_cl_node_went_down_at_prometheus = 'cl11'
 _key_cl_node_last_prometheus_source_used = 'cl12'
 _key_cl_node_last_monitored_prometheus = 'cl13'
@@ -117,8 +117,8 @@ _key_alert_cl_process_start_time_seconds = 'alert_cl_node4'
 _key_alert_cl_tx_manager_gas_bump_exceeds_limit_total = 'alert_cl_node5'
 _key_alert_cl_unconfirmed_transactions = 'alert_cl_node6'
 _key_alert_cl_run_status_update_total = 'alert_cl_node7'
-_key_alert_cl_eth_balance_amount = 'alert_cl_node8'
-_key_alert_cl_eth_balance_amount_increase = 'alert_cl_node9'
+_key_alert_cl_balance_amount = 'alert_cl_node8'
+_key_alert_cl_balance_amount_increase = 'alert_cl_node9'
 _key_alert_cl_invalid_url = 'alert_cl_node10'
 _key_alert_cl_metric_not_found = 'alert_cl_node11'
 _key_alert_cl_node_is_down = 'alert_cl_node12'
@@ -293,8 +293,8 @@ class Keys:
         return Keys._as_prefix(_key_cl_node_current_gas_price_info) + cl_node_id
 
     @staticmethod
-    def get_cl_node_eth_balance_info(cl_node_id: str) -> str:
-        return Keys._as_prefix(_key_cl_node_eth_balance_info) + cl_node_id
+    def get_cl_node_balance_info(cl_node_id: str) -> str:
+        return Keys._as_prefix(_key_cl_node_balance_info) + cl_node_id
 
     @staticmethod
     def get_cl_node_went_down_at_prometheus(cl_node_id: str) -> str:
@@ -566,13 +566,13 @@ class Keys:
         return Keys._as_prefix(_key_alert_cl_invalid_url) + origin_id
 
     @staticmethod
-    def get_alert_cl_eth_balance_amount_increase(origin_id: str) -> str:
+    def get_alert_cl_balance_amount_increase(origin_id: str) -> str:
         return Keys._as_prefix(
-            _key_alert_cl_eth_balance_amount_increase) + origin_id
+            _key_alert_cl_balance_amount_increase) + origin_id
 
     @staticmethod
-    def get_alert_cl_eth_balance_amount(origin_id: str) -> str:
-        return Keys._as_prefix(_key_alert_cl_eth_balance_amount) + origin_id
+    def get_alert_cl_balance_amount(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_cl_balance_amount) + origin_id
 
     @staticmethod
     def get_alert_cl_run_status_update_total(origin_id: str) -> str:

@@ -10,8 +10,8 @@ class GroupedChainlinkNodeAlertsMetricCode(GroupedAlertsMetricCode):
         'cl_tx_manager_gas_bump_exceeds_limit_total')
     NoOfUnconfirmedTxsThreshold = 'cl_unconfirmed_transactions'
     TotalErroredJobRunsThreshold = 'cl_run_status_update_total'
-    EthBalanceThreshold = 'cl_eth_balance_amount'
-    EthBalanceTopUp = 'cl_eth_balance_amount_increase'
+    BalanceThreshold = 'cl_balance_amount'
+    BalanceTopUp = 'cl_balance_amount_increase'
     InvalidUrl = 'cl_invalid_url'
     MetricNotFound = 'cl_metric_not_found'
     NodeIsDown = 'cl_node_is_down'

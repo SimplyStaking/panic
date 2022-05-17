@@ -41,7 +41,7 @@ from src.utils.constants.names import (
     COSMOS_ALERTERS_MANAGER_NAME)
 from src.utils.constants.rabbitmq import (
     ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
-    SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+    SYS_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
     CHANNELS_MANAGER_CONFIGS_QUEUE_NAME, GH_MON_MAN_CONFIGS_QUEUE_NAME,
     DH_MON_MAN_CONFIGS_QUEUE_NAME, SYS_MON_MAN_CONFIGS_QUEUE_NAME,
     NODE_MON_MAN_CONFIGS_QUEUE_NAME, EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS,
@@ -63,7 +63,8 @@ from src.utils.constants.rabbitmq import (
     COSMOS_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
     MONITORABLE_STORE_INPUT_QUEUE_NAME, MONITORABLE_EXCHANGE,
     MONITORABLE_STORE_INPUT_ROUTING_KEY,
-    COSMOS_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME)
+    COSMOS_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+    SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME)
 from src.utils.constants.starters import (
     RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD,
 )
@@ -922,25 +923,50 @@ def _initialise_and_declare_config_queues() -> None:
 
             # System Alerters Manager queues
             log_and_print("Creating queue '{}'".format(
-                SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
-            rabbitmq.queue_declare(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                SYS_ALERTERS_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(SYS_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
                                    False, True, False, False)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                "key {}.".format(SYS_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
                                  ALERTS_CONFIGS_ROUTING_KEY_CHAIN),
                 dummy_logger)
-            rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+            rabbitmq.queue_bind(SYS_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
                                 CONFIG_EXCHANGE,
                                 ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
             log_and_print(
                 "Binding queue '{}' to '{}' exchange with routing "
-                "key {}.".format(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+                "key {}.".format(SYS_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
                                  CONFIG_EXCHANGE,
                                  ALERTS_CONFIGS_ROUTING_KEY_GEN),
                 dummy_logger)
-            rabbitmq.queue_bind(SYS_ALERTERS_MANAGER_CONFIGS_QUEUE_NAME,
+            rabbitmq.queue_bind(SYS_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                ALERTS_CONFIGS_ROUTING_KEY_GEN)
+
+            # System Alerter queues
+            log_and_print("Creating queue '{}'".format(
+                SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                   False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 ALERTS_CONFIGS_ROUTING_KEY_CHAIN),
+                dummy_logger)
+            rabbitmq.queue_bind(SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                ALERTS_CONFIGS_ROUTING_KEY_CHAIN)
+
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                 CONFIG_EXCHANGE,
+                                 ALERTS_CONFIGS_ROUTING_KEY_GEN),
+                dummy_logger)
+            rabbitmq.queue_bind(SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
                                 CONFIG_EXCHANGE,
                                 ALERTS_CONFIGS_ROUTING_KEY_GEN)
 
