@@ -26,6 +26,25 @@ from src.alerter.alerts.network.cosmos import (
     NewProposalSubmittedAlert as CosmosNetworkNewProposalSubmittedAlert,
     ProposalConcludedAlert as CosmosNetworkProposalConcludedAlert
 )
+from src.alerter.alerts.network.substrate import (
+    ErrorNoSyncedSubstrateWebSocketDataSourcesAlert as
+    SubstrateNetworkErrorNoSyncedSubstrateWebSocketDataSourcesAlert,
+    SyncedSubstrateWebSocketDataSourcesFoundAlert as
+    SubstrateNetworkSyncedSubstrateWebSocketDataSourcesFoundAlert,
+    SubstrateNetworkDataObtainedAlert as
+    SubstrateNetworkSubstrateNetworkDataObtainedAlert,
+    SubstrateNetworkDataCouldNotBeObtainedAlert as
+    SubstrateNetworkSubstrateNetworkDataCouldNotBeObtainedAlert,
+    GrandpaIsStalledAlert as SubstrateNetworkGrandpaIsStalledAlert,
+    GrandpaIsNoLongerStalledAlert as
+    SubstrateNetworkGrandpaIsNoLongerStalledAlert,
+    NewReferendumSubmittedAlert as SubstrateNetworkNewReferendumSubmittedAlert,
+    ReferendumConcludedAlert as SubstrateNetworkReferendumConcludedAlert,
+    NewProposalSubmittedAlert as SubstrateNetworkNewProposalSubmittedAlert,
+    SubstrateApiIsNotReachableAlert as
+    SubstrateNetworkSubstrateApiIsNotReachableAlert,
+    SubstrateApiIsReachableAlert as
+    SubstrateNetworkSubstrateApiIsReachableAlert)
 from src.alerter.alerts.node.chainlink import (
     NoChangeInHeightAlert as ClNodeNoChangeInHeightAlert,
     BlockHeightUpdatedAlert as ClNodeBlockHeightUpdatedAlert,
@@ -126,6 +145,47 @@ from src.alerter.alerts.node.evm import (
     BlockHeightDifferenceDecreasedBelowThresholdAlert as
     EVMNodeBlockHeightDifferenceDecreasedBelowThresholdAlert,
     BlockHeightUpdatedAlert as EVMNodeBlockHeightUpdatedAlert)
+from src.alerter.alerts.node.substrate import (
+    ErrorNoSyncedSubstrateWebSocketDataSourcesAlert as
+    SubstrateNodeErrorNoSyncedSubstrateWebSocketDataSourcesAlert,
+    SyncedSubstrateWebSocketDataSourcesFoundAlert as
+    SubstrateNodeSyncedSubstrateWebSocketDataSourcesFoundAlert,
+    SubstrateWebSocketDataCouldNotBeObtainedAlert as
+    SubstrateNodeSubstrateWebSocketDataCouldNotBeObtainedAlert,
+    SubstrateWebSocketDataObtainedAlert as
+    SubstrateNodeSubstrateWebSocketDataObtainedAlert,
+    NoChangeInBestBlockHeightAlert as
+    SubstrateNodeNoChangeInBestBlockHeightAlert,
+    NoChangeInFinalizedBlockHeightAlert as
+    SubstrateNodeNoChangeInFinalizedBlockHeightAlert,
+    BestBlockHeightUpdatedAlert as SubstrateNodeBestBlockHeightUpdatedAlert,
+    FinalizedBlockHeightUpdatedAlert as
+    SubstrateNodeFinalizedBlockHeightUpdatedAlert,
+    NodeIsSyncingAlert as SubstrateNodeNodeIsSyncingAlert,
+    NodeIsNoLongerSyncingAlert as SubstrateNodeNodeIsNoLongerSyncingAlert,
+    ValidatorIsNotActiveAlert as SubstrateNodeValidatorIsNotActiveAlert,
+    ValidatorIsActiveAlert as SubstrateNodeValidatorIsActiveAlert,
+    ValidatorIsNoLongerDisabledAlert as
+    SubstrateNodeValidatorIsNoLongerDisabledAlert,
+    ValidatorIsDisabledAlert as SubstrateNodeValidatorIsDisabledAlert,
+    ValidatorWasNotElectedAlert as SubstrateNodeValidatorWasNotElectedAlert,
+    ValidatorWasElectedAlert as SubstrateNodeValidatorWasElectedAlert,
+    ValidatorBondedAmountChangedAlert as
+    SubstrateNodeValidatorBondedAmountChangedAlert,
+    ValidatorWasOfflineAlert as SubstrateNodeValidatorWasOfflineAlert,
+    ValidatorWasSlashedAlert as SubstrateNodeValidatorWasSlashedAlert,
+    ValidatorPayoutClaimedAlert as SubstrateNodeValidatorPayoutClaimedAlert,
+    ValidatorPayoutNotClaimedAlert as
+    SubstrateNodeValidatorPayoutNotClaimedAlert,
+    ValidatorControllerAddressChangedAlert as
+    SubstrateNodeValidatorControllerAddressChangedAlert,
+    ValidatorNoHeartbeatAndBlockAuthoredYetAlert as
+    SubstrateNodeValidatorNoHeartbeatAndBlockAuthoredYetAlert,
+    ValidatorHeartbeatSentOrBlockAuthoredAlert as
+    SubstrateNodeValidatorHeartbeatSentOrBlockAuthoredAlert,
+    SubstrateApiIsNotReachableAlert as
+    SubstrateNodeSubstrateApiIsNotReachableAlert,
+    SubstrateApiIsReachableAlert as SubstrateNodeSubstrateApiIsReachableAlert)
 from src.alerter.alerts.system_alerts import (
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
     SystemCPUUsageIncreasedAboveThresholdAlert,
@@ -139,24 +199,31 @@ from src.alerter.alerts.system_alerts import (
 )
 from src.configs.alerts.contract.chainlink import ChainlinkContractAlertsConfig
 from src.configs.alerts.network.cosmos import CosmosNetworkAlertsConfig
+from src.configs.alerts.network.substrate import SubstrateNetworkAlertsConfig
 from src.configs.alerts.node.chainlink import ChainlinkNodeAlertsConfig
 from src.configs.alerts.node.cosmos import CosmosNodeAlertsConfig
+from src.configs.alerts.node.substrate import SubstrateNodeAlertsConfig
+from src.configs.nodes.cosmos import CosmosNodeConfig
 from src.configs.nodes.node import NodeConfig
+from src.configs.nodes.substrate import SubstrateNodeConfig
 from src.configs.repo import GitHubRepoConfig, DockerHubRepoConfig
 from src.configs.system import SystemConfig
 from src.monitorables.contracts.chainlink.v3 import V3ChainlinkContract
 from src.monitorables.contracts.chainlink.v4 import V4ChainlinkContract
 from src.monitorables.networks.cosmos import CosmosNetwork
+from src.monitorables.networks.substrate import SubstrateNetwork
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
 from src.monitorables.nodes.cosmos_node import CosmosNode
 from src.monitorables.nodes.evm_node import EVMNode
+from src.monitorables.nodes.substrate_node import SubstrateNode
 from src.monitorables.repo import GitHubRepo, DockerHubRepo
 from src.monitorables.system import System
 
 RedisType = Union[bytes, str, int, float]
+ChainlinkContract = Union[V3ChainlinkContract, V4ChainlinkContract]
 Monitorable = Union[System, GitHubRepo, DockerHubRepo, ChainlinkNode, EVMNode,
-                    CosmosNode, CosmosNetwork, V4ChainlinkContract,
-                    V3ChainlinkContract]
+                    CosmosNode, CosmosNetwork, ChainlinkContract,
+                    SubstrateNode, SubstrateNetwork]
 
 IncreasedAboveThresholdSystemAlert = Union[
     OpenFileDescriptorsIncreasedAboveThresholdAlert,
@@ -185,11 +252,21 @@ CosmosNodeNoChangeInAlert = Union[
 CosmosNodeChangeInAlert = Union[
     CosmosNodeBlockHeightUpdatedAlert
 ]
+SubstrateNodeNoChangeInAlert = Union[
+    SubstrateNodeNoChangeInBestBlockHeightAlert,
+    SubstrateNodeNoChangeInFinalizedBlockHeightAlert
+]
+SubstrateNodeChangeInAlert = Union[
+    SubstrateNodeBestBlockHeightUpdatedAlert,
+    SubstrateNodeFinalizedBlockHeightUpdatedAlert
+]
 NoChangeInAlert = Union[
     ChainlinkNodeNoChangeInAlert, CosmosNodeNoChangeInAlert,
+    SubstrateNodeNoChangeInAlert
 ]
 ChangeInAlert = Union[
-    ChainlinkNodeChangeInAlert, CosmosNodeChangeInAlert
+    ChainlinkNodeChangeInAlert, CosmosNodeChangeInAlert,
+    SubstrateNodeChangeInAlert
 ]
 
 IncreasedAboveThresholdChainlinkNodeAlert = Union[
@@ -217,15 +294,23 @@ DecreasedBelowThresholdCosmosNodeAlert = Union[
     CosmosNodeHeightDifferenceDecrease,
     CosmosNodeBlocksMissedDecreasedBelowThresholdAlert
 ]
+IncreasedAboveThresholdSubstrateNodeAlert = Union[
+    SubstrateNodeNodeIsSyncingAlert
+]
+DecreasedBelowThresholdSubstrateNodeAlert = Union[
+    SubstrateNodeNodeIsNoLongerSyncingAlert
+]
 IncreasedAboveThresholdAlert = Union[
     IncreasedAboveThresholdSystemAlert,
     IncreasedAboveThresholdChainlinkNodeAlert,
-    IncreasedAboveThresholdCosmosNodeAlert
+    IncreasedAboveThresholdCosmosNodeAlert,
+    IncreasedAboveThresholdSubstrateNodeAlert
 ]
 DecreasedBelowThresholdAlert = Union[
     DecreasedBelowThresholdSystemAlert,
     DecreasedBelowThresholdChainlinkNodeAlert,
-    DecreasedBelowThresholdCosmosNodeAlert
+    DecreasedBelowThresholdCosmosNodeAlert,
+    DecreasedBelowThresholdSubstrateNodeAlert
 ]
 
 ChainlinkNodeConditionalAlert = Union[
@@ -244,9 +329,28 @@ CosmosNodeConditionalAlert = Union[
 CosmosNetworkConditionalAlert = Union[
     CosmosNetworkNewProposalSubmittedAlert, CosmosNetworkProposalConcludedAlert
 ]
+SubstrateNodeConditionalAlert = Union[
+    SubstrateNodeValidatorIsNotActiveAlert, SubstrateNodeValidatorIsActiveAlert,
+    SubstrateNodeValidatorIsDisabledAlert,
+    SubstrateNodeValidatorIsNoLongerDisabledAlert,
+    SubstrateNodeValidatorWasNotElectedAlert,
+    SubstrateNodeValidatorWasElectedAlert,
+    SubstrateNodeValidatorBondedAmountChangedAlert,
+    SubstrateNodeValidatorWasOfflineAlert,
+    SubstrateNodeValidatorWasSlashedAlert,
+    SubstrateNodeValidatorControllerAddressChangedAlert
+]
+SubstrateNetworkConditionalAlert = Union[
+    SubstrateNetworkGrandpaIsStalledAlert,
+    SubstrateNetworkGrandpaIsNoLongerStalledAlert,
+    SubstrateNetworkNewProposalSubmittedAlert,
+    SubstrateNetworkNewReferendumSubmittedAlert,
+    SubstrateNetworkReferendumConcludedAlert
+]
 ConditionalAlert = Union[
     ChainlinkNodeConditionalAlert, CosmosNodeConditionalAlert,
-    CosmosNetworkConditionalAlert
+    CosmosNetworkConditionalAlert, SubstrateNodeConditionalAlert,
+    SubstrateNetworkConditionalAlert
 ]
 
 ChainlinkNodeErrorAlert = Union[
@@ -283,12 +387,34 @@ CosmosNetworkErrorSolvedAlert = Union[
     CosmosNetworkSyncedCosmosRestDataSourcesFoundAlert,
     CosmosNetworkCosmosNetworkDataObtainedAlert
 ]
+SubstrateNodeErrorAlert = Union[
+    SubstrateNodeErrorNoSyncedSubstrateWebSocketDataSourcesAlert,
+    SubstrateNodeSubstrateWebSocketDataCouldNotBeObtainedAlert,
+    SubstrateNodeSubstrateApiIsNotReachableAlert
+]
+SubstrateNodeErrorSolvedAlert = Union[
+    SubstrateNodeSyncedSubstrateWebSocketDataSourcesFoundAlert,
+    SubstrateNodeSubstrateWebSocketDataObtainedAlert,
+    SubstrateNodeSubstrateApiIsReachableAlert
+]
+SubstrateNetworkErrorAlert = Union[
+    SubstrateNetworkErrorNoSyncedSubstrateWebSocketDataSourcesAlert,
+    SubstrateNetworkSubstrateNetworkDataCouldNotBeObtainedAlert,
+    SubstrateNetworkSubstrateApiIsNotReachableAlert
+]
+SubstrateNetworkErrorSolvedAlert = Union[
+    SubstrateNetworkSyncedSubstrateWebSocketDataSourcesFoundAlert,
+    SubstrateNetworkSubstrateNetworkDataObtainedAlert,
+    SubstrateNetworkSubstrateApiIsReachableAlert
+]
 ErrorAlert = Union[
-    ChainlinkNodeErrorAlert, CosmosNodeErrorAlert, CosmosNetworkErrorAlert
+    ChainlinkNodeErrorAlert, CosmosNodeErrorAlert, CosmosNetworkErrorAlert,
+    SubstrateNodeErrorAlert, SubstrateNetworkErrorAlert
 ]
 ErrorSolvedAlert = Union[
     ChainlinkNodeErrorSolvedAlert, CosmosNodeErrorSolvedAlert,
-    CosmosNetworkErrorSolvedAlert
+    CosmosNetworkErrorSolvedAlert,
+    SubstrateNodeErrorSolvedAlert, SubstrateNetworkErrorSolvedAlert
 ]
 
 DownAlert = Union[
@@ -310,12 +436,29 @@ BackUpAlert = Union[
     CosmosNodeTendermintRPCSourceBackUpAgainAlert
 ]
 
+ConditionalNoChangeInAlert = Union[
+    SubstrateNodeValidatorNoHeartbeatAndBlockAuthoredYetAlert
+]
+ConditionalChangeInAlert = Union[
+    SubstrateNodeValidatorHeartbeatSentOrBlockAuthoredAlert
+]
+
+IncreasedAboveSubstrateEraThresholdAlert = Union[
+    SubstrateNodeValidatorPayoutNotClaimedAlert
+]
+SolvedSubstrateEraAlert = Union[
+    SubstrateNodeValidatorPayoutClaimedAlert
+]
+
 ChainlinkAlertsConfigs = Union[Type[ChainlinkNodeAlertsConfig],
                                Type[ChainlinkContractAlertsConfig]]
 CosmosAlertsConfigs = Union[Type[CosmosNodeAlertsConfig],
                             Type[CosmosNetworkAlertsConfig]]
+SubstrateAlertsConfigs = Union[Type[SubstrateNodeAlertsConfig],
+                               Type[SubstrateNetworkAlertsConfig]]
 MonitorableConfig = Union[SystemConfig, GitHubRepoConfig, DockerHubRepoConfig,
                           NodeConfig]
+CONFIGS_WITH_VALIDATORS = Union[CosmosNodeConfig, SubstrateNodeConfig]
 
 MUTABLE_TYPES = (dict, list, set)
 

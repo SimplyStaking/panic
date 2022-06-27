@@ -75,6 +75,7 @@ export const alertKeysSystemPrefix: string = 'alert_system';
 export const alertKeysClNodePrefix: string = 'alert_cl_node';
 export const alertKeysEvmNodePrefix: string = 'alert_evm_node';
 export const alertKeysCosmosNodePrefix: string = 'alert_cosmos_node';
+export const alertKeysSubstrateNodePrefix: string = 'alert_substrate_node';
 export const alertKeysClContractPrefix: string = 'alert_cl_contract';
 export const alertKeysGitHubPrefix: string = 'alert_github';
 export const alertKeysDockerHubPrefix: string = 'alert_dockerhub';
@@ -84,7 +85,15 @@ export const alertKeysChainSourced: string[] = [
     'alert_cosmos_network1',
     'alert_cosmos_network2',
     'alert_cosmos_network3',
-    'alert_cosmos_network4'
+    'alert_cosmos_network4',
+    'alert_substrate_network1',
+    'alert_substrate_network2',
+    'alert_substrate_network3',
+    'alert_substrate_network4',
+]
+export const alertKeysChainSourcedWithUniqueIdentifier: string[] = [
+    'alert_substrate_network5',
+    'alert_substrate_network6',
 ]
 
 export const getAlertKeysSystem = (): AlertKeysSystem => ({
@@ -137,6 +146,23 @@ export const getAlertKeysNode = (): AlertKeysNode => ({
     cosmos_node_cosmos_rest_data_not_obtained: `${alertKeysCosmosNodePrefix}17`,
     cosmos_node_tendermint_rpc_data_not_obtained: `${alertKeysCosmosNodePrefix}18`,
     cosmos_node_metric_not_found: `${alertKeysCosmosNodePrefix}19`,
+    // Substrate Nodes
+    substrate_node_is_down: `${alertKeysSubstrateNodePrefix}1`,
+    substrate_node_change_in_best_block_height: `${alertKeysSubstrateNodePrefix}2`,
+    substrate_node_change_in_finalized_block_height: `${alertKeysSubstrateNodePrefix}3`,
+    substrate_node_syncing: `${alertKeysSubstrateNodePrefix}4`,
+    substrate_node_active: `${alertKeysSubstrateNodePrefix}5`,
+    substrate_node_disabled: `${alertKeysSubstrateNodePrefix}6`,
+    substrate_node_elected: `${alertKeysSubstrateNodePrefix}7`,
+    substrate_node_bonded_amount_changed: `${alertKeysSubstrateNodePrefix}8`,
+    substrate_node_controller_address_change: `${alertKeysSubstrateNodePrefix}9`,
+    substrate_node_no_synced_substrate_websocket_source: `${alertKeysSubstrateNodePrefix}10`,
+    substrate_node_substrate_websocket_data_not_obtained: `${alertKeysSubstrateNodePrefix}11`,
+    substrate_node_substrate_api_not_reachable: `${alertKeysSubstrateNodePrefix}12`,
+    substrate_node_no_heartbeat_and_block_authored_yet: `${alertKeysSubstrateNodePrefix}13`,
+    substrate_node_offline: `${alertKeysSubstrateNodePrefix}14`,
+    substrate_node_slashed: `${alertKeysSubstrateNodePrefix}15`,
+    substrate_node_payout_not_claimed: `${alertKeysSubstrateNodePrefix}16`,
 });
 
 export const getAlertKeysGitHubRepo = (): AlertKeysGitHubRepo => ({

@@ -18,7 +18,7 @@ from src.utils.constants.rabbitmq import (
 from src.utils.exceptions import PANICException, MessageWasNotDeliveredException
 from test.test_utils.utils import (
     connect_to_rabbit, delete_queue_if_exists, delete_exchange_if_exists,
-    disconnect_from_rabbit, assert_not_called_with)
+    disconnect_from_rabbit)
 from test.utils.cosmos.cosmos import CosmosTestNodes
 
 # Retrieved data/metrics and their mocks
@@ -773,14 +773,6 @@ class TestCosmosNetworkMonitor(unittest.TestCase):
         self.test_exception = PANICException('test_exception', 1)
         self.retrieved_proposals_example = expected_proposals_1
 
-        self.received_retrieval_info = {
-            'cosmos_rest': {
-                'data': self.retrieved_proposals_example,
-                'data_retrieval_failed': False,
-                'data_retrieval_exception': None
-            }
-        }
-
         # Rabbit connection
         self.connection_check_time_interval = timedelta(seconds=0)
         self.rabbit_ip = env.RABBIT_IP
@@ -804,6 +796,18 @@ class TestCosmosNetworkMonitor(unittest.TestCase):
             self.chain_name, self.dummy_logger, self.monitoring_period,
             self.rabbitmq)
 
+        self.received_retrieval_info = {
+            'cosmos_rest': {
+                'data': self.retrieved_proposals_example,
+                'data_retrieval_failed': False,
+                'data_retrieval_exception': None,
+                'get_function': self.test_monitor._get_cosmos_rest_data,
+                'processing_function':
+                    self.test_monitor._process_retrieved_cosmos_rest_data,
+                'monitoring_enabled': True
+            }
+        }
+
     def tearDown(self) -> None:
         # Delete any queues and exchanges which are common across many tests
         connect_to_rabbit(self.test_monitor.rabbitmq)
@@ -817,6 +821,8 @@ class TestCosmosNetworkMonitor(unittest.TestCase):
         self.connection_check_time_interval = None
         self.rabbitmq = None
         self.test_exception = None
+        self.cosmos_test_nodes.clear_attributes()
+        self.cosmos_test_nodes = None
         self.test_monitor = None
 
     def test_parent_id_returns_parent_id(self) -> None:
@@ -884,39 +890,36 @@ class TestCosmosNetworkMonitor(unittest.TestCase):
     @freeze_time("2012-01-01")
     def test_process_error_returns_expected_data(self) -> None:
         expected_output = {
-            'cosmos_rest': {
-                'error': {
-                    'meta_data': {
-                        'monitor_name': self.test_monitor.monitor_name,
-                        'parent_id': self.test_monitor.parent_id,
-                        'chain_name': self.test_monitor.chain_name,
-                        'time': datetime(2012, 1, 1).timestamp()
-                    },
-                    'message': self.test_exception.message,
-                    'code': self.test_exception.code,
-                }
+            'error': {
+                'meta_data': {
+                    'monitor_name': self.test_monitor.monitor_name,
+                    'parent_id': self.test_monitor.parent_id,
+                    'chain_name': self.test_monitor.chain_name,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'message': self.test_exception.message,
+                'code': self.test_exception.code,
             }
         }
         actual_output = self.test_monitor._process_error(self.test_exception)
         self.assertEqual(actual_output, expected_output)
 
     @freeze_time("2012-01-01")
-    def test_process_retrieved_data_returns_expected_data(self) -> None:
+    def test_process_retrieved_cosmos_rest_data_returns_expected_data(
+            self) -> None:
         expected_output = {
-            'cosmos_rest': {
-                'result': {
-                    'meta_data': {
-                        'monitor_name': self.test_monitor.monitor_name,
-                        'parent_id': self.test_monitor.parent_id,
-                        'chain_name': self.test_monitor.chain_name,
-                        'time': datetime(2012, 1, 1).timestamp()
-                    },
-                    'data': self.retrieved_proposals_example
-                }
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.test_monitor.monitor_name,
+                    'parent_id': self.test_monitor.parent_id,
+                    'chain_name': self.test_monitor.chain_name,
+                    'time': datetime(2012, 1, 1).timestamp()
+                },
+                'data': self.retrieved_proposals_example
             }
         }
 
-        actual_output = self.test_monitor._process_retrieved_data(
+        actual_output = self.test_monitor._process_retrieved_cosmos_rest_data(
             self.retrieved_proposals_example)
         self.assertEqual(expected_output, actual_output)
 
@@ -1048,29 +1051,3 @@ class TestCosmosNetworkMonitor(unittest.TestCase):
         mock_send_data.return_value = None
         mock_send_hb.side_effect = exception_instance
         self.assertRaises(exception_class, self.test_monitor._monitor)
-
-    @mock.patch.object(logging.Logger, "debug")
-    @mock.patch.object(CosmosNetworkMonitor, "_send_heartbeat")
-    @mock.patch.object(CosmosNetworkMonitor, "_send_data")
-    @mock.patch.object(CosmosNetworkMonitor, "_get_data")
-    def test_monitor_does_not_log_if_retrieval_error(
-            self, mock_get_data, mock_send_data, mock_send_hb,
-            mock_log) -> None:
-        # expected_logged_data contains the data that should be logged if all
-        # sources are enabled.
-        expected_logged_data = self.test_monitor._display_data({
-            'result': {
-                'meta_data': {
-                    'monitor_name': self.test_monitor.monitor_name,
-                    'parent_id': self.test_monitor.parent_id,
-                    'chain_name': self.test_monitor.chain_name,
-                    'time': datetime(2012, 1, 1).timestamp()
-                },
-                'data': self.received_retrieval_info,
-            }
-        })
-        mock_send_data.return_value = None
-        mock_send_hb.return_value = None
-        mock_get_data.return_value = self.received_retrieval_info
-        self.test_monitor._monitor()
-        assert_not_called_with(mock_log, expected_logged_data)

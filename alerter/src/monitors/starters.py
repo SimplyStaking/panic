@@ -7,6 +7,7 @@ import pika.exceptions
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.configs.nodes.cosmos import CosmosNodeConfig
 from src.configs.nodes.node import NodeConfig
+from src.configs.nodes.substrate import SubstrateNodeConfig
 from src.configs.repo import GitHubRepoConfig, DockerHubRepoConfig
 from src.configs.system import SystemConfig
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -15,19 +16,19 @@ from src.monitors.dockerhub import DockerHubMonitor
 from src.monitors.github import GitHubMonitor
 from src.monitors.monitor import Monitor
 from src.monitors.network.cosmos import CosmosNetworkMonitor
+from src.monitors.network.substrate import SubstrateNetworkMonitor
 from src.monitors.system import SystemMonitor
 from src.utils import env
-from src.utils.constants.names import (SYSTEM_MONITOR_NAME_TEMPLATE,
-                                       GITHUB_MONITOR_NAME_TEMPLATE,
-                                       DOCKERHUB_MONITOR_NAME_TEMPLATE,
-                                       NODE_MONITOR_NAME_TEMPLATE,
-                                       CL_CONTRACTS_MONITOR_NAME_TEMPLATE,
-                                       COSMOS_NETWORK_MONITOR_NAME_TEMPLATE)
-from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
-                                          RESTART_SLEEPING_PERIOD)
+from src.utils.constants.names import (
+    SYSTEM_MONITOR_NAME_TEMPLATE, GITHUB_MONITOR_NAME_TEMPLATE,
+    DOCKERHUB_MONITOR_NAME_TEMPLATE, NODE_MONITOR_NAME_TEMPLATE,
+    CL_CONTRACTS_MONITOR_NAME_TEMPLATE, COSMOS_NETWORK_MONITOR_NAME_TEMPLATE,
+    SUBSTRATE_NETWORK_MONITOR_NAME_TEMPLATE)
+from src.utils.constants.starters import (
+    RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
-from src.utils.starters import (get_initialisation_error_message,
-                                get_stopped_message)
+from src.utils.starters import (
+    get_initialisation_error_message, get_stopped_message)
 from src.utils.types import MonitorableConfig
 
 # Restricts the generic to Monitor or subclasses
@@ -138,6 +139,36 @@ def _initialise_cosmos_network_monitor(
     return monitor
 
 
+def _initialise_substrate_network_monitor(
+        monitor_display_name: str, monitoring_period: int,
+        data_sources: List[SubstrateNodeConfig],
+        governance_addresses: List[str], parent_id: str,
+        chain_name: str) -> SubstrateNetworkMonitor:
+    monitor_logger = _initialise_monitor_logger(
+        monitor_display_name, SubstrateNetworkMonitor.__name__)
+
+    # Try initialising the monitor until successful
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=monitor_logger.getChild(RabbitMQApi.__name__),
+                host=env.RABBIT_IP)
+            monitor = SubstrateNetworkMonitor(
+                monitor_display_name, data_sources, governance_addresses,
+                parent_id, chain_name, monitor_logger, monitoring_period,
+                rabbitmq)
+            log_and_print("Successfully initialised {}".format(
+                monitor_display_name), monitor_logger)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(monitor_display_name, e)
+            log_and_print(msg, monitor_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return monitor
+
+
 def start_system_monitor(system_config: SystemConfig) -> None:
     # Monitor display name based on system
     monitor_display_name = SYSTEM_MONITOR_NAME_TEMPLATE.format(
@@ -200,6 +231,17 @@ def start_cosmos_network_monitor(
     node_monitor = _initialise_cosmos_network_monitor(
         monitor_display_name, env.NETWORK_MONITOR_PERIOD_SECONDS, data_sources,
         parent_id, chain_name)
+    start_monitor(node_monitor)
+
+
+def start_substrate_network_monitor(
+        data_sources: List[SubstrateNodeConfig], parent_id: str,
+        chain_name: str, governance_addresses: List[str]) -> None:
+    monitor_display_name = SUBSTRATE_NETWORK_MONITOR_NAME_TEMPLATE.format(
+        chain_name)
+    node_monitor = _initialise_substrate_network_monitor(
+        monitor_display_name, env.NETWORK_MONITOR_PERIOD_SECONDS, data_sources,
+        governance_addresses, parent_id, chain_name)
     start_monitor(node_monitor)
 
 

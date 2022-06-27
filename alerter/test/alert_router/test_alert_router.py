@@ -824,7 +824,7 @@ class TestAlertRouter(unittest.TestCase):
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
                 severity, alert_timestamp.timestamp(), "GENERAL", "origin_123",
-                GroupedGithubAlertsMetricCode.GithubRelease
+                GroupedGithubAlertsMetricCode.GithubRelease, []
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -934,7 +934,7 @@ class TestAlertRouter(unittest.TestCase):
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert",
                 severity, alert_timestamp.timestamp(), "GENERAL", "origin_123",
-                GroupedGithubAlertsMetricCode.GithubRelease
+                GroupedGithubAlertsMetricCode.GithubRelease, []
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -1026,7 +1026,7 @@ class TestAlertRouter(unittest.TestCase):
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert", 'error',
                 alert_timestamp.timestamp(), "GENERAL", "origin_123",
-                GroupedGithubAlertsMetricCode.GithubRelease
+                GroupedGithubAlertsMetricCode.GithubRelease, []
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -1116,7 +1116,7 @@ class TestAlertRouter(unittest.TestCase):
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert", 'error',
                 alert_timestamp.timestamp(), "GENERAL", "origin_123",
-                GroupedGithubAlertsMetricCode.GithubRelease
+                GroupedGithubAlertsMetricCode.GithubRelease, []
             )
 
             alert_json = json.dumps(alert.alert_data)
@@ -1195,7 +1195,7 @@ class TestAlertRouter(unittest.TestCase):
             alert = Alert(
                 DummyAlertCode.TEST_ALERT_CODE, "This is a test alert", 'error',
                 alert_timestamp.timestamp(), "GENERAL", "origin_123",
-                GroupedGithubAlertsMetricCode.GithubRelease
+                GroupedGithubAlertsMetricCode.GithubRelease, []
             )
 
             alert_json = json.dumps(alert.alert_data)

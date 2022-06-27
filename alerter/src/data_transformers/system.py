@@ -19,7 +19,7 @@ from src.utils.constants.rabbitmq import (
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   SystemIsDownException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import convert_to_float, Monitorable
+from src.utils.types import convert_to_float
 
 
 class SystemDataTransformer(DataTransformer):
@@ -69,7 +69,7 @@ class SystemDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
-    def load_state(self, system: Monitorable) -> Monitorable:
+    def load_state(self, system: System) -> System:
         # Below, we will try and get the data stored in redis and store it
         # in the system's state. If the data from Redis cannot be obtained, the
         # state won't be updated.
@@ -289,7 +289,7 @@ class SystemDataTransformer(DataTransformer):
             system_id = meta_data['system_id']
             parent_id = meta_data['system_parent_id']
             system_name = meta_data['system_name']
-            system = self.state[system_id]
+            system: System = self.state[system_id]
 
             # Set system details just in case the configs have changed
             system.set_parent_id(parent_id)
@@ -325,7 +325,7 @@ class SystemDataTransformer(DataTransformer):
             system_id = meta_data['system_id']
             parent_id = meta_data['system_parent_id']
             downtime_exception = SystemIsDownException(system_name)
-            system = self.state[system_id]
+            system: System = self.state[system_id]
 
             # Set system details just in case the configs have changed
             system.set_parent_id(parent_id)
@@ -367,7 +367,7 @@ class SystemDataTransformer(DataTransformer):
         if 'result' in transformed_data:
             td_meta_data = transformed_data['result']['meta_data']
             td_system_id = td_meta_data['system_id']
-            system = self.state[td_system_id]
+            system: System = self.state[td_system_id]
             td_metrics = transformed_data['result']['data']
 
             processed_data = {
@@ -417,7 +417,7 @@ class SystemDataTransformer(DataTransformer):
             td_error_code = transformed_data['error']['code']
             td_system_id = td_meta_data['system_id']
             td_system_name = td_meta_data['system_name']
-            system = self.state[td_system_id]
+            system: System = self.state[td_system_id]
             downtime_exception = SystemIsDownException(td_system_name)
 
             processed_data = copy.deepcopy(transformed_data)
@@ -450,7 +450,7 @@ class SystemDataTransformer(DataTransformer):
             meta_data = data['result']['meta_data']
             system_metrics = data['result']['data']
             system_id = meta_data['system_id']
-            system = self.state[system_id]
+            system: System = self.state[system_id]
 
             # Compute the network receive/transmit bytes per second based on the
             # totals and the saved last monitoring round
@@ -509,7 +509,7 @@ class SystemDataTransformer(DataTransformer):
             system_id = meta_data['system_id']
             system_name = meta_data['system_name']
             time_of_error = meta_data['time']
-            system = self.state[system_id]
+            system: System = self.state[system_id]
             downtime_exception = SystemIsDownException(system_name)
 
             # In case of errors in the sent messages only remove the

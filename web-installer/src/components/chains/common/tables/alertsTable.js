@@ -1090,7 +1090,12 @@ const AlertsTable = ({
                               InputProps={{
                                 endAdornment: (
                                   <InputAdornment position="end">
-                                    {ThresholdAlerts.byId[id].adornment_time}
+                                    {
+                                      (ThresholdAlerts.byId[id].identifier === 'validator_is_syncing') || (
+                                        ThresholdAlerts.byId[id].identifier === 'node_is_syncing')
+                                        ? 'Seconds'
+                                        : ThresholdAlerts.byId[id].adornment_time
+                                    }
                                   </InputAdornment>
                                 ),
                                 min: 0,

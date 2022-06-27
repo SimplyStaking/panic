@@ -4,7 +4,7 @@ import NodesForm from 'components/chains/cosmos/forms/nodesForm';
 import NodesTable from 'components/chains/cosmos/tables/nodesTable';
 import { addNodeCosmos, removeNodeCosmos, toggleMonitorNetworkNodesCosmos } from 'redux/actions/cosmosActions';
 import CosmosData from 'data/cosmos';
-import MonitorNetworkNodesForm from 'components/chains/cosmos/forms/monitorNetworkNodesForm';
+import MonitorNetworkNodesForm from 'components/chains/common/forms/monitorNetworkNodesForm';
 import { toggleDirty } from 'redux/actions/pageActions';
 import NodeSchema from '../common/schemas/nodeSchema';
 

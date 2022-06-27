@@ -22,7 +22,7 @@ class EVMNodeAlertsConfigsFactory(ConfigsFactory):
         # same, if not there is some misconfiguration
         parent_ids = {
             configuration['parent_id']
-            for _, configuration in sent_configs.items()
+            for configuration in sent_configs.values()
         }
         if len(parent_ids) != 1:
             raise ParentIdsMissMatchInAlertsConfiguration(
@@ -30,7 +30,7 @@ class EVMNodeAlertsConfigsFactory(ConfigsFactory):
 
         filtered = {
             config['name']: copy.deepcopy(config)
-            for _, config in sent_configs.items()
+            for config in sent_configs.values()
         }
 
         evm_node_alerts_config = EVMNodeAlertsConfig(

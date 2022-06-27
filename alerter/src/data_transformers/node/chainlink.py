@@ -24,8 +24,7 @@ from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE,
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   NodeIsDownException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import (Monitorable, convert_to_float, convert_to_int,
-                             is_mutable)
+from src.utils.types import convert_to_float, convert_to_int, is_mutable
 
 
 class ChainlinkNodeDataTransformer(DataTransformer):
@@ -74,7 +73,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                                        True, False, False)
 
     def _load_number_state(self, state_type: Union[Type[float], Type[int]],
-                           cl_node: Monitorable) -> None:
+                           cl_node: ChainlinkNode) -> None:
         """
         This function will attempt to load a node's number metrics from redis.
         If the data from Redis cannot be obtained, the state won't be updated.
@@ -106,7 +105,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             new_value = convert_fn(processed_redis_value, None)
             eval("cl_node.set_" + attribute + '(new_value)')
 
-    def _load_str_state(self, cl_node: Monitorable) -> None:
+    def _load_str_state(self, cl_node: ChainlinkNode) -> None:
         """
         This function will attempt to load a node's str metrics from redis.
         If the data from Redis cannot be obtained, the state won't be updated.
@@ -133,7 +132,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
                 else redis_value.decode("utf-8")
             eval("cl_node.set_" + attribute + '(new_value)')
 
-    def _load_dict_state(self, cl_node: Monitorable) -> None:
+    def _load_dict_state(self, cl_node: ChainlinkNode) -> None:
         """
         This function will attempt to load a node's dict metrics from redis.
         If the data from Redis cannot be obtained, the state won't be updated.
@@ -167,7 +166,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             else json.loads(redis_balance_info.decode("utf-8"))
         cl_node.set_balance_info(balance_info)
 
-    def load_state(self, cl_node: Monitorable) -> Monitorable:
+    def load_state(self, cl_node: ChainlinkNode) -> ChainlinkNode:
         self.logger.debug("Loading the state of %s from Redis", cl_node)
 
         self._load_number_state(int, cl_node)
@@ -202,7 +201,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             node_id = meta_data['node_id']
             parent_id = meta_data['node_parent_id']
             node_name = meta_data['node_name']
-            node = self.state[node_id]
+            node: ChainlinkNode = self.state[node_id]
 
             # Set node details just in case the configs have changed
             node.set_parent_id(parent_id)
@@ -239,7 +238,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             parent_id = meta_data['node_parent_id']
             node_name = meta_data['node_name']
             downtime_exception = NodeIsDownException(node_name)
-            node = self.state[node_id]
+            node: ChainlinkNode = self.state[node_id]
 
             # Set node details just in case the configs have changed
             node.set_parent_id(parent_id)
@@ -300,7 +299,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
         if 'result' in transformed_prometheus_data:
             td_meta_data = transformed_prometheus_data['result']['meta_data']
             td_node_id = td_meta_data['node_id']
-            node = self.state[td_node_id]
+            node: ChainlinkNode = self.state[td_node_id]
             td_metrics = transformed_prometheus_data['result']['data']
 
             processed_data = {
@@ -342,7 +341,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             td_error_code = transformed_prometheus_data['error']['code']
             td_node_id = td_meta_data['node_id']
             td_node_name = td_meta_data['node_name']
-            node = self.state[td_node_id]
+            node: ChainlinkNode = self.state[td_node_id]
             downtime_exception = NodeIsDownException(td_node_name)
 
             processed_data = copy.deepcopy(transformed_prometheus_data)
@@ -397,7 +396,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             meta_data = prometheus_data['result']['meta_data']
             node_metrics = prometheus_data['result']['data']
             node_id = meta_data['node_id']
-            node = self.state[node_id]
+            node: ChainlinkNode = self.state[node_id]
             transformed_data = copy.deepcopy(prometheus_data)
             td_meta_data = transformed_data['result']['meta_data']
             td_node_metrics = transformed_data['result']['data']
@@ -461,7 +460,7 @@ class ChainlinkNodeDataTransformer(DataTransformer):
             node_id = meta_data['node_id']
             node_name = meta_data['node_name']
             time_of_error = meta_data['time']
-            node = self.state[node_id]
+            node: ChainlinkNode = self.state[node_id]
             downtime_exception = NodeIsDownException(node_name)
 
             # In case of non-downtime errors only remove the monitor_name

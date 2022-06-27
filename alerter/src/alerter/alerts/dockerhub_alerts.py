@@ -13,7 +13,7 @@ class DockerHubNewTagAlert(Alert):
             "Repo {}/{} has a new tag: {}.".format(
                 repo_namespace, repo_name, tag_name), severity, timestamp,
             parent_id, origin_id,
-            GroupedDockerhubAlertsMetricCode.DockerhubNewTag)
+            GroupedDockerhubAlertsMetricCode.DockerhubNewTag, [origin_id])
 
 
 class DockerHubUpdatedTagAlert(Alert):
@@ -25,7 +25,7 @@ class DockerHubUpdatedTagAlert(Alert):
             "Repo {}/{} has had an update released for the tag {}.".format(
                 repo_namespace, repo_name, tag_name), severity, timestamp,
             parent_id, origin_id,
-            GroupedDockerhubAlertsMetricCode.DockerhubUpdatedTag)
+            GroupedDockerhubAlertsMetricCode.DockerhubUpdatedTag, [origin_id])
 
 
 class DockerHubDeletedTagAlert(Alert):
@@ -37,7 +37,7 @@ class DockerHubDeletedTagAlert(Alert):
             "Tag {} was deleted from repo {}/{}.".format(
                 tag_name, repo_namespace, repo_name), severity, timestamp,
             parent_id, origin_id,
-            GroupedDockerhubAlertsMetricCode.DockerhubDeletedTag)
+            GroupedDockerhubAlertsMetricCode.DockerhubDeletedTag, [origin_id])
 
 
 class CannotAccessDockerHubPageAlert(Alert):
@@ -48,7 +48,7 @@ class CannotAccessDockerHubPageAlert(Alert):
             "Dockerhub page {}/{} is inaccessible.".format(repo_namespace,
                                                            repo_name),
             severity, timestamp, parent_id, origin_id,
-            GroupedDockerhubAlertsMetricCode.CannotAccessDockerhub)
+            GroupedDockerhubAlertsMetricCode.CannotAccessDockerhub, [origin_id])
 
 
 class DockerHubPageNowAccessibleAlert(Alert):
@@ -59,7 +59,7 @@ class DockerHubPageNowAccessibleAlert(Alert):
             "Dockerhub page {}/{} is now accessible.".format(repo_namespace,
                                                              repo_name),
             severity, timestamp, parent_id, origin_id,
-            GroupedDockerhubAlertsMetricCode.CannotAccessDockerhub)
+            GroupedDockerhubAlertsMetricCode.CannotAccessDockerhub, [origin_id])
 
 
 class DockerHubTagsAPICallErrorAlert(Alert):
@@ -70,7 +70,7 @@ class DockerHubTagsAPICallErrorAlert(Alert):
             DockerhubAlertCode.DockerHubTagsAPICallErrorAlert,
             "{}/{}: {}".format(repo_namespace, repo_name, error_msg),
             severity, timestamp, parent_id, origin_id,
-            GroupedDockerhubAlertsMetricCode.TagsAPICallError)
+            GroupedDockerhubAlertsMetricCode.TagsAPICallError, [origin_id])
 
 
 class DockerHubTagsAPICallErrorResolvedAlert(Alert):
@@ -81,4 +81,4 @@ class DockerHubTagsAPICallErrorResolvedAlert(Alert):
             "{}/{}: DockerHub Tags API call no longer causing errors.".format(
                 repo_namespace, repo_name),
             severity, timestamp, parent_id, origin_id,
-            GroupedDockerhubAlertsMetricCode.TagsAPICallError)
+            GroupedDockerhubAlertsMetricCode.TagsAPICallError, [origin_id])

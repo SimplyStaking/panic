@@ -13,9 +13,11 @@ from src.message_broker.rabbitmq import RabbitMQApi
 from src.monitorables.contracts.chainlink.v3 import V3ChainlinkContract
 from src.monitorables.contracts.chainlink.v4 import V4ChainlinkContract
 from src.monitorables.networks.cosmos import CosmosNetwork
+from src.monitorables.networks.substrate import SubstrateNetwork
 from src.monitorables.nodes.chainlink_node import ChainlinkNode
 from src.monitorables.nodes.cosmos_node import CosmosNode
 from src.monitorables.nodes.evm_node import EVMNode
+from src.monitorables.nodes.substrate_node import SubstrateNode
 from src.monitorables.repo import (GitHubRepo, DockerHubRepo)
 from src.monitorables.system import System
 from src.utils.constants.monitorables import EMPTY_MONITORABLE_DATA
@@ -309,6 +311,75 @@ def save_cosmos_network_to_redis(redis: RedisApi,
             json.dumps(cosmos_network.proposals),
         Keys.get_cosmos_network_last_monitored_cosmos_rest(cosmos_parent_id):
             str(cosmos_network.last_monitored_cosmos_rest),
+    })
+
+
+def save_substrate_node_to_redis(redis: RedisApi,
+                                 substrate_node: SubstrateNode) -> None:
+    redis_hash = Keys.get_hash_parent(substrate_node.parent_id)
+    substrate_node_id = substrate_node.node_id
+    redis.hset_multiple(redis_hash, {
+        Keys.get_substrate_node_went_down_at_websocket(substrate_node_id):
+            str(substrate_node.went_down_at_websocket),
+        Keys.get_substrate_node_last_monitored_websocket(substrate_node_id):
+            str(substrate_node.last_monitored_websocket),
+        Keys.get_substrate_node_best_height(substrate_node_id):
+            str(substrate_node.best_height),
+        Keys.get_substrate_node_target_height(substrate_node_id):
+            str(substrate_node.target_height),
+        Keys.get_substrate_node_finalized_height(substrate_node_id):
+            str(substrate_node.finalized_height),
+        Keys.get_substrate_node_current_session(substrate_node_id):
+            str(substrate_node.current_session),
+        Keys.get_substrate_node_current_era(substrate_node_id):
+            str(substrate_node.current_era),
+        Keys.get_substrate_node_authored_blocks(substrate_node_id):
+            str(substrate_node.authored_blocks),
+        Keys.get_substrate_node_active(substrate_node_id):
+            str(substrate_node.active),
+        Keys.get_substrate_node_elected(substrate_node_id):
+            str(substrate_node.elected),
+        Keys.get_substrate_node_disabled(substrate_node_id):
+            str(substrate_node.disabled),
+        Keys.get_substrate_node_eras_stakers(substrate_node_id):
+            json.dumps(substrate_node.eras_stakers),
+        Keys.get_substrate_node_sent_heartbeat(substrate_node_id):
+            str(substrate_node.sent_heartbeat),
+        Keys.get_substrate_node_controller_address(substrate_node_id):
+            str(substrate_node.controller_address),
+        Keys.get_substrate_node_history_depth_eras(substrate_node_id):
+            str(substrate_node.history_depth_eras),
+        Keys.get_substrate_node_unclaimed_rewards(substrate_node_id):
+            json.dumps(substrate_node.unclaimed_rewards),
+        Keys.get_substrate_node_claimed_rewards(substrate_node_id):
+            json.dumps(substrate_node.claimed_rewards),
+        Keys.get_substrate_node_previous_era_rewards(substrate_node_id):
+            str(substrate_node.previous_era_rewards),
+        Keys.get_substrate_node_historical(substrate_node_id):
+            json.dumps(substrate_node.historical),
+        Keys.get_substrate_node_token_symbol(substrate_node_id):
+            str(substrate_node.token_symbol)
+    })
+
+
+def save_substrate_network_to_redis(
+        redis: RedisApi, substrate_network: SubstrateNetwork) -> None:
+    redis_hash = Keys.get_hash_parent(substrate_network.parent_id)
+    substrate_parent_id = substrate_network.parent_id
+    redis.hset_multiple(redis_hash, {
+        Keys.get_substrate_network_grandpa_stalled(substrate_parent_id):
+            str(substrate_network.grandpa_stalled),
+        Keys.get_substrate_network_public_prop_count(substrate_parent_id):
+            str(substrate_network.public_prop_count),
+        Keys.get_substrate_network_active_proposals(substrate_parent_id):
+            json.dumps(substrate_network.active_proposals),
+        Keys.get_substrate_network_referendum_count(substrate_parent_id):
+            str(substrate_network.referendum_count),
+        Keys.get_substrate_network_referendums(substrate_parent_id):
+            json.dumps(substrate_network.referendums),
+        Keys.get_substrate_network_last_monitored_websocket(
+            substrate_parent_id): str(
+            substrate_network.last_monitored_websocket),
     })
 
 

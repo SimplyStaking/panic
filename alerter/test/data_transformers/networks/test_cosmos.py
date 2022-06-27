@@ -159,7 +159,7 @@ class TestCosmosNetworkTransformer(unittest.TestCase):
                         'chain_name': self.network_1.chain_name,
                         'last_monitored': self.test_last_monitored,
                         'time': self.test_last_monitored,
-                        'monitor_name': self.test_proposal_submit_time_1,
+                        'monitor_name': self.test_monitor_name,
                     },
                     'data': {
                         'proposals': self.test_proposals,

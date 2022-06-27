@@ -49,12 +49,14 @@ import {
     addPostfixToKeys,
     addPrefixToKeys,
     alertKeysChainSourced,
+    alertKeysChainSourcedWithUniqueIdentifier,
     alertKeysClContractPrefix,
     alertKeysClNodePrefix,
     alertKeysCosmosNodePrefix,
     alertKeysDockerHubPrefix,
     alertKeysEvmNodePrefix,
     alertKeysGitHubPrefix,
+    alertKeysSubstrateNodePrefix,
     alertKeysSystemPrefix,
     getAlertKeysDockerHubRepo,
     getAlertKeysGitHubRepo,
@@ -67,12 +69,7 @@ import {
 } from "./server/redis"
 import {MongoInterface, MonitorablesCollection} from "./server/mongo";
 import {MongoClientOptions} from "mongodb";
-import {
-    baseChains,
-    ERR_STATUS,
-    Severities,
-    SUCCESS_STATUS
-} from "./server/constants";
+import {baseChains, ERR_STATUS, Severities, SUCCESS_STATUS} from "./server/constants";
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
@@ -663,6 +660,8 @@ app.post('/server/redis/alertsOverview',
                                         || (key.includes(
                                             alertKeysCosmosNodePrefix))
                                         || (key.includes(
+                                            alertKeysSubstrateNodePrefix))
+                                        || (key.includes(
                                             alertKeysClContractPrefix)))
                                 ) {
                                     found = true;
@@ -704,16 +703,16 @@ app.post('/server/redis/alertsOverview',
                             });
                         }
 
-                        if (!found) {
-                            if (alertKeysChainSourced.includes(key)) {
-                                if (sourcesObject.include_chain_sourced_alerts) {
-                                    alertsData.push({
-                                        parentId: parentId,
-                                        monitorableId: parentId,
-                                        key: key,
-                                        value: value
-                                    })
-                                }
+                        if (!found && sourcesObject.include_chain_sourced_alerts) {
+                            if (alertKeysChainSourced.includes(key) ||
+                                alertKeysChainSourcedWithUniqueIdentifier.some(
+                                    alertKey => key.includes(alertKey))) {
+                                alertsData.push({
+                                    parentId: parentId,
+                                    monitorableId: parentId,
+                                    key: key,
+                                    value: value
+                                })
                             }
                         }
                     }

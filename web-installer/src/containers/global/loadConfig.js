@@ -280,7 +280,6 @@ class LoadConfig extends Component {
             } else if (filePath[4] === 'dockerhub_repos_config.ini') {
               config = await getConfig('chain', 'dockerhub_repos_config.ini', filePath[3], 'cosmos');
               if (Object.keys(config.data.result).length !== 0) {
-                console.log('entered');
                 CreateChain(config.data.result, filePath[3], addChainCosmosDetails);
                 Object.values(config.data.result).forEach((value) => {
                   const payload = JSON.parse(JSON.stringify(value));
@@ -431,10 +430,16 @@ class LoadConfig extends Component {
                 CreateChain(config.data.result, filePath[3], addChainSubstrateDetails);
                 Object.values(config.data.result).forEach((value) => {
                   const node = JSON.parse(JSON.stringify(value));
+                  if (node.governance_addresses.length === 0) {
+                    node.governance_addresses = [];
+                  } else {
+                    node.governance_addresses = node.governance_addresses.split(',');
+                  }
                   node.is_archive_node = node.is_archive_node === 'true';
                   node.is_validator = node.is_validator === 'true';
                   node.monitor_node = node.monitor_node === 'true';
                   node.use_as_data_source = node.use_as_data_source === 'true';
+                  node.monitor_network = node.monitor_network === 'true';
                   addNodeSubstrateDetails(node);
                 });
               }

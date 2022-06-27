@@ -56,6 +56,57 @@ const NodesTable = ({
       </div>
     );
   }
+
+  let highestLen = 0;
+  const nodesInThisChain = chainConfig.byId[currentChain].nodes;
+  nodesInThisChain.forEach((node) => {
+    const len = substrateNodesConfig.byId[node].governance_addresses.length;
+    if (len > highestLen) {
+      highestLen = len;
+    }
+  });
+
+  const gvnAddressTableHeaders = () => {
+    const tableHeaders = [];
+
+    for (let i = 0; i < highestLen; i += 1) {
+      tableHeaders.push(
+        <StyledTableCell align="center">
+          {`Governance Address ${i + 1}`}
+        </StyledTableCell>,
+      );
+    }
+
+    if (tableHeaders.length <= 1) {
+      return (
+        <StyledTableCell align="center">Governance Address</StyledTableCell>
+      );
+    }
+
+    return tableHeaders;
+  };
+
+  const gvnAddressRows = (governanceAddresses) => {
+    const tableRows = [];
+
+    if (highestLen === 0) {
+      tableRows.push(
+        <StyledTableCell align="center" />,
+      );
+      return tableRows;
+    }
+
+    for (let i = 0; i < highestLen; i += 1) {
+      tableRows.push(
+        <StyledTableCell align="center">
+          {governanceAddresses[i]}
+        </StyledTableCell>,
+      );
+    }
+
+    return tableRows;
+  };
+
   return (
     <Box pt={5}>
       <TableContainer component={Paper}>
@@ -64,10 +115,9 @@ const NodesTable = ({
             <TableRow>
               <StyledTableCell align="center">Name</StyledTableCell>
               <StyledTableCell align="center">Websocket</StyledTableCell>
-              <StyledTableCell align="center">Telemetry</StyledTableCell>
-              <StyledTableCell align="center">Prometheus</StyledTableCell>
               <StyledTableCell align="center">Node Exporter</StyledTableCell>
               <StyledTableCell align="center">Stash Address</StyledTableCell>
+              {gvnAddressTableHeaders()}
               <StyledTableCell align="center">Validator</StyledTableCell>
               <StyledTableCell align="center">Monitor</StyledTableCell>
               <StyledTableCell align="center">Archive</StyledTableCell>
@@ -85,28 +135,41 @@ const NodesTable = ({
                   {substrateNodesConfig.byId[id].node_ws_url}
                 </StyledTableCell>
                 <StyledTableCell align="center">
-                  {substrateNodesConfig.byId[id].telemetry_url}
-                </StyledTableCell>
-                <StyledTableCell align="center">
-                  {substrateNodesConfig.byId[id].prometheus_url}
-                </StyledTableCell>
-                <StyledTableCell align="center">
                   {substrateNodesConfig.byId[id].exporter_url}
                 </StyledTableCell>
                 <StyledTableCell align="center">
                   {substrateNodesConfig.byId[id].stash_address}
                 </StyledTableCell>
+                {gvnAddressRows(
+                  substrateNodesConfig.byId[id].governance_addresses,
+                )}
                 <StyledTableCell align="center">
-                  {substrateNodesConfig.byId[id].is_validator ? <CheckIcon /> : <ClearIcon />}
+                  {substrateNodesConfig.byId[id].is_validator ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
                 </StyledTableCell>
                 <StyledTableCell align="center">
-                  {substrateNodesConfig.byId[id].monitor_node ? <CheckIcon /> : <ClearIcon />}
+                  {substrateNodesConfig.byId[id].monitor_node ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
                 </StyledTableCell>
                 <StyledTableCell align="center">
-                  {substrateNodesConfig.byId[id].is_archive_node ? <CheckIcon /> : <ClearIcon />}
+                  {substrateNodesConfig.byId[id].is_archive_node ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
                 </StyledTableCell>
                 <StyledTableCell align="center">
-                  {substrateNodesConfig.byId[id].use_as_data_source ? <CheckIcon /> : <ClearIcon />}
+                  {substrateNodesConfig.byId[id].use_as_data_source ? (
+                    <CheckIcon />
+                  ) : (
+                    <ClearIcon />
+                  )}
                 </StyledTableCell>
                 <StyledTableCell align="center">
                   <Button

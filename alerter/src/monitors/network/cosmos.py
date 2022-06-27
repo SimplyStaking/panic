@@ -1,7 +1,7 @@
 import copy
 import logging
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Callable
 
 import pika
 
@@ -302,8 +302,7 @@ class CosmosNetworkMonitor(CosmosMonitor):
             if len(other_supported_retrievals) == 0:
                 # If all retrievals failed due to a compatibility issue, then
                 # raise a more meaningful error
-                self.logger.error(
-                    'Cosmos network data could not be obtained.')
+                self.logger.error('Cosmos network data could not be obtained.')
                 return {}, True, CosmosNetworkDataCouldNotBeObtained()
 
             temp_last_rest_retrieval_version = other_supported_retrievals[0]
@@ -318,21 +317,33 @@ class CosmosNetworkMonitor(CosmosMonitor):
 
     def _get_data(self) -> Dict:
         """
-        This function retrieves cosmos network's specific metrics.
+        This function retrieves the data from various data sources. Due to
+        multiple data sources being processed, this function also returns some
+        data retrieval information for further processing.
         :return: A dict containing all network metrics.
         """
-        ret = self._get_cosmos_rest_data()
-
-        # if we are to add more data sources, we need to generalize this
-        # function similarly to the cosmos node monitor
-
-        return {
+        # TODO: If we add more interface data sources in the future we need to
+        #     : change the `monitoring_enabled` field to the individual
+        #     : monitor_<interface> switch
+        retrieval_info = {
             'cosmos_rest': {
-                'data': ret[0],
-                'data_retrieval_failed': ret[1],
-                'data_retrieval_exception': ret[2]
+                'data': {},
+                'data_retrieval_failed': True,
+                'data_retrieval_exception': None,
+                'get_function': self._get_cosmos_rest_data,
+                'processing_function': self._process_retrieved_cosmos_rest_data,
+                'monitoring_enabled': True
             }
         }
+
+        for source, info in retrieval_info.items():
+            if info['monitoring_enabled']:
+                ret = info['get_function']()
+                info['data'] = ret[0]
+                info['data_retrieval_failed'] = ret[1]
+                info['data_retrieval_exception'] = ret[2]
+
+        return retrieval_info
 
     def _process_error(self, error: PANICException) -> Dict:
         """
@@ -342,44 +353,44 @@ class CosmosNetworkMonitor(CosmosMonitor):
         :return: A dict with the error data together with some meta-data
         """
         processed_data = {
-            'cosmos_rest': {
-                'error': {
-                    'meta_data': {
-                        'monitor_name': self.monitor_name,
-                        'parent_id': self.parent_id,
-                        'chain_name': self.chain_name,
-                        'time': datetime.now().timestamp(),
-                    },
-                    'message': error.message,
-                    'code': error.code,
-                }
+            'error': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'parent_id': self.parent_id,
+                    'chain_name': self.chain_name,
+                    'time': datetime.now().timestamp(),
+                },
+                'message': error.message,
+                'code': error.code,
             }
         }
 
         return processed_data
 
-    def _process_retrieved_data(self, data: Dict) -> Dict:
+    def _process_retrieved_cosmos_rest_data(self, data: Dict) -> Dict:
         """
-        This function attempts to process the retrieved Cosmos-REST data.
+        This function attempts to process the retrieved Cosmos-REST data
         :param data: The retrieved Cosmos-REST data
         :return: A dict with the retrieved data together with some meta-data
         """
         # Add some meta-data to the processed data
         processed_data = {
-            'cosmos_rest': {
-                'result': {
-                    'meta_data': {
-                        'monitor_name': self.monitor_name,
-                        'parent_id': self.parent_id,
-                        'chain_name': self.chain_name,
-                        'time': datetime.now().timestamp(),
-                    },
-                    'data': copy.deepcopy(data),
-                }
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'parent_id': self.parent_id,
+                    'chain_name': self.chain_name,
+                    'time': datetime.now().timestamp(),
+                },
+                'data': copy.deepcopy(data),
             }
         }
 
         return processed_data
+
+    @staticmethod
+    def _process_retrieved_data(processing_fn: Callable, data: Dict) -> Dict:
+        return processing_fn(data)
 
     def _send_data(self, data: Dict) -> None:
         self.rabbitmq.basic_publish_confirm(
@@ -390,26 +401,34 @@ class CosmosNetworkMonitor(CosmosMonitor):
         self.logger.debug("Sent data to '%s' exchange", RAW_DATA_EXCHANGE)
 
     def _monitor(self) -> None:
-
-        # if more data sources, generalize to multiple sources.
-        # see cosmos node monitor for logic
         retrieval_info = self._get_data()
-        try:
-            processed_data = self._process_data(
-                retrieval_info['cosmos_rest']['data_retrieval_failed'],
-                [retrieval_info['cosmos_rest']['data_retrieval_exception']],
-                [retrieval_info['cosmos_rest']['data']],
-            )
-        except Exception as error:
-            self.logger.error("Error when processing data: %s", error)
-            self.logger.exception(error)
-            # Do not send data if we experienced processing errors
-            return
+        processed_data = {}
+        for source, info in retrieval_info.items():
+            if info['monitoring_enabled']:
+                try:
+                    processed_data[source] = self._process_data(
+                        info['data_retrieval_failed'],
+                        [info['data_retrieval_exception']],
+                        [info['processing_function'], info['data']],
+                    )
+                except Exception as error:
+                    self.logger.error("Error when processing data: %s", error)
+                    self.logger.exception(error)
+                    # Do not send data if we experienced processing errors
+                    return
+            else:
+                processed_data[source] = {}
 
         self._send_data(processed_data)
 
-        if not retrieval_info['cosmos_rest']['data_retrieval_failed']:
-            # Only output the gathered data if there was no error
+        data_retrieval_failed_list = [
+            info['data_retrieval_failed']
+            for _, info in retrieval_info.items() if info['monitoring_enabled']
+        ]
+
+        # Only output the gathered data if at least one retrieval occurred and
+        # there was no error in the entire retrieval process
+        if data_retrieval_failed_list and not any(data_retrieval_failed_list):
             self.logger.debug(self._display_data(processed_data))
 
         # Send a heartbeat only if the entire round was successful

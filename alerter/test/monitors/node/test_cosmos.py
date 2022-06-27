@@ -2090,62 +2090,20 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         # expected_logged_data contains the data that should be logged if all
         # sources are enabled.
         expected_logged_data = self.test_monitor._display_data({
-            'prometheus': {
-                'result': {
-                    'meta_data': {
-                        'monitor_name': self.test_monitor.monitor_name,
-                        'node_name': self.test_monitor.node_config.node_name,
-                        'node_id': self.test_monitor.node_config.node_id,
-                        'node_parent_id':
-                            self.test_monitor.node_config.parent_id,
-                        'time': datetime(2012, 1, 1).timestamp(),
-                        'is_validator':
-                            self.test_monitor.node_config.is_validator
-                    },
-                    'data': self.processed_prometheus_data_example_1,
-                }
-            },
-            'cosmos_rest': {
-                'result': {
-                    'meta_data': {
-                        'monitor_name': self.test_monitor.monitor_name,
-                        'node_name': self.test_monitor.node_config.node_name,
-                        'node_id': self.test_monitor.node_config.node_id,
-                        'node_parent_id':
-                            self.test_monitor.node_config.parent_id,
-                        'time': datetime(2012, 1, 1).timestamp(),
-                        'is_validator':
-                            self.test_monitor.node_config.is_validator,
-                        'operator_address':
-                            self.test_monitor.node_config.operator_address
-                    },
-                    'data': self.retrieved_cosmos_rest_data_1,
-                }
-            },
-            'tendermint_rpc': {
-                'result': {
-                    'meta_data': {
-                        'monitor_name': self.test_monitor.monitor_name,
-                        'node_name': self.test_monitor.node_config.node_name,
-                        'node_id': self.test_monitor.node_config.node_id,
-                        'node_parent_id':
-                            self.test_monitor.node_config.parent_id,
-                        'time': datetime(2012, 1, 1).timestamp(),
-                        'is_validator':
-                            self.test_monitor.node_config.is_validator,
-                        'operator_address':
-                            self.test_monitor.node_config.operator_address
-                    },
-                    'data': self.retrieved_tendermint_rpc_data,
-                }
-            },
+            'prometheus': {},
+            'cosmos_rest': {},
+            'tendermint_rpc': {},
         })
         mock_send_data.return_value = None
         mock_send_hb.return_value = None
         mock_get_data.return_value = \
             self.received_retrieval_info_all_source_types_enabled
-        self.test_monitor.node_config._monitor_prometheus = False
-        self.test_monitor.node_config._monitor_cosmos_rest = False
+        self.received_retrieval_info_all_source_types_enabled['prometheus'][
+            'monitoring_enabled'] = False
+        self.received_retrieval_info_all_source_types_enabled['cosmos_rest'][
+            'monitoring_enabled'] = False
+        self.received_retrieval_info_all_source_types_enabled['tendermint_rpc'][
+            'monitoring_enabled'] = False
         self.test_monitor._monitor()
         assert_not_called_with(mock_log, expected_logged_data)
 
@@ -2171,7 +2129,8 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                         'is_validator':
                             self.test_monitor.node_config.is_validator
                     },
-                    'data': self.processed_prometheus_data_example_1,
+                    'message': self.test_exception_1.message,
+                    'code': self.test_exception_1.code,
                 }
             },
             'cosmos_rest': {
@@ -2188,7 +2147,8 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                         'operator_address':
                             self.test_monitor.node_config.operator_address
                     },
-                    'data': self.retrieved_cosmos_rest_data_1,
+                    'message': self.test_exception_1.message,
+                    'code': self.test_exception_1.code,
                 }
             },
             'tendermint_rpc': {
@@ -2205,7 +2165,8 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                         'operator_address':
                             self.test_monitor.node_config.operator_address
                     },
-                    'data': self.retrieved_tendermint_rpc_data,
+                    'message': self.test_exception_1.message,
+                    'code': self.test_exception_1.code,
                 }
             },
         })

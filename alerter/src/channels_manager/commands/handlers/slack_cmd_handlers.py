@@ -25,7 +25,7 @@ from src.utils.constants.names import (
     CHANNELS_MANAGER_NAME, HEARTBEAT_HANDLER_NAME, PING_PUBLISHER_NAME,
     NODE_MONITORS_MANAGER_NAME, EVM_NODE_ALERTER_MANAGER_NAME,
     CONTRACT_MONITORS_MANAGER_NAME, NETWORK_MONITORS_MANAGER_NAME,
-    COSMOS_ALERTERS_MANAGER_NAME)
+    COSMOS_ALERTERS_MANAGER_NAME, SUBSTRATE_ALERTERS_MANAGER_NAME)
 
 
 class SlackCommandHandlers(CommandHandler):
@@ -294,6 +294,8 @@ class SlackCommandHandlers(CommandHandler):
             (EVM_NODE_ALERTER_MANAGER_NAME,
              "self._get_manager_component_hb_status"),
             (COSMOS_ALERTERS_MANAGER_NAME,
+             "self._get_manager_component_hb_status"),
+            (SUBSTRATE_ALERTERS_MANAGER_NAME,
              "self._get_manager_component_hb_status"),
             (DATA_STORE_MANAGER_NAME, "self._get_manager_component_hb_status"),
             (ALERT_ROUTER_NAME, "self._get_worker_component_hb_status"),

@@ -12,8 +12,8 @@ from src.alerter.factory.cosmos_network_alerting_factory import (
 from src.alerter.grouped_alerts_metric_code.network. \
     cosmos_network_metric_code import \
     GroupedCosmosNetworkAlertsMetricCode as AlertsMetricCode
-from src.utils.exceptions import NoSyncedDataSourceWasAccessibleException, \
-    CosmosNetworkDataCouldNotBeObtained
+from src.utils.exceptions import (NoSyncedDataSourceWasAccessibleException,
+                                  CosmosNetworkDataCouldNotBeObtained)
 
 
 class TestCosmosNetworkAlertingFactory(unittest.TestCase):

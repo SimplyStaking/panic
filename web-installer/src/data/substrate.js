@@ -47,23 +47,24 @@ export default {
     websocketHolder: 'ws://IP:9944',
     websocketTip: `This IP address will be used to monitor the polkadot node
       statistics, if omitted they will not be monitored and alerted on.`,
-    telemetryHolder: 'http://IP:8000',
-    telemetryTip: `This IP address will be used to monitor telemetry based
-      statistics, if omitted they will not be monitored and alerted on.`,
-    prometheusHolder: 'http://IP:26660/metrics',
-    prometheusTip: `This IP address will be used to monitor prometheus based
-      statistics, if omitted they will not be monitored and alerted on.`,
     exporterUrlHolder: 'http://IP:9100/metrics',
     exporterUrlTip: `This IP address will be used to monitor node exporter
       statistics, if omitted they will not be monitored and alerted on.`,
     stashAddressHolder: 'EDDJBTFGdsg0gh8sd0sdsda2asd12dasdafs',
     stashAddressTip: 'This will be used to monitor the stash address account.',
+    governanceAddressHolder: '12xtGHlkyrmbniiWQqJtECiBQrMn8AypQcXhnQAc6RB6JlKm [Press Enter after each address]',
+    governanceAddressTip:
+      'The address which you are voting in governance with and want monitored.',
     isValidatorTip: 'Set True if the node you are setting up is a validator.',
     isArchiveTip: 'Set True if the node you are setting up is an archive node.',
     monitorNodeTip: 'Set True if you want to monitor this configured node.',
     useAsDataSourceTip: 'Set True if you want to retrieve blockchain data from this node.',
     backStep: CHAINS_STEP,
     nextStep: REPOSITORIES_STEP,
+  },
+  monitorNodesForm: {
+    description: `Do you want to retrieve network metrics for <chain_name>?
+    Setting this to True will enable monitoring data such as governance proposals.`,
   },
   repoForm: {
     title: 'Github Repositories Setup',

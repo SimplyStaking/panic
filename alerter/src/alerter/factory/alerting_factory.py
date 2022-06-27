@@ -121,9 +121,9 @@ class AlertingFactory(ABC):
                 if not critical_window_timer.timer_started:
                     critical_window_timer.start_timer(monitoring_datetime)
                 elif critical_window_timer.can_do_task(monitoring_datetime):
-                    duration = monitoring_timestamp - \
-                               critical_window_timer.start_time.replace(
-                                   tzinfo=timezone.utc).timestamp()
+                    duration = (monitoring_timestamp -
+                                critical_window_timer.start_time.replace(
+                                    tzinfo=timezone.utc).timestamp())
                     alert = no_change_alert(
                         monitorable_name, duration, Severity.CRITICAL.value,
                         monitoring_timestamp, parent_id, monitorable_id,
@@ -140,9 +140,9 @@ class AlertingFactory(ABC):
                       and critical_repeat_enabled
                       and critical_repeat_limiter.can_do_task(
                             monitoring_datetime)):
-                    duration = monitoring_timestamp - \
-                               critical_window_timer.start_time.replace(
-                                   tzinfo=timezone.utc).timestamp()
+                    duration = (monitoring_timestamp -
+                                critical_window_timer.start_time.replace(
+                                    tzinfo=timezone.utc).timestamp())
                     alert = no_change_alert(
                         monitorable_name, duration, Severity.CRITICAL.value,
                         monitoring_timestamp, parent_id, monitorable_id,
@@ -159,9 +159,9 @@ class AlertingFactory(ABC):
                 elif (not critical_sent[metric_name]
                       and warning_window_timer.can_do_task(
                             monitoring_datetime)):
-                    duration = monitoring_timestamp - \
-                               warning_window_timer.start_time.replace(
-                                   tzinfo=timezone.utc).timestamp()
+                    duration = (monitoring_timestamp -
+                                warning_window_timer.start_time.replace(
+                                    tzinfo=timezone.utc).timestamp())
                     alert = no_change_alert(
                         monitorable_name, duration, Severity.WARNING.value,
                         monitoring_timestamp, parent_id, monitorable_id,

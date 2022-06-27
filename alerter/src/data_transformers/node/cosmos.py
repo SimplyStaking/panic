@@ -24,7 +24,7 @@ from src.utils.cosmos import (
 from src.utils.exceptions import (
     ReceivedUnexpectedDataException, NodeIsDownException,
     MessageWasNotDeliveredException)
-from src.utils.types import Monitorable, str_to_bool_strict, convert_to_int
+from src.utils.types import str_to_bool_strict, convert_to_int
 
 
 class CosmosNodeDataTransformer(DataTransformer):
@@ -73,7 +73,7 @@ class CosmosNodeDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
-    def _load_number_state(self, cosmos_node: Monitorable) -> None:
+    def _load_number_state(self, cosmos_node: CosmosNode) -> None:
         """
         This function will attempt to load a node's number metrics from redis.
         If the data from Redis cannot be obtained, the state won't be updated.
@@ -101,7 +101,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             new_value = convert_fn(processed_redis_value, state_value)
             set_fn(new_value)
 
-    def _load_bool_state(self, cosmos_node: Monitorable) -> None:
+    def _load_bool_state(self, cosmos_node: CosmosNode) -> None:
         """
         This function will attempt to load a node's boolean metrics from redis.
         If the data from Redis cannot be obtained, the state won't be updated.
@@ -131,7 +131,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             )
             set_fn(new_value)
 
-    def _load_str_state(self, cosmos_node: Monitorable) -> None:
+    def _load_str_state(self, cosmos_node: CosmosNode) -> None:
         """
         This function will attempt to load a node's string metrics from redis.
         If the data from Redis cannot be obtained, the state won't be updated.
@@ -158,7 +158,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             )
             set_fn(new_value)
 
-    def _load_dict_state(self, cosmos_node: Monitorable) -> None:
+    def _load_dict_state(self, cosmos_node: CosmosNode) -> None:
         """
         This function will attempt to load a node's dict metrics from redis.
         If the data from Redis cannot be obtained, the state won't be updated.
@@ -185,7 +185,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             )
             set_fn(new_value)
 
-    def load_state(self, cosmos_node: Monitorable) -> Monitorable:
+    def load_state(self, cosmos_node: CosmosNode) -> CosmosNode:
         self.logger.debug("Loading the state of %s from Redis", cosmos_node)
 
         self._load_number_state(cosmos_node)
@@ -219,7 +219,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             node_id = meta_data['node_id']
             parent_id = meta_data['node_parent_id']
             node_name = meta_data['node_name']
-            node = self.state[node_id]
+            node: CosmosNode = self.state[node_id]
 
             # Set node details just in case the configs have changed, and the
             # new metrics
@@ -237,7 +237,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             parent_id = meta_data['node_parent_id']
             node_name = meta_data['node_name']
             downtime_exception = NodeIsDownException(node_name)
-            node = self.state[node_id]
+            node: CosmosNode = self.state[node_id]
 
             # Set node details just in case the configs have changed
             node.set_parent_id(parent_id)
@@ -258,7 +258,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             node_id = meta_data['node_id']
             parent_id = meta_data['node_parent_id']
             node_name = meta_data['node_name']
-            node = self.state[node_id]
+            node: CosmosNode = self.state[node_id]
 
             # Set node details just in case the configs have changed, and the
             # new metrics
@@ -275,7 +275,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             parent_id = meta_data['node_parent_id']
             node_name = meta_data['node_name']
             downtime_exception = NodeIsDownException(node_name)
-            node = self.state[node_id]
+            node: CosmosNode = self.state[node_id]
 
             # Set node details just in case the configs have changed
             node.set_parent_id(parent_id)
@@ -296,7 +296,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             node_id = meta_data['node_id']
             parent_id = meta_data['node_parent_id']
             node_name = meta_data['node_name']
-            node = self.state[node_id]
+            node: CosmosNode = self.state[node_id]
 
             # Set node details just in case the configs have changed, and the
             # new metrics
@@ -313,7 +313,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             parent_id = meta_data['node_parent_id']
             node_name = meta_data['node_name']
             downtime_exception = NodeIsDownException(node_name)
-            node = self.state[node_id]
+            node: CosmosNode = self.state[node_id]
 
             # Set node details just in case the configs have changed
             node.set_parent_id(parent_id)
@@ -378,7 +378,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             td_meta_data = transformed_tendermint_rpc_data['result'][
                 'meta_data']
             td_node_id = td_meta_data['node_id']
-            node = self.state[td_node_id]
+            node: CosmosNode = self.state[td_node_id]
             td_metrics = transformed_tendermint_rpc_data['result']['data']
 
             processed_data = {
@@ -407,7 +407,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             td_error_code = transformed_tendermint_rpc_data['error']['code']
             td_node_id = td_meta_data['node_id']
             td_node_name = td_meta_data['node_name']
-            node = self.state[td_node_id]
+            node: CosmosNode = self.state[td_node_id]
             downtime_exception = NodeIsDownException(td_node_name)
 
             processed_data = copy.deepcopy(transformed_tendermint_rpc_data)
@@ -433,7 +433,7 @@ class CosmosNodeDataTransformer(DataTransformer):
         if 'result' in transformed_cosmos_rest_data:
             td_meta_data = transformed_cosmos_rest_data['result']['meta_data']
             td_node_id = td_meta_data['node_id']
-            node = self.state[td_node_id]
+            node: CosmosNode = self.state[td_node_id]
             td_metrics = transformed_cosmos_rest_data['result']['data']
 
             processed_data = {
@@ -459,7 +459,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             td_error_code = transformed_cosmos_rest_data['error']['code']
             td_node_id = td_meta_data['node_id']
             td_node_name = td_meta_data['node_name']
-            node = self.state[td_node_id]
+            node: CosmosNode = self.state[td_node_id]
             downtime_exception = NodeIsDownException(td_node_name)
 
             processed_data = copy.deepcopy(transformed_cosmos_rest_data)
@@ -485,7 +485,7 @@ class CosmosNodeDataTransformer(DataTransformer):
         if 'result' in transformed_prometheus_data:
             td_meta_data = transformed_prometheus_data['result']['meta_data']
             td_node_id = td_meta_data['node_id']
-            node = self.state[td_node_id]
+            node: CosmosNode = self.state[td_node_id]
             td_metrics = transformed_prometheus_data['result']['data']
 
             processed_data = {
@@ -511,7 +511,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             td_error_code = transformed_prometheus_data['error']['code']
             td_node_id = td_meta_data['node_id']
             td_node_name = td_meta_data['node_name']
-            node = self.state[td_node_id]
+            node: CosmosNode = self.state[td_node_id]
             downtime_exception = NodeIsDownException(td_node_name)
 
             processed_data = copy.deepcopy(transformed_prometheus_data)
@@ -574,7 +574,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             td_meta_data = transformed_data['result']['meta_data']
             td_node_metrics = transformed_data['result']['data']
             node_id = meta_data['node_id']
-            node = self.state[node_id]
+            node: CosmosNode = self.state[node_id]
 
             # Historical data will be used to compute new metrics slashed and
             # missed blocks
@@ -635,7 +635,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             node_id = meta_data['node_id']
             node_name = meta_data['node_name']
             time_of_error = meta_data['time']
-            node = self.state[node_id]
+            node: CosmosNode = self.state[node_id]
             downtime_exception = NodeIsDownException(node_name)
 
             # In case of non-downtime errors only remove the monitor_name from
@@ -679,7 +679,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             node_id = meta_data['node_id']
             node_name = meta_data['node_name']
             time_of_error = meta_data['time']
-            node = self.state[node_id]
+            node: CosmosNode = self.state[node_id]
             downtime_exception = NodeIsDownException(node_name)
 
             # In case of non-downtime errors only remove the monitor_name from
@@ -735,7 +735,7 @@ class CosmosNodeDataTransformer(DataTransformer):
             node_id = meta_data['node_id']
             node_name = meta_data['node_name']
             time_of_error = meta_data['time']
-            node = self.state[node_id]
+            node: CosmosNode = self.state[node_id]
             downtime_exception = NodeIsDownException(node_name)
 
             # In case of non-downtime errors only remove the monitor_name from

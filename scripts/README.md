@@ -50,6 +50,12 @@ scripts/clean_api.sh
 scripts/clean_ui.sh
 ```
 
+## Clean Substrate API build files
+
+```
+scripts/clean_substrate_api.sh
+```
+
 ## Reset RabbitMQ
 
 ```
@@ -66,4 +72,16 @@ scripts/reset_redis.sh
 
 ```
 scripts/upgrade_to_1_1_1.sh
+```
+
+## Upgrade to version 1.2.0 from an older version
+
+```
+scripts/upgrade_to_1_2_0.sh
+```
+
+## Upgrade Substrate configurations as required by version 1.2.0
+
+```
+scripts/upgrade_substrate_configs.sh
 ```

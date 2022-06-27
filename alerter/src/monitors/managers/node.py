@@ -3,24 +3,27 @@ import json
 import logging
 import multiprocessing
 from datetime import datetime
-from typing import Dict, Type, List
+from typing import Dict, Type, List, Callable
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
 from src.configs.nodes.cosmos import CosmosNodeConfig
 from src.configs.nodes.node import NodeConfig
+from src.configs.nodes.substrate import SubstrateNodeConfig
 from src.message_broker.rabbitmq import RabbitMQApi
-from src.monitors.managers.manager import MonitorsManager
+from src.monitors.managers.manager import (
+    MonitorsManager)
 from src.monitors.monitor import Monitor
 from src.monitors.node.chainlink import ChainlinkNodeMonitor
 from src.monitors.node.cosmos import CosmosNodeMonitor
 from src.monitors.node.evm import EVMNodeMonitor
+from src.monitors.node.substrate import SubstrateNodeMonitor
 from src.monitors.starters import start_node_monitor
 from src.utils.configs import (
     get_newly_added_configs, get_modified_configs, get_removed_configs,
     parse_cosmos_node_config, parse_chainlink_node_config,
-    parse_evm_node_config)
+    parse_evm_node_config, parse_substrate_node_config)
 from src.utils.constants.monitorables import MonitorableType
 from src.utils.constants.names import NODE_MONITOR_NAME_TEMPLATE
 from src.utils.constants.rabbitmq import (
@@ -30,7 +33,7 @@ from src.utils.constants.rabbitmq import (
     TOPIC, MONITORABLE_EXCHANGE)
 from src.utils.exceptions import MessageWasNotDeliveredException
 from src.utils.logging import log_and_print
-from src.utils.types import str_to_bool
+from src.utils.types import CONFIGS_WITH_VALIDATORS
 
 
 class NodeMonitorsManager(MonitorsManager):
@@ -125,27 +128,31 @@ class NodeMonitorsManager(MonitorsManager):
         self._config_process_dict[config_id]['process'] = process
         self._config_process_dict[config_id]['monitor_type'] = monitor_type
         self._config_process_dict[config_id]['node_config'] = node_config
-        self._config_process_dict[config_id]['parent_id'] = (
-            node_config.parent_id)
-        self._config_process_dict[config_id]['source_name'] = (
-            node_config.node_name)
+        self._config_process_dict[config_id][
+            'parent_id'] = node_config.parent_id
+        self._config_process_dict[config_id][
+            'source_name'] = node_config.node_name
         self._config_process_dict[config_id]['base_chain'] = base_chain
         self._config_process_dict[config_id]['sub_chain'] = sub_chain
         self._config_process_dict[config_id]['args'] = args
 
     @staticmethod
-    def _determine_data_sources_for_cosmos_monitor(
-            node_config: CosmosNodeConfig,
-            sent_configs: Dict) -> List[CosmosNodeConfig]:
+    def _determine_data_sources_for_monitor(
+            node_config: CONFIGS_WITH_VALIDATORS, sent_configs: Dict,
+            config_parser: Callable[[Dict], CONFIGS_WITH_VALIDATORS]) \
+            -> List[CONFIGS_WITH_VALIDATORS]:
         """
-        Given the configuration of the node to be monitored and the sent
-        configurations, this function will determine the data sources to be
-        given to the Cosmos node monitor. This function computes the list of
-        data sources as follows:
+        Given the configuration of the node to be monitored, the configurations
+        sent, and a config parsing function, this function will determine the
+        data sources to be given to the Node Monitor. This function computes the
+        list of data sources as follows:
         [non_validator_data_sources, validator_data_sources,
         node_to_be_monitored]
         :param node_config: The configuration of the node to be monitored
-        :param sent_configs: The sent configurations
+        :param sent_configs: The configurations sent
+        :param config_parser: A function taking the configurations sent as
+                              parameter and returns an object representing the
+                              parsed configurations
         :return: A list of configurations in the following format:
                  [non_validator_data_sources, validator_data_sources,
                  node_to_be_monitored]
@@ -156,36 +163,67 @@ class NodeMonitorsManager(MonitorsManager):
             # For each configuration, check if use_as_data_source is enabled and
             # classify if the data source is a validator or not. Ignore the node
             # to be monitored as this must always be appended last.
-            use_as_data_source = str_to_bool(config_data['use_as_data_source'])
-            node_id = config_data['id']
-            is_validator = str_to_bool(config_data['is_validator'])
-            if node_id != node_config.node_id and use_as_data_source:
-                data_source_config = parse_cosmos_node_config(config_data)
+            data_source_config = config_parser(config_data)
+            if (data_source_config.node_id != node_config.node_id
+                    and data_source_config.use_as_data_source):
                 (validator_data_sources.append(data_source_config)
-                 if is_validator
+                 if data_source_config.is_validator
                  else non_validator_data_sources.append(data_source_config))
 
         return [*non_validator_data_sources, *validator_data_sources,
                 node_config]
 
-    def _process_cosmos_node_configs(self, sent_configs: Dict,
-                                     current_configs: Dict,
-                                     base_chain: str,
-                                     sub_chain: str) -> Dict:
+    def _determine_data_sources_for_cosmos_monitor(
+            self, node_config: CosmosNodeConfig,
+            sent_configs: Dict) -> List[CosmosNodeConfig]:
+        """
+        Given the configuration of the node to be monitored and the
+        configurations sent, this function will determine the data sources to be
+        given to the Cosmos Node Monitor using the
+        self._determine_data_sources_for_monitor function
+        :param node_config: The configuration of the node to be monitored
+        :param sent_configs: The configurations sent
+        :return: A list of configurations in the following format:
+                 [non_validator_data_sources, validator_data_sources,
+                 node_to_be_monitored]
+        """
+        return self._determine_data_sources_for_monitor(
+            node_config, sent_configs, parse_cosmos_node_config)
+
+    def _determine_data_sources_for_substrate_monitor(
+            self, node_config: SubstrateNodeConfig,
+            sent_configs: Dict) -> List[SubstrateNodeConfig]:
+        """
+        Given the configuration of the node to be monitored and the
+        configurations sent, this function will determine the data sources to be
+        given to the Substrate Node Monitor using the
+        self._determine_data_sources_for_monitor function
+        :param node_config: The configuration of the node to be monitored
+        :param sent_configs: The configurations sent
+        :return: A list of configurations in the following format:
+                 [non_validator_data_sources, validator_data_sources,
+                 node_to_be_monitored]
+        """
+        return self._determine_data_sources_for_monitor(
+            node_config, sent_configs, parse_substrate_node_config)
+
+    def _process_cosmos_node_configs(
+            self, sent_configs: Dict, current_configs: Dict, base_chain: str,
+            sub_chain: str) -> Dict:
         """
         This function processes the new nodes configs for a particular
         cosmos-based chain. It creates/removes new processes, and it keeps a
         local copy of all changes being done step by step. This is done in this
         way so that if a sub-config is malformed or a process errors, we can
-        keep track of what the new self._nodes_config should be.
+        keep track of what the new self._nodes_config should be
         :param sent_configs:
         The new node configurations for a particular cosmos-based chain
         :param current_configs:
         The currently stored node configurations for a particular cosmos-based
         chain
         :return:
-        The new nodes configuration for a particular cosmos-based chain based on
-        the current configs and the new configs.
+        The new nodes' configuration for a particular cosmos-based chain based
+        on the current configs and the new configs.
         """
         correct_nodes_configs = copy.deepcopy(current_configs)
         try:
@@ -304,29 +342,151 @@ class NodeMonitorsManager(MonitorsManager):
 
         return correct_nodes_configs
 
-    def _process_chainlink_node_configs(self, sent_configs: Dict,
-                                        current_configs: Dict,
-                                        base_chain: str,
-                                        sub_chain: str) -> Dict:
+    def _process_substrate_node_configs(
+            self, sent_configs: Dict, current_configs: Dict, base_chain: str,
+            sub_chain: str) -> Dict:
+        """
+        This function processes the new nodes configs for a particular
+        substrate-based chain. It creates/removes new processes, and it keeps a
+        local copy of all changes being done step by step. This is done in this
+        way so that if a sub-config is malformed or a process errors, we can
+        keep track of what the new self._nodes_config should be
+        :param sent_configs:
+        The new node configurations for a particular substrate-based chain
+        :param current_configs:
+        The currently stored node configurations for a particular
+        substrate-based chain
+        :return:
+        The new nodes' configuration for a particular substrate-based chain
+        based on the current configs and the new configs.
+        """
+        correct_nodes_configs = copy.deepcopy(current_configs)
+        try:
+            new_configs = get_newly_added_configs(sent_configs, current_configs)
+            for config_id in new_configs:
+                config = new_configs[config_id]
+                node_config = parse_substrate_node_config(config)
+
+                # If `monitor_node` is disabled do not start a monitor and move
+                # to the next config.
+                if not node_config.monitor_node:
+                    continue
+
+                data_sources = \
+                    self._determine_data_sources_for_substrate_monitor(
+                        node_config, sent_configs)
+                self._create_and_start_monitor_process(
+                    node_config, config_id, SubstrateNodeMonitor, base_chain,
+                    sub_chain, data_sources)
+                correct_nodes_configs[config_id] = config
+
+            modified_configs = get_modified_configs(sent_configs,
+                                                    current_configs)
+            for config_id in modified_configs:
+                # Get the latest updates
+                config = sent_configs[config_id]
+                node_config = parse_substrate_node_config(config)
+                previous_process = self.config_process_dict[config_id][
+                    'process']
+                previous_process.terminate()
+                previous_process.join()
+
+                # If `monitor_node` is disabled do not restart a monitor, but
+                # delete the previous process from the system and move to the
+                # next config.
+                if not node_config.monitor_node:
+                    del self.config_process_dict[config_id]
+                    del correct_nodes_configs[config_id]
+                    log_and_print("Killed the monitor of {} ".format(
+                        modified_configs[config_id]['name']), self.logger)
+                    continue
+
+                log_and_print(
+                    "The configuration for {} was modified. A new monitor with "
+                    "the latest configuration will be started.".format(
+                        modified_configs[config_id]['name']), self.logger)
+
+                data_sources = \
+                    self._determine_data_sources_for_substrate_monitor(
+                        node_config, sent_configs)
+                self._create_and_start_monitor_process(
+                    node_config, config_id, SubstrateNodeMonitor, base_chain,
+                    sub_chain, data_sources)
+                correct_nodes_configs[config_id] = config
+
+            removed_configs = get_removed_configs(sent_configs, current_configs)
+            for config_id in removed_configs:
+                config = removed_configs[config_id]
+                node_name = config['name']
+                previous_process = self.config_process_dict[config_id][
+                    'process']
+                previous_process.terminate()
+                previous_process.join()
+                del self.config_process_dict[config_id]
+                del correct_nodes_configs[config_id]
+                log_and_print("Killed the monitor of {} ".format(node_name),
+                              self.logger)
+
+            # For each correct configuration we need to check that the data
+            # sources used by each monitor are up-to-date. Suppose we have two
+            # monitors for node A and B having use_as_data_source = True. If
+            # use_data_source is set to False for node A, then the monitor of
+            # node A would have the correct data sources but node B wouldn't
+            # because it would not be classified as new or modified
+            # configuration
+            for config_id, config in correct_nodes_configs.items():
+                node_config = parse_substrate_node_config(config)
+                data_sources = \
+                    self._determine_data_sources_for_substrate_monitor(
+                        node_config, sent_configs)
+                previous_data_sources = self.config_process_dict[config_id][
+                    'args'][0]
+                if data_sources != previous_data_sources:
+                    log_and_print(
+                        "The monitor of {} does not have updated data sources. "
+                        "We will restart it with the updated "
+                        "configurations".format(node_config.node_name),
+                        self.logger)
+                    previous_process = self.config_process_dict[config_id][
+                        'process']
+                    previous_process.terminate()
+                    previous_process.join()
+                    self._create_and_start_monitor_process(
+                        node_config, config_id, SubstrateNodeMonitor,
+                        base_chain, sub_chain, data_sources)
+        except Exception as e:
+            # If we encounter an error during processing, this error must be
+            # logged and the message must be acknowledged so that it is removed
+            # from the queue
+            self.logger.error("Error when processing %s", sent_configs)
+            self.logger.exception(e)
+
+        self.process_and_send_monitorable_data(base_chain,
+                                               MonitorableType.NODES)
+
+        return correct_nodes_configs
+
+    def _process_chainlink_node_configs(
+            self, sent_configs: Dict, current_configs: Dict, base_chain: str,
+            sub_chain: str) -> Dict:
         """
         This function processes the new nodes configs for a particular chainlink
         chain. It creates/removes new processes, and it keeps a local copy of
         all changes being done step by step. This is done in this way so that if
         a sub-config is malformed or a process errors, we can keep track of what
-        the new self._nodes_config should be.
+        the new self._nodes_config should be
         :param sent_configs:
         The new node configurations for a particular chainlink chain
         :param current_configs:
         The currently stored node configurations for a particular chainlink
         chain
         :return:
-        The new nodes configuration for a particular chainlink chain based on
+        The new nodes' configuration for a particular chainlink chain based on
         the current configs and the new configs.
         """
         correct_nodes_configs = copy.deepcopy(current_configs)
         try:
-            new_configs = get_newly_added_configs(
-                sent_configs, current_configs)
+            new_configs = get_newly_added_configs(sent_configs, current_configs)
             for config_id in new_configs:
                 config = new_configs[config_id]
                 node_config = parse_chainlink_node_config(config)
@@ -338,9 +498,9 @@ class NodeMonitorsManager(MonitorsManager):
                 if not node_config.monitor_node or not any(sources_enabled):
                     continue
 
-                self._create_and_start_monitor_process(node_config, config_id,
-                                                       ChainlinkNodeMonitor,
-                                                       base_chain, sub_chain)
+                self._create_and_start_monitor_process(
+                    node_config, config_id, ChainlinkNodeMonitor, base_chain,
+                    sub_chain)
                 correct_nodes_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
@@ -376,8 +536,7 @@ class NodeMonitorsManager(MonitorsManager):
                                                        base_chain, sub_chain)
                 correct_nodes_configs[config_id] = config
 
-            removed_configs = get_removed_configs(
-                sent_configs, current_configs)
+            removed_configs = get_removed_configs(sent_configs, current_configs)
             for config_id in removed_configs:
                 config = removed_configs[config_id]
                 node_name = config['name']
@@ -401,16 +560,15 @@ class NodeMonitorsManager(MonitorsManager):
 
         return correct_nodes_configs
 
-    def _process_evm_node_configs(self, sent_configs: Dict,
-                                  current_configs: Dict,
-                                  base_chain: str,
-                                  sub_chain: str) -> Dict:
+    def _process_evm_node_configs(
+            self, sent_configs: Dict, current_configs: Dict, base_chain: str,
+            sub_chain: str) -> Dict:
         """
         This function processes the new evm nodes configs for a particular
         chain. It creates/removes new processes, and it keeps a local copy of
         all changes being done step by step. This is done in this way so that if
         a sub-config is malformed or a process errors, we can keep track of what
-        the new self._nodes_config should be.
+        the new self._nodes_config should be
         :param sent_configs:
         The new evm node configurations for a particular chain
         :param current_configs:
@@ -421,8 +579,7 @@ class NodeMonitorsManager(MonitorsManager):
         """
         correct_nodes_configs = copy.deepcopy(current_configs)
         try:
-            new_configs = get_newly_added_configs(
-                sent_configs, current_configs)
+            new_configs = get_newly_added_configs(sent_configs, current_configs)
             for config_id in new_configs:
                 config = new_configs[config_id]
                 node_config = parse_evm_node_config(config)
@@ -432,9 +589,9 @@ class NodeMonitorsManager(MonitorsManager):
                 if not node_config.monitor_node:
                     continue
 
-                self._create_and_start_monitor_process(node_config, config_id,
-                                                       EVMNodeMonitor,
-                                                       base_chain, sub_chain)
+                self._create_and_start_monitor_process(
+                    node_config, config_id, EVMNodeMonitor, base_chain,
+                    sub_chain)
                 correct_nodes_configs[config_id] = config
 
             modified_configs = get_modified_configs(sent_configs,
@@ -523,6 +680,9 @@ class NodeMonitorsManager(MonitorsManager):
                 sent_configs, current_configs, base_chain, sub_chain)
         elif parsed_routing_key[1].lower() == 'cosmos':
             updated_configs = self._process_cosmos_node_configs(
+                sent_configs, current_configs, base_chain, sub_chain)
+        elif parsed_routing_key[1].lower() == 'substrate':
+            updated_configs = self._process_substrate_node_configs(
                 sent_configs, current_configs, base_chain, sub_chain)
 
         if chain not in self._nodes_configs:

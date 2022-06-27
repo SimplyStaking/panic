@@ -81,11 +81,13 @@ services:
       - 'CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS=${CHAINLINK_CONTRACTS_MONITOR_PERIOD_SECONDS}'
       - 'NETWORK_MONITOR_PERIOD_SECONDS=${NETWORK_MONITOR_PERIOD_SECONDS}'
       - 'DOCKERHUB_TAGS_TEMPLATE=${DOCKERHUB_TAGS_TEMPLATE}'
+      - 'SUBSTRATE_API_IP=${SUBSTRATE_API_IP}'
+      - 'SUBSTRATE_API_PORT=${SUBSTRATE_API_PORT}'
       - 'WAIT_HOSTS=${DB_IP_TEST}:${DB_PORT}, ${REDIS_IP_TEST}:${REDIS_PORT}, ${RABBIT_IP_TEST}:${RABBIT_PORT}'
     build:
       context: './'
       dockerfile: './alerter/Tests_Dockerfile'
-    image: 'simplyvc/panic_alerter_tests:1.1.1'
+    image: 'simplyvc/panic_alerter_tests:1.2.0'
     logging:
       driver: "json-file"
       options:

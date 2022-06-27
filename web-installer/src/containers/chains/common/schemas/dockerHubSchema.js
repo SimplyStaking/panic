@@ -13,7 +13,7 @@ const DockerHubSchema = (props) => Yup.object().shape({
         dockerHubConfig,
       );
     })
-    .matches('^[a-z0-9]+\\/[a-z0-9]+$|^[a-z0-9]+$', 'Name must be in the form \'simplyvc/panic\' or \'panic\'.')
+    .matches('^[a-z+-0-9]+\\/[a-z+-0-9]+$|^[a-z+-0-9]+$', 'Name must be in the form \'simplyvc/panic\' or \'panic\'.')
     .required('DockerHub name is required.'),
 });
 

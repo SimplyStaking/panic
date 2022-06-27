@@ -19,7 +19,7 @@ from src.utils.constants.rabbitmq import (
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   NodeIsDownException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import (Monitorable, convert_to_int, convert_to_float,
+from src.utils.types import (convert_to_int, convert_to_float,
                              convert_none_to_bool)
 
 
@@ -71,7 +71,7 @@ class EVMNodeDataTransformer(DataTransformer):
                                        True, False, False)
 
     def _load_number_state(self, state_type: Union[Type[float], Type[int]],
-                           evm_node: Monitorable) -> None:
+                           evm_node: EVMNode) -> None:
         """
         This function will attempt to load a node's number metrics from redis.
         If the data from Redis cannot be obtained, the state won't be updated.
@@ -105,7 +105,7 @@ class EVMNodeDataTransformer(DataTransformer):
             new_value = convert_fn(processed_redis_value, None)
             eval("evm_node.set_" + attribute + '(new_value)')
 
-    def load_state(self, evm_node: Monitorable) -> Monitorable:
+    def load_state(self, evm_node: EVMNode) -> EVMNode:
         """
         This function attempts to load the state of an evm_node from redis. If
         the data from Redis cannot be obtained, the state won't be updated.
@@ -135,7 +135,7 @@ class EVMNodeDataTransformer(DataTransformer):
             node_id = meta_data['node_id']
             parent_id = meta_data['node_parent_id']
             node_name = meta_data['node_name']
-            node = self.state[node_id]
+            node: EVMNode = self.state[node_id]
 
             # Set node details just in case the configs have changed
             node.set_parent_id(parent_id)
@@ -153,7 +153,7 @@ class EVMNodeDataTransformer(DataTransformer):
             node_id = meta_data['node_id']
             parent_id = meta_data['node_parent_id']
             downtime_exception = NodeIsDownException(node_name)
-            node = self.state[node_id]
+            node: EVMNode = self.state[node_id]
 
             # Set node details just in case the configs have changed
             node.set_parent_id(parent_id)
@@ -195,7 +195,7 @@ class EVMNodeDataTransformer(DataTransformer):
         if 'result' in transformed_data:
             td_meta_data = transformed_data['result']['meta_data']
             td_node_id = td_meta_data['node_id']
-            node = self.state[td_node_id]
+            node: EVMNode = self.state[td_node_id]
             td_metrics = transformed_data['result']['data']
 
             processed_data = {
@@ -222,7 +222,7 @@ class EVMNodeDataTransformer(DataTransformer):
             td_error_code = transformed_data['error']['code']
             td_node_id = td_meta_data['node_id']
             td_node_name = td_meta_data['node_name']
-            node = self.state[td_node_id]
+            node: EVMNode = self.state[td_node_id]
             downtime_exception = NodeIsDownException(td_node_name)
 
             processed_data = copy.deepcopy(transformed_data)
@@ -270,7 +270,7 @@ class EVMNodeDataTransformer(DataTransformer):
             node_id = meta_data['node_id']
             node_name = meta_data['node_name']
             time_of_error = meta_data['time']
-            node = self.state[node_id]
+            node: EVMNode = self.state[node_id]
             downtime_exception = NodeIsDownException(node_name)
 
             # In case of errors in the sent messages only remove the

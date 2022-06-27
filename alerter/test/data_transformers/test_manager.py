@@ -16,14 +16,17 @@ from src.data_transformers.starters import (
     start_system_data_transformer, start_github_data_transformer,
     start_dockerhub_data_transformer, start_chainlink_node_data_transformer,
     start_evm_node_data_transformer, start_chainlink_contracts_data_transformer,
-    start_cosmos_node_data_transformer)
+    start_cosmos_node_data_transformer, start_substrate_node_data_transformer,
+    start_substrate_network_data_transformer)
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (
     SYSTEM_DATA_TRANSFORMER_NAME, GITHUB_DATA_TRANSFORMER_NAME,
     DOCKERHUB_DATA_TRANSFORMER_NAME, CL_NODE_DATA_TRANSFORMER_NAME,
     EVM_NODE_DATA_TRANSFORMER_NAME, CL_CONTRACTS_DATA_TRANSFORMER_NAME,
-    COSMOS_NODE_DATA_TRANSFORMER_NAME, COSMOS_NETWORK_DATA_TRANSFORMER_NAME)
+    COSMOS_NODE_DATA_TRANSFORMER_NAME, COSMOS_NETWORK_DATA_TRANSFORMER_NAME,
+    SUBSTRATE_NODE_DATA_TRANSFORMER_NAME,
+    SUBSTRATE_NETWORK_DATA_TRANSFORMER_NAME)
 from src.utils.constants.rabbitmq import (
     DT_MAN_HEARTBEAT_QUEUE_NAME, HEALTH_CHECK_EXCHANGE, PING_ROUTING_KEY,
     HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY)
@@ -72,6 +75,10 @@ class TestDataTransformersManager(unittest.TestCase):
         self.dummy_process7.daemon = True
         self.dummy_process8 = Process(target=infinite_fn, args=())
         self.dummy_process8.daemon = True
+        self.dummy_process9 = Process(target=infinite_fn, args=())
+        self.dummy_process9.daemon = True
+        self.dummy_process10 = Process(target=infinite_fn, args=())
+        self.dummy_process10.daemon = True
         self.transformer_process_dict_example = {
             SYSTEM_DATA_TRANSFORMER_NAME: self.dummy_process1,
             GITHUB_DATA_TRANSFORMER_NAME: self.dummy_process2,
@@ -80,7 +87,9 @@ class TestDataTransformersManager(unittest.TestCase):
             EVM_NODE_DATA_TRANSFORMER_NAME: self.dummy_process5,
             CL_CONTRACTS_DATA_TRANSFORMER_NAME: self.dummy_process6,
             COSMOS_NODE_DATA_TRANSFORMER_NAME: self.dummy_process7,
-            COSMOS_NETWORK_DATA_TRANSFORMER_NAME: self.dummy_process8
+            COSMOS_NETWORK_DATA_TRANSFORMER_NAME: self.dummy_process8,
+            SUBSTRATE_NODE_DATA_TRANSFORMER_NAME: self.dummy_process9,
+            SUBSTRATE_NETWORK_DATA_TRANSFORMER_NAME: self.dummy_process10
         }
 
         # Test data transformer manager
@@ -108,6 +117,8 @@ class TestDataTransformersManager(unittest.TestCase):
         self.dummy_process6 = None
         self.dummy_process7 = None
         self.dummy_process8 = None
+        self.dummy_process9 = None
+        self.dummy_process10 = None
         self.test_manager = None
         self.test_exception = None
         self.transformer_process_dict_example = None
@@ -235,6 +246,12 @@ class TestDataTransformersManager(unittest.TestCase):
          'self.transformer_process_dict_example', True,),
         (COSMOS_NODE_DATA_TRANSFORMER_NAME, start_cosmos_node_data_transformer,
          'self.transformer_process_dict_example', True,),
+        (SUBSTRATE_NODE_DATA_TRANSFORMER_NAME,
+         start_substrate_node_data_transformer,
+         'self.transformer_process_dict_example', True,),
+        (SUBSTRATE_NETWORK_DATA_TRANSFORMER_NAME,
+         start_substrate_network_data_transformer,
+         'self.transformer_process_dict_example', True,),
     ])
     @mock.patch.object(multiprocessing.Process, "start")
     def test_start_transformers_processes_creates_and_stores_process_correctly(
@@ -268,7 +285,7 @@ class TestDataTransformersManager(unittest.TestCase):
         # time run, and for when the related process is dead. For the second
         # case we will use the dummy state created in startUp as no dummy
         # process was started. Note that each time we will check that start is
-        # called 7 times, once for each transformer.
+        # called 10 times, once for each transformer.
         mock_start.return_value = None
 
         self.test_manager._transformer_process_dict = \
@@ -276,7 +293,7 @@ class TestDataTransformersManager(unittest.TestCase):
 
         self.test_manager._start_transformers_processes()
 
-        self.assertEqual(8, mock_start.call_count)
+        self.assertEqual(10, mock_start.call_count)
 
     @mock.patch.object(multiprocessing, "Process")
     @mock.patch.object(multiprocessing.Process, "is_alive")
@@ -334,7 +351,9 @@ class TestDataTransformersManager(unittest.TestCase):
                                   EVM_NODE_DATA_TRANSFORMER_NAME,
                                   CL_CONTRACTS_DATA_TRANSFORMER_NAME,
                                   COSMOS_NODE_DATA_TRANSFORMER_NAME,
-                                  COSMOS_NETWORK_DATA_TRANSFORMER_NAME],
+                                  COSMOS_NETWORK_DATA_TRANSFORMER_NAME,
+                                  SUBSTRATE_NODE_DATA_TRANSFORMER_NAME,
+                                  SUBSTRATE_NETWORK_DATA_TRANSFORMER_NAME],
             'dead_processes': [],
             'timestamp': datetime.now().timestamp()
         }
@@ -351,9 +370,9 @@ class TestDataTransformersManager(unittest.TestCase):
         # We will perform this test by checking that send_hb is called with the
         # correct heartbeat as the actual sending was already tested above. Note
         # we wil mock is_alive by setting it to return different values
-        # (note we have 8 processes). By this we can avoid creating processes.
+        # (note we have 10 processes). By this we can avoid creating processes.
         mock_is_alive.side_effect = [True, False, False, True, True, False,
-                                     True, True]
+                                     True, True, True, True]
         mock_send_hb.return_value = None
         mock_join.return_value = None
         mock_start_trans.return_value = None
@@ -380,7 +399,9 @@ class TestDataTransformersManager(unittest.TestCase):
                                   CL_NODE_DATA_TRANSFORMER_NAME,
                                   EVM_NODE_DATA_TRANSFORMER_NAME,
                                   COSMOS_NODE_DATA_TRANSFORMER_NAME,
-                                  COSMOS_NETWORK_DATA_TRANSFORMER_NAME],
+                                  COSMOS_NETWORK_DATA_TRANSFORMER_NAME,
+                                  SUBSTRATE_NODE_DATA_TRANSFORMER_NAME,
+                                  SUBSTRATE_NETWORK_DATA_TRANSFORMER_NAME],
             'dead_processes': [GITHUB_DATA_TRANSFORMER_NAME,
                                DOCKERHUB_DATA_TRANSFORMER_NAME,
                                CL_CONTRACTS_DATA_TRANSFORMER_NAME],
@@ -431,7 +452,9 @@ class TestDataTransformersManager(unittest.TestCase):
                                EVM_NODE_DATA_TRANSFORMER_NAME,
                                CL_CONTRACTS_DATA_TRANSFORMER_NAME,
                                COSMOS_NODE_DATA_TRANSFORMER_NAME,
-                               COSMOS_NETWORK_DATA_TRANSFORMER_NAME],
+                               COSMOS_NETWORK_DATA_TRANSFORMER_NAME,
+                               SUBSTRATE_NODE_DATA_TRANSFORMER_NAME,
+                               SUBSTRATE_NETWORK_DATA_TRANSFORMER_NAME],
             'timestamp': datetime.now().timestamp()
         }
         mock_send_hb.assert_called_once_with(expected_hb)
@@ -485,7 +508,7 @@ class TestDataTransformersManager(unittest.TestCase):
         # it to return different values. By this we can avoid creating
         # processes.
         mock_is_alive.side_effect = [False, True, False, True, True, False,
-                                     True, True]
+                                     True, True, True, True]
         mock_send_hb.return_value = None
         mock_join.return_value = None
         mock_start_trans.return_value = None

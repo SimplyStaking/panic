@@ -20,8 +20,7 @@ from src.utils.constants.rabbitmq import (RAW_DATA_EXCHANGE, STORE_EXCHANGE,
                                           TOPIC)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import (convert_to_float,
-                             convert_to_int, Monitorable)
+from src.utils.types import convert_to_float, convert_to_int
 
 
 class GitHubDataTransformer(DataTransformer):
@@ -72,7 +71,7 @@ class GitHubDataTransformer(DataTransformer):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, TOPIC, False,
                                        True, False, False)
 
-    def load_state(self, repo: Monitorable) -> Monitorable:
+    def load_state(self, repo: GitHubRepo) -> GitHubRepo:
         # Below, we will try and get the data stored in redis and store it
         # in the repo's state. If the data from Redis cannot be obtained, the
         # state won't be updated.
@@ -116,7 +115,7 @@ class GitHubDataTransformer(DataTransformer):
             repo_id = meta_data['repo_id']
             parent_id = meta_data['repo_parent_id']
             repo_name = meta_data['repo_name']
-            repo = self.state[repo_id]
+            repo: GitHubRepo = self.state[repo_id]
 
             # Set repo details just in case the configs have changed
             repo.set_parent_id(parent_id)
@@ -130,7 +129,7 @@ class GitHubDataTransformer(DataTransformer):
             repo_name = meta_data['repo_name']
             repo_id = meta_data['repo_id']
             parent_id = meta_data['repo_parent_id']
-            repo = self.state[repo_id]
+            repo: GitHubRepo = self.state[repo_id]
 
             # Set repo details just in case the configs have changed
             repo.set_parent_id(parent_id)
@@ -181,7 +180,7 @@ class GitHubDataTransformer(DataTransformer):
         if 'result' in transformed_data:
             td_meta_data = transformed_data['result']['meta_data']
             td_repo_id = td_meta_data['repo_id']
-            repo = self.state[td_repo_id]
+            repo: GitHubRepo = self.state[td_repo_id]
             td_metrics = transformed_data['result']['data']
 
             processed_data = {

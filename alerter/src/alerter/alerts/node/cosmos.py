@@ -3,6 +3,9 @@ from typing import Optional
 
 from src.alerter.alert_code.node.cosmos_alert_code import CosmosNodeAlertCode
 from src.alerter.alerts.alert import Alert
+from src.alerter.alerts.common_alerts import (
+    DataCouldNotBeObtainedAlert, DataObtainedAlert,
+    ErrorNoSyncedDataSourcesAlert, SyncedDataSourcesFoundAlert)
 from src.alerter.grouped_alerts_metric_code.node.cosmos_node_metric_code \
     import GroupedCosmosNodeAlertsMetricCode
 from src.utils.datetime import strfdelta
@@ -16,7 +19,7 @@ class NodeWentDownAtAlert(Alert):
             "Node {} is down, last time checked: {}.".format(
                 origin_name, datetime.fromtimestamp(timestamp)),
             severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.NodeIsDown)
+            GroupedCosmosNodeAlertsMetricCode.NodeIsDown, [origin_id])
 
 
 class NodeBackUpAgainAlert(Alert):
@@ -27,7 +30,7 @@ class NodeBackUpAgainAlert(Alert):
             "Node {} is back up, last successful monitor at: {}.".format(
                 origin_name, datetime.fromtimestamp(timestamp)),
             severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.NodeIsDown)
+            GroupedCosmosNodeAlertsMetricCode.NodeIsDown, [origin_id])
 
 
 class NodeStillDownAlert(Alert):
@@ -39,7 +42,7 @@ class NodeStillDownAlert(Alert):
                 origin_name, strfdelta(timedelta(seconds=difference),
                                        "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.NodeIsDown)
+            GroupedCosmosNodeAlertsMetricCode.NodeIsDown, [origin_id])
 
 
 class ValidatorWasSlashedAlert(Alert):
@@ -55,7 +58,7 @@ class ValidatorWasSlashedAlert(Alert):
         super().__init__(
             CosmosNodeAlertCode.ValidatorWasSlashedAlert, alert_msg, severity,
             timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.ValidatorWasSlashed)
+            GroupedCosmosNodeAlertsMetricCode.ValidatorWasSlashed, [origin_id])
 
 
 class NodeIsSyncingAlert(Alert):
@@ -65,7 +68,7 @@ class NodeIsSyncingAlert(Alert):
             CosmosNodeAlertCode.NodeIsSyncingAlert,
             "Node {} is syncing.".format(origin_name), severity, timestamp,
             parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.NodeIsSyncing)
+            GroupedCosmosNodeAlertsMetricCode.NodeIsSyncing, [origin_id])
 
 
 class NodeIsNoLongerSyncingAlert(Alert):
@@ -75,7 +78,7 @@ class NodeIsNoLongerSyncingAlert(Alert):
             CosmosNodeAlertCode.NodeIsNoLongerSyncingAlert,
             "Node {} is no longer syncing.".format(origin_name), severity,
             timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.NodeIsSyncing)
+            GroupedCosmosNodeAlertsMetricCode.NodeIsSyncing, [origin_id])
 
 
 class ValidatorIsNotActiveAlert(Alert):
@@ -85,7 +88,7 @@ class ValidatorIsNotActiveAlert(Alert):
             CosmosNodeAlertCode.ValidatorIsNotActiveAlert,
             "Validator {} is not in the active set of validators.".format(
                 origin_name), severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.ValidatorIsNotActive)
+            GroupedCosmosNodeAlertsMetricCode.ValidatorIsNotActive, [origin_id])
 
 
 class ValidatorIsActiveAlert(Alert):
@@ -95,7 +98,7 @@ class ValidatorIsActiveAlert(Alert):
             CosmosNodeAlertCode.ValidatorIsActiveAlert,
             "Validator {} is now in the active set of validators.".format(
                 origin_name), severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.ValidatorIsNotActive)
+            GroupedCosmosNodeAlertsMetricCode.ValidatorIsNotActive, [origin_id])
 
 
 class ValidatorIsJailedAlert(Alert):
@@ -105,7 +108,7 @@ class ValidatorIsJailedAlert(Alert):
             CosmosNodeAlertCode.ValidatorIsJailedAlert,
             "Validator {} is currently jailed.".format(origin_name), severity,
             timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.ValidatorIsJailed)
+            GroupedCosmosNodeAlertsMetricCode.ValidatorIsJailed, [origin_id])
 
 
 class ValidatorIsNoLongerJailedAlert(Alert):
@@ -115,7 +118,7 @@ class ValidatorIsNoLongerJailedAlert(Alert):
             CosmosNodeAlertCode.ValidatorIsNoLongerJailedAlert,
             "Validator {} is no longer jailed.".format(origin_name), severity,
             timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.ValidatorIsJailed)
+            GroupedCosmosNodeAlertsMetricCode.ValidatorIsJailed, [origin_id])
 
 
 class BlocksMissedIncreasedAboveThresholdAlert(Alert):
@@ -131,7 +134,8 @@ class BlocksMissedIncreasedAboveThresholdAlert(Alert):
                          strfdelta(timedelta(seconds=period_seconds),
                                    "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.BlocksMissedThreshold)
+            GroupedCosmosNodeAlertsMetricCode.BlocksMissedThreshold, [origin_id]
+        )
 
 
 class BlocksMissedDecreasedBelowThresholdAlert(Alert):
@@ -147,7 +151,8 @@ class BlocksMissedDecreasedBelowThresholdAlert(Alert):
                          strfdelta(timedelta(seconds=period_seconds),
                                    "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.BlocksMissedThreshold)
+            GroupedCosmosNodeAlertsMetricCode.BlocksMissedThreshold, [origin_id]
+        )
 
 
 class NoChangeInHeightAlert(Alert):
@@ -161,7 +166,7 @@ class NoChangeInHeightAlert(Alert):
                 timedelta(seconds=duration),
                 "{hours}h, {minutes}m, {seconds}s"), last_processed_block),
             severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.NoChangeInHeight)
+            GroupedCosmosNodeAlertsMetricCode.NoChangeInHeight, [origin_id])
 
 
 class BlockHeightUpdatedAlert(Alert):
@@ -173,7 +178,7 @@ class BlockHeightUpdatedAlert(Alert):
             "{} is now receiving blocks again. Last synced block: {}.".format(
                 origin_name, last_processed_block),
             severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.NoChangeInHeight)
+            GroupedCosmosNodeAlertsMetricCode.NoChangeInHeight, [origin_id])
 
 
 class BlockHeightDifferenceIncreasedAboveThresholdAlert(Alert):
@@ -187,7 +192,8 @@ class BlockHeightDifferenceIncreasedAboveThresholdAlert(Alert):
             "height. Value has INCREASED above {} threshold.".format(
                 origin_name, current_value, threshold_severity),
             severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.BlockHeightDifferenceThreshold)
+            GroupedCosmosNodeAlertsMetricCode.BlockHeightDifferenceThreshold,
+            [origin_id])
 
 
 class BlockHeightDifferenceDecreasedBelowThresholdAlert(Alert):
@@ -201,7 +207,8 @@ class BlockHeightDifferenceDecreasedBelowThresholdAlert(Alert):
             "height. Value has DECREASED below {} threshold.".format(
                 origin_name, current_value, threshold_severity),
             severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.BlockHeightDifferenceThreshold)
+            GroupedCosmosNodeAlertsMetricCode.BlockHeightDifferenceThreshold,
+            [origin_id])
 
 
 class InvalidUrlAlert(Alert):
@@ -211,7 +218,7 @@ class InvalidUrlAlert(Alert):
                  metric_code: GroupedCosmosNodeAlertsMetricCode) -> None:
         super().__init__(
             alert_code, "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id, metric_code)
+            timestamp, parent_id, origin_id, metric_code, [origin_id])
 
 
 class ValidUrlAlert(Alert):
@@ -221,7 +228,7 @@ class ValidUrlAlert(Alert):
                  metric_code: GroupedCosmosNodeAlertsMetricCode) -> None:
         super().__init__(
             alert_code, "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id, metric_code)
+            timestamp, parent_id, origin_id, metric_code, [origin_id])
 
 
 class PrometheusInvalidUrlAlert(InvalidUrlAlert):
@@ -294,7 +301,7 @@ class SourceIsDownAlert(Alert):
             "Cannot access the {} source of node {}, last time checked: "
             "{}.".format(source_name, origin_name,
                          datetime.fromtimestamp(timestamp)),
-            severity, timestamp, parent_id, origin_id, metric_code)
+            severity, timestamp, parent_id, origin_id, metric_code, [origin_id])
 
 
 class SourceStillDownAlert(Alert):
@@ -308,7 +315,7 @@ class SourceStillDownAlert(Alert):
             "{}.".format(source_name, origin_name,
                          strfdelta(timedelta(seconds=difference),
                                    "{hours}h, {minutes}m, {seconds}s")),
-            severity, timestamp, parent_id, origin_id, metric_code)
+            severity, timestamp, parent_id, origin_id, metric_code, [origin_id])
 
 
 class SourceBackUpAgainAlert(Alert):
@@ -321,7 +328,7 @@ class SourceBackUpAgainAlert(Alert):
             "The {} source of node {} is accessible again, last successful "
             "monitor at: {}.".format(source_name, origin_name,
                                      datetime.fromtimestamp(timestamp)),
-            severity, timestamp, parent_id, origin_id, metric_code)
+            severity, timestamp, parent_id, origin_id, metric_code, [origin_id])
 
 
 class PrometheusSourceIsDownAlert(SourceIsDownAlert):
@@ -420,28 +427,6 @@ class TendermintRPCSourceBackUpAgainAlert(SourceBackUpAgainAlert):
             'tendermint-rpc', alert_code, metric_code)
 
 
-class ErrorNoSyncedDataSourcesAlert(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 source_name: str, alert_code: CosmosNodeAlertCode,
-                 metric_code: GroupedCosmosNodeAlertsMetricCode) -> None:
-        super().__init__(
-            alert_code,
-            "Could not retrieve {} data for {}: {}".format(
-                source_name, origin_name, message), severity, timestamp,
-            parent_id, origin_id, metric_code)
-
-
-class SyncedDataSourcesFoundAlert(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 alert_code: CosmosNodeAlertCode,
-                 metric_code: GroupedCosmosNodeAlertsMetricCode) -> None:
-        super().__init__(
-            alert_code, "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id, metric_code)
-
-
 class ErrorNoSyncedCosmosRestDataSourcesAlert(ErrorNoSyncedDataSourcesAlert):
     def __init__(self, origin_name: str, message: str, severity: str,
                  timestamp: float, parent_id: str, origin_id: str) -> None:
@@ -449,7 +434,7 @@ class ErrorNoSyncedCosmosRestDataSourcesAlert(ErrorNoSyncedDataSourcesAlert):
         metric_code = GroupedCosmosNodeAlertsMetricCode.NoSyncedCosmosRestSource
         super().__init__(
             origin_name, message, severity, timestamp, parent_id, origin_id,
-            'cosmos-rest', alert_code, metric_code)
+            'cosmos-rest', alert_code, metric_code, [origin_id])
 
 
 class SyncedCosmosRestDataSourcesFoundAlert(SyncedDataSourcesFoundAlert):
@@ -459,7 +444,7 @@ class SyncedCosmosRestDataSourcesFoundAlert(SyncedDataSourcesFoundAlert):
         metric_code = GroupedCosmosNodeAlertsMetricCode.NoSyncedCosmosRestSource
         super().__init__(
             origin_name, message, severity, timestamp, parent_id, origin_id,
-            alert_code, metric_code)
+            alert_code, metric_code, [origin_id])
 
 
 class ErrorNoSyncedTendermintRPCDataSourcesAlert(ErrorNoSyncedDataSourcesAlert):
@@ -473,7 +458,7 @@ class ErrorNoSyncedTendermintRPCDataSourcesAlert(ErrorNoSyncedDataSourcesAlert):
         )
         super().__init__(
             origin_name, message, severity, timestamp, parent_id, origin_id,
-            'tendermint-rpc', alert_code, metric_code)
+            'tendermint-rpc', alert_code, metric_code, [origin_id])
 
 
 class SyncedTendermintRPCDataSourcesFoundAlert(SyncedDataSourcesFoundAlert):
@@ -487,27 +472,7 @@ class SyncedTendermintRPCDataSourcesFoundAlert(SyncedDataSourcesFoundAlert):
         )
         super().__init__(
             origin_name, message, severity, timestamp, parent_id, origin_id,
-            alert_code, metric_code)
-
-
-class DataCouldNotBeObtainedAlert(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 alert_code: CosmosNodeAlertCode,
-                 metric_code: GroupedCosmosNodeAlertsMetricCode) -> None:
-        super().__init__(
-            alert_code, "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id, metric_code)
-
-
-class DataObtainedAlert(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 alert_code: CosmosNodeAlertCode,
-                 metric_code: GroupedCosmosNodeAlertsMetricCode) -> None:
-        super().__init__(
-            alert_code, "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id, metric_code)
+            alert_code, metric_code, [origin_id])
 
 
 class CosmosRestServerDataCouldNotBeObtainedAlert(DataCouldNotBeObtainedAlert):
@@ -521,7 +486,7 @@ class CosmosRestServerDataCouldNotBeObtainedAlert(DataCouldNotBeObtainedAlert):
         )
         super().__init__(
             origin_name, message, severity, timestamp, parent_id, origin_id,
-            alert_code, metric_code)
+            alert_code, metric_code, [origin_id])
 
 
 class CosmosRestServerDataObtainedAlert(DataObtainedAlert):
@@ -533,7 +498,7 @@ class CosmosRestServerDataObtainedAlert(DataObtainedAlert):
         )
         super().__init__(
             origin_name, message, severity, timestamp, parent_id, origin_id,
-            alert_code, metric_code)
+            alert_code, metric_code, [origin_id])
 
 
 class TendermintRPCDataCouldNotBeObtainedAlert(DataCouldNotBeObtainedAlert):
@@ -547,7 +512,7 @@ class TendermintRPCDataCouldNotBeObtainedAlert(DataCouldNotBeObtainedAlert):
         )
         super().__init__(
             origin_name, message, severity, timestamp, parent_id, origin_id,
-            alert_code, metric_code)
+            alert_code, metric_code, [origin_id])
 
 
 class TendermintRPCDataObtainedAlert(DataObtainedAlert):
@@ -559,7 +524,7 @@ class TendermintRPCDataObtainedAlert(DataObtainedAlert):
         )
         super().__init__(
             origin_name, message, severity, timestamp, parent_id, origin_id,
-            alert_code, metric_code)
+            alert_code, metric_code, [origin_id])
 
 
 class MetricNotFoundErrorAlert(Alert):
@@ -569,7 +534,7 @@ class MetricNotFoundErrorAlert(Alert):
             CosmosNodeAlertCode.MetricNotFoundErrorAlert,
             "{}: {}".format(origin_name, message), severity, timestamp,
             parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.MetricNotFound)
+            GroupedCosmosNodeAlertsMetricCode.MetricNotFound, [origin_id])
 
 
 class MetricFoundAlert(Alert):
@@ -579,4 +544,4 @@ class MetricFoundAlert(Alert):
             CosmosNodeAlertCode.MetricFoundAlert,
             "{}: {}".format(origin_name, message), severity, timestamp,
             parent_id, origin_id,
-            GroupedCosmosNodeAlertsMetricCode.MetricNotFound)
+            GroupedCosmosNodeAlertsMetricCode.MetricNotFound, [origin_id])

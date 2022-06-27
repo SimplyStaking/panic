@@ -89,7 +89,7 @@ class LogAlertsHandler(ChannelHandler):
             alert = Alert(alert_code_enum, alert_json['message'],
                           alert_json['severity'], alert_json['timestamp'],
                           alert_json['parent_id'], alert_json['origin_id'],
-                          metric_code_enum)
+                          metric_code_enum, alert_json['metric_state_args'])
 
             self.logger.debug("Successfully processed %s", alert_json)
         except Exception as e:

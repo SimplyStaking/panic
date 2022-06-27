@@ -13,14 +13,16 @@ from src.data_store.starters import (
     start_system_store, start_github_store, start_dockerhub_store,
     start_alert_store, start_chainlink_node_store, start_evm_node_store,
     start_cl_contract_store, start_monitorable_store, start_cosmos_node_store,
-    start_cosmos_network_store
+    start_cosmos_network_store, start_substrate_node_store,
+    start_substrate_network_store
 )
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (
     SYSTEM_STORE_NAME, GITHUB_STORE_NAME, DOCKERHUB_STORE_NAME,
     ALERT_STORE_NAME, CL_NODE_STORE_NAME, EVM_NODE_STORE_NAME,
     CL_CONTRACT_STORE_NAME, MONITORABLE_STORE_NAME, COSMOS_NODE_STORE_NAME,
-    COSMOS_NETWORK_STORE_NAME
+    COSMOS_NETWORK_STORE_NAME, SUBSTRATE_NODE_STORE_NAME,
+    SUBSTRATE_NETWORK_STORE_NAME
 )
 from src.utils.constants.rabbitmq import (
     HEALTH_CHECK_EXCHANGE, DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME,
@@ -138,6 +140,8 @@ class StoreManager(PublisherSubscriberComponent):
             EVM_NODE_STORE_NAME: start_evm_node_store,
             CL_CONTRACT_STORE_NAME: start_cl_contract_store,
             COSMOS_NETWORK_STORE_NAME: start_cosmos_network_store,
+            SUBSTRATE_NODE_STORE_NAME: start_substrate_node_store,
+            SUBSTRATE_NETWORK_STORE_NAME: start_substrate_network_store,
         }
         for store_name, store_starter in configuration.items():
             if store_name not in self._store_process_dict or not \

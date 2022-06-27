@@ -50,6 +50,8 @@ const dbport = process.env.DB_PORT;
 const mongoDBUrl = `mongodb://${dbip}:${dbport}/${dbname}`;
 const instAuthCollection = process.env.INSTALLER_AUTH_COLLECTION;
 const accountsCollection = process.env.ACCOUNTS_COLLECTION;
+const substrateIp = process.env.SUBSTRATE_API_IP;
+const substrateApi = process.env.SUBSTRATE_API_PORT;
 
 const blackList = [
   '127.0.0.1',
@@ -435,7 +437,7 @@ app.post('/server/account/save', verify, async (req, res) => {
     // return whatever error is thrown.
     if (err.code === constants.C_446) {
       const error = new errors.UsernameAlreadyExists(username);
-      console.log(error);
+      console.error(error);
       res.status(error.code).send(utils.errorJson(error.message));
       return;
     }
@@ -470,7 +472,7 @@ app.post('/server/account/delete', verify, async (req, res) => {
     // return whatever error is thrown.
     if (err.code === constants.C_446) {
       const error = new errors.UsernameDoesNotExists(username);
-      console.log(error);
+      console.error(error);
       res.status(error.code).send(utils.errorJson(error.message));
       return;
     }
@@ -629,7 +631,7 @@ app.post('/server/config/delete', verify, async (req, res) => {
     try {
       await fs.openSync(gitKeep, 'w');
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
     const msg = new msgs.DeleteDirectory();
     return res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
@@ -741,7 +743,7 @@ app.post('/server/twilio/test', verify, async (req, res) => {
       res.status(error.code).send(utils.errorJson(error.message));
     });
 });
- 
+
 // ---------------------------------------- E-mail
 
 // This endpoint sends a test e-mail to the address.
@@ -763,7 +765,7 @@ app.post('/server/email/test', verify, async (req, res) => {
 
   if (blackList.find((a) => smtp.includes(a))) {
     const error = new errors.BlackListError(smtp);
-    console.log(error);
+    console.error(error);
     res.status(error.code).send(utils.errorJson(error.message));
     return;
   }
@@ -919,7 +921,7 @@ app.post('/server/ethereum/rpc', verify, async (req, res) => {
 
   if (blackList.find((a) => httpUrl.includes(a))) {
     const error = new errors.BlackListError(httpUrl);
-    console.log(error);
+    console.error(error);
     res.status(error.code).send(utils.errorJson(error.message));
     return;
   }
@@ -953,7 +955,7 @@ app.post('/server/common/prometheus', verify, async (req, res) => {
 
   if (blackList.find((a) => prometheusUrl.includes(a))) {
     const error = new errors.BlackListError(prometheusUrl);
-    console.log(error);
+    console.error(error);
     res.status(error.code).send(utils.errorJson(error.message));
     return;
   }
@@ -988,6 +990,47 @@ app.post('/server/common/prometheus', verify, async (req, res) => {
     });
 });
 
+app.post('/server/substrate/rpc', verify, async (req, res) => {
+  console.log('Received POST request for %s', req.url);
+  const { substrateUrl } = req.body;
+
+  // Check if substrate url is missing.
+  const missingParamsList = utils.missingValues({ substrateUrl });
+
+  // If some required parameters are missing inform the user.
+  if (missingParamsList.length !== 0) {
+    const err = new errors.MissingArguments(missingParamsList);
+    res.status(err.code).send(utils.errorJson(err.message));
+    return;
+  }
+  if (blackList.find((a) => substrateUrl.includes(a))) {
+    const error = new errors.BlackListError(substrateUrl);
+    console.error(error);
+    res.status(error.code).send(utils.errorJson(error.message));
+    return;
+  }
+
+  const url = `https://${substrateIp}:${substrateApi}/api/rpc/system/syncState?websocket=${substrateUrl}`;
+
+  axios
+    .get(url, { params: {} })
+    .then((_) => {
+      const msg = new msgs.MessagePong();
+      res.status(utils.SUCCESS_STATUS).send(utils.resultJson(msg.message));
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.code === 'ECONNREFUSED') {
+        const msg = new msgs.MessageNoConnection();
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+      } else {
+        const msg = new msgs.ConnectionError();
+        // Connection made but error occurred (typically means node is missing)
+        res.status(utils.ERR_STATUS).send(utils.errorJson(msg.message));
+      }
+    });
+});
+
 // ---------------------------------------- Cosmos
 
 app.post('/server/cosmos/rest', verify, async (req, res) => {
@@ -1006,7 +1049,7 @@ app.post('/server/cosmos/rest', verify, async (req, res) => {
 
   if (blackList.find((a) => restUrl.includes(a))) {
     const error = new errors.BlackListError(restUrl);
-    console.log(error);
+    console.error(error);
     res.status(error.code).send(utils.errorJson(error.message));
     return;
   }
@@ -1053,7 +1096,7 @@ app.post('/server/cosmos/tendermint', verify, async (req, res) => {
 
   if (blackList.find((a) => httpUrl.includes(a))) {
     const error = new errors.BlackListError(httpUrl);
-    console.log(error);
+    console.error(error);
     res.status(error.code).send(utils.errorJson(error.message));
     return;
   }

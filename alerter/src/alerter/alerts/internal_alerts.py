@@ -35,4 +35,4 @@ class ComponentResetAlert(Alert):
         super().__init__(
             InternalAlertCode.ComponentResetAlert, msg, Severity.INTERNAL.value,
             timestamp, parent_id, origin_id,
-            GroupedInternalAlertsMetricCode.ComponentReset)
+            GroupedInternalAlertsMetricCode.ComponentReset, [])
