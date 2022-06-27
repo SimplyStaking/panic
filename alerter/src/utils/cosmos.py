@@ -3,7 +3,9 @@ from typing import List, Dict
 import bech32
 
 from src.data_store.redis import Keys
-from src.utils.types import convert_to_float, Monitorable, convert_to_int
+from src.monitorables.networks.cosmos import CosmosNetwork
+from src.monitorables.nodes.cosmos_node import CosmosNode
+from src.utils.types import convert_to_float, convert_to_int
 
 
 def bech32_to_address(bech32_str: str) -> str:
@@ -14,7 +16,7 @@ def bech32_to_address(bech32_str: str) -> str:
 
 
 def get_load_number_state_helper_network(
-        cosmos_network: Monitorable) -> List[Dict]:
+        cosmos_network: CosmosNetwork) -> List[Dict]:
     parent_id = cosmos_network.parent_id
 
     return [
@@ -26,7 +28,7 @@ def get_load_number_state_helper_network(
     ]
 
 
-def get_load_number_state_helper(cosmos_node: Monitorable) -> List[Dict]:
+def get_load_number_state_helper(cosmos_node: CosmosNode) -> List[Dict]:
     """
     Given a cosmos node, this function will return a list of dicts containing
     information on how each number metric needs to be loaded from Redis.
@@ -74,7 +76,7 @@ def get_load_number_state_helper(cosmos_node: Monitorable) -> List[Dict]:
     ]
 
 
-def get_load_bool_state_helper(cosmos_node: Monitorable) -> List[Dict]:
+def get_load_bool_state_helper(cosmos_node: CosmosNode) -> List[Dict]:
     """
     Given a cosmos node, this function will return a list of dicts containing
     information on how each boolean metric needs to be loaded from Redis.
@@ -93,7 +95,7 @@ def get_load_bool_state_helper(cosmos_node: Monitorable) -> List[Dict]:
     ]
 
 
-def get_load_str_state_helper(cosmos_node: Monitorable) -> List[Dict]:
+def get_load_str_state_helper(cosmos_node: CosmosNode) -> List[Dict]:
     """
     Given a cosmos node, this function will return a list of dicts containing
     information on how each string metric needs to be loaded from Redis.
@@ -109,7 +111,7 @@ def get_load_str_state_helper(cosmos_node: Monitorable) -> List[Dict]:
     ]
 
 
-def get_load_dict_state_helper(cosmos_node: Monitorable) -> List[Dict]:
+def get_load_dict_state_helper(cosmos_node: CosmosNode) -> List[Dict]:
     """
     Given a cosmos node, this function will return a list of dicts containing
     information on how each dict metric needs to be loaded from Redis.
@@ -129,7 +131,7 @@ def get_load_dict_state_helper(cosmos_node: Monitorable) -> List[Dict]:
 
 
 def get_load_list_of_dicts_state_helper(
-        cosmos_network: Monitorable) -> List[Dict]:
+        cosmos_network: CosmosNetwork) -> List[Dict]:
     parent_id = cosmos_network.parent_id
     return [
         {'state_value': cosmos_network.proposals,

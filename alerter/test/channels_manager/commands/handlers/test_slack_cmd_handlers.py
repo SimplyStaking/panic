@@ -30,7 +30,7 @@ from src.utils.constants.names import (
     CHANNELS_MANAGER_NAME, PING_PUBLISHER_NAME, HEARTBEAT_HANDLER_NAME,
     NODE_MONITORS_MANAGER_NAME, CONTRACT_MONITORS_MANAGER_NAME,
     EVM_NODE_ALERTER_MANAGER_NAME, NETWORK_MONITORS_MANAGER_NAME,
-    COSMOS_ALERTERS_MANAGER_NAME)
+    COSMOS_ALERTERS_MANAGER_NAME, SUBSTRATE_ALERTERS_MANAGER_NAME)
 from test.test_utils.utils import (
     assign_side_effect_if_not_none_otherwise_return_value)
 
@@ -735,6 +735,7 @@ class TestSlackCommandHandlers(unittest.TestCase):
                     CL_ALERTERS_MANAGER_NAME: False,
                     EVM_NODE_ALERTER_MANAGER_NAME: False,
                     COSMOS_ALERTERS_MANAGER_NAME: False,
+                    SUBSTRATE_ALERTERS_MANAGER_NAME: False,
                     DATA_STORE_MANAGER_NAME: False,
                     ALERT_ROUTER_NAME: False,
                     CONFIGS_MANAGER_NAME: False,
@@ -756,6 +757,7 @@ class TestSlackCommandHandlers(unittest.TestCase):
                     CL_ALERTERS_MANAGER_NAME: True,
                     EVM_NODE_ALERTER_MANAGER_NAME: False,
                     COSMOS_ALERTERS_MANAGER_NAME: True,
+                    SUBSTRATE_ALERTERS_MANAGER_NAME: True,
                     DATA_STORE_MANAGER_NAME: True,
                     ALERT_ROUTER_NAME: True,
                     CONFIGS_MANAGER_NAME: True,
@@ -852,6 +854,10 @@ class TestSlackCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': False,
                     },
+                    SUBSTRATE_ALERTERS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': False,
+                    },
                     DATA_STORE_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': False,
@@ -924,6 +930,10 @@ class TestSlackCommandHandlers(unittest.TestCase):
                         'hb_exists': True,
                         'hb_ok': True,
                     },
+                    SUBSTRATE_ALERTERS_MANAGER_NAME: {
+                        'hb_exists': True,
+                        'hb_ok': True,
+                    },
                     DATA_STORE_MANAGER_NAME: {
                         'hb_exists': True,
                         'hb_ok': True,
@@ -970,8 +980,8 @@ class TestSlackCommandHandlers(unittest.TestCase):
             DATA_TRANSFORMERS_MANAGER_NAME, SYSTEM_ALERTERS_MANAGER_NAME,
             GITHUB_ALERTER_MANAGER_NAME, DOCKERHUB_ALERTER_MANAGER_NAME,
             CL_ALERTERS_MANAGER_NAME, EVM_NODE_ALERTER_MANAGER_NAME,
-            COSMOS_ALERTERS_MANAGER_NAME, DATA_STORE_MANAGER_NAME,
-            CHANNELS_MANAGER_NAME]
+            COSMOS_ALERTERS_MANAGER_NAME, SUBSTRATE_ALERTERS_MANAGER_NAME,
+            DATA_STORE_MANAGER_NAME, CHANNELS_MANAGER_NAME]
         worker_components = [ALERT_ROUTER_NAME, CONFIGS_MANAGER_NAME]
         mock_manager_status.side_effect = [
             '' if components_hb_status_dict[component]['hb_ok']

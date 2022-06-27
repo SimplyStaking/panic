@@ -12,6 +12,8 @@
 - [EVM Node Alerts](#evm-node-alerts)
 - [Cosmos Node Alerts](#cosmos-node-alerts)
 - [Cosmos Network Alerts](#cosmos-network-alerts)
+- [Substrate Node Alerts](#substrate-node-alerts)
+- [Substrate Network Alerts](#substrate-network-alerts)
 - [GitHub Repository Alerts](#github-repository-alerts)
 - [DockerHub Repository Alerts](#dockerhub-repository-alerts)
 
@@ -24,6 +26,8 @@ The PANIC alerter can alert a node operator on the following sources:
 - EVM nodes will be monitored through the RPC endpoint.
 - Cosmos nodes will be monitored through their Prometheus metrics, REST, and Tendermint RPC.
 - Cosmos networks will be monitored using various Cosmos nodes' REST endpoint.
+- Substrate nodes will be monitored through their web-socket URL.
+- Substrate networks will be monitored using various Substrate nodes' web-socket URLs.
 - GitHub repository releases using the [GitHub Releases API](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#releases).
 - DockerHub repository releases using the [Docker HUB API](https://docs.docker.com/docker-hub/api/latest).
 
@@ -45,7 +49,7 @@ For system monitoring and alerting, PANIC operates as follows:
 - When a **Channel Handler** receives an alert via **RabbitMQ**, it simply forwards it to the channel it handles and the **Node Operator** would be notified via this channel.
 - If the user sets-up a **Telegram** or **Slack** Channel with **Commands** enabled, the user would be able to control and query PANIC via Telegram Bot/Slack App Commands. A list of available commands is given [here](#telegram-and-slack-commands).
 
-For the EVM Node, Cosmos Node, and GitHub/DockerHub repositories monitoring and alerting PANIC operates similarly to the above. The difference is that each monitorable type has its own set of dedicated processes which monitor different endpoints/data sources as required. For example, to monitor Cosmos nodes a Cosmos Node Monitor, Cosmos Node Data Transformer and a Cosmos Node Alerter were written to monitor data obtained from the REST, prometheus and Tendermint-RPC endpoints.
+For EVM Node, Cosmos Node, Substrate Node, and GitHub/DockerHub repositories monitoring and alerting, PANIC operates similarly to system monitoring and alerting. The difference is that each monitorable type has its own set of dedicated processes which monitor different endpoints/data sources as required. For example, to monitor Cosmos nodes a Cosmos Node Monitor, Cosmos Node Data Transformer and a Cosmos Node Alerter were written to monitor data obtained from the REST, prometheus and Tendermint-RPC endpoints.
 
 For Chainlink node monitoring and alerting, PANIC operates as follows:
 - When the **Monitors Manager Process** receives the configurations, it starts as many **Chainlink Node Monitors** as there are Chainlink configurations to be monitored. A Chainlink configuration could have multiple prometheus data points setup as a node operator would have multiple Chainlink nodes setup but one running. If one Chainlink node goes down another would start operating to ensure fully functional operations. The node monitor is built to consider this and checks all prometheus data points to find the active one, if none are found an appropriate response is passed on.
@@ -77,9 +81,10 @@ For Cosmos network monitoring and alerting, PANIC operates as follows:
 - When a **Channel Handler** receives an alert via **RabbitMQ**, it simply forwards it to the channel it handles and the **Node Operator** would be notified via this channel.
 - If the user sets-up a **Telegram** or **Slack** Channel with **Commands** enabled, the user would be able to control and query PANIC via Telegram Bot/Slack App Commands. A list of available commands is given [here](#telegram-and-slack-commands).
 
+For Substrate Network monitoring and alerting, PANIC operates similarly to that of Cosmos Network monitoring and alerting. The difference is that each monitorable type has its own set of dedicated processes which monitor different endpoints/data sources as required. For example, to monitor Substrate networks a Substrate Network Monitor, Substrate Network Data Transformer and a Substrate Network Alerter were written to monitor data obtained from the web-socket URLs.
+
 **Notes**: 
 
-- In future releases, the node operator will be able to use PANIC to monitor Substrate based nodes and get alerts based on blockchain-specific metrics obtained from various data sources.
 - Another important component which is not depicted above is the **Health-Checker** component. The **Health-Checker** was not included in the image above as it is not part of the monitoring and alerting process, in fact it runs in its own Docker container. The **Health-Checker** component constitutes of two separate components, the **Ping Publisher** and the **Heartbeat Handler**. The **Ping Publisher** sends ping requests to PANIC's components every 30 seconds via **RabbitMQ**, and the **Heartbeat Handler** listens for heartbeats and saves them to **Redis**. This mechanism makes it possible to deduce whether PANIC's components are running as expected when the node operator enters the `/status` command described [here](#telegram-and-slack-commands).
 
 ## Alert Types
@@ -143,6 +148,8 @@ A complete list of alerts will now be presented. These are grouped into:
 + [EVM Node Alerts](#evm-node-alerts)
 + [Cosmos Node Alerts](#cosmos-node-alerts)
 + [Cosmos Network Alerts](#cosmos-network-alerts)
++ [Substrate Node Alerts](#substrate-node-alerts)
++ [Substrate Network Alerts](#substrate-network-alerts)
 + [GitHub Repository Alerts](#github-repository-alerts)
 + [DockerHub Repository Alerts](#dockerhub-repository-alerts)
 
@@ -250,7 +257,7 @@ In the lists below we will show which alerts have severity thresholds and which 
 | `BlocksMissedIncreasedAboveThresholdAlert`          | `WARNING`,`CRITICAL` |                  |      ✓       |                               ✓                                | The number of missed block signatures increased above `warning` or `critical` thresholds.                                                              |
 | `BlocksMissedDecreasedBelowThresholdAlert`          | `INFO`               |                  |      ✗       |     Depends on `BlocksMissedIncreasedAboveThresholdAlert`      | The number of missed block signatures decreased below `warning` or `critical` thresholds.                                                              |
 | `NoChangeInHeightAlert`                             | `WARNING`,`CRITICAL` |                  |      ✓       |                               ✓                                | There hasn't been a change in node block height over a period of time.                                                                                 |
-| `BlockHeightUpdatedAlert`                           | `INFO`               |                  |      ✗       |              Depends on `BlockHeightUpdatedAlert`              | Cosmos node starts to update it's block height.                                                                                                        |
+| `BlockHeightUpdatedAlert`                           | `INFO`               |                  |      ✗       |               Depends on `NoChangeInHeightAlert`               | Cosmos node starts to update it's block height.                                                                                                        |
 | `BlockHeightDifferenceIncreasedAboveThresholdAlert` | `WARNING`,`CRITICAL` |                  |      ✓       |                               ✓                                | The block height difference between multiple Cosmos nodes increased above thresholds.                                                                  |
 | `BlockHeightDifferenceDecreasedBelowThresholdAlert` | `INFO`               |                  |      ✗       | Depends on `BlockHeightDifferenceIncreasedAboveThresholdAlert` | The difference between Cosmos node's block heights decreased below thresholds.                                                                         |
 | `PrometheusInvalidUrlAlert`                         |                      | `ERROR`          |      ✗       |                               ✗                                | A node's provided Prometheus endpoint has an invalid URL schema.                                                                                       |
@@ -289,6 +296,56 @@ In the lists below we will show which alerts have severity thresholds and which 
 | `SyncedCosmosRestDataSourcesFoundAlert`    |                     | `INFO`   |      ✗       |            ✗            | PANIC found a Cosmos node that could act as a Cosmos REST data source again.                         |
 | `CosmosNetworkDataCouldNotBeObtainedAlert` |                     | `ERROR`  |      ✗       |            ✗            | Could not obtain network data using given nodes.                                                     |
 | `CosmosNetworkDataObtainedAlert`           |                     | `INFO`   |      ✗       |            ✗            | Obtained network data using a given node after `CosmosNetworkDataCouldNotBeObtainedAlert` is raised. |
+
+## Substrate Node Alerts
+
+| Alert Class                                       | Severity Thresholds  | Severity   | Configurable |                  Can be Enabled/Disabled                  | Description                                                                                                                 |
+|---------------------------------------------------|----------------------|------------|:------------:|:---------------------------------------------------------:|-----------------------------------------------------------------------------------------------------------------------------|
+| `NodeWentDownAtAlert`                             | `WARNING`,`CRITICAL` |            |      ✓       |                             ✓                             | Web-socket of a node is unreachable, classifying the node as down.                                                          |
+| `NodeBackUpAgainAlert`                            | `INFO`               |            |      ✗       |             Depends on `NodeWentDownAtAlert`              | Web-socket is accessible again, meaning that the node is now reachable.                                                     |
+| `NodeStillDownAlert`                              | `CRITICAL`           |            |      ✓       |          ✓ but depends on `NodeWentDownAtAlert`           | If a node has been classified as down for sometime this alert will keep repeating for a period until it is back up again.   |
+| `NoChangeInBestBlockHeightAlert`                  | `WARNING`,`CRITICAL` |            |      ✓       |                             ✓                             | There hasn't been a change in node's best block height over a period of time.                                               |
+| `BestBlockHeightUpdatedAlert`                     | `INFO`               |            |      ✗       |        Depends on `NoChangeInBestBlockHeightAlert`        | Substrate node starts to update it's best block height.                                                                     |
+| `NoChangeInFinalizedBlockHeightAlert`             | `WARNING`,`CRITICAL` |            |      ✓       |                             ✓                             | There hasn't been a change in node's finalized block height over a period of time.                                          |
+| `FinalizedBlockHeightUpdatedAlert`                | `INFO`               |            |      ✗       |     Depends on `NoChangeInFinalizedBlockHeightAlert`      | Substrate node starts to update it's finalized block height.                                                                |
+| `NodeIsSyncingAlert`                              | `WARNING`,`CRITICAL` |            |      ✓       |                             ✓                             | Node or validator is syncing. The threshold between the target height and the node's best block height was elapsed.         |
+| `NodeIsNoLongerSyncingAlert`                      | `INFO`               |            |      ✗       |              Depends on `NodeIsSyncingAlert`              | Node or validator is no longer syncing.                                                                                     |
+| `ValidatorIsNotActiveAlert`                       |                      | `WARNING`  |      ✓       |                             ✓                             | Validator is not in the active set of validators.                                                                           |
+| `ValidatorIsActiveAlert`                          |                      | `INFO`     |      ✗       |          Depends on `ValidatorIsNotActiveAlert`           | Validator is in the active set of validators after previously not being in the active set of validators.                    |
+| `ValidatorIsDisabledAlert`                        |                      | `CRITICAL` |      ✓       |                             ✓                             | Validator is disabled.                                                                                                      |
+| `ValidatorIsNoLongerDisabledAlert`                |                      | `INFO`     |      ✗       |           Depends on `ValidatorIsDisabledAlert`           | Validator is no longer disabled.                                                                                            |
+| `ValidatorWasNotElectedAlert`                     |                      | `WARNING`  |      ✓       |                             ✓                             | Validator was not elected for next session.                                                                                 |
+| `ValidatorWasElectedAlert`                        |                      | `INFO`     |      ✗       |         Depends on `ValidatorWasNotElectedAlert`          | Validator was elected for next session after previously not being elected.                                                  |
+| `ValidatorBondedAmountChangedAlert`               |                      | `INFO`     |      ✓       |                             ✓                             | The bonded amount of a validator changed.                                                                                   |
+| `ValidatorNoHeartbeatAndBlockAuthoredYetAlert`    | `WARNING`,`CRITICAL` |            |      ✓       |                             ✓                             | Validator did not send a heartbeat and did not author block in a session after a session has being ongoing for a period.    |
+| `ValidatorHeartbeatSentOrBlockAuthoredAlert`      | `INFO`               |            |      ✗       | Depends on `ValidatorNoHeartbeatAndBlockAuthoredYetAlert` | Validator sent a heartbeat or authored a block in a session after `ValidatorNoHeartbeatAndBlockAuthoredYetAlert` is raised. |
+| `ValidatorWasOfflineAlert`                        |                      | `CRITICAL` |      ✓       |                             ✓                             | An offline event was generated for a validator.                                                                             |
+| `ValidatorWasSlashedAlert`                        |                      | `CRITICAL` |      ✓       |                             ✓                             | Validator was slashed.                                                                                                      |
+| `ValidatorPayoutNotClaimedAlert`                  | `WARNING`,`CRITICAL` |            |      ✓       |                             ✓                             | Validator has not claimed a payout after an era threshold is reached from when the payout was available.                    |
+| `ValidatorPayoutClaimedAlert`                     |                      | `INFO`     |      ✗       |        Depends on `ValidatorPayoutNotClaimedAlert`        | Validator claimed a payout.                                                                                                 |
+| `ValidatorControllerAddressChangedAlert`          |                      | `WARNING`  |      ✓       |                             ✓                             | The controller address of a validator changed.                                                                              |
+| `ErrorNoSyncedSubstrateWebSocketDataSourcesAlert` |                      | `ERROR`    |      ✗       |                             ✗                             | No synced Substrate node was available as a web-socket data source.                                                         |
+| `SyncedSubstrateWebSocketDataSourcesFoundAlert`   |                      | `INFO`     |      ✗       |                             ✗                             | PANIC found a Substrate node that could act as a web-socket data source again.                                              |
+| `SubstrateWebSocketDataCouldNotBeObtainedAlert`   |                      | `ERROR`    |      ✗       |                             ✗                             | Could not obtain data from web-socket for a given node.                                                                     |
+| `SubstrateWebSocketDataObtainedAlert`             |                      | `INFO`     |      ✗       |                             ✗                             | Obtained data from web-socket for a given node after `SubstrateWebSocketDataCouldNotBeObtainedAlert` is raised.             |
+| `SubstrateApiIsNotReachableAlert`                 |                      | `ERROR`    |      ✗       |                             ✗                             | Could not reach the Substrate API. Probably means that the Substrate API container is not running.                          |
+| `SubstrateApiIsReachableAlert`                    |                      | `INFO`     |      ✗       |                             ✗                             | Managed to reach the Substrate API after `SubstrateApiIsNotReachableAlert` is raised.                                       |
+
+## Substrate Network Alerts
+
+| Alert Class                                       | Severity Thresholds | Severity  | Configurable |      Can be Enabled/Disabled       | Description                                                                                                           |
+|---------------------------------------------------|---------------------|-----------|:------------:|:----------------------------------:|-----------------------------------------------------------------------------------------------------------------------|
+| `GrandpaIsStalledAlert`                           |                     | `WARNING` |      ✓       |                 ✓                  | Alert is raised when GRANDPA is stalled.                                                                              |
+| `GrandpaIsNoLongerStalledAlert`                   |                     | `INFO`    |      ✗       | Depends on `GrandpaIsStalledAlert` | Alert is raised when GRANDPA is no longer stalled.                                                                    |
+| `NewProposalSubmittedAlert`                       |                     | `INFO`    |      ✓       |                 ✓                  | A new proposal has been submitted in the network.                                                                     |
+| `NewReferendumSubmittedAlert`                     |                     | `INFO`    |      ✓       |                 ✓                  | A new referendum has been submitted in the network.                                                                   |
+| `ReferendumConcludedAlert`                        |                     | `INFO`    |      ✓       |                 ✓                  | A governance referendum has concluded. Final result is also returned.                                                 |
+| `ErrorNoSyncedSubstrateWebSocketDataSourcesAlert` |                     | `ERROR`   |      ✗       |                 ✗                  | No synced Substrate node was available as a web-socket data source.                                                   |
+| `SyncedSubstrateWebSocketDataSourcesFoundAlert`   |                     | `INFO`    |      ✗       |                 ✗                  | PANIC found a Substrate node that could act as a web-socket data source again.                                        |
+| `SubstrateNetworkDataCouldNotBeObtainedAlert`     |                     | `ERROR`   |      ✗       |                 ✗                  | Could not obtain network data from web-socket for a given node.                                                       |
+| `SubstrateNetworkDataObtainedAlert`               |                     | `INFO`    |      ✗       |                 ✗                  | Obtained network data from web-socket for a given node after `SubstrateNetworkDataCouldNotBeObtainedAlert` is raised. |
+| `SubstrateApiIsNotReachableAlert`                 |                     | `ERROR`   |      ✗       |                 ✗                  | Could not reach the Substrate API. Probably means that the Substrate API container is not running.                    |
+| `SubstrateApiIsReachableAlert`                    |                     | `INFO`    |      ✗       |                 ✗                  | Managed to reach the Substrate API after `SubstrateApiIsNotReachableAlert` is raised.                                 |
 
 ## GitHub Repository Alerts
 

@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.2.0
+Released on 27th June 2022
+
+- Added Substrate Node and Network alerting.
+- Added Substrate-API docker service. This is going to be used to get Substrate-related metrics.
+- Updated API, UI and Web-Installer to be compatible with Substrate alerting.
+
 ## 1.1.1
 Released on 17th May 2022
 

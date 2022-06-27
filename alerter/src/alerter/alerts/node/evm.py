@@ -18,7 +18,7 @@ class NoChangeInBlockHeight(Alert):
                 timedelta(seconds=duration),
                 "{hours}h, {minutes}m, {seconds}s"), last_processed_block),
             severity, timestamp, parent_id, origin_id,
-            GroupedEVMNodeAlertsMetricCode.NoChangeInBlockHeight)
+            GroupedEVMNodeAlertsMetricCode.NoChangeInBlockHeight, [origin_id])
 
 
 class BlockHeightUpdatedAlert(Alert):
@@ -30,7 +30,7 @@ class BlockHeightUpdatedAlert(Alert):
             "{} is now receiving blocks again. Last synced block: {}.".format(
                 origin_name, last_processed_block),
             severity, timestamp, parent_id, origin_id,
-            GroupedEVMNodeAlertsMetricCode.NoChangeInBlockHeight)
+            GroupedEVMNodeAlertsMetricCode.NoChangeInBlockHeight, [origin_id])
 
 
 class BlockHeightDifferenceIncreasedAboveThresholdAlert(Alert):
@@ -44,7 +44,7 @@ class BlockHeightDifferenceIncreasedAboveThresholdAlert(Alert):
             "height. Value has INCREASED above {} threshold."
                 .format(origin_name, current_value, threshold_severity),
             severity, timestamp, parent_id, origin_id,
-            GroupedEVMNodeAlertsMetricCode.BlockHeightDifference)
+            GroupedEVMNodeAlertsMetricCode.BlockHeightDifference, [origin_id])
 
 
 class BlockHeightDifferenceDecreasedBelowThresholdAlert(Alert):
@@ -58,7 +58,7 @@ class BlockHeightDifferenceDecreasedBelowThresholdAlert(Alert):
             "height. Value has DECREASED below {} threshold."
                 .format(origin_name, current_value, threshold_severity),
             severity, timestamp, parent_id, origin_id,
-            GroupedEVMNodeAlertsMetricCode.BlockHeightDifference)
+            GroupedEVMNodeAlertsMetricCode.BlockHeightDifference, [origin_id])
 
 
 class InvalidUrlAlert(Alert):
@@ -67,7 +67,7 @@ class InvalidUrlAlert(Alert):
         super().__init__(
             EVMNodeAlertCode.InvalidUrlAlert, "{}: {}".format(
                 origin_name, message), severity, timestamp, parent_id,
-            origin_id, GroupedEVMNodeAlertsMetricCode.InvalidUrl)
+            origin_id, GroupedEVMNodeAlertsMetricCode.InvalidUrl, [origin_id])
 
 
 class ValidUrlAlert(Alert):
@@ -76,7 +76,7 @@ class ValidUrlAlert(Alert):
         super().__init__(
             EVMNodeAlertCode.ValidUrlAlert, "{}: {}".format(
                 origin_name, message), severity, timestamp, parent_id,
-            origin_id, GroupedEVMNodeAlertsMetricCode.InvalidUrl)
+            origin_id, GroupedEVMNodeAlertsMetricCode.InvalidUrl, [origin_id])
 
 
 class NodeWentDownAtAlert(Alert):
@@ -87,7 +87,7 @@ class NodeWentDownAtAlert(Alert):
             "Node {} is down, last time checked: {}.".format(
                 origin_name, datetime.fromtimestamp(timestamp)),
             severity, timestamp, parent_id, origin_id,
-            GroupedEVMNodeAlertsMetricCode.NodeIsDown)
+            GroupedEVMNodeAlertsMetricCode.NodeIsDown, [origin_id])
 
 
 class NodeBackUpAgainAlert(Alert):
@@ -98,7 +98,7 @@ class NodeBackUpAgainAlert(Alert):
             "Node {} is back up, last successful monitor at: {}.".format(
                 origin_name, datetime.fromtimestamp(timestamp)),
             severity, timestamp, parent_id, origin_id,
-            GroupedEVMNodeAlertsMetricCode.NodeIsDown)
+            GroupedEVMNodeAlertsMetricCode.NodeIsDown, [origin_id])
 
 
 class NodeStillDownAlert(Alert):
@@ -110,4 +110,4 @@ class NodeStillDownAlert(Alert):
                 origin_name, strfdelta(timedelta(seconds=difference),
                                        "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id,
-            GroupedEVMNodeAlertsMetricCode.NodeIsDown)
+            GroupedEVMNodeAlertsMetricCode.NodeIsDown, [origin_id])

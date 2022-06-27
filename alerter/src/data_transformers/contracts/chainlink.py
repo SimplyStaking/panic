@@ -20,7 +20,7 @@ from src.utils.constants.rabbitmq import (
     CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY)
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import Monitorable, convert_to_int, convert_to_float
+from src.utils.types import convert_to_int, convert_to_float, ChainlinkContract
 
 
 class ChainlinkContractsDataTransformer(DataTransformer):
@@ -73,7 +73,7 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                                        True, False, False)
 
     def _load_number_state(self, state_type: Union[Type[float], Type[int]],
-                           cl_contract: Monitorable) -> None:
+                           cl_contract: ChainlinkContract) -> None:
         """
         This function will attempt to load a Chainlink contract's number metrics
         from redis. If the data from Redis cannot be obtained, the state won't
@@ -108,7 +108,7 @@ class ChainlinkContractsDataTransformer(DataTransformer):
             new_value = convert_fn(processed_redis_value, None)
             eval("cl_contract.set" + attribute + '(new_value)')
 
-    def _load_list_state(self, cl_contract: Monitorable) -> None:
+    def _load_list_state(self, cl_contract: ChainlinkContract) -> None:
         """
         This function will attempt to load a Chainlink contract's list metrics
         from redis. If the data from Redis cannot be obtained, the state won't
@@ -131,7 +131,7 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                 redis_value.decode("utf-8"))
             eval("cl_contract.set" + attribute + '(new_value)')
 
-    def load_state(self, cl_contract: Monitorable) -> Monitorable:
+    def load_state(self, cl_contract: ChainlinkContract) -> ChainlinkContract:
         """
         This function attempts to load the state of a Chainlink contract from
         redis. If the data from Redis cannot be obtained, the state won't be
@@ -168,7 +168,8 @@ class ChainlinkContractsDataTransformer(DataTransformer):
 
             # We need to update the state for every node and contract
             for proxy_address, contract_data in metrics.items():
-                cl_contract = self.state[node_id][proxy_address]
+                cl_contract: ChainlinkContract = self.state[node_id][
+                    proxy_address]
 
                 # Set some contract details
                 cl_contract.set_aggregator_address(
@@ -234,7 +235,8 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                               'description']
 
             for proxy_address, contract_data in td_metrics.items():
-                cl_contract = self.state[node_id][proxy_address]
+                cl_contract: ChainlinkContract = self.state[node_id][
+                    proxy_address]
                 processed_data_metrics[proxy_address] = {}
 
                 # Reformat the data in such a way that both the previous and
@@ -357,7 +359,8 @@ class ChainlinkContractsDataTransformer(DataTransformer):
         """
         state_created = False
         if node_id in self.state and proxy_address in self.state[node_id]:
-            old_cl_contract = copy.deepcopy(self.state[node_id][proxy_address])
+            old_cl_contract: ChainlinkContract = copy.deepcopy(
+                self.state[node_id][proxy_address])
             if version != old_cl_contract.version:
                 if version == 3:
                     self.state[node_id][proxy_address] = V3ChainlinkContract(
@@ -407,7 +410,8 @@ class ChainlinkContractsDataTransformer(DataTransformer):
                         node_id, proxy_address, parent_id, version,
                         aggregator_address)
                     if state_created:
-                        cl_contract = self.state[node_id][proxy_address]
+                        cl_contract: ChainlinkContract = self.state[node_id][
+                            proxy_address]
                         self.load_state(cl_contract)
 
                 transformed_data, data_for_alerting, data_for_saving = \

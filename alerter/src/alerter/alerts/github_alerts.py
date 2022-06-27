@@ -12,7 +12,7 @@ class NewGitHubReleaseAlert(Alert):
             "Repo: {} has a new release {} tagged {}.".format(
                 origin_name, release_name, tag_name),
             severity, timestamp, parent_id, origin_id,
-            GroupedGithubAlertsMetricCode.GithubRelease)
+            GroupedGithubAlertsMetricCode.GithubRelease, [origin_id])
 
 
 class CannotAccessGitHubPageAlert(Alert):
@@ -22,7 +22,7 @@ class CannotAccessGitHubPageAlert(Alert):
             GithubAlertCode.CannotAccessGitHubPageAlert,
             "Github page inaccessible {}.".format(origin_name),
             severity, timestamp, parent_id, origin_id,
-            GroupedGithubAlertsMetricCode.CannotAccessGithub)
+            GroupedGithubAlertsMetricCode.CannotAccessGithub, [origin_id])
 
 
 class GitHubPageNowAccessibleAlert(Alert):
@@ -32,7 +32,7 @@ class GitHubPageNowAccessibleAlert(Alert):
             GithubAlertCode.GitHubPageNowAccessibleAlert,
             "Github page accessible {}.".format(origin_name),
             severity, timestamp, parent_id, origin_id,
-            GroupedGithubAlertsMetricCode.CannotAccessGithub)
+            GroupedGithubAlertsMetricCode.CannotAccessGithub, [origin_id])
 
 
 class GitHubAPICallErrorAlert(Alert):
@@ -42,7 +42,7 @@ class GitHubAPICallErrorAlert(Alert):
             GithubAlertCode.GitHubAPICallErrorAlert,
             "{}: {}.".format(origin_name, error_msg),
             severity, timestamp, parent_id, origin_id,
-            GroupedGithubAlertsMetricCode.APICallError)
+            GroupedGithubAlertsMetricCode.APICallError, [origin_id])
 
 
 class GitHubAPICallErrorResolvedAlert(Alert):
@@ -52,4 +52,4 @@ class GitHubAPICallErrorResolvedAlert(Alert):
             GithubAlertCode.GitHubAPICallErrorResolvedAlert,
             "{}: Github API call no longer causing errors.".format(origin_name),
             severity, timestamp, parent_id, origin_id,
-            GroupedGithubAlertsMetricCode.APICallError)
+            GroupedGithubAlertsMetricCode.APICallError, [origin_id])

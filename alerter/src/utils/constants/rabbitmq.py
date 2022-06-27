@@ -36,6 +36,10 @@ CL_CONTRACTS_DT_INPUT_QUEUE_NAME = \
 COSMOS_NODE_DT_INPUT_QUEUE_NAME = 'cosmos_node_data_transformer_input_queue'
 COSMOS_NETWORK_DT_INPUT_QUEUE_NAME = \
     'cosmos_network_data_transformer_input_queue'
+SUBSTRATE_NODE_DT_INPUT_QUEUE_NAME = \
+    'substrate_node_data_transformer_input_queue'
+SUBSTRATE_NETWORK_DT_INPUT_QUEUE_NAME = \
+    'substrate_network_data_transformer_input_queue'
 DT_MAN_HEARTBEAT_QUEUE_NAME = 'data_transformers_manager_heartbeat_queue'
 SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME = "system_alerter_input_configs_queue"
 GITHUB_ALERTER_INPUT_QUEUE_NAME = 'github_alerter_input_queue'
@@ -49,6 +53,10 @@ COSMOS_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME = \
     'cosmos_node_alerter_input_configs_queue'
 COSMOS_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME = \
     'cosmos_network_alerter_input_configs_queue'
+SUBSTRATE_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME = \
+    'substrate_node_alerter_input_configs_queue'
+SUBSTRATE_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME = \
+    'substrate_network_alerter_input_configs_queue'
 SYS_ALERTERS_MAN_HEARTBEAT_QUEUE_NAME = \
     'system_alerters_manager_heartbeat_queue'
 SYS_ALERTERS_MAN_CONFIGS_QUEUE_NAME = 'system_alerters_manager_configs_queue'
@@ -68,6 +76,8 @@ COSMOS_NETWORK_STORE_INPUT_QUEUE_NAME = 'cosmos_network_store_input_queue'
 CL_NODE_STORE_INPUT_QUEUE_NAME = 'chainlink_node_store_input_queue'
 CL_CONTRACT_STORE_INPUT_QUEUE_NAME = 'chainlink_contract_store_input_queue'
 EVM_NODE_STORE_INPUT_QUEUE_NAME = 'evm_node_store_input_queue'
+SUBSTRATE_NODE_STORE_INPUT_QUEUE_NAME = 'substrate_node_store_input_queue'
+SUBSTRATE_NETWORK_STORE_INPUT_QUEUE_NAME = 'substrate_network_store_input_queue'
 DATA_STORES_MAN_HEARTBEAT_QUEUE_NAME = 'data_stores_manager_heartbeat_queue'
 CHAN_ALERTS_HAN_INPUT_QUEUE_NAME_TEMPLATE = '{}_alerts_handler_input_queue'
 CHAN_CMDS_HAN_HB_QUEUE_NAME_TEMPLATE = '{}_commands_handler_heartbeat_queue'
@@ -82,14 +92,20 @@ EVM_NODE_ALERTER_MAN_HEARTBEAT_QUEUE_NAME = \
     'evm_node_alerter_manager_heartbeat_queue'
 EVM_NODE_ALERTER_MAN_CONFIGS_QUEUE_NAME = \
     'evm_node_alerter_manager_configs_queue'
+SUBSTRATE_ALERTERS_MAN_HB_QUEUE_NAME = \
+    'substrate_alerters_manager_heartbeat_queue'
+SUBSTRATE_ALERTERS_MAN_CONFIGS_QUEUE_NAME = \
+    'substrate_alerters_manager_configs_queue'
 
 # Routing Keys
 SYSTEM_RAW_DATA_ROUTING_KEY = 'system'
 CHAINLINK_NODE_RAW_DATA_ROUTING_KEY = 'node.chainlink'
 COSMOS_NODE_RAW_DATA_ROUTING_KEY = 'node.cosmos'
+SUBSTRATE_NODE_RAW_DATA_ROUTING_KEY = 'node.substrate'
 EVM_NODE_RAW_DATA_ROUTING_KEY = 'node.evm'
 CHAINLINK_CONTRACTS_RAW_DATA_ROUTING_KEY = 'contracts.chainlink'
 COSMOS_NETWORK_RAW_DATA_ROUTING_KEY = 'network.cosmos'
+SUBSTRATE_NETWORK_RAW_DATA_ROUTING_KEY = 'network.substrate'
 GITHUB_RAW_DATA_ROUTING_KEY = 'github'
 DOCKERHUB_RAW_DATA_ROUTING_KEY = 'dockerhub'
 GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.github_repos_config'
@@ -106,6 +122,9 @@ SYSTEM_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.system'
 CL_NODE_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.node.chainlink'
 COSMOS_NODE_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.node.cosmos'
 COSMOS_NETWORK_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.network.cosmos'
+SUBSTRATE_NODE_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.node.substrate'
+SUBSTRATE_NETWORK_TRANSFORMED_DATA_ROUTING_KEY = \
+    'transformed_data.network.substrate'
 EVM_NODE_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.node.evm'
 CL_CONTRACT_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.contract.chainlink'
 SYSTEM_ALERT_ROUTING_KEY = 'alert.system'
@@ -115,10 +134,13 @@ CL_NODE_ALERT_ROUTING_KEY = 'alert.node.chainlink'
 CL_CONTRACT_ALERT_ROUTING_KEY = 'alert.contract.chainlink'
 COSMOS_NODE_ALERT_ROUTING_KEY = 'alert.node.cosmos'
 COSMOS_NETWORK_ALERT_ROUTING_KEY = 'alert.network.cosmos'
+SUBSTRATE_NODE_ALERT_ROUTING_KEY = 'alert.node.substrate'
+SUBSTRATE_NETWORK_ALERT_ROUTING_KEY = 'alert.network.substrate'
 EVM_NODE_ALERT_ROUTING_KEY = 'alert.node.evm'
 CL_ALERTS_CONFIGS_ROUTING_KEY = 'chains.chainlink.*.alerts_config'
 EVM_ALERTS_CONFIGS_ROUTING_KEY = 'chains.chainlink.*.alerts_config'
 COSMOS_ALERTS_CONFIGS_ROUTING_KEY = 'chains.cosmos.*.alerts_config'
+SUBSTRATE_ALERTS_CONFIGS_ROUTING_KEY = 'chains.substrate.*.alerts_config'
 ALERTS_CONFIGS_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
 ALERTS_CONFIGS_ROUTING_KEY_GEN = 'general.alerts_config'
 ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'

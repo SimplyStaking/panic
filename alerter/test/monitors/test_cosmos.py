@@ -422,7 +422,7 @@ class TestCosmosMonitor(unittest.TestCase):
         (KeyError('test'),),
     ])
     @mock.patch.object(TendermintRpcApiWrapper, 'execute_with_checks')
-    def test_select_cosmos_rest_node_does_not_select_nodes_raising_expected_err(
+    def test_select_cosmos_tendermint_node_ignores_nodes_raising_expected_err(
             self, exception_instance, mock_execute_with_checks) -> None:
         """
         In this test we will set the first two nodes to return one of the

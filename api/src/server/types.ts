@@ -128,6 +128,23 @@ export interface AlertKeysNode {
     cosmos_node_cosmos_rest_data_not_obtained: string,
     cosmos_node_tendermint_rpc_data_not_obtained: string,
     cosmos_node_metric_not_found: string,
+    // Substrate Nodes
+    substrate_node_is_down: string,
+    substrate_node_change_in_best_block_height: string,
+    substrate_node_change_in_finalized_block_height: string,
+    substrate_node_syncing: string,
+    substrate_node_active: string,
+    substrate_node_disabled: string,
+    substrate_node_elected: string,
+    substrate_node_bonded_amount_changed: string,
+    substrate_node_controller_address_change: string,
+    substrate_node_no_synced_substrate_websocket_source: string,
+    substrate_node_substrate_websocket_data_not_obtained: string,
+    substrate_node_substrate_api_not_reachable: string,
+    substrate_node_no_heartbeat_and_block_authored_yet: string,
+    substrate_node_offline: string,
+    substrate_node_slashed: string,
+    substrate_node_payout_not_claimed: string,
 
     [key: string]: string
 }

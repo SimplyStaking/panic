@@ -2,13 +2,7 @@
 // when importing app from '../src/server'.
 process.env.UI_ACCESS_IP = '0.0.0.0';
 
-import {
-    AggregationCursor,
-    Collection,
-    FilterQuery,
-    MongoCallback,
-    MongoClientCommonOption
-} from 'mongodb';
+import {AggregationCursor, Collection, FilterQuery, MongoCallback, MongoClientCommonOption} from 'mongodb';
 import {Callback, RedisError} from 'redis';
 import request from 'supertest'
 import {app, mongoInterval, redisInterval, server} from '../src/server';
@@ -18,6 +12,8 @@ import {
     alertsMultipleSourcesMongoRet,
     alertsOverviewChainSourceEndpointRet,
     alertsOverviewChainSourceRedisRet,
+    alertsOverviewChainSourceWithUniqueIdentifierEndpointRet,
+    alertsOverviewChainSourceWithUniqueIdentifierRedisRet,
     alertsOverviewMultipleSourcesEndpointRet,
     alertsOverviewMultipleSourcesRedisRet,
     alertsOverviewSingleDockerHubRepoEndpointRet,
@@ -690,7 +686,7 @@ describe('Redis Alerts Overview POST Route', () => {
             {
                 result: {
                     unique_chain_id: {
-                        info: 36, critical: 0, warning: 0, error: 0,
+                        info: 52, critical: 0, warning: 0, error: 0,
                         problems: {}, releases: {}, tags: {}
                     }
                 }
@@ -799,6 +795,19 @@ describe('Redis Alerts Overview POST Route', () => {
             },
             alertsOverviewChainSourceRedisRet,
             alertsOverviewChainSourceEndpointRet],
+        ['a single chain which includes chain sourced alerts with unique identifier ' +
+        'and chain has some alerts is specified',
+            {
+                parentIds: {
+                    unique_chain_id: {
+                        include_chain_sourced_alerts: true,
+                        systems: [], nodes: [],
+                        github_repos: [], dockerhub_repos: []
+                    }
+                }
+            },
+            alertsOverviewChainSourceWithUniqueIdentifierRedisRet,
+            alertsOverviewChainSourceWithUniqueIdentifierEndpointRet],
         ['a single chain with multiple sources that have alerts',
             {
                 parentIds: {

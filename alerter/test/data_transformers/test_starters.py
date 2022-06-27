@@ -12,6 +12,7 @@ from src.data_transformers.contracts.chainlink import (
 from src.data_transformers.dockerhub import DockerHubDataTransformer
 from src.data_transformers.github import GitHubDataTransformer
 from src.data_transformers.networks.cosmos import CosmosNetworkTransformer
+from src.data_transformers.networks.substrate import SubstrateNetworkTransformer
 from src.data_transformers.node.chainlink import ChainlinkNodeDataTransformer
 from src.data_transformers.node.cosmos import CosmosNodeDataTransformer
 from src.data_transformers.node.evm import EVMNodeDataTransformer
@@ -20,7 +21,8 @@ from src.data_transformers.starters import (
     _initialise_data_transformer, start_system_data_transformer,
     start_github_data_transformer, start_chainlink_node_data_transformer,
     start_evm_node_data_transformer, start_chainlink_contracts_data_transformer,
-    start_cosmos_node_data_transformer, start_cosmos_network_data_transformer)
+    start_cosmos_node_data_transformer, start_cosmos_network_data_transformer,
+    start_substrate_network_data_transformer)
 from src.data_transformers.system import SystemDataTransformer
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
@@ -28,7 +30,8 @@ from src.utils.constants.names import (
     SYSTEM_DATA_TRANSFORMER_NAME, DOCKERHUB_DATA_TRANSFORMER_NAME,
     GITHUB_DATA_TRANSFORMER_NAME, CL_NODE_DATA_TRANSFORMER_NAME,
     EVM_NODE_DATA_TRANSFORMER_NAME, CL_CONTRACTS_DATA_TRANSFORMER_NAME,
-    COSMOS_NODE_DATA_TRANSFORMER_NAME, COSMOS_NETWORK_DATA_TRANSFORMER_NAME)
+    COSMOS_NODE_DATA_TRANSFORMER_NAME, COSMOS_NETWORK_DATA_TRANSFORMER_NAME,
+    SUBSTRATE_NETWORK_DATA_TRANSFORMER_NAME)
 
 
 class TestDataTransformersStarters(unittest.TestCase):
@@ -147,6 +150,19 @@ class TestDataTransformersStarters(unittest.TestCase):
         self.test_cosmos_network_dt._publishing_queue = \
             self.publishing_queue_cosmos_network_dt
 
+        # Substrate Network Data Transformer
+        self.substrate_network_dt_name = \
+            'test_substrate_network_data_transformer'
+        self.substrate_network_dt_publishing_queue_size = 1010
+        self.publishing_queue_substrate_network_dt = Queue(
+            self.substrate_network_dt_publishing_queue_size)
+        self.test_substrate_network_dt = SubstrateNetworkTransformer(
+            self.substrate_network_dt_name, self.dummy_logger, self.redis,
+            self.rabbitmq, self.substrate_network_dt_publishing_queue_size
+        )
+        self.test_substrate_network_dt._publishing_queue = \
+            self.publishing_queue_substrate_network_dt
+
     def tearDown(self) -> None:
         self.dummy_logger = None
         self.rabbitmq = None
@@ -166,6 +182,7 @@ class TestDataTransformersStarters(unittest.TestCase):
         self.test_cl_contracts_dt = None
         self.test_cosmos_node_dt = None
         self.test_cosmos_network_dt = None
+        self.test_substrate_network_dt = None
 
     @mock.patch("src.data_transformers.starters.create_logger")
     def test_initialise_transformer_logger_creates_and_returns_logger_correctly(
@@ -223,6 +240,8 @@ class TestDataTransformersStarters(unittest.TestCase):
          CosmosNodeDataTransformer.__name__),
         (CosmosNetworkTransformer, COSMOS_NETWORK_DATA_TRANSFORMER_NAME,
          CosmosNetworkTransformer.__name__),
+        (SubstrateNetworkTransformer, SUBSTRATE_NETWORK_DATA_TRANSFORMER_NAME,
+         SubstrateNetworkTransformer.__name__),
     ])
     @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
     def test_initialise_data_transformer_calls_initialise_logger_correct(
@@ -246,6 +265,7 @@ class TestDataTransformersStarters(unittest.TestCase):
          CL_CONTRACTS_DATA_TRANSFORMER_NAME,),
         (CosmosNodeDataTransformer, COSMOS_NODE_DATA_TRANSFORMER_NAME,),
         (CosmosNetworkTransformer, COSMOS_NETWORK_DATA_TRANSFORMER_NAME,),
+        (SubstrateNetworkTransformer, SUBSTRATE_NETWORK_DATA_TRANSFORMER_NAME,),
     ])
     @mock.patch("src.data_transformers.starters._initialise_transformer_redis")
     @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
@@ -279,6 +299,9 @@ class TestDataTransformersStarters(unittest.TestCase):
         (CosmosNetworkTransformer, 'self.cosmos_network_dt_name',
          'self.publishing_queue_cosmos_network_dt',
          'self.test_cosmos_network_dt'),
+        (SubstrateNetworkTransformer, 'self.substrate_network_dt_name',
+         'self.publishing_queue_substrate_network_dt',
+         'self.test_substrate_network_dt'),
     ])
     @mock.patch("src.data_transformers.starters._initialise_transformer_logger")
     @mock.patch("src.data_transformers.starters._initialise_transformer_redis")
@@ -385,10 +408,26 @@ class TestDataTransformersStarters(unittest.TestCase):
     def test_start_cosmos_network_transformer_calls_sub_functions_correctly(
             self, mock_start_transformer, mock_initialise_dt) -> None:
         mock_start_transformer.return_value = None
-        mock_initialise_dt.return_value = self.test_cosmos_node_dt
+        mock_initialise_dt.return_value = self.test_cosmos_network_dt
 
         start_cosmos_network_data_transformer()
 
-        mock_start_transformer.assert_called_once_with(self.test_cosmos_node_dt)
+        mock_start_transformer.assert_called_once_with(
+            self.test_cosmos_network_dt)
         mock_initialise_dt.assert_called_once_with(
             CosmosNetworkTransformer, COSMOS_NETWORK_DATA_TRANSFORMER_NAME)
+
+    @mock.patch("src.data_transformers.starters._initialise_data_transformer")
+    @mock.patch('src.data_transformers.starters.start_transformer')
+    def test_start_substrate_network_transformer_calls_sub_functions_correctly(
+            self, mock_start_transformer, mock_initialise_dt) -> None:
+        mock_start_transformer.return_value = None
+        mock_initialise_dt.return_value = self.test_substrate_network_dt
+
+        start_substrate_network_data_transformer()
+
+        mock_start_transformer.assert_called_once_with(
+            self.test_substrate_network_dt)
+        mock_initialise_dt.assert_called_once_with(
+            SubstrateNetworkTransformer,
+            SUBSTRATE_NETWORK_DATA_TRANSFORMER_NAME)

@@ -1503,7 +1503,7 @@ class TestChainlinkNodeMonitor(unittest.TestCase):
         self.assertEqual(mock_get_symbol.call_count, 1)
         self.assertEqual(self.test_monitor.currency_symbol, self.test_symbol)
 
-        self.test_monitor.currency_symbol_limiter\
+        self.test_monitor.currency_symbol_limiter \
             .set_last_time_that_did_task(parser.parse("2012-01-01 10:00"))
 
         self.assertTrue(self.test_monitor.currency_symbol_limiter.can_do_task())

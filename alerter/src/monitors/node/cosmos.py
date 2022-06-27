@@ -821,7 +821,7 @@ class CosmosNodeMonitor(CosmosMonitor):
     def _process_error(self, error: PANICException) -> Dict:
         """
         This function attempts to process the error which occurred when
-        retrieving data.
+        retrieving data
         :param error: The detected error
         :return: A dict with the error data together with some meta-data
         """

@@ -11,9 +11,9 @@ from src.abstract.publisher_subscriber import \
     QueuingPublisherSubscriberComponent
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants.monitorables import MonitorableType
-from src.utils.constants.rabbitmq import (HEALTH_CHECK_EXCHANGE,
-                                          HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
-                                          MONITORABLE_EXCHANGE)
+from src.utils.constants.rabbitmq import (
+    HEALTH_CHECK_EXCHANGE, HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY,
+    MONITORABLE_EXCHANGE)
 from src.utils.logging import log_and_print
 
 
@@ -107,7 +107,7 @@ class MonitorsManager(QueuingPublisherSubscriberComponent, ABC):
     def send_monitorable_data(self, routing_key: str, data: Dict) -> None:
         """
         This function sends monitorable data to the monitorable RabbitMQ
-        exchange.
+        exchange
         :param routing_key: The routing key to use
         :param data: The data to be sent
         """

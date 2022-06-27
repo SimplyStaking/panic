@@ -1,15 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-  Typography,
-  Box,
-  Grid,
-  Switch,
-  FormControlLabel,
+  Box, FormControlLabel, Grid, Switch, Typography,
 } from '@material-ui/core';
 import Divider from '@material-ui/core/Divider';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { defaultTheme } from 'components/theme/default';
+
+const isMonitorNetworkActive = (chainConfig, currentChain, substrateNodesConfig) => {
+  const nodeInChain = chainConfig.byId[currentChain].nodes[0];
+  return substrateNodesConfig.byId[nodeInChain].monitor_network;
+};
 
 const MonitorNetworkNodesForm = ({
   values,
@@ -18,6 +19,7 @@ const MonitorNetworkNodesForm = ({
   setFieldValue,
   chainConfig,
   currentChain,
+  substrateNodesConfig,
 }) => (chainConfig.byId[currentChain].nodes.length !== 0
   ? (
     <MuiThemeProvider theme={defaultTheme}>
@@ -46,7 +48,11 @@ const MonitorNetworkNodesForm = ({
                   <FormControlLabel
                     control={(
                       <Switch
-                        checked={values.monitor_network}
+                        checked={isMonitorNetworkActive(
+                          chainConfig,
+                          currentChain,
+                          substrateNodesConfig,
+                        )}
                         onClick={() => {
                           setFieldValue('monitor_network', !values.monitor_network);
                           const payload = {
@@ -79,6 +85,23 @@ MonitorNetworkNodesForm.propTypes = {
     }).isRequired,
   }).isRequired,
   currentChain: PropTypes.string.isRequired,
+  substrateNodesConfig: PropTypes.shape({
+    byId: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.string,
+      parent_id: PropTypes.string,
+      name: PropTypes.string,
+      node_ws_url: PropTypes.string,
+      exporter_url: PropTypes.string,
+      monitor_system: PropTypes.bool,
+      is_validator: PropTypes.bool,
+      monitor_node: PropTypes.bool,
+      is_archive_node: PropTypes.bool,
+      use_as_data_source: PropTypes.bool,
+      stash_address: PropTypes.string,
+      governance_addresses: PropTypes.arrayOf(PropTypes.string),
+      monitor_network: PropTypes.bool,
+    })),
+  }).isRequired,
   values: PropTypes.shape({
     monitor_network: PropTypes.bool.isRequired,
   }).isRequired,

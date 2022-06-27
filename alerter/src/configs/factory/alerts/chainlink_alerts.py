@@ -81,7 +81,7 @@ class ChainlinkNodeAlertsConfigsFactory(ChainlinkAlertsConfigsFactory):
         # same, if not there is some misconfiguration
         parent_ids = {
             configuration['parent_id']
-            for _, configuration in sent_configs.items()
+            for configuration in sent_configs.values()
         }
         if len(parent_ids) != 1:
             raise ParentIdsMissMatchInAlertsConfiguration(
@@ -89,7 +89,7 @@ class ChainlinkNodeAlertsConfigsFactory(ChainlinkAlertsConfigsFactory):
 
         filtered = {
             config['name']: copy.deepcopy(config)
-            for _, config in sent_configs.items()
+            for config in sent_configs.values()
         }
 
         cl_node_alerts_config = ChainlinkNodeAlertsConfig(
@@ -123,7 +123,7 @@ class ChainlinkContractAlertsConfigsFactory(ChainlinkAlertsConfigsFactory):
         # same, if not there is some misconfiguration
         parent_ids = {
             configuration['parent_id']
-            for _, configuration in sent_configs.items()
+            for configuration in sent_configs.values()
         }
         if len(parent_ids) != 1:
             raise ParentIdsMissMatchInAlertsConfiguration(
@@ -131,7 +131,7 @@ class ChainlinkContractAlertsConfigsFactory(ChainlinkAlertsConfigsFactory):
 
         filtered = {
             config['name']: copy.deepcopy(config)
-            for _, config in sent_configs.items()
+            for config in sent_configs.values()
         }
 
         cl_contracts_alerts_config = ChainlinkContractAlertsConfig(

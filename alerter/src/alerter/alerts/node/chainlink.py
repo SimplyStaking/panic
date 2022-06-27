@@ -19,7 +19,7 @@ class NoChangeInHeightAlert(Alert):
                 timedelta(seconds=duration),
                 "{hours}h, {minutes}m, {seconds}s"), last_processed_block),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight)
+            GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight, [origin_id])
 
 
 class BlockHeightUpdatedAlert(Alert):
@@ -31,7 +31,7 @@ class BlockHeightUpdatedAlert(Alert):
             "{} is now receiving blocks again. Last synced block: {}.".format(
                 origin_name, last_processed_block),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight)
+            GroupedChainlinkNodeAlertsMetricCode.NoChangeInHeight, [origin_id])
 
 
 class NoChangeInTotalHeadersReceivedAlert(Alert):
@@ -46,7 +46,8 @@ class NoChangeInTotalHeadersReceivedAlert(Alert):
                                        "{hours}h, {minutes}m, {seconds}s"),
                 current_headers_received),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived)
+            GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived,
+            [origin_id])
 
 
 class ReceivedANewHeaderAlert(Alert):
@@ -58,7 +59,8 @@ class ReceivedANewHeaderAlert(Alert):
             "{} received a new block header. {} headers received in "
             "total.".format(origin_name, current_headers_received),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived)
+            GroupedChainlinkNodeAlertsMetricCode.NoChangeInTotalHeadersReceived,
+            [origin_id])
 
 
 class MaxUnconfirmedBlocksIncreasedAboveThresholdAlert(Alert):
@@ -74,7 +76,8 @@ class MaxUnconfirmedBlocksIncreasedAboveThresholdAlert(Alert):
                                strfdelta(timedelta(seconds=duration),
                                          "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold)
+            GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold,
+            [origin_id])
 
 
 class MaxUnconfirmedBlocksDecreasedBelowThresholdAlert(Alert):
@@ -88,7 +91,8 @@ class MaxUnconfirmedBlocksDecreasedBelowThresholdAlert(Alert):
             "for has DECREASED below {} threshold. Current value: {}.".format(
                 origin_name, threshold_severity, current_value),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold)
+            GroupedChainlinkNodeAlertsMetricCode.MaxUnconfirmedBlocksThreshold,
+            [origin_id])
 
 
 class ChangeInSourceNodeAlert(Alert):
@@ -99,7 +103,8 @@ class ChangeInSourceNodeAlert(Alert):
             "{} restarted. PANIC will use {} as a source node for {}.".format(
                 new_source, new_source, origin_name),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.ChangeInSourceNode)
+            GroupedChainlinkNodeAlertsMetricCode.ChangeInSourceNode,
+            [origin_id])
 
 
 class GasBumpIncreasedOverNodeGasPriceLimitAlert(Alert):
@@ -110,7 +115,7 @@ class GasBumpIncreasedOverNodeGasPriceLimitAlert(Alert):
             "Gas bump increased over {}'s gas price limit.".format(origin_name),
             severity, timestamp, parent_id, origin_id,
             GroupedChainlinkNodeAlertsMetricCode
-                .GasBumpIncreasedOverNodeGasPriceLimit)
+                .GasBumpIncreasedOverNodeGasPriceLimit, [origin_id])
 
 
 class NoOfUnconfirmedTxsIncreasedAboveThresholdAlert(Alert):
@@ -126,7 +131,8 @@ class NoOfUnconfirmedTxsIncreasedAboveThresholdAlert(Alert):
                     timedelta(seconds=duration),
                     "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.NoOfUnconfirmedTxsThreshold)
+            GroupedChainlinkNodeAlertsMetricCode.NoOfUnconfirmedTxsThreshold,
+            [origin_id])
 
 
 class NoOfUnconfirmedTxsDecreasedBelowThresholdAlert(Alert):
@@ -140,7 +146,8 @@ class NoOfUnconfirmedTxsDecreasedBelowThresholdAlert(Alert):
             "threshold. Current value: {}.".format(
                 origin_name, threshold_severity, current_value),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.NoOfUnconfirmedTxsThreshold)
+            GroupedChainlinkNodeAlertsMetricCode.NoOfUnconfirmedTxsThreshold,
+            [origin_id])
 
 
 class TotalErroredJobRunsIncreasedAboveThresholdAlert(Alert):
@@ -156,7 +163,8 @@ class TotalErroredJobRunsIncreasedAboveThresholdAlert(Alert):
                     timedelta(seconds=duration),
                     "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold)
+            GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold,
+            [origin_id])
 
 
 class TotalErroredJobRunsDecreasedBelowThresholdAlert(Alert):
@@ -172,7 +180,8 @@ class TotalErroredJobRunsDecreasedBelowThresholdAlert(Alert):
                     timedelta(seconds=duration),
                     "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold)
+            GroupedChainlinkNodeAlertsMetricCode.TotalErroredJobRunsThreshold,
+            [origin_id])
 
 
 class BalanceIncreasedAboveThresholdAlert(Alert):
@@ -185,7 +194,7 @@ class BalanceIncreasedAboveThresholdAlert(Alert):
             "value: {} {}.".format(
                 origin_name, threshold_severity, current_value, symbol),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold)
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold, [origin_id])
 
 
 class BalanceDecreasedBelowThresholdAlert(Alert):
@@ -198,7 +207,7 @@ class BalanceDecreasedBelowThresholdAlert(Alert):
             "value: {} {}.".format(
                 origin_name, threshold_severity, current_value, symbol),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold)
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold, [origin_id])
 
 
 class BalanceToppedUpAlert(Alert):
@@ -211,7 +220,7 @@ class BalanceToppedUpAlert(Alert):
             "value: {} {}.".format(
                 origin_name, increase, symbol, current_value, symbol),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.BalanceTopUp)
+            GroupedChainlinkNodeAlertsMetricCode.BalanceTopUp, [origin_id])
 
 
 class InvalidUrlAlert(Alert):
@@ -220,7 +229,8 @@ class InvalidUrlAlert(Alert):
         super().__init__(
             ChainlinkNodeAlertCode.InvalidUrlAlert, "{}: {}".format(
                 origin_name, message), severity, timestamp, parent_id,
-            origin_id, GroupedChainlinkNodeAlertsMetricCode.InvalidUrl)
+            origin_id, GroupedChainlinkNodeAlertsMetricCode.InvalidUrl,
+            [origin_id])
 
 
 class ValidUrlAlert(Alert):
@@ -229,7 +239,8 @@ class ValidUrlAlert(Alert):
         super().__init__(
             ChainlinkNodeAlertCode.ValidUrlAlert, "{}: {}".format(
                 origin_name, message), severity, timestamp, parent_id,
-            origin_id, GroupedChainlinkNodeAlertsMetricCode.InvalidUrl)
+            origin_id, GroupedChainlinkNodeAlertsMetricCode.InvalidUrl,
+            [origin_id])
 
 
 class PrometheusSourceIsDownAlert(Alert):
@@ -241,7 +252,8 @@ class PrometheusSourceIsDownAlert(Alert):
             "checked: {}.".format(origin_name,
                                   datetime.fromtimestamp(timestamp)),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown)
+            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown,
+            [origin_id])
 
 
 class PrometheusSourceBackUpAgainAlert(Alert):
@@ -253,7 +265,8 @@ class PrometheusSourceBackUpAgainAlert(Alert):
             "successful monitor at: {}.".format(
                 origin_name, datetime.fromtimestamp(timestamp)),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown)
+            GroupedChainlinkNodeAlertsMetricCode.PrometheusSourceIsDown,
+            [origin_id])
 
 
 class NodeWentDownAtAlert(Alert):
@@ -264,7 +277,7 @@ class NodeWentDownAtAlert(Alert):
             "Node {} is down, last time checked: {}.".format(
                 origin_name, datetime.fromtimestamp(timestamp)),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown)
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown, [origin_id])
 
 
 class NodeBackUpAgainAlert(Alert):
@@ -275,7 +288,7 @@ class NodeBackUpAgainAlert(Alert):
             "Node {} is back up, last successful monitor at: {}.".format(
                 origin_name, datetime.fromtimestamp(timestamp)),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown)
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown, [origin_id])
 
 
 class NodeStillDownAlert(Alert):
@@ -287,7 +300,7 @@ class NodeStillDownAlert(Alert):
                 origin_name, strfdelta(timedelta(seconds=difference),
                                        "{hours}h, {minutes}m, {seconds}s")),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown)
+            GroupedChainlinkNodeAlertsMetricCode.NodeIsDown, [origin_id])
 
 
 class MetricNotFoundErrorAlert(Alert):
@@ -297,7 +310,7 @@ class MetricNotFoundErrorAlert(Alert):
             ChainlinkNodeAlertCode.MetricNotFoundErrorAlert,
             "{}: {}".format(origin_name, message),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.MetricNotFound)
+            GroupedChainlinkNodeAlertsMetricCode.MetricNotFound, [origin_id])
 
 
 class MetricFoundAlert(Alert):
@@ -307,4 +320,4 @@ class MetricFoundAlert(Alert):
             ChainlinkNodeAlertCode.MetricFoundAlert,
             "{}: {}".format(origin_name, message),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.MetricNotFound)
+            GroupedChainlinkNodeAlertsMetricCode.MetricNotFound, [origin_id])

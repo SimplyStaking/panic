@@ -12,13 +12,15 @@ import {
 import Divider from '@material-ui/core/Divider';
 import InfoIcon from '@material-ui/icons/Info';
 import { MuiThemeProvider } from '@material-ui/core/styles';
-import { PingPrometheus } from 'utils/buttons';
+import TestButtonWithStatus from 'utils/TestButtonWithStatus';
 import { defaultTheme, theme } from 'components/theme/default';
 import Button from 'components/material_ui/CustomButtons/Button';
 import useStyles from 'assets/jss/material-kit-react/views/landingPageSections/productStyle';
 import CssTextField from 'assets/jss/custom-jss/CssTextField';
 import GridContainer from 'components/material_ui/Grid/GridContainer';
 import GridItem from 'components/material_ui/Grid/GridItem';
+import { Autocomplete } from '@material-ui/lab';
+import { pingSubstrate, pingPrometheus } from 'utils/data';
 
 let isDirty = false;
 
@@ -31,6 +33,10 @@ const NodesForm = ({
     isDirty = dirty;
     toggleDirtyForm({ isDirty });
   }
+
+  const updateGovernanceAddresses = (event, governanceAddress) => {
+    setFieldValue('governance_addresses', governanceAddress);
+  };
 
   return (
     <MuiThemeProvider theme={defaultTheme}>
@@ -62,13 +68,13 @@ const NodesForm = ({
                 <Grid item xs={12}>
                   <CssTextField
                     id="chain-name-outlined-full-width"
-                    error={!!errors.name}
                     value={values.name}
                     label="Node name"
                     type="text"
                     style={{ margin: 8 }}
                     name="name"
                     placeholder={data.nodeForm.nameHolder}
+                    error={!!errors.name}
                     helperText={errors.name ? errors.name : ''}
                     onChange={handleChange}
                     fullWidth
@@ -101,8 +107,10 @@ const NodesForm = ({
                     name="node_ws_url"
                     placeholder={data.nodeForm.websocketHolder}
                     onChange={handleChange}
+                    error={!!errors.node_ws_url}
+                    helperText={errors.node_ws_url ? errors.node_ws_url : ''}
                     fullWidth
-                    disabled
+                    disabled={!values.monitor_node}
                     margin="normal"
                     InputLabelProps={{
                       shrink: true,
@@ -127,148 +135,44 @@ const NodesForm = ({
                     <FormControlLabel
                       control={(
                         <Switch
-                          checked={values.monitor_ws}
+                          checked={values.monitor_node}
                           onClick={() => {
-                            setFieldValue('monitor_ws', !values.monitor_ws);
+                            setFieldValue('monitor_node', !values.monitor_node);
                           }}
-                          name="monitor_ws"
+                          name="monitor_node"
                           color="primary"
                         />
                       )}
                       label="Monitor"
                       labelPlacement="start"
-                      disabled
                     />
                   </Grid>
                 </Grid>
                 <Grid item xs={2}>
-                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
-                    <PingPrometheus disabled prometheusUrl="" metric="" />
-                  </Grid>
-                </Grid>
-                <Grid item xs={8}>
-                  <CssTextField
-                    id="telemetry-url-outlined-full-width"
-                    value={values.telemetry_url}
-                    label="Telemetry URL"
-                    type="text"
-                    style={{ margin: 8 }}
-                    name="telemetry_url"
-                    placeholder={data.nodeForm.telemetryHolder}
-                    onChange={handleChange}
-                    fullWidth
-                    margin="normal"
-                    disabled
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                    variant="outlined"
-                    autoComplete="off"
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <MuiThemeProvider theme={theme}>
-                            <Tooltip title={data.nodeForm.telemetryTip} placement="left">
-                              <InfoIcon />
-                            </Tooltip>
-                          </MuiThemeProvider>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={2}>
-                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          checked={values.monitor_telemetry}
-                          onClick={() => {
-                            setFieldValue('monitor_telemetry', !values.monitor_telemetry);
-                          }}
-                          name="monitor_telemetry"
-                          color="primary"
-                        />
-                      )}
-                      label="Monitor"
-                      labelPlacement="start"
-                      disabled
+                  <Grid container direction="row" justify="flex-end" alignItems="center">
+                    <TestButtonWithStatus
+                      url={values.node_ws_url}
+                      disabled={!values.monitor_node}
+                      pingMethod={pingSubstrate}
                     />
-                  </Grid>
-                </Grid>
-                <Grid item xs={2}>
-                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
-                    <PingPrometheus disabled prometheusUrl="" metric="" />
-                  </Grid>
-                </Grid>
-                <Grid item xs={8}>
-                  <CssTextField
-                    id="prometheus-url-outlined-full-width"
-                    value={values.prometheus_url}
-                    label="Prometheus URL"
-                    type="text"
-                    style={{ margin: 8 }}
-                    name="prometheus_url"
-                    placeholder={data.nodeForm.prometheusHolder}
-                    onChange={handleChange}
-                    fullWidth
-                    margin="normal"
-                    disabled
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                    variant="outlined"
-                    autoComplete="off"
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <MuiThemeProvider theme={theme}>
-                            <Tooltip title={data.nodeForm.prometheusTip} placement="left">
-                              <InfoIcon />
-                            </Tooltip>
-                          </MuiThemeProvider>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={2}>
-                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          checked={values.monitor_prometheus}
-                          onClick={() => {
-                            setFieldValue('monitor_prometheus', !values.monitor_prometheus);
-                          }}
-                          name="monitor_prometheus"
-                          color="primary"
-                        />
-                      )}
-                      label="Monitor"
-                      labelPlacement="start"
-                      disabled
-                    />
-                  </Grid>
-                </Grid>
-                <Grid item xs={2}>
-                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
-                    <PingPrometheus disabled prometheusUrl="" metric="" />
                   </Grid>
                 </Grid>
                 <Grid item xs={8}>
                   <CssTextField
                     id="node-exporter-outlined-full-width"
-                    error={!!errors.exporter_url}
                     value={values.exporter_url}
                     label="Node Exporter URL"
                     type="text"
                     style={{ margin: 8 }}
                     name="exporter_url"
                     placeholder={data.nodeForm.exporterUrlHolder}
-                    helperText={errors.exporter_url ? errors.exporter_url : ''}
+                    error={!!errors.exporter_url && values.monitor_system}
+                    helperText={
+                      errors.exporter_url && values.monitor_system ? errors.exporter_url : ''
+                    }
                     onChange={handleChange}
                     fullWidth
+                    disabled={!values.monitor_system}
                     margin="normal"
                     InputLabelProps={{
                       shrink: true,
@@ -307,11 +211,13 @@ const NodesForm = ({
                   </Grid>
                 </Grid>
                 <Grid item xs={2}>
-                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
-                    <PingPrometheus
-                      disabled={false}
-                      prometheusUrl={values.exporter_url}
+                  <Grid container direction="row" justify="flex-end" alignItems="center">
+                    <TestButtonWithStatus
+                      disabled={!values.monitor_system}
+                      url={values.exporter_url}
                       metric="go_memstats_alloc_bytes_total"
+                      pingMethod={pingPrometheus}
+
                     />
                   </Grid>
                 </Grid>
@@ -324,9 +230,13 @@ const NodesForm = ({
                     style={{ margin: 8 }}
                     name="stash_address"
                     placeholder={data.nodeForm.stashAddressHolder}
+                    error={!!errors.stash_address && values.is_validator}
+                    helperText={
+                      errors.stash_address && values.is_validator ? errors.stash_address : ''
+                    }
                     onChange={handleChange}
                     fullWidth
-                    disabled
+                    disabled={!values.is_validator}
                     margin="normal"
                     InputLabelProps={{
                       shrink: true,
@@ -346,37 +256,54 @@ const NodesForm = ({
                     }}
                   />
                 </Grid>
-                <Grid item xs={4} />
                 <Grid item xs={2}>
-                  <Box pl={1}>
-                    <Typography> Node is Validator </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={1}>
-                  <FormControlLabel
-                    control={(
-                      <Switch
-                        checked={values.is_validator}
-                        onClick={() => {
-                          setFieldValue('is_validator', !values.is_validator);
-                        }}
-                        name="is_validator"
-                        color="primary"
-                      />
-                    )}
-                    label=""
-                    disabled
-                  />
-                </Grid>
-                <Grid item xs={1}>
-                  <Grid container justifyContent="flex-start">
-                    <MuiThemeProvider theme={theme}>
-                      <Tooltip title={data.nodeForm.isValidatorTip} placement="left">
-                        <InfoIcon />
-                      </Tooltip>
-                    </MuiThemeProvider>
+                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={values.is_validator}
+                          onClick={() => {
+                            setFieldValue('is_validator', !values.is_validator);
+                          }}
+                          name="is_validator"
+                          color="primary"
+                        />
+                      )}
+                      label="Validator"
+                      labelPlacement="start"
+                    />
                   </Grid>
                 </Grid>
+                <Grid item xs={2} />
+                <Grid item xs={8}>
+                  <Autocomplete
+                    multiple
+                    freeSolo
+                    options={[]}
+                    onChange={updateGovernanceAddresses}
+                    value={values.governance_addresses}
+                    renderInput={(params) => (
+                      <CssTextField
+                        // eslint-disable-next-line react/jsx-props-no-spreading
+                        {...params}
+                        id="governance-addresses-outlined-full-width"
+                        label="Governance Address"
+                        type="text"
+                        style={{ margin: 8 }}
+                        name="governance_addresses"
+                        placeholder={data.nodeForm.governanceAddressHolder}
+                        fullWidth
+                        margin="normal"
+                        InputLabelProps={{
+                          shrink: true,
+                        }}
+                        variant="outlined"
+                        autoComplete="off"
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={4} />
                 <Grid item xs={2}>
                   <Typography> Is Archive Node </Typography>
                 </Grid>
@@ -393,43 +320,12 @@ const NodesForm = ({
                       />
                     )}
                     label=""
-                    disabled
                   />
                 </Grid>
                 <Grid item xs={1}>
                   <Grid container justifyContent="flex-start">
                     <MuiThemeProvider theme={theme}>
                       <Tooltip title={data.nodeForm.isArchiveTip} placement="left">
-                        <InfoIcon />
-                      </Tooltip>
-                    </MuiThemeProvider>
-                  </Grid>
-                </Grid>
-                <Grid item xs={4} />
-                <Grid item xs={2}>
-                  <Box pl={1}>
-                    <Typography> Monitor Node </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={1}>
-                  <FormControlLabel
-                    control={(
-                      <Switch
-                        checked={values.monitor_node}
-                        onClick={() => {
-                          setFieldValue('monitor_node', !values.monitor_node);
-                        }}
-                        name="monitor_node"
-                        color="primary"
-                      />
-                    )}
-                    label=""
-                  />
-                </Grid>
-                <Grid item xs={1}>
-                  <Grid container justifyContent="flex-start">
-                    <MuiThemeProvider theme={theme}>
-                      <Tooltip title={data.nodeForm.monitorNodeTip} placement="left">
                         <InfoIcon />
                       </Tooltip>
                     </MuiThemeProvider>
@@ -451,7 +347,6 @@ const NodesForm = ({
                       />
                     )}
                     label=""
-                    disabled
                   />
                 </Grid>
                 <Grid item xs={1}>
@@ -463,8 +358,8 @@ const NodesForm = ({
                     </MuiThemeProvider>
                   </Grid>
                 </Grid>
-                <Grid item xs={4}>
-                  <Grid container direction="row" justifyContent="flex-end" alignItems="center">
+                <Grid item xs={2}>
+                  <Grid container direction="row" justifyContent="center" alignItems="center">
                     <Button
                       color="primary"
                       size="md"
@@ -488,21 +383,21 @@ NodesForm.propTypes = {
   errors: PropTypes.shape({
     name: PropTypes.string,
     exporter_url: PropTypes.string,
+    node_ws_url: PropTypes.string,
+    governance_addresses: PropTypes.string,
+    stash_address: PropTypes.string,
   }).isRequired,
   handleSubmit: PropTypes.func.isRequired,
   values: PropTypes.shape({
     name: PropTypes.string.isRequired,
-    node_ws_url: PropTypes.string,
-    monitor_ws: PropTypes.bool.isRequired,
-    telemetry_url: PropTypes.string,
-    monitor_telemetry: PropTypes.bool.isRequired,
-    prometheus_url: PropTypes.string,
-    monitor_prometheus: PropTypes.bool.isRequired,
-    exporter_url: PropTypes.string,
-    monitor_system: PropTypes.bool.isRequired,
-    stash_address: PropTypes.string,
-    is_validator: PropTypes.bool.isRequired,
+    node_ws_url: PropTypes.string.isRequired,
     monitor_node: PropTypes.bool.isRequired,
+    exporter_url: PropTypes.string.isRequired,
+    monitor_system: PropTypes.bool.isRequired,
+    governance_addresses: PropTypes.arrayOf(PropTypes.string).isRequired,
+    monitor_network: PropTypes.bool.isRequired,
+    stash_address: PropTypes.string.isRequired,
+    is_validator: PropTypes.bool.isRequired,
     is_archive_node: PropTypes.bool.isRequired,
     use_as_data_source: PropTypes.bool.isRequired,
   }).isRequired,
@@ -518,14 +413,12 @@ NodesForm.propTypes = {
       nameTip: PropTypes.string.isRequired,
       websocketHolder: PropTypes.string.isRequired,
       websocketTip: PropTypes.string.isRequired,
-      telemetryHolder: PropTypes.string.isRequired,
-      telemetryTip: PropTypes.string.isRequired,
-      prometheusHolder: PropTypes.string.isRequired,
-      prometheusTip: PropTypes.string.isRequired,
       exporterUrlHolder: PropTypes.string.isRequired,
       exporterUrlTip: PropTypes.string.isRequired,
-      stashAddressHolder: PropTypes.string.isRequired,
+      governanceAddressTip: PropTypes.string.isRequired,
+      governanceAddressHolder: PropTypes.string.isRequired,
       stashAddressTip: PropTypes.string.isRequired,
+      stashAddressHolder: PropTypes.string.isRequired,
       isValidatorTip: PropTypes.string.isRequired,
       isArchiveTip: PropTypes.string.isRequired,
       monitorNodeTip: PropTypes.string.isRequired,

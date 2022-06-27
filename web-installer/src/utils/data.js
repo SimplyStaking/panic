@@ -22,6 +22,10 @@ function pingTendermintRPC(httpUrl) {
     { httpUrl });
 }
 
+function pingSubstrate(substrateUrl) {
+  return sendData('/server/substrate/rpc', {}, { substrateUrl });
+}
+
 function pingEthRPC(httpUrl) {
   return sendData('/server/ethereum/rpc', {},
     { httpUrl });
@@ -108,5 +112,5 @@ export {
   authenticate, sendTestPagerDuty, sendTestOpsGenie, refreshAccessToken,
   sendConfig, saveAccount, deleteAccount, getConfigPaths, getConfig,
   loadAccounts, deleteConfigs, pingDockerHub, pingPrometheus, pingEthRPC,
-  pingCosmosRestUrl, pingTendermintRPC,
+  pingCosmosRestUrl, pingTendermintRPC, pingSubstrate,
 };

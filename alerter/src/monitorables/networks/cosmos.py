@@ -19,11 +19,11 @@ class CosmosNetwork(Network):
         return self._proposals
 
     @property
-    def last_monitored_cosmos_rest(self) -> List:
+    def last_monitored_cosmos_rest(self) -> float:
         return self._last_monitored_cosmos_rest
 
     @staticmethod
-    def _is_new_proposals_valid(new_proposals: List[Dict]) -> bool:
+    def _are_new_proposals_valid(new_proposals: List[Dict]) -> bool:
         schema = Schema(Or([
             {
                 'proposal_id': Or(int, None),
@@ -52,7 +52,7 @@ class CosmosNetwork(Network):
         return schema.is_valid(new_proposals)
 
     def set_proposals(self, new_proposals: List[Dict]):
-        if self._is_new_proposals_valid(new_proposals):
+        if self._are_new_proposals_valid(new_proposals):
             self._proposals = new_proposals
         else:
             raise InvalidDictSchemaException('new_proposals')

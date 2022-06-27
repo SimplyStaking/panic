@@ -383,7 +383,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         data_for_alerting = []
         current = float(self.test_alerts_config.balance_amount[
                             'critical_threshold']) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -410,7 +411,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
 
         current = float(
             self.test_alerts_config.balance_amount[threshold_var]) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -437,7 +439,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         # Send first warning alert
         current = float(
             self.test_alerts_config.balance_amount['warning_threshold']) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -449,7 +452,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         data_for_alerting.clear()
 
         # Classify again to check if a warning alert is raised
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -473,7 +477,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         # First critical below threshold alert
         current = float(self.test_alerts_config.balance_amount[
                             'critical_threshold']) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -489,7 +494,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         pad = float(self.test_alerts_config.balance_amount[
                         'critical_repeat']) - 1
         alert_timestamp = datetime.now().timestamp() + pad
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -504,7 +510,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         pad = float(self.test_alerts_config.balance_amount[
                         'critical_repeat'])
         alert_timestamp = datetime.now().timestamp() + pad
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -532,7 +539,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         # First critical below threshold alert
         current = float(self.test_alerts_config.balance_amount[
                             'critical_threshold']) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -548,7 +556,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         pad = float(self.test_alerts_config.balance_amount[
                         'critical_repeat'])
         alert_timestamp = datetime.now().timestamp() + pad
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -575,7 +584,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         # First below threshold alert
         current = float(self.test_alerts_config.balance_amount[
                             threshold_var]) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -592,7 +602,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         current = float(self.test_alerts_config.balance_amount[
                             'warning_threshold']) + 1
         alert_timestamp = datetime.now().timestamp()
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -623,7 +634,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         # Send warning decrease below threshold alert
         current = float(self.test_alerts_config.balance_amount[
                             'warning_threshold']) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -636,7 +648,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         # Send critical decrease below threshold alert
         current = float(self.test_alerts_config.balance_amount[
                             'critical_threshold']) - 1
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,
@@ -651,7 +664,8 @@ class TestChainlinkNodeAlertingFactory(unittest.TestCase):
         current = float(self.test_alerts_config.balance_amount[
                             'critical_threshold']) + 1
         alert_timestamp = datetime.now().timestamp() + 10
-        self.test_factory_instance.classify_thresholded_alert_reverse_chainlink_node(
+        self.test_factory_instance \
+            .classify_thresholded_alert_reverse_chainlink_node(
             current, self.test_alerts_config.balance_amount, 'TEST',
             BalanceIncreasedAboveThresholdAlert,
             BalanceDecreasedBelowThresholdAlert, data_for_alerting,

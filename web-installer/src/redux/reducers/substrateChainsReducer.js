@@ -7,6 +7,7 @@ import {
   ADD_CHAIN_SUBSTRATE,
   ADD_NODE_SUBSTRATE,
   REMOVE_NODE_SUBSTRATE,
+  TOGGLE_NODE_MONITORING_SUBSTRATE,
   REMOVE_CHAIN_SUBSTRATE,
   UPDATE_CHAIN_NAME_SUBSTRATE,
   RESET_CHAIN_SUBSTRATE,
@@ -26,18 +27,30 @@ import {
 } from 'redux/actions/types';
 
 const substrateRepeatAlerts = {
+  byId: {},
+  allIds: [],
+};
+
+const substrateTimeWindowAlerts = {
+  byId: {},
+  allIds: [],
+};
+
+const substrateThresholdAlerts = {
   byId: {
     1: {
-      name: 'Cannot access validator',
+      name: 'Cannot Access Validator',
       identifier: 'cannot_access_validator',
-      description: 'If a validator is inaccessible you will be alerted.',
+      description: 'Raised when a validator is unaccessible.',
       adornment: 'Seconds',
+      adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        repeat: 60,
+        threshold: 0,
         enabled: true,
       },
       critical: {
+        threshold: 120,
         repeat: 300,
         repeat_enabled: true,
         enabled: true,
@@ -45,100 +58,182 @@ const substrateRepeatAlerts = {
       enabled: true,
     },
     2: {
-      name: 'Cannot access node',
+      name: 'Cannot Access Node',
       identifier: 'cannot_access_node',
-      description: 'If a node is inaccessible you will be alerted.',
+      description: 'Raised when a node is unaccessible.',
       adornment: 'Seconds',
+      adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        repeat: 300,
+        threshold: 0,
         enabled: true,
       },
       critical: {
-        repeat: 300,
+        threshold: 300,
+        repeat: 600,
         repeat_enabled: true,
         enabled: false,
       },
       enabled: true,
     },
     3: {
-      name: 'Lost connection with specific peer',
-      identifier: 'lost_connection_with_peer',
-      description:
-        'If a node loses connection with a specific peer after some '
-        + 'time you will receive an alert.',
+      name: 'No Change in Validator Best Block Height',
+      identifier: 'no_change_in_best_block_height_validator',
+      description: 'Raised when the best block height of a validator is unchanged.',
       adornment: 'Seconds',
+      adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        repeat: 300,
+        threshold: 180,
         enabled: true,
       },
       critical: {
-        repeat: 500,
+        threshold: 300,
+        repeat: 180,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    4: {
+      name: 'No Change in Node Best Block Height',
+      identifier: 'no_change_in_best_block_height_node',
+      description: 'Raised when the best block height of a node is unchanged.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 180,
+        enabled: true,
+      },
+      critical: {
+        threshold: 300,
+        repeat: 300,
         repeat_enabled: true,
         enabled: false,
       },
       enabled: true,
     },
-  },
-  allIds: ['1', '2', '3'],
-};
-
-const substrateTimeWindowAlerts = {
-  byId: {
-    4: {
-      name: 'No change in best block height above threshold',
-      identifier: 'no_change_in_best_block_height',
-      description: "There hasn't been a change in best block height after some time.",
-      adornment_threshold: 'Blocks',
-      adornment_time: 'Seconds',
-      parent_id: '',
-      warning: {
-        threshold: 30,
-        time_window: 360,
-        enabled: true,
-      },
-      critical: {
-        threshold: 60,
-        time_window: 3600,
-        repeat: 300,
-        repeat_enabled: true,
-        enabled: true,
-      },
-      enabled: true,
-    },
     5: {
-      name: 'No change in finalized block height above threshold',
-      identifier: 'no_change_in_finalized_block_height',
-      description: "There hasn't been a change in finalized block height after some time.",
-      adornment_threshold: 'Blocks',
+      name: 'No Change in Validator Finalized Best Block Height',
+      identifier: 'no_change_in_finalized_block_height_validator',
+      description: 'Raised when the finalized best block height of a validator is unchanged.',
+      adornment: 'Seconds',
       adornment_time: 'Seconds',
       parent_id: '',
       warning: {
-        threshold: 30,
-        time_window: 360,
+        threshold: 180,
         enabled: true,
       },
       critical: {
-        threshold: 60,
-        time_window: 3600,
+        threshold: 300,
+        repeat: 180,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    6: {
+      name: 'No Change in Node Finalized Best Block Height',
+      identifier: 'no_change_in_finalized_block_height_node',
+      description: 'Raised when the finalized best block height of a node is unchanged.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 180,
+        enabled: true,
+      },
+      critical: {
+        threshold: 300,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: false,
+      },
+      enabled: true,
+    },
+    7: {
+      name: 'Validator is Syncing',
+      identifier: 'validator_is_syncing',
+      description: 'This alert is raised when the validator\'s sync target height and best block height differ by a value greater than the threshold.',
+      adornment: 'Blocks',
+      adornment_time: 'Blocks',
+      parent_id: '',
+      warning: {
+        threshold: 50,
+        enabled: true,
+      },
+      critical: {
+        threshold: 100,
         repeat: 300,
         repeat_enabled: true,
         enabled: true,
       },
       enabled: true,
     },
-  },
-  allIds: ['4', '5'],
-};
-
-const substrateThresholdAlerts = {
-  byId: {
-    6: {
+    8: {
+      name: 'Node is Syncing',
+      identifier: 'node_is_syncing',
+      description: 'This alert is raised when the node\'s sync target height and best block height differ by a value greater than the threshold.',
+      adornment: 'Blocks',
+      adornment_time: 'Blocks',
+      parent_id: '',
+      warning: {
+        threshold: 50,
+        enabled: true,
+      },
+      critical: {
+        threshold: 100,
+        repeat: 300,
+        repeat_enabled: true,
+        enabled: false,
+      },
+      enabled: true,
+    },
+    9: {
+      name: 'No Heartbeat and Did Not Author Block in Current Session Yet',
+      identifier: 'no_heartbeat_did_not_author_block',
+      description: 'Occurs when no heartbeat was recieved and no block has yet been '
+          + 'authored in the current session.',
+      adornment: 'Seconds',
+      adornment_time: 'Seconds',
+      parent_id: '',
+      warning: {
+        threshold: 1800,
+        enabled: true,
+      },
+      critical: {
+        threshold: 2700,
+        repeat: 300,
+        repeat_enabled: false,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    10: {
+      name: 'Payout Not Claimed',
+      identifier: 'payout_not_claimed',
+      description: 'Occurs when a payout has not been claimed yet after a number of eras.',
+      adornment: 'Eras',
+      adornment_time: 'Eras',
+      parent_id: '',
+      warning: {
+        threshold: 30,
+        enabled: true,
+      },
+      critical: {
+        threshold: 60,
+        repeat: 1,
+        repeat_enabled: true,
+        enabled: true,
+      },
+      enabled: true,
+    },
+    11: {
       name: 'System Is Down',
       identifier: 'system_is_down',
       description:
-        'The Node Exporter URL is unreachable therefore the system is declared to be down.',
+          'The Node Exporter URL is unreachable therefore the system is declared to be down.',
       adornment: 'Seconds',
       adornment_time: 'Seconds',
       parent_id: '',
@@ -154,47 +249,7 @@ const substrateThresholdAlerts = {
       },
       enabled: true,
     },
-    7: {
-      name: 'Time of last activity is above threshold',
-      identifier: 'time_of_last_activity',
-      description:
-        'Alerts will be sent based on how much time has passed '
-        + 'since last pre-commit/pre-vote activity.',
-      adornment: 'Seconds',
-      adornment_time: 'Seconds',
-      parent_id: '',
-      warning: {
-        threshold: 60,
-        enabled: true,
-      },
-      critical: {
-        threshold: 180,
-        repeat: 300,
-        repeat_enabled: true,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    8: {
-      name: 'Mempool Size',
-      identifier: 'mempool_size',
-      description: 'Alerts will be sent based on how many transactions are in the mempool.',
-      adornment: 'Megabytes',
-      adornment_time: 'Seconds',
-      parent_id: '',
-      warning: {
-        threshold: 85,
-        enabled: true,
-      },
-      critical: {
-        threshold: 95,
-        repeat: 300,
-        repeat_enabled: true,
-        enabled: true,
-      },
-      enabled: true,
-    },
-    9: {
+    12: {
       name: 'Open File Descriptors Increased',
       identifier: 'open_file_descriptors',
       description: 'Open File Descriptors alerted on based on percentage usage.',
@@ -213,7 +268,7 @@ const substrateThresholdAlerts = {
       },
       enabled: true,
     },
-    10: {
+    13: {
       name: 'System CPU usage increased',
       identifier: 'system_cpu_usage',
       description: 'System CPU alerted on based on percentage usage.',
@@ -232,7 +287,7 @@ const substrateThresholdAlerts = {
       },
       enabled: true,
     },
-    11: {
+    14: {
       name: 'System storage usage increased',
       identifier: 'system_storage_usage',
       description: 'System Storage alerted on based on percentage usage.',
@@ -251,7 +306,7 @@ const substrateThresholdAlerts = {
       },
       enabled: true,
     },
-    12: {
+    15: {
       name: 'System RAM usage increased',
       identifier: 'system_ram_usage',
       description: 'System RAM alerted on based on percentage usage.',
@@ -271,248 +326,84 @@ const substrateThresholdAlerts = {
       enabled: true,
     },
   },
-  allIds: ['6', '7', '8', '9', '10', '11', '12'],
+  allIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15'],
 };
 
 const substrateSeverityAlerts = {
   byId: {
-    13: {
-      name: 'Validator inaccessible on startup',
-      identifier: 'validator_inaccessible_on_startup',
-      description: 'Validator was not accessible on startup.',
-      severity: CRITICAL,
-      parent_id: '',
-      enabled: true,
-    },
-    14: {
-      name: 'Node inaccessible on startup',
-      identifier: 'node_inaccessible_on_startup',
-      description: 'Node was not accessible on startup.',
-      severity: WARNING,
-      parent_id: '',
-      enabled: true,
-    },
-    15: {
-      name: 'Slashed',
-      identifier: 'slashed',
-      description: 'Occurs when your validator has been slashed.',
-      severity: CRITICAL,
-      parent_id: '',
-      enabled: true,
-    },
     16: {
-      name: 'Node is syncing',
-      identifier: 'node_is_syncing',
-      description:
-        'Occurs when your node is still catching up to the rest of '
-        + 'the blockchain network in terms of block height.',
+      name: 'Not Active in Session',
+      identifier: 'not_active_in_session',
+      description: 'Occurs when a validator does not participate in a session.',
       severity: WARNING,
       parent_id: '',
       enabled: true,
     },
     17: {
-      name: 'Validator is not active in this session',
-      identifier: 'validator_not_active_in_session',
-      description:
-        'Occurs when your validator is not participating in the current consensus round.',
-      severity: WARNING,
+      name: 'Is Disabled',
+      identifier: 'is_disabled',
+      description: 'Occurs when a validator is disabled.',
+      severity: CRITICAL,
       parent_id: '',
       enabled: true,
     },
     18: {
-      name: 'Validator set size increased',
-      identifier: 'validator_set_size_increased',
-      description: 'The number of validators in the set have increased.',
-      severity: INFO,
+      name: 'Not elected',
+      identifier: 'not_elected',
+      description: 'Occurs when a validator was not elected for next session.',
+      severity: WARNING,
       parent_id: '',
       enabled: true,
     },
     19: {
-      name: 'Validator set size decreased',
-      identifier: 'validator_set_size_decreased',
-      description: 'The number of validators in the set have decreased.',
+      name: 'Bonded Amount Changed',
+      identifier: 'bonded_amount_change',
+      description: 'Occurs when the bonded amount of a validator is changed.',
       severity: INFO,
       parent_id: '',
       enabled: true,
     },
     20: {
-      name: 'Validator declared offline',
-      identifier: 'validator_declared_offline',
-      description: 'The validator has been declared offline by the blockchain.',
-      severity: WARNING,
+      name: 'Offline',
+      identifier: 'offline',
+      description: 'Occurs when an offline event is generated for a validator.',
+      severity: CRITICAL,
       parent_id: '',
       enabled: true,
     },
     21: {
-      name: 'Validator not authoring',
-      identifier: 'validator_not_authoring',
-      description:
-        'The Validator did not author a block and sent no heartbeats in the previous session',
-      severity: WARNING,
+      name: 'Slashed',
+      identifier: 'slashed',
+      description: 'Occurs when a validator has been slashed.',
+      severity: CRITICAL,
       parent_id: '',
-      enabled: false,
+      enabled: true,
     },
     22: {
-      name: 'A new payout is pending',
-      identifier: 'new_payout_pending',
-      description: 'A new pending payout has been detected',
+      name: 'Controller Address Change',
+      identifier: 'controller_address_change',
+      description: 'Occurs when the controller address changes.',
       severity: WARNING,
       parent_id: '',
-      enabled: false,
+      enabled: true,
     },
     23: {
+      name: 'Grandpa is Stalled',
+      identifier: 'grandpa_is_stalled',
+      description: 'Occurs when the grandpa algorithm stalls.',
+      severity: WARNING,
+      parent_id: '',
+      enabled: true,
+    },
+    24: {
       name: 'New proposal submitted',
       identifier: 'new_proposal',
       description: 'A new proposal has been submitted.',
       severity: INFO,
       parent_id: '',
-      enabled: false,
-    },
-    24: {
-      name: 'Proposal conducted',
-      identifier: 'proposal_conducted',
-      description: 'A proposal has been conducted.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
+      enabled: true,
     },
     25: {
-      name: 'Delegated balance increase',
-      identifier: 'delegated_balance_increase',
-      description: 'The amount of tokens delegated to your validator has increased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
-    },
-    26: {
-      name: 'Delegated balance decrease',
-      identifier: 'delegated_balance_decrease',
-      description: 'The amount of tokens delegated to your validator has decreased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
-    },
-    27: {
-      name: 'Bonded balance increased',
-      identifier: 'bonded_balance_increased',
-      description: 'Bonded balance of your validator has increased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
-    },
-    28: {
-      name: 'Bonded balance decreased',
-      identifier: 'bonded_balance_decreased',
-      description: 'Bonded balance of your validator has decreased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
-    },
-    29: {
-      name: 'Free balance increased',
-      identifier: 'free_balance_increased',
-      description: 'Free balance of your validator has increased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
-    },
-    30: {
-      name: 'Free balance decreased',
-      identifier: 'free_balance_decreased',
-      description: 'Free balance of your validator has decreased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
-    },
-    31: {
-      name: 'Reserved balance increased',
-      identifier: 'reserve_balance_increased',
-      description: 'Reserve balance of your validator has increased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
-    },
-    32: {
-      name: 'Reserved balance decreased',
-      identifier: 'reserve_balance_decreased',
-      description: 'Reserve balance of your validator has decreased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
-    },
-    33: {
-      name: 'Nominated balance increased',
-      identifier: 'nominated_balance_increased',
-      description: 'Nominated balance of your validator has increased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
-    },
-    34: {
-      name: 'Nominated balance decreased',
-      identifier: 'nominated_balance_decreased',
-      description: 'Nominated balance of your validator has decreased.',
-      severity: INFO,
-      parent_id: '',
-      enabled: false,
-    },
-    35: {
-      name: 'Validator is not elected',
-      identifier: 'validator_not_elected',
-      description: 'The Validator has not been elected for the next session.',
-      severity: WARNING,
-      parent_id: '',
-      enabled: true,
-    },
-    36: {
-      name: 'Validator has been disabled',
-      identifier: 'validator_is_disabled',
-      description: 'The Validator has not been elected for the next session.',
-      severity: CRITICAL,
-      parent_id: '',
-      enabled: true,
-    },
-    37: {
-      name: 'New Council proposal',
-      identifier: 'new_council_proposal',
-      description: 'A new council proposal has been detected.',
-      severity: INFO,
-      parent_id: '',
-      enabled: true,
-    },
-    38: {
-      name: 'Validator is in council',
-      identifier: 'validator_in_council',
-      description: 'The Validator is now part of the council.',
-      severity: INFO,
-      parent_id: '',
-      enabled: true,
-    },
-    39: {
-      name: 'Validator not in council',
-      identifier: 'validator_not_in_council',
-      description: 'The Validator is no longer part of the council.',
-      severity: INFO,
-      parent_id: '',
-      enabled: true,
-    },
-    40: {
-      name: 'New treasury proposal',
-      identifier: 'new_treasury_proposal',
-      description: 'A new treasury proposal has been submitted.',
-      severity: INFO,
-      parent_id: '',
-      enabled: true,
-    },
-    41: {
-      name: 'New TIP proposal',
-      identifier: 'new_tip_proposal',
-      description: 'A new tip proposal has been submitted.',
-      severity: INFO,
-      parent_id: '',
-      enabled: true,
-    },
-    42: {
       name: 'New Referendum',
       identifier: 'new_referendum',
       description: 'A new referendum has been submitted.',
@@ -520,60 +411,40 @@ const substrateSeverityAlerts = {
       parent_id: '',
       enabled: true,
     },
-    43: {
-      name: 'Referendum completed',
-      identifier: 'referendum_completed',
-      description: 'A new referendum has been completed.',
+    26: {
+      name: 'Referendum concluded',
+      identifier: 'referendum_concluded',
+      description: 'A referendum has been concluded.',
       severity: INFO,
       parent_id: '',
       enabled: true,
     },
   },
-  allIds: [
-    '13',
-    '14',
-    '15',
-    '16',
-    '17',
-    '18',
-    '19',
-    '20',
-    '21',
-    '22',
-    '23',
-    '24',
-    '25',
-    '26',
-    '27',
-    '28',
-    '29',
-    '30',
-    '31',
-    '32',
-    '33',
-    '34',
-    '35',
-    '36',
-    '37',
-    '38',
-    '39',
-    '40',
-    '41',
-    '42',
-    '43',
-  ],
+  allIds: ['16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26'],
 };
 
 // Reducers to add and remove substrate node configurations from global state
 function nodesById(state = {}, action) {
   switch (action.type) {
     case ADD_NODE_SUBSTRATE:
+      Object.keys(state).forEach((node) => {
+        if (state[node].parent_id === action.payload.parent_id) {
+          action.payload.monitor_network = state[node].monitor_network;
+        }
+      });
       return {
         ...state,
         [action.payload.id]: action.payload,
       };
     case REMOVE_NODE_SUBSTRATE:
       return _.omit(state, action.payload.id);
+    case TOGGLE_NODE_MONITORING_SUBSTRATE:
+      Object.keys(state).forEach((node) => {
+        if (state[node].parent_id === action.payload.parent_id) {
+          state[node].monitor_network = action.payload.monitor_network;
+        }
+      });
+      return state;
     default:
       return state;
   }

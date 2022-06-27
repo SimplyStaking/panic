@@ -121,7 +121,7 @@ class CosmosNetworkStore(Store):
         metrics = data['data']
 
         self.logger.debug(
-            "Saving %s state: _last_monitored=%s _proposals=%s",
+            "Saving %s state: _last_monitored=%s, _proposals=%s",
             chain_name, meta_data['last_monitored'], metrics['proposals'],
         )
 

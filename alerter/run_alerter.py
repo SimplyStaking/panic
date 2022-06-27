@@ -15,6 +15,7 @@ from src.alerter.managers.dockerhub import DockerhubAlerterManager
 from src.alerter.managers.evm import EVMNodeAlerterManager
 from src.alerter.managers.github import GithubAlerterManager
 from src.alerter.managers.manager import AlertersManager
+from src.alerter.managers.substrate import SubstrateAlertersManager
 from src.alerter.managers.system import SystemAlertersManager
 from src.channels_manager.manager import ChannelsManager
 from src.config_manager import ConfigsManager
@@ -38,7 +39,7 @@ from src.utils.constants.names import (
     CONFIGS_MANAGER_NAME, DATA_STORE_MANAGER_NAME, NODE_MONITORS_MANAGER_NAME,
     CONTRACT_MONITORS_MANAGER_NAME, EVM_NODE_ALERTER_MANAGER_NAME,
     CL_ALERTERS_MANAGER_NAME, NETWORK_MONITORS_MANAGER_NAME,
-    COSMOS_ALERTERS_MANAGER_NAME)
+    COSMOS_ALERTERS_MANAGER_NAME, SUBSTRATE_ALERTERS_MANAGER_NAME)
 from src.utils.constants.rabbitmq import (
     ALERT_ROUTER_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
     SYS_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
@@ -64,7 +65,11 @@ from src.utils.constants.rabbitmq import (
     MONITORABLE_STORE_INPUT_QUEUE_NAME, MONITORABLE_EXCHANGE,
     MONITORABLE_STORE_INPUT_ROUTING_KEY,
     COSMOS_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
-    SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME)
+    SYSTEM_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+    SUBSTRATE_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
+    SUBSTRATE_ALERTS_CONFIGS_ROUTING_KEY,
+    SUBSTRATE_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+    SUBSTRATE_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME)
 from src.utils.constants.starters import (
     RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD,
 )
@@ -268,6 +273,35 @@ def _initialise_cosmos_alerters_manager() -> CosmosAlertersManager:
             time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
 
     return cosmos_alerters_manager
+
+
+def _initialise_substrate_alerters_manager() -> SubstrateAlertersManager:
+    manager_display_name = SUBSTRATE_ALERTERS_MANAGER_NAME
+
+    substrate_alerters_manager_logger = _initialise_logger(
+        manager_display_name, SubstrateAlertersManager.__name__,
+        env.MANAGERS_LOG_FILE_TEMPLATE
+    )
+
+    # Attempt to initialise the Substrate alerters manager
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=substrate_alerters_manager_logger.getChild(
+                    RabbitMQApi.__name__), host=env.RABBIT_IP)
+            substrate_alerters_manager = SubstrateAlertersManager(
+                substrate_alerters_manager_logger, manager_display_name,
+                rabbitmq)
+            break
+        except Exception as e:
+            log_and_print(get_initialisation_error_message(
+                manager_display_name, e), substrate_alerters_manager_logger)
+            log_and_print(get_reattempting_message(manager_display_name),
+                          substrate_alerters_manager_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return substrate_alerters_manager
 
 
 def _initialise_system_monitors_manager() -> SystemMonitorsManager:
@@ -687,6 +721,11 @@ def run_cosmos_alerters_manager() -> None:
     run_alerters_manager(cosmos_alerters_manager)
 
 
+def run_substrate_alerters_manager() -> None:
+    substrate_alerters_manager = _initialise_substrate_alerters_manager()
+    run_alerters_manager(substrate_alerters_manager)
+
+
 def run_monitors_manager(manager: MonitorsManager) -> None:
     while True:
         try:
@@ -1089,6 +1128,55 @@ def _initialise_and_declare_config_queues() -> None:
                                 CONFIG_EXCHANGE,
                                 COSMOS_ALERTS_CONFIGS_ROUTING_KEY)
 
+            # Substrate Alerters Manager queues
+            log_and_print("Creating queue '{}'".format(
+                SUBSTRATE_ALERTERS_MAN_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(
+                SUBSTRATE_ALERTERS_MAN_CONFIGS_QUEUE_NAME, False, True, False,
+                False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing key "
+                "{}.".format(SUBSTRATE_ALERTERS_MAN_CONFIGS_QUEUE_NAME,
+                             CONFIG_EXCHANGE,
+                             SUBSTRATE_ALERTS_CONFIGS_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(
+                SUBSTRATE_ALERTERS_MAN_CONFIGS_QUEUE_NAME, CONFIG_EXCHANGE,
+                SUBSTRATE_ALERTS_CONFIGS_ROUTING_KEY)
+
+            # Substrate Node Alerter queues
+            log_and_print("Creating queue '{}'".format(
+                SUBSTRATE_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME), dummy_logger)
+            rabbitmq.queue_declare(
+                SUBSTRATE_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                False, True, False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(
+                    SUBSTRATE_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                    CONFIG_EXCHANGE, SUBSTRATE_ALERTS_CONFIGS_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(SUBSTRATE_NODE_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                                CONFIG_EXCHANGE,
+                                SUBSTRATE_ALERTS_CONFIGS_ROUTING_KEY)
+
+            # Substrate Network Alerter queues
+            log_and_print("Creating queue '{}'".format(
+                SUBSTRATE_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME),
+                dummy_logger)
+            rabbitmq.queue_declare(
+                SUBSTRATE_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME, False, True,
+                False, False)
+            log_and_print(
+                "Binding queue '{}' to '{}' exchange with routing "
+                "key {}.".format(
+                    SUBSTRATE_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                    CONFIG_EXCHANGE, SUBSTRATE_ALERTS_CONFIGS_ROUTING_KEY),
+                dummy_logger)
+            rabbitmq.queue_bind(
+                SUBSTRATE_NETWORK_ALERTER_INPUT_CONFIGS_QUEUE_NAME,
+                CONFIG_EXCHANGE, SUBSTRATE_ALERTS_CONFIGS_ROUTING_KEY)
+
             # Channels manager queues
             log_and_print("Creating queue '{}'".format(
                 CHANNELS_MANAGER_CONFIGS_QUEUE_NAME), dummy_logger)
@@ -1405,6 +1493,10 @@ if __name__ == '__main__':
     cosmos_alerters_manager_process = multiprocessing.Process(
         target=run_cosmos_alerters_manager, args=())
     cosmos_alerters_manager_process.start()
+
+    substrate_alerters_manager_process = multiprocessing.Process(
+        target=run_substrate_alerters_manager, args=())
+    substrate_alerters_manager_process.start()
 
     dockerhub_alerter_manager_process = multiprocessing.Process(
         target=run_dockerhub_alerters_manager, args=())

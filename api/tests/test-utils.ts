@@ -34,6 +34,8 @@ export {
     alertsOverviewSingleDockerHubRepoEndpointRet,
     alertsOverviewChainSourceRedisRet,
     alertsOverviewChainSourceEndpointRet,
+    alertsOverviewChainSourceWithUniqueIdentifierRedisRet,
+    alertsOverviewChainSourceWithUniqueIdentifierEndpointRet,
     alertsOverviewMultipleSourcesRedisRet,
     alertsOverviewMultipleSourcesEndpointRet,
 
@@ -731,26 +733,27 @@ const alertsOverviewSingleNodeRedisRet: { [p: string]: string } = {
 const alertsOverviewSingleNodeEndpointRet: any = {
     result: {
         unique_chain_id: {
-            info: 35, critical: 1, warning: 1, error: 0,
+            info: 51, critical: 1, warning: 1, error: 0,
             problems: {
-                test_node: [{
-                    severity: 'WARNING',
-                    message: 'chainlink node Ethereum balance has DECREASED' +
-                        ' below WARNING threshold. Current value: 123.245.',
-                    metric: 'cl_eth_balance_amount',
-                    timestamp: 1636446847.232556,
-                    expiry: null
-                },
-                {
-                    severity: 'CRITICAL',
-                    message: 'The Chainlink test_node node\'s submission' +
-                        ' has increased above CRITICAL threshold to 10%' +
-                        ' deviation for the price feed 0x12345. Current' +
-                        ' value: 123.456.',
-                    metric: 'cl_contract_price_feed_deviation',
-                    timestamp: 1636446847.232556,
-                    expiry: null
-                }]
+                test_node: [
+                    {
+                        severity: 'WARNING',
+                        message: 'chainlink node Ethereum balance has DECREASED' +
+                            ' below WARNING threshold. Current value: 123.245.',
+                        metric: 'cl_eth_balance_amount',
+                        timestamp: 1636446847.232556,
+                        expiry: null
+                    },
+                    {
+                        severity: 'CRITICAL',
+                        message: 'The Chainlink test_node node\'s submission' +
+                            ' has increased above CRITICAL threshold to 10%' +
+                            ' deviation for the price feed 0x12345. Current' +
+                            ' value: 123.456.',
+                        metric: 'cl_contract_price_feed_deviation',
+                        timestamp: 1636446847.232556,
+                        expiry: null
+                    }]
             },
             releases: {},
             tags: {}
@@ -839,6 +842,32 @@ const alertsOverviewChainSourceEndpointRet: any = {
     }
 };
 
+const alertsOverviewChainSourceWithUniqueIdentifierRedisRet: { [p: string]: string } = {
+    'alert_cl_contract4': '{"severity": "WARNING", "message": ' +
+        '"New proposal, ID: 123.", "metric": ' +
+        '"substrate_network_proposal_submitted", "timestamp": ' +
+        '1636446847.232556, "expiry": null}'
+}
+
+const alertsOverviewChainSourceWithUniqueIdentifierEndpointRet: any = {
+    result: {
+        unique_chain_id: {
+            info: 0, critical: 0, warning: 1, error: 0,
+            problems: {
+                unique_chain_id: [{
+                    severity: 'WARNING',
+                    message: 'New proposal, ID: 123.',
+                    metric: 'substrate_network_proposal_submitted',
+                    timestamp: 1636446847.232556,
+                    expiry: null
+                }]
+            },
+            releases: {},
+            tags: {}
+        }
+    }
+};
+
 const alertsOverviewMultipleSourcesRedisRet: { [p: string]: string } = {
     'alert_system3_test_system': '{"severity": "WARNING", "message": ' +
         '"test_system system storage usage INCREASED above WARNING ' +
@@ -846,7 +875,7 @@ const alertsOverviewMultipleSourcesRedisRet: { [p: string]: string } = {
         '"system_storage_usage", "timestamp": 1636446847.232556, ' +
         '"expiry": null}',
     'alert_system5_test_system': '{"severity": "INFO", "message":' +
-        ' "cosmos_node_1 System is back up, last successful monitor at:' +
+        ' "System is back up, last successful monitor at:' +
         ' 2021-11-09 15:08:58.998260.", "metric": "system_is_down",' +
         ' "timestamp": 1636470538.99826, "expiry": null}',
     'alert_cl_node8_test_node': '{"severity": ' +
@@ -880,13 +909,21 @@ const alertsOverviewMultipleSourcesRedisRet: { [p: string]: string } = {
     'alert_cosmos_network1': '{"severity": "CRITICAL", "message": ' +
         '"New proposal submitted: example proposal.", "metric": ' +
         '"cosmos_network_proposals_submitted", "timestamp": ' +
+        '1636446847.232556, "expiry": null}',
+    'alert_substrate_node1_test_node': '{"severity": "CRITICAL", "message": ' +
+        '"Node is down.", "metric": ' +
+        '"substrate_node_is_down", "timestamp": ' +
+        '1636446847.232556, "expiry": null}',
+    'alert_substrate_network1': '{"severity": "WARNING", "message": ' +
+        '"Grandpa is stalled.", "metric": ' +
+        '"substrate_network_grandpa_stalled", "timestamp": ' +
         '1636446847.232556, "expiry": null}'
 }
 
 const alertsOverviewMultipleSourcesEndpointRet: any = {
     result: {
         unique_chain_id: {
-            info: 84, critical: 1, warning: 3, error: 1,
+            info: 115, critical: 2, warning: 4, error: 1,
             problems: {
                 test_system: [{
                     severity: 'WARNING',
@@ -910,6 +947,12 @@ const alertsOverviewMultipleSourcesEndpointRet: any = {
                     metric: 'cl_eth_balance_amount',
                     timestamp: 1636446847.232556,
                     expiry: null
+                }, {
+                    severity: 'CRITICAL',
+                    message: 'Node is down.',
+                    metric: 'substrate_node_is_down',
+                    timestamp: 1636446847.232556,
+                    expiry: null
                 }],
                 unique_chain_id: [{
                     severity: 'ERROR',
@@ -921,6 +964,12 @@ const alertsOverviewMultipleSourcesEndpointRet: any = {
                     severity: 'CRITICAL',
                     message: 'New proposal submitted: example proposal.',
                     metric: 'cosmos_network_proposals_submitted',
+                    timestamp: 1636446847.232556,
+                    expiry: null
+                }, {
+                    severity: 'WARNING',
+                    message: 'Grandpa is stalled.',
+                    metric: 'substrate_network_grandpa_stalled',
                     timestamp: 1636446847.232556,
                     expiry: null
                 }

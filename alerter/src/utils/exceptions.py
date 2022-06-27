@@ -302,3 +302,55 @@ class TendermintRPCCallException(PANICException):
         message = "Tendermint RPC call {} failed. Error: {}".format(
             api_call, error_message)
         super().__init__(message, self.code)
+
+
+class SubstrateApiCallException(PANICException):
+    code = 5031
+
+    def __init__(self, api_call: str, error_message: str) -> None:
+        message = "Substrate API call {} failed. Error: {}".format(
+            api_call, error_message)
+        super().__init__(message, self.code)
+
+
+class SubstrateApiIsNotReachableException(PANICException):
+    code = 5032
+
+    def __init__(self, component: str, api_url: str) -> None:
+        message = "{} could not reach Substrate API at {}.".format(component,
+                                                                   api_url)
+        super().__init__(message, self.code)
+
+
+class SubstrateWebSocketDataCouldNotBeObtained(PANICException):
+    code = 5033
+
+    def __init__(self, node_name: str) -> None:
+        # TODO: This message needs to be modified if we add more interface data
+        #     : sources in the future, as the individual monitor_<interface>
+        #     : disabling switches would be added, thus we would not need to
+        #     : disable the entire monitoring.
+        message = (
+            "PANIC cannot obtain Substrate websocket data for {} due to data "
+            "incompatibility issues with the node used as data source. Please "
+            "check the logs of {} to detect which node is incompatible and "
+            "disable it from being a data source. If no other compatible data "
+            "source can be given (not even {}), please disable monitoring "
+            "altogether for {}.".format(node_name, node_name, node_name,
+                                        node_name)
+        )
+        super().__init__(message, self.code)
+
+
+class SubstrateNetworkDataCouldNotBeObtained(PANICException):
+    code = 5034
+
+    def __init__(self) -> None:
+        message = (
+            "PANIC cannot obtain network data due to incompatibility issues "
+            "with the Websocket interface of the node used as data source. "
+            "Please check the logs to detect which nodes are incompatible and "
+            "disable them from being a data source. If no other compatible "
+            "data source can be given, please disable network monitoring."
+        )
+        super().__init__(message, self.code)

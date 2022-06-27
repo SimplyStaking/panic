@@ -10,9 +10,11 @@ from src.data_store.stores.dockerhub import DockerhubStore
 from src.data_store.stores.github import GithubStore
 from src.data_store.stores.monitorable import MonitorableStore
 from src.data_store.stores.network.cosmos import CosmosNetworkStore
+from src.data_store.stores.network.substrate import SubstrateNetworkStore
 from src.data_store.stores.node.chainlink import ChainlinkNodeStore
 from src.data_store.stores.node.cosmos import CosmosNodeStore
 from src.data_store.stores.node.evm import EVMNodeStore
+from src.data_store.stores.node.substrate import SubstrateNodeStore
 from src.data_store.stores.store import Store
 from src.data_store.stores.system import SystemStore
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -21,7 +23,8 @@ from src.utils.constants.names import (
     MONITORABLE_STORE_NAME, SYSTEM_STORE_NAME, GITHUB_STORE_NAME,
     DOCKERHUB_STORE_NAME, ALERT_STORE_NAME, CL_NODE_STORE_NAME,
     EVM_NODE_STORE_NAME, CL_CONTRACT_STORE_NAME, COSMOS_NODE_STORE_NAME,
-    COSMOS_NETWORK_STORE_NAME)
+    COSMOS_NETWORK_STORE_NAME, SUBSTRATE_NODE_STORE_NAME,
+    SUBSTRATE_NETWORK_STORE_NAME)
 from src.utils.constants.starters import (RE_INITIALISE_SLEEPING_PERIOD,
                                           RESTART_SLEEPING_PERIOD)
 from src.utils.logging import create_logger, log_and_print
@@ -128,6 +131,18 @@ def start_cosmos_network_store() -> None:
     cosmos_network_store = _initialise_store(CosmosNetworkStore,
                                              COSMOS_NETWORK_STORE_NAME)
     start_store(cosmos_network_store)
+
+
+def start_substrate_node_store() -> None:
+    substrate_node_store = _initialise_store(SubstrateNodeStore,
+                                             SUBSTRATE_NODE_STORE_NAME)
+    start_store(substrate_node_store)
+
+
+def start_substrate_network_store() -> None:
+    substrate_network_store = _initialise_store(SubstrateNetworkStore,
+                                                SUBSTRATE_NETWORK_STORE_NAME)
+    start_store(substrate_network_store)
 
 
 def start_store(store: Store) -> None:

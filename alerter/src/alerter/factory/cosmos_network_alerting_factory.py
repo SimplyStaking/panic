@@ -145,8 +145,6 @@ class CosmosNetworkAlertingFactory(AlertingFactory):
         the AlertingFactory class. This is needed because the
         CosmosNetworkAlertingFactory class stores the alerting state
         differently.
-        :param received_error_code: The code associated with the received error
-        if any. If no errors are received this should be set to None.
         :param error_code_to_detect: The error code to detect in order to raise
         the error alert
         :param error_alert: The error alert to be raised if detected
@@ -154,12 +152,13 @@ class CosmosNetworkAlertingFactory(AlertingFactory):
         :param data_for_alerting: The list to be appended with alerts
         :param parent_id: The id of the base chain
         :param monitorable_id: The id of the monitorable
-        :param metric_name: The name of the metric
         :param monitorable_name: The name of the monitorable
         :param monitoring_timestamp: The data timestamp
+        :param metric_name: The name of the metric
         :param error_message: The alert's message when an error is raised
         :param resolved_message: The alert's message when an error is resolved
-        :param received_error_code: The received error code
+        :param received_error_code: The code associated with the received error
+        if any. If no errors are received this should be set to None.
         :return: None
         """
 

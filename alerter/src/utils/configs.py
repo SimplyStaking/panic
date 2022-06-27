@@ -6,6 +6,7 @@ from typing import Dict, List
 from src.configs.nodes.chainlink import ChainlinkNodeConfig
 from src.configs.nodes.cosmos import CosmosNodeConfig
 from src.configs.nodes.evm import EVMNodeConfig
+from src.configs.nodes.substrate import SubstrateNodeConfig
 from src.utils.types import convert_to_float, str_to_bool
 
 
@@ -105,6 +106,28 @@ def parse_cosmos_node_config(node_config: Dict) -> CosmosNodeConfig:
         prometheus_url, monitor_cosmos_rest, cosmos_rest_url,
         monitor_tendermint_rpc, tendermint_rpc_url, is_validator,
         is_archive_node, use_as_data_source, operator_address)
+
+
+def parse_substrate_node_config(node_config: Dict) -> SubstrateNodeConfig:
+    """
+    Given the received node configuration, this function parses the values
+    as a SubstrateNodeConfig object
+    :param node_config: The received configuration for the node
+    :return: A representation of the node config as a SubstrateNodeConfig
+           : object
+    """
+    node_id = node_config['id']
+    parent_id = node_config['parent_id']
+    node_name = node_config['name']
+    monitor_node = str_to_bool(node_config['monitor_node'])
+    node_ws_url = node_config['node_ws_url']
+    is_validator = str_to_bool(node_config['is_validator'])
+    use_as_data_source = str_to_bool(node_config['use_as_data_source'])
+    is_archive_node = str_to_bool(node_config['is_archive_node'])
+    stash_address = node_config['stash_address']
+    return SubstrateNodeConfig(
+        node_id, parent_id, node_name, monitor_node, node_ws_url,
+        use_as_data_source, is_validator, is_archive_node, stash_address)
 
 
 def parse_chainlink_node_config(node_config: Dict) -> ChainlinkNodeConfig:

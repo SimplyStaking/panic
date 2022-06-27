@@ -2,6 +2,7 @@ import {
   ADD_CHAIN_SUBSTRATE,
   ADD_NODE_SUBSTRATE,
   REMOVE_NODE_SUBSTRATE,
+  TOGGLE_NODE_MONITORING_SUBSTRATE,
   LOAD_CONFIG_SUBSTRATE,
   RESET_CHAIN_SUBSTRATE,
   UPDATE_CHAIN_NAME_SUBSTRATE,
@@ -77,19 +78,24 @@ export function addNodeSubstrate(payload) {
       parent_id: payload.parent_id,
       name: payload.name,
       node_ws_url: payload.node_ws_url,
-      monitor_ws: payload.monitor_ws,
-      telemetry_url: payload.telemetry_url,
-      monitor_telemetry: payload.monitor_telemetry,
-      prometheus_url: payload.prometheus_url,
-      monitor_prometheus: payload.monitor_prometheus,
       exporter_url: payload.exporter_url,
       monitor_system: payload.monitor_system,
-      stash_address: payload.stash_address,
       is_validator: payload.is_validator,
       monitor_node: payload.monitor_node,
       is_archive_node: payload.is_archive_node,
       use_as_data_source: payload.use_as_data_source,
+      stash_address: payload.stash_address,
+      governance_addresses: payload.governance_addresses,
+      monitor_network: payload.monitor_network,
     },
+  };
+}
+
+// Action toggle network monitoring for all nodes on a substrate chain
+export function toggleMonitorNetworkNodesSubstrate(payload) {
+  return {
+    type: TOGGLE_NODE_MONITORING_SUBSTRATE,
+    payload,
   };
 }
 

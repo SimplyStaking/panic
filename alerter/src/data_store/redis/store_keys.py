@@ -61,6 +61,36 @@ _key_cosmos_node_last_monitored_tendermint_rpc = 'CosmosNode13'
 _key_cosmos_network_proposals = 'CosmosNetwork1'
 _key_cosmos_network_last_monitored_cosmos_rest = 'CosmosNetwork2'
 
+# SubstrateNodeX_<substrate_node_id>
+_key_substrate_node_best_height = 'SubstrateNode1'
+_key_substrate_node_target_height = 'SubstrateNode2'
+_key_substrate_node_finalized_height = 'SubstrateNode3'
+_key_substrate_node_current_session = 'SubstrateNode4'
+_key_substrate_node_current_era = 'SubstrateNode5'
+_key_substrate_node_authored_blocks = 'SubstrateNode6'
+_key_substrate_node_active = 'SubstrateNode7'
+_key_substrate_node_elected = 'SubstrateNode8'
+_key_substrate_node_disabled = 'SubstrateNode9'
+_key_substrate_node_eras_stakers = 'SubstrateNode10'
+_key_substrate_node_sent_heartbeat = 'SubstrateNode11'
+_key_substrate_node_controller_address = 'SubstrateNode12'
+_key_substrate_node_history_depth_eras = 'SubstrateNode13'
+_key_substrate_node_unclaimed_rewards = 'SubstrateNode14'
+_key_substrate_node_claimed_rewards = 'SubstrateNode15'
+_key_substrate_node_previous_era_rewards = 'SubstrateNode16'
+_key_substrate_node_historical = 'SubstrateNode17'
+_key_substrate_node_token_symbol = 'SubstrateNode18'
+_key_substrate_node_went_down_at_websocket = 'SubstrateNode19'
+_key_substrate_node_last_monitored_websocket = 'SubstrateNode20'
+
+# SubstrateNetworkX_<substrate_network_id>
+_key_substrate_network_grandpa_stalled = 'SubstrateNetwork1'
+_key_substrate_network_public_prop_count = 'SubstrateNetwork2'
+_key_substrate_network_active_proposals = 'SubstrateNetwork3'
+_key_substrate_network_referendum_count = 'SubstrateNetwork4'
+_key_substrate_network_referendums = 'SubstrateNetwork5'
+_key_substrate_network_last_monitored_websocket = 'SubstrateNetwork6'
+
 # ChainlinkContractX_<cl_node_id>_<contract_proxy_address>
 _key_cl_contract_version = 'ChainlinkContract1'
 _key_cl_contract_aggregator_address = 'ChainlinkContract2'
@@ -165,6 +195,44 @@ _key_alert_evm_node_is_down = 'alert_evm_node1'
 _key_alert_evm_block_syncing_block_height_difference = 'alert_evm_node2'
 _key_alert_evm_block_syncing_no_change_in_block_height = 'alert_evm_node3'
 _key_alert_evm_invalid_url = 'alert_evm_node4'
+
+# alert_substrate_nodeX_<origin_id>
+_key_alert_substrate_node_is_down = 'alert_substrate_node1'
+_key_alert_substrate_node_change_in_best_block_height = 'alert_substrate_node2'
+_key_alert_substrate_node_change_in_finalized_block_height = (
+    'alert_substrate_node3')
+_key_alert_substrate_node_syncing = 'alert_substrate_node4'
+_key_alert_substrate_node_active = 'alert_substrate_node5'
+_key_alert_substrate_node_disabled = 'alert_substrate_node6'
+_key_alert_substrate_node_elected = 'alert_substrate_node7'
+_key_alert_substrate_node_bonded_amount_changed = 'alert_substrate_node8'
+_key_alert_substrate_node_controller_address_change = 'alert_substrate_node9'
+_key_alert_substrate_node_no_synced_substrate_websocket_source = (
+    'alert_substrate_node10')
+_key_alert_substrate_node_substrate_websocket_data_not_obtained = (
+    'alert_substrate_node11')
+_key_alert_substrate_node_substrate_api_not_reachable = 'alert_substrate_node12'
+# alert_substrate_nodeX_<origin_id>_<session_id>
+_key_alert_substrate_node_no_heartbeat_and_block_authored_yet = (
+    'alert_substrate_node13')
+# alert_substrate_nodeX_<origin_id>_<block_height>
+_key_alert_substrate_node_offline = 'alert_substrate_node14'
+_key_alert_substrate_node_slashed = 'alert_substrate_node15'
+# alert_substrate_nodeX_<origin_id>_<era_id>
+_key_alert_substrate_node_payout_not_claimed = 'alert_substrate_node16'
+
+# alert_substrate_networkX
+_key_alert_substrate_network_grandpa_stalled = 'alert_substrate_network1'
+_key_alert_substrate_network_no_synced_substrate_websocket_source = (
+    'alert_substrate_network2')
+_key_alert_substrate_network_substrate_network_data_not_obtained = (
+    'alert_substrate_network3')
+_key_alert_substrate_network_substrate_api_not_reachable = (
+    'alert_substrate_network4')
+# alert_substrate_networkX_<proposal_id>
+_key_alert_substrate_network_proposal_submitted = 'alert_substrate_network5'
+# alert_substrate_networkX_<referendum_id>
+_key_alert_substrate_network_referendum_info = 'alert_substrate_network6'
 
 
 class Keys:
@@ -394,6 +462,135 @@ class Keys:
     def get_cosmos_network_last_monitored_cosmos_rest(parent_id: str) -> str:
         return Keys._as_prefix(
             _key_cosmos_network_last_monitored_cosmos_rest) + parent_id
+
+    @staticmethod
+    def get_substrate_node_went_down_at_websocket(
+            substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_went_down_at_websocket) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_last_monitored_websocket(
+            substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_last_monitored_websocket) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_best_height(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_best_height) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_target_height(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_target_height) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_finalized_height(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_finalized_height) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_current_session(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_current_session) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_current_era(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_current_era) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_authored_blocks(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_authored_blocks) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_active(substrate_node_id: str) -> str:
+        return Keys._as_prefix(_key_substrate_node_active) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_elected(substrate_node_id: str) -> str:
+        return Keys._as_prefix(_key_substrate_node_elected) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_disabled(substrate_node_id: str) -> str:
+        return Keys._as_prefix(_key_substrate_node_disabled) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_eras_stakers(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_eras_stakers) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_sent_heartbeat(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_sent_heartbeat) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_controller_address(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_controller_address) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_history_depth_eras(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_history_depth_eras) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_unclaimed_rewards(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_unclaimed_rewards) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_claimed_rewards(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_claimed_rewards) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_previous_era_rewards(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_previous_era_rewards) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_historical(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_historical) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_node_token_symbol(substrate_node_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_node_token_symbol) + substrate_node_id
+
+    @staticmethod
+    def get_substrate_network_grandpa_stalled(parent_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_network_grandpa_stalled) + parent_id
+
+    @staticmethod
+    def get_substrate_network_public_prop_count(parent_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_network_public_prop_count) + parent_id
+
+    @staticmethod
+    def get_substrate_network_active_proposals(parent_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_network_active_proposals) + parent_id
+
+    @staticmethod
+    def get_substrate_network_referendum_count(parent_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_network_referendum_count) + parent_id
+
+    @staticmethod
+    def get_substrate_network_referendums(parent_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_network_referendums) + parent_id
+
+    @staticmethod
+    def get_substrate_network_last_monitored_websocket(parent_id: str) -> str:
+        return Keys._as_prefix(
+            _key_substrate_network_last_monitored_websocket) + parent_id
 
     @staticmethod
     def get_cl_contract_version(cl_node_id: str,
@@ -767,10 +964,128 @@ class Keys:
     def get_alert_evm_block_syncing_no_change_in_block_height(
             evm_node_id: str) -> str:
         return Keys._as_prefix(
-            _key_alert_evm_block_syncing_no_change_in_block_height) + (
-                   evm_node_id)
+            _key_alert_evm_block_syncing_no_change_in_block_height
+        ) + evm_node_id
 
     @staticmethod
     def get_alert_evm_invalid_url(
             evm_node_id: str) -> str:
         return Keys._as_prefix(_key_alert_evm_invalid_url) + evm_node_id
+
+    @staticmethod
+    def get_alert_substrate_node_is_down(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_substrate_node_is_down) + origin_id
+
+    @staticmethod
+    def get_alert_substrate_node_change_in_best_block_height(
+            origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_substrate_node_change_in_best_block_height) + origin_id
+
+    @staticmethod
+    def get_alert_substrate_node_change_in_finalized_block_height(
+            origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_substrate_node_change_in_finalized_block_height
+        ) + origin_id
+
+    @staticmethod
+    def get_alert_substrate_node_syncing(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_substrate_node_syncing) + origin_id
+
+    @staticmethod
+    def get_alert_substrate_node_active(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_substrate_node_active) + origin_id
+
+    @staticmethod
+    def get_alert_substrate_node_disabled(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_substrate_node_disabled) + origin_id
+
+    @staticmethod
+    def get_alert_substrate_node_elected(origin_id: str) -> str:
+        return Keys._as_prefix(_key_alert_substrate_node_elected) + origin_id
+
+    @staticmethod
+    def get_alert_substrate_node_bonded_amount_changed(origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_substrate_node_bonded_amount_changed) + origin_id
+
+    @staticmethod
+    def get_alert_substrate_node_controller_address_change(
+            origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_substrate_node_controller_address_change) + origin_id
+
+    @staticmethod
+    def get_alert_substrate_node_no_synced_substrate_websocket_source(
+            origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_substrate_node_no_synced_substrate_websocket_source
+        ) + origin_id
+
+    @staticmethod
+    def get_alert_substrate_node_substrate_websocket_data_not_obtained(
+            origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_substrate_node_substrate_websocket_data_not_obtained
+        ) + origin_id
+
+    @staticmethod
+    def get_alert_substrate_node_substrate_api_not_reachable(
+            origin_id: str) -> str:
+        return Keys._as_prefix(
+            _key_alert_substrate_node_substrate_api_not_reachable) + origin_id
+
+    @staticmethod
+    def get_alert_substrate_node_no_heartbeat_and_block_authored_yet(
+            origin_id: str, session_id: int) -> str:
+        return Keys._as_prefix(
+            _key_alert_substrate_node_no_heartbeat_and_block_authored_yet
+        ) + Keys._as_prefix(origin_id) + str(session_id)
+
+    @staticmethod
+    def get_alert_substrate_node_offline(origin_id: str,
+                                         block_height: int) -> str:
+        return (Keys._as_prefix(_key_alert_substrate_node_offline) +
+                Keys._as_prefix(origin_id) + str(block_height))
+
+    @staticmethod
+    def get_alert_substrate_node_slashed(origin_id: str,
+                                         block_height: int) -> str:
+        return (Keys._as_prefix(_key_alert_substrate_node_slashed) +
+                Keys._as_prefix(origin_id) + str(block_height))
+
+    @staticmethod
+    def get_alert_substrate_node_payout_not_claimed(origin_id: str,
+                                                    era_id: int) -> str:
+        return Keys._as_prefix(
+            _key_alert_substrate_node_payout_not_claimed) + Keys._as_prefix(
+            origin_id) + str(era_id)
+
+    @staticmethod
+    def get_alert_substrate_network_grandpa_stalled() -> str:
+        return _key_alert_substrate_network_grandpa_stalled
+
+    @staticmethod
+    def get_alert_substrate_network_no_synced_substrate_websocket_source(
+    ) -> str:
+        return _key_alert_substrate_network_no_synced_substrate_websocket_source
+
+    @staticmethod
+    def get_alert_substrate_network_substrate_network_data_not_obtained(
+    ) -> str:
+        return _key_alert_substrate_network_substrate_network_data_not_obtained
+
+    @staticmethod
+    def get_alert_substrate_network_substrate_api_not_reachable() -> str:
+        return _key_alert_substrate_network_substrate_api_not_reachable
+
+    @staticmethod
+    def get_alert_substrate_network_proposal_submitted(proposal_id: int) -> str:
+        return Keys._as_prefix(
+            _key_alert_substrate_network_proposal_submitted) + str(proposal_id)
+
+    @staticmethod
+    def get_alert_substrate_network_referendum_info(referendum_id: int) -> str:
+        return Keys._as_prefix(
+            _key_alert_substrate_network_referendum_info) + str(referendum_id)

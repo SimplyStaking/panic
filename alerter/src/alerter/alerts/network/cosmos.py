@@ -2,11 +2,14 @@ from datetime import datetime
 from typing import Dict
 
 from src.alerter.alert_code.network.cosmos_alert_code import (
-    CosmosNetworkAlertCode
+    CosmosNetworkAlertCode as AlertCode
 )
 from src.alerter.alerts.alert import Alert
+from src.alerter.alerts.common_alerts import (
+    DataCouldNotBeObtainedAlert, DataObtainedAlert,
+    ErrorNoSyncedDataSourcesAlert, SyncedDataSourcesFoundAlert)
 from src.alerter.grouped_alerts_metric_code.network.cosmos_network_metric_code \
-    import GroupedCosmosNetworkAlertsMetricCode
+    import GroupedCosmosNetworkAlertsMetricCode as GroupedAlertsMetricCode
 
 
 class NewProposalSubmittedAlert(Alert):
@@ -22,9 +25,9 @@ class NewProposalSubmittedAlert(Alert):
             "Voting end time: {}\n"
         ).format(origin_name, proposal_id, title, formatted_end_time)
         super().__init__(
-            CosmosNetworkAlertCode.NewProposalSubmittedAlert, alert_msg,
+            AlertCode.NewProposalSubmittedAlert, alert_msg,
             severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNetworkAlertsMetricCode.NewProposalSubmitted)
+            GroupedAlertsMetricCode.NewProposalSubmitted, [])
 
 
 class ProposalConcludedAlert(Alert):
@@ -42,102 +45,46 @@ class ProposalConcludedAlert(Alert):
                  final_tally_result['yes'], final_tally_result['abstain'],
                  final_tally_result['no'], final_tally_result['no_with_veto'])
         super().__init__(
-            CosmosNetworkAlertCode.ProposalConcludedAlert, alert_msg,
+            AlertCode.ProposalConcludedAlert, alert_msg,
             severity, timestamp, parent_id, origin_id,
-            GroupedCosmosNetworkAlertsMetricCode.ProposalConcluded)
-
-
-class ErrorNoSyncedDataSourcesAlert(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 source_name: str, alert_code: CosmosNetworkAlertCode,
-                 metric_code: GroupedCosmosNetworkAlertsMetricCode) -> None:
-        super().__init__(
-            alert_code,
-            "Could not retrieve {} data for {}: {}".format(
-                source_name, origin_name, message), severity, timestamp,
-            parent_id, origin_id, metric_code)
-
-
-class SyncedDataSourcesFoundAlert(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 alert_code: CosmosNetworkAlertCode,
-                 metric_code: GroupedCosmosNetworkAlertsMetricCode) -> None:
-        super().__init__(
-            alert_code, "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id, metric_code)
+            GroupedAlertsMetricCode.ProposalConcluded, [])
 
 
 class ErrorNoSyncedCosmosRestDataSourcesAlert(ErrorNoSyncedDataSourcesAlert):
     def __init__(self, origin_name: str, message: str, severity: str,
                  timestamp: float, parent_id: str, origin_id: str) -> None:
-        alert_code = (
-            CosmosNetworkAlertCode.ErrorNoSyncedCosmosRestDataSourcesAlert
-        )
-        metric_code = (
-            GroupedCosmosNetworkAlertsMetricCode.NoSyncedCosmosRestSource
-        )
+        alert_code = AlertCode.ErrorNoSyncedCosmosRestDataSourcesAlert
+        metric_code = GroupedAlertsMetricCode.NoSyncedCosmosRestSource
         super().__init__(
             origin_name, message, severity, timestamp, parent_id, origin_id,
-            'cosmos-rest', alert_code, metric_code)
+            'cosmos-rest', alert_code, metric_code, [])
 
 
 class SyncedCosmosRestDataSourcesFoundAlert(SyncedDataSourcesFoundAlert):
     def __init__(self, origin_name: str, message: str, severity: str,
                  timestamp: float, parent_id: str, origin_id: str) -> None:
-        alert_code = (
-            CosmosNetworkAlertCode.SyncedCosmosRestDataSourcesFoundAlert
-        )
-        metric_code = (
-            GroupedCosmosNetworkAlertsMetricCode.NoSyncedCosmosRestSource
-        )
+        alert_code = AlertCode.SyncedCosmosRestDataSourcesFoundAlert
+        metric_code = GroupedAlertsMetricCode.NoSyncedCosmosRestSource
         super().__init__(
             origin_name, message, severity, timestamp, parent_id, origin_id,
-            alert_code, metric_code)
-
-
-class DataCouldNotBeObtainedAlert(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 alert_code: CosmosNetworkAlertCode,
-                 metric_code: GroupedCosmosNetworkAlertsMetricCode) -> None:
-        super().__init__(
-            alert_code, "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id, metric_code)
-
-
-class DataObtainedAlert(Alert):
-    def __init__(self, origin_name: str, message: str, severity: str,
-                 timestamp: float, parent_id: str, origin_id: str,
-                 alert_code: CosmosNetworkAlertCode,
-                 metric_code: GroupedCosmosNetworkAlertsMetricCode) -> None:
-        super().__init__(
-            alert_code, "{}: {}".format(origin_name, message), severity,
-            timestamp, parent_id, origin_id, metric_code)
+            alert_code, metric_code, [])
 
 
 class CosmosNetworkDataCouldNotBeObtainedAlert(DataCouldNotBeObtainedAlert):
     def __init__(self, origin_name: str, message: str, severity: str,
                  timestamp: float, parent_id: str, origin_id: str) -> None:
-        alert_code = (
-            CosmosNetworkAlertCode.CosmosNetworkDataCouldNotBeObtainedAlert
-        )
-        metric_code = (
-            GroupedCosmosNetworkAlertsMetricCode.CosmosNetworkDataNotObtained
-        )
+        alert_code = AlertCode.CosmosNetworkDataCouldNotBeObtainedAlert
+        metric_code = GroupedAlertsMetricCode.CosmosNetworkDataNotObtained
         super().__init__(
             origin_name, message, severity, timestamp, parent_id, origin_id,
-            alert_code, metric_code)
+            alert_code, metric_code, [])
 
 
 class CosmosNetworkDataObtainedAlert(DataObtainedAlert):
     def __init__(self, origin_name: str, message: str, severity: str,
                  timestamp: float, parent_id: str, origin_id: str) -> None:
-        alert_code = CosmosNetworkAlertCode.CosmosNetworkDataObtainedAlert
-        metric_code = (
-            GroupedCosmosNetworkAlertsMetricCode.CosmosNetworkDataNotObtained
-        )
+        alert_code = AlertCode.CosmosNetworkDataObtainedAlert
+        metric_code = GroupedAlertsMetricCode.CosmosNetworkDataNotObtained
         super().__init__(
             origin_name, message, severity, timestamp, parent_id, origin_id,
-            alert_code, metric_code)
+            alert_code, metric_code, [])

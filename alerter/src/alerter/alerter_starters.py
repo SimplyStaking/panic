@@ -8,22 +8,27 @@ from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerters.dockerhub import DockerhubAlerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.network.cosmos import CosmosNetworkAlerter
+from src.alerter.alerters.network.substrate import SubstrateNetworkAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerters.node.cosmos import CosmosNodeAlerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
+from src.alerter.alerters.node.substrate import SubstrateNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.factory.alerts.chainlink_alerts import (
     ChainlinkNodeAlertsConfigsFactory, ChainlinkContractAlertsConfigsFactory)
 from src.configs.factory.alerts.cosmos_alerts import (
     CosmosNodeAlertsConfigsFactory, CosmosNetworkAlertsConfigsFactory)
 from src.configs.factory.alerts.evm_alerts import EVMNodeAlertsConfigsFactory
+from src.configs.factory.alerts.substrate_alerts import (
+    SubstrateNodeAlertsConfigsFactory, SubstrateNetworkAlertsConfigsFactory)
 from src.configs.factory.alerts.system_alerts import SystemAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils.constants.names import (
     SYSTEM_ALERTER_NAME, GITHUB_ALERTER_NAME, DOCKERHUB_ALERTER_NAME,
     CHAINLINK_NODE_ALERTER_NAME, CHAINLINK_CONTRACT_ALERTER_NAME,
     EVM_NODE_ALERTER_NAME, COSMOS_NODE_ALERTER_NAME,
-    COSMOS_NETWORK_ALERTER_NAME)
+    COSMOS_NETWORK_ALERTER_NAME, SUBSTRATE_NODE_ALERTER_NAME,
+    SUBSTRATE_NETWORK_ALERTER_NAME)
 from src.utils.constants.starters import (
     RE_INITIALISE_SLEEPING_PERIOD, RESTART_SLEEPING_PERIOD)
 from src.utils.env import (
@@ -296,6 +301,66 @@ def _initialise_cosmos_network_alerter(
     return cosmos_alerter
 
 
+def _initialise_substrate_node_alerter(
+        substrate_alerts_configs_factory: SubstrateNodeAlertsConfigsFactory
+) -> SubstrateNodeAlerter:
+    alerter_display_name = SUBSTRATE_NODE_ALERTER_NAME
+
+    substrate_alerter_logger = _initialise_alerter_logger(
+        alerter_display_name, SubstrateNodeAlerter.__name__)
+
+    # Try initialising an alerter until successful
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=substrate_alerter_logger.getChild(RabbitMQApi.__name__),
+                host=RABBIT_IP)
+            substrate_alerter = SubstrateNodeAlerter(
+                alerter_display_name, substrate_alerter_logger, rabbitmq,
+                substrate_alerts_configs_factory, ALERTER_PUBLISHING_QUEUE_SIZE
+            )
+            log_and_print("Successfully initialised {}".format(
+                alerter_display_name), substrate_alerter_logger)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(alerter_display_name, e)
+            log_and_print(msg, substrate_alerter_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return substrate_alerter
+
+
+def _initialise_substrate_network_alerter(
+        substrate_alerts_configs_factory: SubstrateNetworkAlertsConfigsFactory
+) -> SubstrateNetworkAlerter:
+    alerter_display_name = SUBSTRATE_NETWORK_ALERTER_NAME
+
+    substrate_alerter_logger = _initialise_alerter_logger(
+        alerter_display_name, SubstrateNetworkAlerter.__name__)
+
+    # Try initialising an alerter until successful
+    while True:
+        try:
+            rabbitmq = RabbitMQApi(
+                logger=substrate_alerter_logger.getChild(RabbitMQApi.__name__),
+                host=RABBIT_IP)
+            substrate_alerter = SubstrateNetworkAlerter(
+                alerter_display_name, substrate_alerter_logger, rabbitmq,
+                substrate_alerts_configs_factory, ALERTER_PUBLISHING_QUEUE_SIZE
+            )
+            log_and_print("Successfully initialised {}".format(
+                alerter_display_name), substrate_alerter_logger)
+            break
+        except Exception as e:
+            msg = get_initialisation_error_message(alerter_display_name, e)
+            log_and_print(msg, substrate_alerter_logger)
+            # sleep before trying again
+            time.sleep(RE_INITIALISE_SLEEPING_PERIOD)
+
+    return substrate_alerter
+
+
 def start_system_alerter(
         system_alerts_configs_factory: SystemAlertsConfigsFactory) -> None:
     system_alerter = _initialise_system_alerter(system_alerts_configs_factory)
@@ -347,6 +412,22 @@ def start_cosmos_network_alerter(
     cosmos_alerter = _initialise_cosmos_network_alerter(
         cosmos_alerts_configs_factory)
     start_alerter(cosmos_alerter)
+
+
+def start_substrate_node_alerter(
+        substrate_alerts_configs_factory: SubstrateNodeAlertsConfigsFactory
+) -> None:
+    substrate_alerter = _initialise_substrate_node_alerter(
+        substrate_alerts_configs_factory)
+    start_alerter(substrate_alerter)
+
+
+def start_substrate_network_alerter(
+        substrate_alerts_configs_factory: SubstrateNetworkAlertsConfigsFactory
+) -> None:
+    substrate_alerter = _initialise_substrate_network_alerter(
+        substrate_alerts_configs_factory)
+    start_alerter(substrate_alerter)
 
 
 def start_alerter(alerter: Alerter) -> None:

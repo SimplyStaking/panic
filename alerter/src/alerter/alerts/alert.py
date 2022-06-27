@@ -1,7 +1,6 @@
-from typing import Dict, Optional
+from typing import Dict, List, Union
 
 from src.alerter.alert_code import AlertCode
-from src.alerter.alert_data import AlertData
 from src.alerter.grouped_alerts_metric_code import GroupedAlertsMetricCode
 
 
@@ -11,7 +10,7 @@ class Alert:
             self, alert_code: AlertCode, message: str, severity: str,
             timestamp: float, parent_id: str, origin_id: str,
             alert_group_metric_code: GroupedAlertsMetricCode,
-            alert_data: Optional[AlertData] = None) -> None:
+            metric_state_args: List[Union[str, int]]) -> None:
         self._alert_code = alert_code
         self._message = message
         self._severity = severity
@@ -19,7 +18,7 @@ class Alert:
         self._origin_id = origin_id
         self._timestamp = timestamp
         self._alert_group_metric_code = alert_group_metric_code
-        self._alert_data = alert_data
+        self._metric_state_args = metric_state_args
 
     def __str__(self) -> str:
         return self.message
@@ -53,6 +52,10 @@ class Alert:
         return self._alert_group_metric_code
 
     @property
+    def metric_state_args(self) -> List[Union[str, int]]:
+        return self._metric_state_args
+
+    @property
     def alert_data(self) -> Dict:
         return {
             'alert_code': {
@@ -65,6 +68,5 @@ class Alert:
             'parent_id': self._parent_id,
             'origin_id': self._origin_id,
             'timestamp': self._timestamp,
-            'alert_data': (None if self._alert_data is None
-                           else self._alert_data.alert_data)
+            'metric_state_args': self._metric_state_args
         }

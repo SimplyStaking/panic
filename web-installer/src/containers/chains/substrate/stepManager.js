@@ -20,7 +20,7 @@ import {
   REPOSITORIES_STEP,
   DOCKER_STEP,
 } from 'constants/constants';
-import { NodesFormContainer, NodesTableContainer } from './nodesContainer';
+import { NodesFormContainer, MonitorNetworkFormContainer, NodesTableContainer } from './nodesContainer';
 
 const mapStateToProps = (state) => ({
   step: state.ChangeStepReducer.step,
@@ -39,6 +39,7 @@ function getStep(stepName) {
       return (
         <div>
           <NodesFormContainer />
+          <MonitorNetworkFormContainer />
           <NodesTableContainer />
         </div>
       );

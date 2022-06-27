@@ -12,27 +12,34 @@ from src.alerter.alerter_starters import (
     start_chainlink_node_alerter, start_evm_node_alerter,
     start_chainlink_contract_alerter, _initialise_cosmos_node_alerter,
     start_cosmos_node_alerter, _initialise_cosmos_network_alerter,
-    start_cosmos_network_alerter, start_dockerhub_alerter)
+    start_cosmos_network_alerter, start_dockerhub_alerter,
+    _initialise_substrate_node_alerter, start_substrate_node_alerter,
+    _initialise_substrate_network_alerter, start_substrate_network_alerter)
 from src.alerter.alerters.contract.chainlink import ChainlinkContractAlerter
 from src.alerter.alerters.dockerhub import DockerhubAlerter
 from src.alerter.alerters.github import GithubAlerter
 from src.alerter.alerters.network.cosmos import CosmosNetworkAlerter
+from src.alerter.alerters.network.substrate import SubstrateNetworkAlerter
 from src.alerter.alerters.node.chainlink import ChainlinkNodeAlerter
 from src.alerter.alerters.node.cosmos import CosmosNodeAlerter
 from src.alerter.alerters.node.evm import EVMNodeAlerter
+from src.alerter.alerters.node.substrate import SubstrateNodeAlerter
 from src.alerter.alerters.system import SystemAlerter
 from src.configs.factory.alerts.chainlink_alerts import (
     ChainlinkNodeAlertsConfigsFactory, ChainlinkContractAlertsConfigsFactory)
 from src.configs.factory.alerts.cosmos_alerts import (
     CosmosNodeAlertsConfigsFactory, CosmosNetworkAlertsConfigsFactory)
 from src.configs.factory.alerts.evm_alerts import EVMNodeAlertsConfigsFactory
+from src.configs.factory.alerts.substrate_alerts import (
+    SubstrateNodeAlertsConfigsFactory, SubstrateNetworkAlertsConfigsFactory)
 from src.configs.factory.alerts.system_alerts import SystemAlertsConfigsFactory
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.names import (
     SYSTEM_ALERTER_NAME, CHAINLINK_NODE_ALERTER_NAME,
     CHAINLINK_CONTRACT_ALERTER_NAME, EVM_NODE_ALERTER_NAME,
-    COSMOS_NODE_ALERTER_NAME, COSMOS_NETWORK_ALERTER_NAME)
+    COSMOS_NODE_ALERTER_NAME, COSMOS_NETWORK_ALERTER_NAME,
+    SUBSTRATE_NODE_ALERTER_NAME, SUBSTRATE_NETWORK_ALERTER_NAME)
 
 
 # Tests adapted from monitor starters
@@ -125,6 +132,10 @@ class TestAlertersStarters(unittest.TestCase):
             CosmosNodeAlertsConfigsFactory()
         self.cosmos_network_alerts_configs_factory = \
             CosmosNetworkAlertsConfigsFactory()
+        self.substrate_node_alerts_configs_factory = \
+            SubstrateNodeAlertsConfigsFactory()
+        self.substrate_network_alerts_configs_factory = \
+            SubstrateNetworkAlertsConfigsFactory()
 
         self.test_chainlink_node_alerter = ChainlinkNodeAlerter(
             CHAINLINK_NODE_ALERTER_NAME, self.dummy_logger,
@@ -156,6 +167,18 @@ class TestAlertersStarters(unittest.TestCase):
             env.ALERTER_PUBLISHING_QUEUE_SIZE
         )
 
+        self.test_substrate_node_alerter = SubstrateNodeAlerter(
+            SUBSTRATE_NODE_ALERTER_NAME, self.dummy_logger, self.rabbitmq,
+            self.substrate_node_alerts_configs_factory,
+            env.ALERTER_PUBLISHING_QUEUE_SIZE
+        )
+
+        self.test_substrate_network_alerter = SubstrateNetworkAlerter(
+            SUBSTRATE_NETWORK_ALERTER_NAME, self.dummy_logger, self.rabbitmq,
+            self.substrate_network_alerts_configs_factory,
+            env.ALERTER_PUBLISHING_QUEUE_SIZE
+        )
+
         self.system_id = 'test_system_id'
         self.system_parent_id = 'test_system_parent_id'
         self.system_name = 'test_system'
@@ -173,11 +196,15 @@ class TestAlertersStarters(unittest.TestCase):
         self.chainlink_contract_alerts_configs_factory = None
         self.cosmos_node_alerts_configs_factory = None
         self.cosmos_network_alerts_configs_factory = None
+        self.substrate_node_alerts_configs_factory = None
+        self.substrate_network_alerts_configs_factory = None
         self.test_chainlink_node_alerter = None
         self.test_chainlink_contract_alerter = None
         self.test_evm_node_alerter = None
         self.test_cosmos_node_alerter = None
         self.test_cosmos_network_alerter = None
+        self.test_substrate_node_alerter = None
+        self.test_substrate_network_alerter = None
 
     @mock.patch("src.alerter.alerter_starters.create_logger")
     def test_initialise_alerter_logger_calls_create_logger_correctly(
@@ -295,6 +322,30 @@ class TestAlertersStarters(unittest.TestCase):
 
         mock_init_logger.assert_called_once_with(
             COSMOS_NETWORK_ALERTER_NAME, CosmosNetworkAlerter.__name__
+        )
+
+    @mock.patch("src.alerter.alerter_starters._initialise_alerter_logger")
+    def test_initialise_substrate_node_alerter_calls_initialise_logger_correct(
+            self, mock_init_logger) -> None:
+        mock_init_logger.return_value = self.dummy_logger
+
+        _initialise_substrate_node_alerter(
+            self.substrate_node_alerts_configs_factory)
+
+        mock_init_logger.assert_called_once_with(
+            SUBSTRATE_NODE_ALERTER_NAME, SubstrateNodeAlerter.__name__
+        )
+
+    @mock.patch("src.alerter.alerter_starters._initialise_alerter_logger")
+    def test_initialise_substrate_network_alerter_calls_initialise_logger_correct(
+            self, mock_init_logger) -> None:
+        mock_init_logger.return_value = self.dummy_logger
+
+        _initialise_substrate_network_alerter(
+            self.substrate_network_alerts_configs_factory)
+
+        mock_init_logger.assert_called_once_with(
+            SUBSTRATE_NETWORK_ALERTER_NAME, SubstrateNetworkAlerter.__name__
         )
 
     @mock.patch("src.alerter.alerter_starters._initialise_alerter_logger")
@@ -428,6 +479,40 @@ class TestAlertersStarters(unittest.TestCase):
         self.assertEqual(self.cosmos_network_alerts_configs_factory, args[3])
         self.assertEqual(env.ALERTER_PUBLISHING_QUEUE_SIZE, args[4])
 
+    @mock.patch("src.alerter.alerter_starters._initialise_alerter_logger")
+    @mock.patch('src.alerter.alerter_starters.SubstrateNodeAlerter')
+    def test_initialise_substrate_node_alerter_creates_alerter_correctly(
+            self, mock_substrate_alerter, mock_init_logger) -> None:
+        mock_init_logger.return_value = self.dummy_logger
+        mock_substrate_alerter.__name__ = 'substrate_alerter_name'
+
+        _initialise_substrate_node_alerter(
+            self.substrate_node_alerts_configs_factory)
+
+        args, _ = mock_substrate_alerter.call_args
+        self.assertEqual(SUBSTRATE_NODE_ALERTER_NAME, args[0])
+        self.assertEqual(self.dummy_logger, args[1])
+        self.assertEqual(type(self.rabbitmq), type(args[2]))
+        self.assertEqual(self.substrate_node_alerts_configs_factory, args[3])
+        self.assertEqual(env.ALERTER_PUBLISHING_QUEUE_SIZE, args[4])
+
+    @mock.patch("src.alerter.alerter_starters._initialise_alerter_logger")
+    @mock.patch('src.alerter.alerter_starters.SubstrateNetworkAlerter')
+    def test_initialise_substrate_network_alerter_creates_alerter_correctly(
+            self, mock_substrate_alerter, mock_init_logger) -> None:
+        mock_init_logger.return_value = self.dummy_logger
+        mock_substrate_alerter.__name__ = 'substrate_alerter_name'
+
+        _initialise_substrate_network_alerter(
+            self.substrate_network_alerts_configs_factory)
+
+        args, _ = mock_substrate_alerter.call_args
+        self.assertEqual(SUBSTRATE_NETWORK_ALERTER_NAME, args[0])
+        self.assertEqual(self.dummy_logger, args[1])
+        self.assertEqual(type(self.rabbitmq), type(args[2]))
+        self.assertEqual(self.substrate_network_alerts_configs_factory, args[3])
+        self.assertEqual(env.ALERTER_PUBLISHING_QUEUE_SIZE, args[4])
+
     @mock.patch("src.alerter.alerter_starters._initialise_system_alerter")
     @mock.patch('src.alerter.alerter_starters.start_alerter')
     def test_start_system_alerter_calls_sub_functions_correctly(
@@ -551,3 +636,38 @@ class TestAlertersStarters(unittest.TestCase):
         )
         mock_initialise_alerter.assert_called_once_with(
             self.cosmos_network_alerts_configs_factory)
+
+    @mock.patch(
+        "src.alerter.alerter_starters._initialise_substrate_node_alerter")
+    @mock.patch('src.alerter.alerter_starters.start_alerter')
+    def test_start_substrate_node_alerter_calls_sub_functions_correctly(
+            self, mock_start_alerter, mock_initialise_alerter) -> None:
+        mock_start_alerter.return_value = None
+        mock_initialise_alerter.return_value = self.test_substrate_node_alerter
+
+        start_substrate_node_alerter(
+            self.substrate_node_alerts_configs_factory)
+
+        mock_start_alerter.assert_called_once_with(
+            self.test_substrate_node_alerter
+        )
+        mock_initialise_alerter.assert_called_once_with(
+            self.substrate_node_alerts_configs_factory)
+
+    @mock.patch(
+        "src.alerter.alerter_starters._initialise_substrate_network_alerter")
+    @mock.patch('src.alerter.alerter_starters.start_alerter')
+    def test_start_substrate_network_alerter_calls_sub_functions_correctly(
+            self, mock_start_alerter, mock_initialise_alerter) -> None:
+        mock_start_alerter.return_value = None
+        mock_initialise_alerter.return_value = (
+            self.test_substrate_network_alerter)
+
+        start_substrate_network_alerter(
+            self.substrate_network_alerts_configs_factory)
+
+        mock_start_alerter.assert_called_once_with(
+            self.test_substrate_network_alerter
+        )
+        mock_initialise_alerter.assert_called_once_with(
+            self.substrate_network_alerts_configs_factory)

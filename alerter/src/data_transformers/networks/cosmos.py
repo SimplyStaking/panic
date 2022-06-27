@@ -21,7 +21,7 @@ from src.utils.cosmos import (get_load_number_state_helper_network,
 from src.utils.datetime import iso_to_epoch
 from src.utils.exceptions import (ReceivedUnexpectedDataException,
                                   MessageWasNotDeliveredException)
-from src.utils.types import (Monitorable, convert_to_float, convert_to_int)
+from src.utils.types import convert_to_float, convert_to_int
 
 
 class CosmosNetworkTransformer(DataTransformer):
@@ -71,7 +71,7 @@ class CosmosNetworkTransformer(DataTransformer):
         self.rabbitmq.exchange_declare(HEALTH_CHECK_EXCHANGE, 'topic', False,
                                        True, False, False)
 
-    def _load_number_state(self, cosmos_network: Monitorable) -> None:
+    def _load_number_state(self, cosmos_network: CosmosNetwork) -> None:
         """
         This function will attempt to load a network's number metrics from redis
         If the data from Redis cannot be obtained, the state won't be updated.
@@ -99,7 +99,7 @@ class CosmosNetworkTransformer(DataTransformer):
             new_value = convert_fn(processed_redis_value, state_value)
             set_fn(new_value)
 
-    def _load_list_of_dicts_state(self, cosmos_network: Monitorable) -> None:
+    def _load_list_of_dicts_state(self, cosmos_network: CosmosNetwork) -> None:
         """
         This function will attempt to load a network's dict metrics from redis.
         If the data from Redis cannot be obtained, the state won't be updated.
@@ -126,7 +126,7 @@ class CosmosNetworkTransformer(DataTransformer):
             )
             set_fn(new_value)
 
-    def load_state(self, cosmos_network: Monitorable) -> Monitorable:
+    def load_state(self, cosmos_network: CosmosNetwork) -> CosmosNetwork:
         self.logger.debug("Loading the state of %s from Redis", cosmos_network)
 
         self._load_number_state(cosmos_network)
@@ -146,7 +146,7 @@ class CosmosNetworkTransformer(DataTransformer):
             metrics = cosmos_rest_data['result']['data']
             parent_id = meta_data['parent_id']
             chain_name = meta_data['chain_name']
-            network = self.state[parent_id]
+            network: CosmosNetwork = self.state[parent_id]
 
             # Set network details just in case the configs have changed, and the
             # new metrics
@@ -158,7 +158,7 @@ class CosmosNetworkTransformer(DataTransformer):
             meta_data = cosmos_rest_data['error']['meta_data']
             parent_id = meta_data['parent_id']
             chain_name = meta_data['chain_name']
-            network = self.state[parent_id]
+            network: CosmosNetwork = self.state[parent_id]
 
             # Set network details just in case the configs have changed
             network.set_parent_id(parent_id)
@@ -216,7 +216,7 @@ class CosmosNetworkTransformer(DataTransformer):
             td_meta_data = transformed_cosmos_network_data['result'][
                 'meta_data']
             td_parent_id = td_meta_data['parent_id']
-            network = self.state[td_parent_id]
+            network: CosmosNetwork = self.state[td_parent_id]
             td_metrics = transformed_cosmos_network_data['result']['data']
 
             processed_data = {

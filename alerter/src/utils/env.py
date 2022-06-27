@@ -28,6 +28,10 @@ REDIS_DB = int(os.environ['REDIS_DB'])
 RABBIT_IP = os.environ['RABBIT_IP']
 RABBIT_PORT = int(os.environ['RABBIT_PORT'])
 
+# Substrate API IP
+SUBSTRATE_API_IP = os.environ['SUBSTRATE_API_IP']
+SUBSTRATE_API_PORT = int(os.environ['SUBSTRATE_API_PORT'])
+
 # Logs configuration
 LOGGING_LEVEL = os.environ['LOGGING_LEVEL']
 DATA_STORE_LOG_FILE_TEMPLATE = os.environ['DATA_STORE_LOG_FILE_TEMPLATE']

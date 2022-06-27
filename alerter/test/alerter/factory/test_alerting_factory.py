@@ -56,7 +56,7 @@ class IncreasedAboveThresholdTestAlert(Alert):
             "{} has INCREASED above {} threshold. Current value: {}.".format(
                 origin_name, threshold_severity, current_value),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold)
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold, [])
 
 
 class DecreasedBelowThresholdTestAlert(Alert):
@@ -68,7 +68,7 @@ class DecreasedBelowThresholdTestAlert(Alert):
             "{} has DECREASED below {} threshold. Current value: {}.".format(
                 origin_name, threshold_severity, current_value),
             severity, timestamp, parent_id, origin_id,
-            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold)
+            GroupedChainlinkNodeAlertsMetricCode.BalanceThreshold, [])
 
 
 class ChainlinkAlertingFactoryInstance(AlertingFactory):
