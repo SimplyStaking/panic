@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { checkChainName } from 'utils/helpers';
+import { checkChainName, checkIfDoesNotContainsSquareBracket } from 'utils/helpers';
 
 const ChainNameSchema = (props) => Yup.object().shape({
   chain_name: Yup.string()
@@ -16,6 +16,8 @@ const ChainNameSchema = (props) => Yup.object().shape({
 
       return checkChainName(value, ...[config, config2, config3]);
     })
+    .test('does-not-contain-square-bracket', 'Chain name contains a square bracket',
+      (value) => checkIfDoesNotContainsSquareBracket(value))
     .required('Chain name is required.'),
 });
 

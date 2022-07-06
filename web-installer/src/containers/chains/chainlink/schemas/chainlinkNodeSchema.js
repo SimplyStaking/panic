@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { checkSourceName } from 'utils/helpers';
+import { checkIfDoesNotContainsSquareBracket, checkSourceName } from 'utils/helpers';
 
 const ChainlinkNodeSchema = (props) => Yup.object().shape({
   name: Yup.string()
@@ -24,6 +24,8 @@ const ChainlinkNodeSchema = (props) => Yup.object().shape({
         dockerHubConfig,
       ]);
     })
+    .test('does-not-contain-square-bracket', 'Node name contains a square bracket',
+      (value) => checkIfDoesNotContainsSquareBracket(value))
     .required('Node name is required.'),
 });
 

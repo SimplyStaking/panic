@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { checkGitHubRepoExists } from 'utils/helpers';
+import { checkGitHubRepoExists, checkIfDoesNotContainsSquareBracket } from 'utils/helpers';
 
 const RepositorySchema = (props) => Yup.object().shape({
   repo_name: Yup.string()
@@ -13,6 +13,8 @@ const RepositorySchema = (props) => Yup.object().shape({
         reposConfig,
       );
     })
+    .test('does-not-contain-square-bracket', 'GitHub repo name contains a square bracket',
+      (value) => checkIfDoesNotContainsSquareBracket(value))
     .required('Repository name is required.'),
 });
 

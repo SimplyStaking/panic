@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { checkDockerHubRepoExists } from 'utils/helpers';
+import { checkDockerHubRepoExists, checkIfDoesNotContainsSquareBracket } from 'utils/helpers';
 
 const DockerHubSchema = (props) => Yup.object().shape({
   name: Yup.string()
@@ -13,6 +13,8 @@ const DockerHubSchema = (props) => Yup.object().shape({
         dockerHubConfig,
       );
     })
+    .test('does-not-contain-square-bracket', 'DockerHub repo name contains a square bracket',
+      (value) => checkIfDoesNotContainsSquareBracket(value))
     .matches('^[a-z+-0-9]+\\/[a-z+-0-9]+$|^[a-z+-0-9]+$', 'Name must be in the form \'simplyvc/panic\' or \'panic\'.')
     .required('DockerHub name is required.'),
 });

@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { checkChannelName } from 'utils/helpers';
+import { checkChannelName, checkIfDoesNotContainsSquareBracket } from 'utils/helpers';
 
 const PagerDutySchema = (props) => Yup.object().shape({
   channel_name: Yup.string()
@@ -16,6 +16,8 @@ const PagerDutySchema = (props) => Yup.object().shape({
         );
       },
     )
+    .test('does-not-contain-square-bracket', 'PagerDuty config name contains a square bracket',
+      (value) => checkIfDoesNotContainsSquareBracket(value))
     .required('Config name is required.'),
   api_token: Yup.string().required('API token is required.'),
   integration_key: Yup.string().required('Integration key is required.'),

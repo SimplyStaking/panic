@@ -79,6 +79,7 @@ const MonitorNetworkForm = withFormik({
 // Substrate redux data that will be used to control the node form.
 const mapStateToProps = (state) => ({
   currentChain: state.CurrentSubstrateChain,
+  currentChainName: 'substrate',
   chainConfig: state.SubstrateChainsReducer,
   chainlinkNodesConfig: state.ChainlinkNodesReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,
