@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { checkChannelName } from 'utils/helpers';
+import { checkChannelName, checkIfDoesNotContainsSquareBracket } from 'utils/helpers';
 
 const TwilioSchema = (props) => Yup.object().shape({
   channel_name: Yup.string()
@@ -12,6 +12,8 @@ const TwilioSchema = (props) => Yup.object().shape({
         ...[emails, opsGenies, pagerDuties, telegrams, twilios, slacks],
       );
     })
+    .test('does-not-contain-square-bracket', 'Twilio config name contains a square bracket',
+      (value) => checkIfDoesNotContainsSquareBracket(value))
     .required('Config name is required.'),
   account_sid: Yup.string().required('Account Sid is required.'),
   auth_token: Yup.string().required('Authentication token is required.'),

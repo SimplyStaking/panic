@@ -7,8 +7,15 @@ import Divider from '@material-ui/core/Divider';
 import { MuiThemeProvider } from '@material-ui/core/styles';
 import { defaultTheme } from 'components/theme/default';
 
-const isMonitorNetworkActive = (chainConfig, currentChain, substrateNodesConfig) => {
+const isMonitorNetworkActive = (chainConfig,
+  currentChain,
+  substrateNodesConfig,
+  cosmosNodesConfig,
+  currentChainName) => {
   const nodeInChain = chainConfig.byId[currentChain].nodes[0];
+  if (currentChainName === 'cosmos') {
+    return cosmosNodesConfig.byId[nodeInChain].monitor_network;
+  }
   return substrateNodesConfig.byId[nodeInChain].monitor_network;
 };
 
@@ -20,6 +27,8 @@ const MonitorNetworkNodesForm = ({
   chainConfig,
   currentChain,
   substrateNodesConfig,
+  cosmosNodesConfig,
+  currentChainName,
 }) => (chainConfig.byId[currentChain].nodes.length !== 0
   ? (
     <MuiThemeProvider theme={defaultTheme}>
@@ -52,6 +61,8 @@ const MonitorNetworkNodesForm = ({
                           chainConfig,
                           currentChain,
                           substrateNodesConfig,
+                          cosmosNodesConfig,
+                          currentChainName,
                         )}
                         onClick={() => {
                           setFieldValue('monitor_network', !values.monitor_network);
@@ -102,6 +113,24 @@ MonitorNetworkNodesForm.propTypes = {
       monitor_network: PropTypes.bool,
     })),
   }).isRequired,
+  cosmosNodesConfig: PropTypes.shape({
+    byId: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.string,
+      parent_id: PropTypes.string,
+      name: PropTypes.string,
+      node_ws_url: PropTypes.string,
+      exporter_url: PropTypes.string,
+      monitor_system: PropTypes.bool,
+      is_validator: PropTypes.bool,
+      monitor_node: PropTypes.bool,
+      is_archive_node: PropTypes.bool,
+      use_as_data_source: PropTypes.bool,
+      stash_address: PropTypes.string,
+      governance_addresses: PropTypes.arrayOf(PropTypes.string),
+      monitor_network: PropTypes.bool,
+    })),
+  }).isRequired,
+  currentChainName: PropTypes.string.isRequired,
   values: PropTypes.shape({
     monitor_network: PropTypes.bool.isRequired,
   }).isRequired,

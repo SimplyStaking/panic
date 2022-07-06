@@ -80,6 +80,7 @@ const MonitorNetworkForm = withFormik({
 // Cosmos redux data that will be used to control the node form.
 const mapStateToProps = (state) => ({
   currentChain: state.CurrentCosmosChain,
+  currentChainName: 'cosmos',
   chainConfig: state.CosmosChainsReducer,
   cosmosNodesConfig: state.CosmosNodesReducer,
   substrateNodesConfig: state.SubstrateNodesReducer,

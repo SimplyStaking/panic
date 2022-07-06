@@ -133,6 +133,16 @@ export function checkChannelName(value, ...configs) {
   return true;
 }
 
+/**
+ * @param value is the variable to check for a square bracket
+ */
+export function checkIfDoesNotContainsSquareBracket(value) {
+  if (!value) {
+    return true;
+  }
+  return !(value.includes('[') || value.includes(']'));
+}
+
 export function setAlertsData(chainConfig, currentChainId) {
   const repeatAlertsConfig = {};
   const thresholdAlertsConfig = {};

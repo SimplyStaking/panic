@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.2.1
+Released on 6th July 2022
+
+- Installer: Fixed blank page bug when adding a Cosmos node.
+- Installer: Added functionality for preventing square-brackets in configuration names.
+
 ## 1.2.0
 Released on 27th June 2022
 

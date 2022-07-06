@@ -1,6 +1,6 @@
 /* eslint-disable func-names */
 import * as Yup from 'yup';
-import { checkChannelName } from 'utils/helpers';
+import { checkChannelName, checkIfDoesNotContainsSquareBracket } from 'utils/helpers';
 
 const EmailSchema = (props) => Yup.object().shape({
   channel_name: Yup.string()
@@ -14,6 +14,8 @@ const EmailSchema = (props) => Yup.object().shape({
         ...[emails, opsGenies, pagerDuties, telegrams, twilios, slacks],
       );
     })
+    .test('does-not-contain-square-bracket', 'Email config name contains a square bracket',
+      (value) => checkIfDoesNotContainsSquareBracket(value))
     .required('Config name is required.'),
   smtp: Yup.string().required('SMTP is required.'),
   port: Yup.string().required('Port is required.'),

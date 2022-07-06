@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { checkChannelName } from 'utils/helpers';
+import { checkChannelName, checkIfDoesNotContainsSquareBracket } from 'utils/helpers';
 
 /*
   SlackSchema takes in props and returns a Yup validation object,
@@ -25,6 +25,8 @@ const SlackSchema = (props) => Yup.object().shape({
         ...[emails, opsGenies, pagerDuties, telegrams, twilios, slacks],
       );
     })
+    .test('does-not-contain-square-bracket', 'Slack config name contains a square bracket',
+      (value) => checkIfDoesNotContainsSquareBracket(value))
     .required('Slack Channel Name is required.'),
   bot_token: Yup.string().required('Bot token is required.'),
   app_token: Yup.string().required('App-Level token is required.'),

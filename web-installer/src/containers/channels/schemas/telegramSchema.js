@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { checkChannelName } from 'utils/helpers';
+import { checkChannelName, checkIfDoesNotContainsSquareBracket } from 'utils/helpers';
 
 /*
   TelegramSchema takes in props and returns a Yup validation object,
@@ -25,6 +25,8 @@ const TelegramSchema = (props) => Yup.object().shape({
         ...[emails, opsGenies, pagerDuties, telegrams, twilios, slacks],
       );
     })
+    .test('does-not-contain-square-bracket', 'Telegram config name contains a square bracket',
+      (value) => checkIfDoesNotContainsSquareBracket(value))
     .required('Bot name is required.'),
   bot_token: Yup.string().required('Bot token is required.'),
   chat_id: Yup.number()

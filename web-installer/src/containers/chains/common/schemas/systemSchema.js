@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { checkSourceName } from 'utils/helpers';
+import { checkIfDoesNotContainsSquareBracket, checkSourceName } from 'utils/helpers';
 
 const SystemSchema = (props) => Yup.object().shape({
   name: Yup.string()
@@ -27,6 +27,8 @@ const SystemSchema = (props) => Yup.object().shape({
         ],
       );
     })
+    .test('does-not-contain-square-bracket', 'System name contains a square bracket',
+      (value) => checkIfDoesNotContainsSquareBracket(value))
     .required('System name is required.'),
   exporter_url: Yup.string().required('Node Exporter URL is required.'),
 });
