@@ -11,3 +11,9 @@ panic-header {
 ion-popover.svc-dropdown-menu-content svc-dropdown-menu-content ion-item::part(native) {
   text-transform: capitalize;
 }
+
+.panic-header__menu {
+  display: flex;
+  flex-direction: row-reverse;
+}
+

@@ -1,0 +1,12 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[packages]
+configparser = "*"
+bson = "*"
+pymongo = "==3.12.1"
+
+[requires]
+python_version = "3.9.5"

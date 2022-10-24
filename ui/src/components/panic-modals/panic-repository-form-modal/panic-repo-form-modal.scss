@@ -1,0 +1,44 @@
+.sc-ion-modal-md-h {
+  --height: 320px;
+}
+
+ion-modal {
+  --width: 800px !important;
+
+  &.panic-repo-form-modal__repo-selected {
+    --height: 360px;
+  }
+}
+
+.panic-repo-form-modal {
+  padding: 10px;
+
+  fieldset {
+    border: 5px solid rgba(var(--ion-color-primary-rgb), 0.5);
+    border-radius: 3px;
+
+    legend {
+      font-weight: 900;
+      color: var(--ion-color-primary);
+      font-size: 1.3em;
+    }
+  }
+
+  &__buttons-container {
+    display: flex;
+    margin-top: 15px;
+    justify-content: center;
+  }
+}
+
+#type {
+  ion-select {
+    margin-top: 5px;
+    margin-bottom: 15px;
+  }
+}
+
+panic-installer-test-button {
+  text-align: center;
+}
+

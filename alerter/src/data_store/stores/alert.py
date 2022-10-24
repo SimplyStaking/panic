@@ -22,6 +22,7 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
 from src.utils.constants.data import EXPIRE_METRICS
+from src.utils.constants.mongo import REPLICA_SET_HOSTS, REPLICA_SET_NAME
 from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           ALERT_STORE_INPUT_QUEUE_NAME,
                                           ALERT_STORE_INPUT_ROUTING_KEY, TOPIC)
@@ -44,8 +45,8 @@ class AlertStore(Store):
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(name, logger, rabbitmq)
         self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
-                               db_name=self.mongo_db, host=self.mongo_ip,
-                               port=self.mongo_port)
+                               db_name=self.mongo_db, host=REPLICA_SET_HOSTS,
+                               replicaSet=REPLICA_SET_NAME)
 
     def _initialise_rabbitmq(self) -> None:
         """

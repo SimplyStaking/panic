@@ -5,16 +5,324 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
+import { ChannelType } from "../../entities/ts/ChannelType";
+import { Router } from "stencil-router-v2";
+import { SeverityType } from "../../entities/ts/SeverityType";
+import { MoreInfoType } from "./components/installer/panic-installer-more-info-modal/panic-installer-more-info-modal";
+import { ButtonIconPositionType } from "@simply-vc/uikit/dist/types/types/button";
+import { Config } from "../../entities/ts/Config";
+import { RepositoryType } from "../../entities/ts/RepositoryType";
+import { SourceType } from "../../entities/ts/SourceType";
+import { BaseChain } from "../../entities/ts/BaseChain";
+import { Sources } from "./components/installer/panic-installer-sources/panic-installer-sources";
+import { DataTableHeaderType } from "@simply-vc/uikit/dist/types/types/datatable";
+import { MoreInfoType as MoreInfoType1 } from "./components/installer/panic-installer-more-info-modal/panic-installer-more-info-modal";
+import { NodeSubconfig } from "../../entities/ts/NodeSubconfig";
+import { ContractSubconfig } from "../../entities/ts/ContractSubconfig";
+import { SelectOptionType } from "@simply-vc/uikit/dist/types/types/select";
+import { EVMNodeSubconfig } from "../../entities/ts/EVMNodeSubconfig";
+import { SystemSubconfig } from "../../entities/ts/SystemSubconfig";
+import { PingPropertiesType, PingPropertiesTypeMultipleSources, ServiceNames, ServiceNamesMultipleSources } from "./utils/types";
+import { RepositorySubconfig } from "../../entities/ts/RepositorySubconfig";
 export namespace Components {
     interface PanicAlertsOverview {
+    }
+    interface PanicChannelFormModal {
+        /**
+          * The channel object, passed should the form be in edit mode.
+         */
+        "channel": any;
+        /**
+          * List of ChannelType objects.
+         */
+        "channelTypes": ChannelType[];
     }
     interface PanicDashboardOverview {
     }
     interface PanicFooter {
     }
     interface PanicHeader {
+        /**
+          * Whether the menu should be displayed or not. Default is `true`.
+         */
+        "showMenu": boolean;
+    }
+    interface PanicInstallerAlerts {
+        /**
+          * The ID of the configuration that has just been saved
+         */
+        "configId": string;
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router": Router;
+        /**
+          * The list of SeverityType provided by PANIC.
+         */
+        "severityTypes": SeverityType[];
+    }
+    interface PanicInstallerAlertsAlertCell {
+        /**
+          * the method in which time is measured, for example: seconds; blocks; eras; etc.
+         */
+        "adornment": string;
+        /**
+          * the alert identifier
+         */
+        "alertIdentifier": string;
+        /**
+          * the title of the primary input
+         */
+        "primaryInputLabel": string;
+        /**
+          * the default text of the primary input
+         */
+        "primaryInputValue": number;
+        /**
+          * the default state of the repeat enabled setting
+         */
+        "repeatEnabled": boolean;
+        /**
+          * the title of the secondary input
+         */
+        "secondaryInputLabel": string;
+        /**
+          * the default text of the secondary input
+         */
+        "secondaryInputValue": number;
+        /**
+          * the SeverityType object associated with the alert
+         */
+        "severity": SeverityType;
+        /**
+          * the default state of the severity enabled setting
+         */
+        "severityEnabled": boolean;
+        /**
+          * the default text of the tertiary input
+         */
+        "tertiaryInputLabel": string;
+        /**
+          * the default text of the tertiary input
+         */
+        "tertiaryInputValue": number;
+    }
+    interface PanicInstallerAlertsMessageCell {
+        /**
+          * the label which serves as the header text
+         */
+        "label": string;
+        /**
+          * the message which serves as additional text
+         */
+        "message": string;
+    }
+    interface PanicInstallerChannels {
+        /**
+          * List of channel type objects.
+         */
+        "channelTypes": ChannelType[];
+        /**
+          * The configuration id being edited.
+         */
+        "configId": string;
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router": Router;
+    }
+    interface PanicInstallerFeedback {
+        /**
+          * The ID of the configuration that has just been saved
+         */
+        "configId": string;
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router": Router;
+    }
+    interface PanicInstallerFormCheckbox {
+        /**
+          * whether to default the checkbox state to enabled
+         */
+        "checked": boolean;
+        /**
+          * the name used in order to process the HTML form
+         */
+        "name": string;
+    }
+    interface PanicInstallerModal {
+    }
+    interface PanicInstallerMoreInfoModal {
+        "class": string;
+        "messages": MoreInfoType[];
+    }
+    interface PanicInstallerNav {
+        /**
+          * The current config being edited.
+         */
+        "config": Config;
+        "hidePreviousBtn": boolean;
+        "nextStepButtonIcon": string;
+        "nextStepButtonIconPosition": ButtonIconPositionType;
+        "nextStepButtonText": string;
+        "previousStepButtonIcon": string;
+        "previousStepButtonIconPosition": ButtonIconPositionType;
+        "previousStepButtonText": string;
+    }
+    interface PanicInstallerRepo {
+        /**
+          * The identifier used to represent the Config.
+         */
+        "configId": string;
+        /**
+          * List containing the Generic Repository Types.
+         */
+        "repositoryTypes": RepositoryType[];
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router": Router;
+    }
+    interface PanicInstallerSources {
+        /**
+          * The identifier used to represent the Config.
+         */
+        "configId": string;
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router": Router;
+        /**
+          * List containing the Generic Source Types.
+         */
+        "sourceTypes": SourceType[];
+    }
+    interface PanicInstallerSourcesCard {
+        "addButtonLabel": string;
+        "baseChain": BaseChain;
+        "cardTitle": string;
+        "cols": DataTableHeaderType[];
+        "governanceAddresses": string;
+        "headline": string;
+        "messages": MoreInfoType1[];
+        "monitorNetwork": boolean;
+        "sourceType": SourceType;
+        "sources": Sources[];
+    }
+    interface PanicInstallerSourcesCards {
+        "baseChain": BaseChain;
+        "config": Config;
+        "governanceAddresses": string;
+        "monitorNetwork": boolean;
+    }
+    interface PanicInstallerSourcesChainlinknodeForm {
+        "node": NodeSubconfig;
+    }
+    interface PanicInstallerSourcesContract {
+        "contract": ContractSubconfig;
+    }
+    interface PanicInstallerSourcesContractForm {
+    }
+    interface PanicInstallerSourcesContractWeiWatcher {
+        "contract": ContractSubconfig;
+        "contractNetworkOptions": SelectOptionType;
+    }
+    interface PanicInstallerSourcesCosmosnodeForm {
+        "node": NodeSubconfig;
+    }
+    interface PanicInstallerSourcesFormEvmnode {
+        "node": EVMNodeSubconfig;
+    }
+    interface PanicInstallerSourcesFormSystem {
+        "baseChain": BaseChain;
+        "system": SystemSubconfig;
+    }
+    interface PanicInstallerSourcesModal {
+        "baseChain": BaseChain;
+        "source": Sources;
+        "sourceType": SourceType;
+    }
+    interface PanicInstallerSourcesSubstratenodeForm {
+        "node": NodeSubconfig;
+    }
+    interface PanicInstallerSubChain {
+        /**
+          * List of blockchain frameworks supported by PANIC.
+         */
+        "baseChains": BaseChain[];
+        /**
+          * Indicates whether the installer process is editing a previously created config.
+         */
+        "configId": string;
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router": Router;
+    }
+    interface PanicInstallerTestButton {
+        /**
+          * the identifier of the service being tested (IP, channel name..)
+         */
+        "identifier": string;
+        /**
+          * the arguments to be used to call the ping function
+         */
+        "pingProperties": PingPropertiesType;
+        /**
+          * The service to be pinged
+         */
+        "service": ServiceNames;
+    }
+    interface PanicInstallerTestButtonMultipleSources {
+        /**
+          * Whether one valid source is sufficient for a successful toast
+         */
+        "oneValidSourceIsSufficient"?: boolean;
+        /**
+          * The list of arguments to be used to make multiple calls to the ping function
+         */
+        "pingProperties": PingPropertiesTypeMultipleSources[];
+        /**
+          * The service to be pinged
+         */
+        "service": ServiceNamesMultipleSources;
+    }
+    interface PanicInstallerWelcome {
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router": Router;
+    }
+    interface PanicRepoFormModal {
+        /**
+          * Aids with edit functionality by giving the ability for RepositorySubconfig objects to be passed to the modal, with the object data rendered in the form.
+         */
+        "repository": RepositorySubconfig;
+        /**
+          * RepositoryType list containing the generic Repository data.
+         */
+        "repositoryTypes": RepositoryType[];
     }
     interface PanicRoot {
+    }
+    interface PanicSettingsChains {
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router": Router;
+    }
+    interface PanicSettingsChannels {
+        /**
+          * List of channel type objects.
+         */
+        "channelTypes": ChannelType[];
+    }
+    interface PanicSettingsConfigMenu {
+        /**
+          * The config being edited.
+         */
+        "config": Config;
     }
     interface PanicSystemsOverview {
         /**
@@ -29,6 +337,12 @@ declare global {
     var HTMLPanicAlertsOverviewElement: {
         prototype: HTMLPanicAlertsOverviewElement;
         new (): HTMLPanicAlertsOverviewElement;
+    };
+    interface HTMLPanicChannelFormModalElement extends Components.PanicChannelFormModal, HTMLStencilElement {
+    }
+    var HTMLPanicChannelFormModalElement: {
+        prototype: HTMLPanicChannelFormModalElement;
+        new (): HTMLPanicChannelFormModalElement;
     };
     interface HTMLPanicDashboardOverviewElement extends Components.PanicDashboardOverview, HTMLStencilElement {
     }
@@ -48,11 +362,191 @@ declare global {
         prototype: HTMLPanicHeaderElement;
         new (): HTMLPanicHeaderElement;
     };
+    interface HTMLPanicInstallerAlertsElement extends Components.PanicInstallerAlerts, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerAlertsElement: {
+        prototype: HTMLPanicInstallerAlertsElement;
+        new (): HTMLPanicInstallerAlertsElement;
+    };
+    interface HTMLPanicInstallerAlertsAlertCellElement extends Components.PanicInstallerAlertsAlertCell, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerAlertsAlertCellElement: {
+        prototype: HTMLPanicInstallerAlertsAlertCellElement;
+        new (): HTMLPanicInstallerAlertsAlertCellElement;
+    };
+    interface HTMLPanicInstallerAlertsMessageCellElement extends Components.PanicInstallerAlertsMessageCell, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerAlertsMessageCellElement: {
+        prototype: HTMLPanicInstallerAlertsMessageCellElement;
+        new (): HTMLPanicInstallerAlertsMessageCellElement;
+    };
+    interface HTMLPanicInstallerChannelsElement extends Components.PanicInstallerChannels, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerChannelsElement: {
+        prototype: HTMLPanicInstallerChannelsElement;
+        new (): HTMLPanicInstallerChannelsElement;
+    };
+    interface HTMLPanicInstallerFeedbackElement extends Components.PanicInstallerFeedback, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerFeedbackElement: {
+        prototype: HTMLPanicInstallerFeedbackElement;
+        new (): HTMLPanicInstallerFeedbackElement;
+    };
+    interface HTMLPanicInstallerFormCheckboxElement extends Components.PanicInstallerFormCheckbox, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerFormCheckboxElement: {
+        prototype: HTMLPanicInstallerFormCheckboxElement;
+        new (): HTMLPanicInstallerFormCheckboxElement;
+    };
+    interface HTMLPanicInstallerModalElement extends Components.PanicInstallerModal, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerModalElement: {
+        prototype: HTMLPanicInstallerModalElement;
+        new (): HTMLPanicInstallerModalElement;
+    };
+    interface HTMLPanicInstallerMoreInfoModalElement extends Components.PanicInstallerMoreInfoModal, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerMoreInfoModalElement: {
+        prototype: HTMLPanicInstallerMoreInfoModalElement;
+        new (): HTMLPanicInstallerMoreInfoModalElement;
+    };
+    interface HTMLPanicInstallerNavElement extends Components.PanicInstallerNav, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerNavElement: {
+        prototype: HTMLPanicInstallerNavElement;
+        new (): HTMLPanicInstallerNavElement;
+    };
+    interface HTMLPanicInstallerRepoElement extends Components.PanicInstallerRepo, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerRepoElement: {
+        prototype: HTMLPanicInstallerRepoElement;
+        new (): HTMLPanicInstallerRepoElement;
+    };
+    interface HTMLPanicInstallerSourcesElement extends Components.PanicInstallerSources, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSourcesElement: {
+        prototype: HTMLPanicInstallerSourcesElement;
+        new (): HTMLPanicInstallerSourcesElement;
+    };
+    interface HTMLPanicInstallerSourcesCardElement extends Components.PanicInstallerSourcesCard, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSourcesCardElement: {
+        prototype: HTMLPanicInstallerSourcesCardElement;
+        new (): HTMLPanicInstallerSourcesCardElement;
+    };
+    interface HTMLPanicInstallerSourcesCardsElement extends Components.PanicInstallerSourcesCards, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSourcesCardsElement: {
+        prototype: HTMLPanicInstallerSourcesCardsElement;
+        new (): HTMLPanicInstallerSourcesCardsElement;
+    };
+    interface HTMLPanicInstallerSourcesChainlinknodeFormElement extends Components.PanicInstallerSourcesChainlinknodeForm, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSourcesChainlinknodeFormElement: {
+        prototype: HTMLPanicInstallerSourcesChainlinknodeFormElement;
+        new (): HTMLPanicInstallerSourcesChainlinknodeFormElement;
+    };
+    interface HTMLPanicInstallerSourcesContractElement extends Components.PanicInstallerSourcesContract, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSourcesContractElement: {
+        prototype: HTMLPanicInstallerSourcesContractElement;
+        new (): HTMLPanicInstallerSourcesContractElement;
+    };
+    interface HTMLPanicInstallerSourcesContractFormElement extends Components.PanicInstallerSourcesContractForm, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSourcesContractFormElement: {
+        prototype: HTMLPanicInstallerSourcesContractFormElement;
+        new (): HTMLPanicInstallerSourcesContractFormElement;
+    };
+    interface HTMLPanicInstallerSourcesContractWeiWatcherElement extends Components.PanicInstallerSourcesContractWeiWatcher, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSourcesContractWeiWatcherElement: {
+        prototype: HTMLPanicInstallerSourcesContractWeiWatcherElement;
+        new (): HTMLPanicInstallerSourcesContractWeiWatcherElement;
+    };
+    interface HTMLPanicInstallerSourcesCosmosnodeFormElement extends Components.PanicInstallerSourcesCosmosnodeForm, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSourcesCosmosnodeFormElement: {
+        prototype: HTMLPanicInstallerSourcesCosmosnodeFormElement;
+        new (): HTMLPanicInstallerSourcesCosmosnodeFormElement;
+    };
+    interface HTMLPanicInstallerSourcesFormEvmnodeElement extends Components.PanicInstallerSourcesFormEvmnode, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSourcesFormEvmnodeElement: {
+        prototype: HTMLPanicInstallerSourcesFormEvmnodeElement;
+        new (): HTMLPanicInstallerSourcesFormEvmnodeElement;
+    };
+    interface HTMLPanicInstallerSourcesFormSystemElement extends Components.PanicInstallerSourcesFormSystem, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSourcesFormSystemElement: {
+        prototype: HTMLPanicInstallerSourcesFormSystemElement;
+        new (): HTMLPanicInstallerSourcesFormSystemElement;
+    };
+    interface HTMLPanicInstallerSourcesModalElement extends Components.PanicInstallerSourcesModal, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSourcesModalElement: {
+        prototype: HTMLPanicInstallerSourcesModalElement;
+        new (): HTMLPanicInstallerSourcesModalElement;
+    };
+    interface HTMLPanicInstallerSourcesSubstratenodeFormElement extends Components.PanicInstallerSourcesSubstratenodeForm, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSourcesSubstratenodeFormElement: {
+        prototype: HTMLPanicInstallerSourcesSubstratenodeFormElement;
+        new (): HTMLPanicInstallerSourcesSubstratenodeFormElement;
+    };
+    interface HTMLPanicInstallerSubChainElement extends Components.PanicInstallerSubChain, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerSubChainElement: {
+        prototype: HTMLPanicInstallerSubChainElement;
+        new (): HTMLPanicInstallerSubChainElement;
+    };
+    interface HTMLPanicInstallerTestButtonElement extends Components.PanicInstallerTestButton, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerTestButtonElement: {
+        prototype: HTMLPanicInstallerTestButtonElement;
+        new (): HTMLPanicInstallerTestButtonElement;
+    };
+    interface HTMLPanicInstallerTestButtonMultipleSourcesElement extends Components.PanicInstallerTestButtonMultipleSources, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerTestButtonMultipleSourcesElement: {
+        prototype: HTMLPanicInstallerTestButtonMultipleSourcesElement;
+        new (): HTMLPanicInstallerTestButtonMultipleSourcesElement;
+    };
+    interface HTMLPanicInstallerWelcomeElement extends Components.PanicInstallerWelcome, HTMLStencilElement {
+    }
+    var HTMLPanicInstallerWelcomeElement: {
+        prototype: HTMLPanicInstallerWelcomeElement;
+        new (): HTMLPanicInstallerWelcomeElement;
+    };
+    interface HTMLPanicRepoFormModalElement extends Components.PanicRepoFormModal, HTMLStencilElement {
+    }
+    var HTMLPanicRepoFormModalElement: {
+        prototype: HTMLPanicRepoFormModalElement;
+        new (): HTMLPanicRepoFormModalElement;
+    };
     interface HTMLPanicRootElement extends Components.PanicRoot, HTMLStencilElement {
     }
     var HTMLPanicRootElement: {
         prototype: HTMLPanicRootElement;
         new (): HTMLPanicRootElement;
+    };
+    interface HTMLPanicSettingsChainsElement extends Components.PanicSettingsChains, HTMLStencilElement {
+    }
+    var HTMLPanicSettingsChainsElement: {
+        prototype: HTMLPanicSettingsChainsElement;
+        new (): HTMLPanicSettingsChainsElement;
+    };
+    interface HTMLPanicSettingsChannelsElement extends Components.PanicSettingsChannels, HTMLStencilElement {
+    }
+    var HTMLPanicSettingsChannelsElement: {
+        prototype: HTMLPanicSettingsChannelsElement;
+        new (): HTMLPanicSettingsChannelsElement;
+    };
+    interface HTMLPanicSettingsConfigMenuElement extends Components.PanicSettingsConfigMenu, HTMLStencilElement {
+    }
+    var HTMLPanicSettingsConfigMenuElement: {
+        prototype: HTMLPanicSettingsConfigMenuElement;
+        new (): HTMLPanicSettingsConfigMenuElement;
     };
     interface HTMLPanicSystemsOverviewElement extends Components.PanicSystemsOverview, HTMLStencilElement {
     }
@@ -62,23 +556,343 @@ declare global {
     };
     interface HTMLElementTagNameMap {
         "panic-alerts-overview": HTMLPanicAlertsOverviewElement;
+        "panic-channel-form-modal": HTMLPanicChannelFormModalElement;
         "panic-dashboard-overview": HTMLPanicDashboardOverviewElement;
         "panic-footer": HTMLPanicFooterElement;
         "panic-header": HTMLPanicHeaderElement;
+        "panic-installer-alerts": HTMLPanicInstallerAlertsElement;
+        "panic-installer-alerts-alert-cell": HTMLPanicInstallerAlertsAlertCellElement;
+        "panic-installer-alerts-message-cell": HTMLPanicInstallerAlertsMessageCellElement;
+        "panic-installer-channels": HTMLPanicInstallerChannelsElement;
+        "panic-installer-feedback": HTMLPanicInstallerFeedbackElement;
+        "panic-installer-form-checkbox": HTMLPanicInstallerFormCheckboxElement;
+        "panic-installer-modal": HTMLPanicInstallerModalElement;
+        "panic-installer-more-info-modal": HTMLPanicInstallerMoreInfoModalElement;
+        "panic-installer-nav": HTMLPanicInstallerNavElement;
+        "panic-installer-repo": HTMLPanicInstallerRepoElement;
+        "panic-installer-sources": HTMLPanicInstallerSourcesElement;
+        "panic-installer-sources-card": HTMLPanicInstallerSourcesCardElement;
+        "panic-installer-sources-cards": HTMLPanicInstallerSourcesCardsElement;
+        "panic-installer-sources-chainlinknode-form": HTMLPanicInstallerSourcesChainlinknodeFormElement;
+        "panic-installer-sources-contract": HTMLPanicInstallerSourcesContractElement;
+        "panic-installer-sources-contract-form": HTMLPanicInstallerSourcesContractFormElement;
+        "panic-installer-sources-contract-wei-watcher": HTMLPanicInstallerSourcesContractWeiWatcherElement;
+        "panic-installer-sources-cosmosnode-form": HTMLPanicInstallerSourcesCosmosnodeFormElement;
+        "panic-installer-sources-form-evmnode": HTMLPanicInstallerSourcesFormEvmnodeElement;
+        "panic-installer-sources-form-system": HTMLPanicInstallerSourcesFormSystemElement;
+        "panic-installer-sources-modal": HTMLPanicInstallerSourcesModalElement;
+        "panic-installer-sources-substratenode-form": HTMLPanicInstallerSourcesSubstratenodeFormElement;
+        "panic-installer-sub-chain": HTMLPanicInstallerSubChainElement;
+        "panic-installer-test-button": HTMLPanicInstallerTestButtonElement;
+        "panic-installer-test-button-multiple-sources": HTMLPanicInstallerTestButtonMultipleSourcesElement;
+        "panic-installer-welcome": HTMLPanicInstallerWelcomeElement;
+        "panic-repo-form-modal": HTMLPanicRepoFormModalElement;
         "panic-root": HTMLPanicRootElement;
+        "panic-settings-chains": HTMLPanicSettingsChainsElement;
+        "panic-settings-channels": HTMLPanicSettingsChannelsElement;
+        "panic-settings-config-menu": HTMLPanicSettingsConfigMenuElement;
         "panic-systems-overview": HTMLPanicSystemsOverviewElement;
     }
 }
 declare namespace LocalJSX {
     interface PanicAlertsOverview {
     }
+    interface PanicChannelFormModal {
+        /**
+          * The channel object, passed should the form be in edit mode.
+         */
+        "channel"?: any;
+        /**
+          * List of ChannelType objects.
+         */
+        "channelTypes"?: ChannelType[];
+    }
     interface PanicDashboardOverview {
     }
     interface PanicFooter {
     }
     interface PanicHeader {
+        /**
+          * Whether the menu should be displayed or not. Default is `true`.
+         */
+        "showMenu"?: boolean;
+    }
+    interface PanicInstallerAlerts {
+        /**
+          * The ID of the configuration that has just been saved
+         */
+        "configId"?: string;
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router"?: Router;
+        /**
+          * The list of SeverityType provided by PANIC.
+         */
+        "severityTypes"?: SeverityType[];
+    }
+    interface PanicInstallerAlertsAlertCell {
+        /**
+          * the method in which time is measured, for example: seconds; blocks; eras; etc.
+         */
+        "adornment"?: string;
+        /**
+          * the alert identifier
+         */
+        "alertIdentifier"?: string;
+        /**
+          * the title of the primary input
+         */
+        "primaryInputLabel"?: string;
+        /**
+          * the default text of the primary input
+         */
+        "primaryInputValue"?: number;
+        /**
+          * the default state of the repeat enabled setting
+         */
+        "repeatEnabled"?: boolean;
+        /**
+          * the title of the secondary input
+         */
+        "secondaryInputLabel"?: string;
+        /**
+          * the default text of the secondary input
+         */
+        "secondaryInputValue"?: number;
+        /**
+          * the SeverityType object associated with the alert
+         */
+        "severity"?: SeverityType;
+        /**
+          * the default state of the severity enabled setting
+         */
+        "severityEnabled"?: boolean;
+        /**
+          * the default text of the tertiary input
+         */
+        "tertiaryInputLabel"?: string;
+        /**
+          * the default text of the tertiary input
+         */
+        "tertiaryInputValue"?: number;
+    }
+    interface PanicInstallerAlertsMessageCell {
+        /**
+          * the label which serves as the header text
+         */
+        "label"?: string;
+        /**
+          * the message which serves as additional text
+         */
+        "message"?: string;
+    }
+    interface PanicInstallerChannels {
+        /**
+          * List of channel type objects.
+         */
+        "channelTypes"?: ChannelType[];
+        /**
+          * The configuration id being edited.
+         */
+        "configId"?: string;
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router"?: Router;
+    }
+    interface PanicInstallerFeedback {
+        /**
+          * The ID of the configuration that has just been saved
+         */
+        "configId"?: string;
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router"?: Router;
+    }
+    interface PanicInstallerFormCheckbox {
+        /**
+          * whether to default the checkbox state to enabled
+         */
+        "checked"?: boolean;
+        /**
+          * the name used in order to process the HTML form
+         */
+        "name"?: string;
+    }
+    interface PanicInstallerModal {
+    }
+    interface PanicInstallerMoreInfoModal {
+        "class"?: string;
+        "messages"?: MoreInfoType[];
+    }
+    interface PanicInstallerNav {
+        /**
+          * The current config being edited.
+         */
+        "config"?: Config;
+        "hidePreviousBtn"?: boolean;
+        "nextStepButtonIcon"?: string;
+        "nextStepButtonIconPosition"?: ButtonIconPositionType;
+        "nextStepButtonText"?: string;
+        "previousStepButtonIcon"?: string;
+        "previousStepButtonIconPosition"?: ButtonIconPositionType;
+        "previousStepButtonText"?: string;
+    }
+    interface PanicInstallerRepo {
+        /**
+          * The identifier used to represent the Config.
+         */
+        "configId"?: string;
+        /**
+          * List containing the Generic Repository Types.
+         */
+        "repositoryTypes"?: RepositoryType[];
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router"?: Router;
+    }
+    interface PanicInstallerSources {
+        /**
+          * The identifier used to represent the Config.
+         */
+        "configId"?: string;
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router"?: Router;
+        /**
+          * List containing the Generic Source Types.
+         */
+        "sourceTypes"?: SourceType[];
+    }
+    interface PanicInstallerSourcesCard {
+        "addButtonLabel"?: string;
+        "baseChain"?: BaseChain;
+        "cardTitle"?: string;
+        "cols"?: DataTableHeaderType[];
+        "governanceAddresses"?: string;
+        "headline"?: string;
+        "messages"?: MoreInfoType1[];
+        "monitorNetwork"?: boolean;
+        "sourceType"?: SourceType;
+        "sources"?: Sources[];
+    }
+    interface PanicInstallerSourcesCards {
+        "baseChain"?: BaseChain;
+        "config"?: Config;
+        "governanceAddresses"?: string;
+        "monitorNetwork"?: boolean;
+    }
+    interface PanicInstallerSourcesChainlinknodeForm {
+        "node"?: NodeSubconfig;
+    }
+    interface PanicInstallerSourcesContract {
+        "contract"?: ContractSubconfig;
+    }
+    interface PanicInstallerSourcesContractForm {
+    }
+    interface PanicInstallerSourcesContractWeiWatcher {
+        "contract"?: ContractSubconfig;
+        "contractNetworkOptions"?: SelectOptionType;
+    }
+    interface PanicInstallerSourcesCosmosnodeForm {
+        "node"?: NodeSubconfig;
+    }
+    interface PanicInstallerSourcesFormEvmnode {
+        "node"?: EVMNodeSubconfig;
+    }
+    interface PanicInstallerSourcesFormSystem {
+        "baseChain"?: BaseChain;
+        "system"?: SystemSubconfig;
+    }
+    interface PanicInstallerSourcesModal {
+        "baseChain"?: BaseChain;
+        "source"?: Sources;
+        "sourceType"?: SourceType;
+    }
+    interface PanicInstallerSourcesSubstratenodeForm {
+        "node"?: NodeSubconfig;
+    }
+    interface PanicInstallerSubChain {
+        /**
+          * List of blockchain frameworks supported by PANIC.
+         */
+        "baseChains"?: BaseChain[];
+        /**
+          * Indicates whether the installer process is editing a previously created config.
+         */
+        "configId"?: string;
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router"?: Router;
+    }
+    interface PanicInstallerTestButton {
+        /**
+          * the identifier of the service being tested (IP, channel name..)
+         */
+        "identifier": string;
+        /**
+          * the arguments to be used to call the ping function
+         */
+        "pingProperties": PingPropertiesType;
+        /**
+          * The service to be pinged
+         */
+        "service": ServiceNames;
+    }
+    interface PanicInstallerTestButtonMultipleSources {
+        /**
+          * Whether one valid source is sufficient for a successful toast
+         */
+        "oneValidSourceIsSufficient"?: boolean;
+        /**
+          * The list of arguments to be used to make multiple calls to the ping function
+         */
+        "pingProperties": PingPropertiesTypeMultipleSources[];
+        /**
+          * The service to be pinged
+         */
+        "service": ServiceNamesMultipleSources;
+    }
+    interface PanicInstallerWelcome {
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router"?: Router;
+    }
+    interface PanicRepoFormModal {
+        /**
+          * Aids with edit functionality by giving the ability for RepositorySubconfig objects to be passed to the modal, with the object data rendered in the form.
+         */
+        "repository"?: RepositorySubconfig;
+        /**
+          * RepositoryType list containing the generic Repository data.
+         */
+        "repositoryTypes"?: RepositoryType[];
     }
     interface PanicRoot {
+    }
+    interface PanicSettingsChains {
+        /**
+          * Stencil Router object for page navigation.
+         */
+        "router"?: Router;
+    }
+    interface PanicSettingsChannels {
+        /**
+          * List of channel type objects.
+         */
+        "channelTypes"?: ChannelType[];
+    }
+    interface PanicSettingsConfigMenu {
+        /**
+          * The config being edited.
+         */
+        "config"?: Config;
     }
     interface PanicSystemsOverview {
         /**
@@ -88,10 +902,41 @@ declare namespace LocalJSX {
     }
     interface IntrinsicElements {
         "panic-alerts-overview": PanicAlertsOverview;
+        "panic-channel-form-modal": PanicChannelFormModal;
         "panic-dashboard-overview": PanicDashboardOverview;
         "panic-footer": PanicFooter;
         "panic-header": PanicHeader;
+        "panic-installer-alerts": PanicInstallerAlerts;
+        "panic-installer-alerts-alert-cell": PanicInstallerAlertsAlertCell;
+        "panic-installer-alerts-message-cell": PanicInstallerAlertsMessageCell;
+        "panic-installer-channels": PanicInstallerChannels;
+        "panic-installer-feedback": PanicInstallerFeedback;
+        "panic-installer-form-checkbox": PanicInstallerFormCheckbox;
+        "panic-installer-modal": PanicInstallerModal;
+        "panic-installer-more-info-modal": PanicInstallerMoreInfoModal;
+        "panic-installer-nav": PanicInstallerNav;
+        "panic-installer-repo": PanicInstallerRepo;
+        "panic-installer-sources": PanicInstallerSources;
+        "panic-installer-sources-card": PanicInstallerSourcesCard;
+        "panic-installer-sources-cards": PanicInstallerSourcesCards;
+        "panic-installer-sources-chainlinknode-form": PanicInstallerSourcesChainlinknodeForm;
+        "panic-installer-sources-contract": PanicInstallerSourcesContract;
+        "panic-installer-sources-contract-form": PanicInstallerSourcesContractForm;
+        "panic-installer-sources-contract-wei-watcher": PanicInstallerSourcesContractWeiWatcher;
+        "panic-installer-sources-cosmosnode-form": PanicInstallerSourcesCosmosnodeForm;
+        "panic-installer-sources-form-evmnode": PanicInstallerSourcesFormEvmnode;
+        "panic-installer-sources-form-system": PanicInstallerSourcesFormSystem;
+        "panic-installer-sources-modal": PanicInstallerSourcesModal;
+        "panic-installer-sources-substratenode-form": PanicInstallerSourcesSubstratenodeForm;
+        "panic-installer-sub-chain": PanicInstallerSubChain;
+        "panic-installer-test-button": PanicInstallerTestButton;
+        "panic-installer-test-button-multiple-sources": PanicInstallerTestButtonMultipleSources;
+        "panic-installer-welcome": PanicInstallerWelcome;
+        "panic-repo-form-modal": PanicRepoFormModal;
         "panic-root": PanicRoot;
+        "panic-settings-chains": PanicSettingsChains;
+        "panic-settings-channels": PanicSettingsChannels;
+        "panic-settings-config-menu": PanicSettingsConfigMenu;
         "panic-systems-overview": PanicSystemsOverview;
     }
 }
@@ -100,10 +945,41 @@ declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
             "panic-alerts-overview": LocalJSX.PanicAlertsOverview & JSXBase.HTMLAttributes<HTMLPanicAlertsOverviewElement>;
+            "panic-channel-form-modal": LocalJSX.PanicChannelFormModal & JSXBase.HTMLAttributes<HTMLPanicChannelFormModalElement>;
             "panic-dashboard-overview": LocalJSX.PanicDashboardOverview & JSXBase.HTMLAttributes<HTMLPanicDashboardOverviewElement>;
             "panic-footer": LocalJSX.PanicFooter & JSXBase.HTMLAttributes<HTMLPanicFooterElement>;
             "panic-header": LocalJSX.PanicHeader & JSXBase.HTMLAttributes<HTMLPanicHeaderElement>;
+            "panic-installer-alerts": LocalJSX.PanicInstallerAlerts & JSXBase.HTMLAttributes<HTMLPanicInstallerAlertsElement>;
+            "panic-installer-alerts-alert-cell": LocalJSX.PanicInstallerAlertsAlertCell & JSXBase.HTMLAttributes<HTMLPanicInstallerAlertsAlertCellElement>;
+            "panic-installer-alerts-message-cell": LocalJSX.PanicInstallerAlertsMessageCell & JSXBase.HTMLAttributes<HTMLPanicInstallerAlertsMessageCellElement>;
+            "panic-installer-channels": LocalJSX.PanicInstallerChannels & JSXBase.HTMLAttributes<HTMLPanicInstallerChannelsElement>;
+            "panic-installer-feedback": LocalJSX.PanicInstallerFeedback & JSXBase.HTMLAttributes<HTMLPanicInstallerFeedbackElement>;
+            "panic-installer-form-checkbox": LocalJSX.PanicInstallerFormCheckbox & JSXBase.HTMLAttributes<HTMLPanicInstallerFormCheckboxElement>;
+            "panic-installer-modal": LocalJSX.PanicInstallerModal & JSXBase.HTMLAttributes<HTMLPanicInstallerModalElement>;
+            "panic-installer-more-info-modal": LocalJSX.PanicInstallerMoreInfoModal & JSXBase.HTMLAttributes<HTMLPanicInstallerMoreInfoModalElement>;
+            "panic-installer-nav": LocalJSX.PanicInstallerNav & JSXBase.HTMLAttributes<HTMLPanicInstallerNavElement>;
+            "panic-installer-repo": LocalJSX.PanicInstallerRepo & JSXBase.HTMLAttributes<HTMLPanicInstallerRepoElement>;
+            "panic-installer-sources": LocalJSX.PanicInstallerSources & JSXBase.HTMLAttributes<HTMLPanicInstallerSourcesElement>;
+            "panic-installer-sources-card": LocalJSX.PanicInstallerSourcesCard & JSXBase.HTMLAttributes<HTMLPanicInstallerSourcesCardElement>;
+            "panic-installer-sources-cards": LocalJSX.PanicInstallerSourcesCards & JSXBase.HTMLAttributes<HTMLPanicInstallerSourcesCardsElement>;
+            "panic-installer-sources-chainlinknode-form": LocalJSX.PanicInstallerSourcesChainlinknodeForm & JSXBase.HTMLAttributes<HTMLPanicInstallerSourcesChainlinknodeFormElement>;
+            "panic-installer-sources-contract": LocalJSX.PanicInstallerSourcesContract & JSXBase.HTMLAttributes<HTMLPanicInstallerSourcesContractElement>;
+            "panic-installer-sources-contract-form": LocalJSX.PanicInstallerSourcesContractForm & JSXBase.HTMLAttributes<HTMLPanicInstallerSourcesContractFormElement>;
+            "panic-installer-sources-contract-wei-watcher": LocalJSX.PanicInstallerSourcesContractWeiWatcher & JSXBase.HTMLAttributes<HTMLPanicInstallerSourcesContractWeiWatcherElement>;
+            "panic-installer-sources-cosmosnode-form": LocalJSX.PanicInstallerSourcesCosmosnodeForm & JSXBase.HTMLAttributes<HTMLPanicInstallerSourcesCosmosnodeFormElement>;
+            "panic-installer-sources-form-evmnode": LocalJSX.PanicInstallerSourcesFormEvmnode & JSXBase.HTMLAttributes<HTMLPanicInstallerSourcesFormEvmnodeElement>;
+            "panic-installer-sources-form-system": LocalJSX.PanicInstallerSourcesFormSystem & JSXBase.HTMLAttributes<HTMLPanicInstallerSourcesFormSystemElement>;
+            "panic-installer-sources-modal": LocalJSX.PanicInstallerSourcesModal & JSXBase.HTMLAttributes<HTMLPanicInstallerSourcesModalElement>;
+            "panic-installer-sources-substratenode-form": LocalJSX.PanicInstallerSourcesSubstratenodeForm & JSXBase.HTMLAttributes<HTMLPanicInstallerSourcesSubstratenodeFormElement>;
+            "panic-installer-sub-chain": LocalJSX.PanicInstallerSubChain & JSXBase.HTMLAttributes<HTMLPanicInstallerSubChainElement>;
+            "panic-installer-test-button": LocalJSX.PanicInstallerTestButton & JSXBase.HTMLAttributes<HTMLPanicInstallerTestButtonElement>;
+            "panic-installer-test-button-multiple-sources": LocalJSX.PanicInstallerTestButtonMultipleSources & JSXBase.HTMLAttributes<HTMLPanicInstallerTestButtonMultipleSourcesElement>;
+            "panic-installer-welcome": LocalJSX.PanicInstallerWelcome & JSXBase.HTMLAttributes<HTMLPanicInstallerWelcomeElement>;
+            "panic-repo-form-modal": LocalJSX.PanicRepoFormModal & JSXBase.HTMLAttributes<HTMLPanicRepoFormModalElement>;
             "panic-root": LocalJSX.PanicRoot & JSXBase.HTMLAttributes<HTMLPanicRootElement>;
+            "panic-settings-chains": LocalJSX.PanicSettingsChains & JSXBase.HTMLAttributes<HTMLPanicSettingsChainsElement>;
+            "panic-settings-channels": LocalJSX.PanicSettingsChannels & JSXBase.HTMLAttributes<HTMLPanicSettingsChannelsElement>;
+            "panic-settings-config-menu": LocalJSX.PanicSettingsConfigMenu & JSXBase.HTMLAttributes<HTMLPanicSettingsConfigMenuElement>;
             "panic-systems-overview": LocalJSX.PanicSystemsOverview & JSXBase.HTMLAttributes<HTMLPanicSystemsOverviewElement>;
         }
     }

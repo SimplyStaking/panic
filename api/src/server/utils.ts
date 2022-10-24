@@ -33,3 +33,57 @@ export const getElementsNotInList = (elements: any[], list: any[]): any[] => {
 export const allElementsInListHaveTypeString = (list: any[]): boolean => {
     return list.every(item => typeof (item) === "string")
 };
+
+export const getPrometheusMetricFromBaseChain = (baseChain: string): string => {
+    switch (baseChain.toLowerCase()) {
+        case 'cosmos':
+            return 'tendermint_consensus_height'
+        case 'chainlink':
+            return 'max_unconfirmed_blocks'
+        default:
+            return ''
+    }
+}
+
+export const verifyPrometheusPing = (prometheusPingData: string, baseChain: string): boolean => {
+    const metric = getPrometheusMetricFromBaseChain(baseChain);
+    let isValid: boolean = false;
+    prometheusPingData.split('\n').forEach((line) => {
+        if (!isValid) {
+            line.split(' ').forEach(token => {
+                if (!isValid && token.includes(metric)) {
+                    isValid = true;
+                }
+            })
+        }
+    });
+    return isValid;
+}
+
+export const verifyNodeExporterPing = (nodeExporterPingData: string): boolean => {
+    let isValid: boolean = false;
+    nodeExporterPingData.split('\n').forEach((line) => {
+        if (!isValid) {
+            line.split(' ').forEach(token => {
+                if (!isValid && token === 'node_cpu_seconds_total') {
+                    isValid = true;
+                }
+            })
+        }
+    });
+    return isValid;
+}
+
+export const fulfillWithTimeLimit = async (task: Promise<any>, timeLimit: number, failureValue: any = null) => {
+    let timeout;
+    const timeoutPromise = new Promise((resolve, _reject) => {
+        timeout = setTimeout(() => {
+            resolve(failureValue);
+        }, timeLimit);
+    });
+    const response = await Promise.race([task, timeoutPromise]);
+    if (timeout) {
+        clearTimeout(timeout);
+    }
+    return response;
+}

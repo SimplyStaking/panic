@@ -21,7 +21,7 @@ docker-compose up --build -d ui
 Running the UI in a development server triggers a rebuild when the src files are
 updated. To run the UI in this mode, you need to perform the following steps:
 
-1. Update `DEV_MODE` to true in the `.env` file.
+1. Update `DEV_MODE` to `true` in the `.env` file.
 2. Navigate to the PANIC root directory and do `docker-compose up --build -d 
    api` to run the API service. This will enable the UI service to successfully 
    obtain data.
@@ -31,7 +31,7 @@ updated. To run the UI in this mode, you need to perform the following steps:
 
 This will start the development server at `http://localhost:{API_PORT}`.
 
-**Note**: Make sure to change back `DEV_MODE` to false in the `.env` file before
+**Note**: Make sure to change back `DEV_MODE` to `false` in the `.env` file before
 running PANIC in production.
 
 ## Running tests
@@ -63,13 +63,19 @@ npm run test.watch    # Run E2E and unit tests in watch mode
 ```
 
 ## Pages
-Currently, the UI consists of two pages: the [Home Page](#home-page) and
-[Systems Overview](#systems-overview). Environmental variables such as `UI_PORT`
-can be obtained from the .env file found in the root directory of PANIC. The 
-default UI_PORT is `3333`.
+The latest version of PANIC UI is able to detect whether PANIC has been set up or not.
+If the node operator did not set up PANIC yet, the installer will be fired up.
+This will enable the node operator to set up PANIC.
+
+![](../docs/images/UI/installer.png)
+
+When not in installation mode, the UI consists of three pages: the [Home Page](#home-page),
+[Systems Overview Pages](#systems-overview) and the [Settings Pages](#settings-pages).
 
 ### Home Page
-This page can be accessed at `https://{UI_ACCESS_IP}:UI_PORT`.
+This page can be accessed at `https://{UI_ACCESS_IP}:UI_PORT`, where both `UI_ACCESS_IP`
+and `UI_PORT` are values that can be obtained from the `.env` file. Note that `UI_PORT` is `3333` 
+by default.
 
 The homepage consists of two sections: [Dashboard Overview](#dashboard-overview)
 and [Alerts Overview](#alerts-overview).
@@ -77,7 +83,7 @@ and [Alerts Overview](#alerts-overview).
 #### Dashboard Overview
 This section depicts an overview of all current problems in the node 
 operator's set-up being monitored by PANIC. A pie chart is displayed for each 
-base-chain (Cosmos, Substrate, Chainlink, General), showing the denomination of 
+base chain (Cosmos, Substrate, Chainlink, General), showing the denomination of 
 all problems for every sub-chain (ex. Polkadot, Regen, Binance Smart Chain) by 
 severity. Problems in PANIC can be of three different severities; Critical, 
 Warning and Error, thus the problems being displayed in this section have one of
@@ -92,8 +98,6 @@ severities, and sorted by severity, timestamp or description.
 
 ![](../docs/images/UI/dashboard-overview-2.png)
 
-For all alerts, kindly use the [Alerts Overview](#alerts-overview) section.
-
 #### Alerts Overview
 This section displays all the alerts that have been raised by PANIC so far in a 
 table. Each entry in the table consists of the alert severity, timestamp and 
@@ -102,11 +106,9 @@ date-time, and sorted by severity, timestamp or message.
 
 ![](../docs/images/UI/alerts-overview.png)
 
-For active alerts, kindly use the [Dashboard Overview](#dashboard-overview) section.
-
 ### Systems Overview
 The aim of this page is to show the system metrics (CPU usage, storage usage and
-more) of a particular base-chain in a tabular way. Each metric value has the 
+more) of a particular base chain in a tabular way. Each metric value has the 
 following colour coding:
 
 - Green: If the metric value is not problematic
@@ -117,8 +119,48 @@ In addition to this, the node operator can also sort by the metric values.
 
 ![](../docs/images/UI/systems-overview.png)
 
-This page can be accessed by clicking on the dropdown menu found in the 
-right-hand side of the header, and choosing the desired base-chain.
+This page can be accessed by clicking the `Networks` option found on the 
+right-hand side of the PANIC UI header, and choosing the desired base chain.
+
+### Settings Pages
+
+The aim of the settings pages is to provide functionality for modifying the 
+configurations which are set during the installation procedure. PANIC UI consists
+of two settings pages, one for [Channels](#channels-settings-page) and one 
+for the [Chains](#chains-settings-page).
+
+#### Channels Settings Page
+
+The channels settings page provides the following functionalities to the user:
+
+1. The addition of new channels
+2. The removal of already added channels
+3. The modification of already added channels
+4. The ability to map a channel to various subchains
+
+The addition, removal and modification of channels can be done from this section:
+
+![](../docs/images/UI/channels-settings-page-1.png)
+
+The mapping procedure can be done from this section:
+
+![](../docs/images/UI/channels-settings-page-2.png)
+
+This page can be accessed by clicking the `Settings > Channels` option found on the 
+right-hand side of the PANIC UI header.
+
+#### Chains Settings Page
+
+The chains settings page provides the following functionalities to the user:
+
+1. The addition of new chains
+2. The removal of already added chains
+3. The modification of already added chains
+
+![](../docs/images/UI/chains-settings-page.png)
+
+This page can be accessed by clicking the `Settings > Chains` option found on the 
+right-hand side of the PANIC UI header.
 
 ## Known Issues
 - Because of a known bug in the Firefox Browser, when accessing PANIC UI from 

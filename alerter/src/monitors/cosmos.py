@@ -82,6 +82,7 @@ class CosmosMonitor(Monitor, ABC):
         :return: The node config of the selected node.
                : None if no node is selected.
         """
+        nodes = [node for node in nodes if node.cosmos_rest_url]
         for node in nodes:
             cosmos_rest_url = node.cosmos_rest_url
             try:
@@ -112,6 +113,7 @@ class CosmosMonitor(Monitor, ABC):
         :return: The node config of the selected node.
                : None if no node is selected.
         """
+        nodes = [node for node in nodes if node.tendermint_rpc_url]
         for node in nodes:
             tendermint_rpc_url = node.tendermint_rpc_url
             try:

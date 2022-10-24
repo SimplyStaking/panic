@@ -33,5 +33,8 @@ def iso_to_epoch(time):
     other time formats in the future.
     """
     time = str(time)[:-4]
-    time = datetime.datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.%f')
+    try:
+        time = datetime.datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.%f')
+    except ValueError:
+        time = datetime.datetime.strptime(time, '%Y-%m-%dT%H:%M')
     return time.timestamp()

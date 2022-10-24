@@ -1,20 +1,80 @@
 version: '3.7'
 
 services:
-  mongo-test:
-    image: 'mongo'
+  
+  # 3 replica sets: primary rs1
+  rs1-test:
+    container_name: rs1-test
+    image: mongo
     logging:
       driver: "json-file"
       options:
         max-file: "5"
         max-size: "10m"
+    restart: always
+    command: mongod --replSet replica-set
     networks:
       panic_net:
-        ipv4_address: '${DB_IP_TEST}'
+        ipv4_address: '${DB_IP_REPLICA_1_TEST}'
+
+  rs2-test:
+    container_name: rs2-test
+    image: mongo
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
     restart: always
-    container_name: 'mongo-test'
-    volumes:
-      - 'db-data:/data/db'
+    command: mongod --replSet replica-set
+    networks:
+      panic_net:
+        ipv4_address: '${DB_IP_REPLICA_2_TEST}'
+
+  rs3-test:
+    container_name: rs3-test
+    image: mongo
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    restart: always
+    command: mongod --replSet replica-set
+    networks:
+      panic_net:
+        ipv4_address: '${DB_IP_REPLICA_3_TEST}'
+    
+  # simply container to startup the replica set
+  mongo-startup-test:
+    container_name: mongo-startup-test
+    image: mongo
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "10m"
+    # this container will exit after executing the command
+    restart: "no"
+    depends_on:
+      - rs1-test
+      - rs2-test
+      - rs3-test
+    command: >
+      mongosh --host rs1-test:27017 --eval 'db=(new Mongo("rs1-test:27017")).getDB("local"); 
+        config = {
+          "_id" : "replica-set",
+          "members" : [
+            {"_id" : 0,"host" : "rs1-test:27017"},
+            {"_id" : 1,"host" : "rs2-test:27017"},
+            {"_id" : 2,"host" : "rs3-test:27017"}
+          ] 
+        };
+        rs.initiate(config);'
+    networks:
+      panic_net:
+        ipv4_address: '${DB_IP_REPLICA_STARTUP_TEST}'
+
 
   redis-test:
     image: 'redis'
@@ -46,9 +106,9 @@ services:
     environment:
       - 'UNIQUE_ALERTER_IDENTIFIER=${UNIQUE_ALERTER_IDENTIFIER}'
       - 'DB_NAME=${DB_NAME}'
-      - 'DB_IP=${DB_IP_TEST}'
+      - 'DB_IP=${DB_IP_REPLICA_1_TEST}'
       - 'DB_PORT=${DB_PORT}'
-      - 'REDIS_DB=${REDIS_TEST_DB}'
+      - 'REDIS_DB=${REDIS_DB_TEST}'
       - 'REDIS_IP=${REDIS_IP_TEST}'
       - 'REDIS_PORT=${REDIS_PORT}'
       - 'RABBIT_IP=${RABBIT_IP_TEST}'
@@ -83,11 +143,11 @@ services:
       - 'DOCKERHUB_TAGS_TEMPLATE=${DOCKERHUB_TAGS_TEMPLATE}'
       - 'SUBSTRATE_API_IP=${SUBSTRATE_API_IP}'
       - 'SUBSTRATE_API_PORT=${SUBSTRATE_API_PORT}'
-      - 'WAIT_HOSTS=${DB_IP_TEST}:${DB_PORT}, ${REDIS_IP_TEST}:${REDIS_PORT}, ${RABBIT_IP_TEST}:${RABBIT_PORT}'
+      - 'WAIT_HOSTS=${DB_IP_REPLICA_1_TEST}:${DB_PORT}, ${DB_IP_REPLICA_2_TEST}:${DB_PORT}, ${DB_IP_REPLICA_3_TEST}:${DB_PORT}, ${REDIS_IP_TEST}:${REDIS_PORT}, ${RABBIT_IP_TEST}:${RABBIT_PORT}'
     build:
       context: './'
       dockerfile: './alerter/Tests_Dockerfile'
-    image: 'simplyvc/panic_alerter_tests:1.2.1'
+    image: 'simplyvc/panic_alerter_tests:1.3.0'
     logging:
       driver: "json-file"
       options:
@@ -99,10 +159,10 @@ services:
     networks:
       panic_net:
         ipv4_address: '${TESTS_IP}'
-    depends_on:
-      - mongo-test
+    depends_on:      
       - redis-test
       - rabbitmq-test
+      - mongo-startup-test
 
 networks:
   panic_net:

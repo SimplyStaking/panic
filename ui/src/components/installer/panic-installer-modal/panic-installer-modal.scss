@@ -1,0 +1,40 @@
+/* controlling modal height */
+@media only screen and (min-width: 768px) {
+  .sc-ion-modal-md-h {
+    --height: 380px !important;
+  }
+}
+
+.panic-installer-modal {
+  margin: 10px;
+  padding-right: 0px;
+
+  &__icon {
+    display: flex;
+    font-size: 120px;
+    justify-content: center;
+    margin-bottom: 50px;
+  }
+
+  &__content {
+    margin: 10px;
+  }
+
+  &__inner-text {
+   text-align: center;
+
+   svc-text {
+     font-size: 16px;
+     color: var(--ion-color-primary);
+   }
+ }
+}
+
+svc-button {
+  margin-top: 50px;
+  display: grid;
+}
+
+ion-button {
+  font-size: 16px;
+}

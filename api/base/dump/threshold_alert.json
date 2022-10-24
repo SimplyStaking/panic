@@ -1,0 +1,596 @@
+[
+    {
+        "_id": "628bcb395c5ab4c82d151a93",
+        "name": "Cannot access validator",
+        "value": "cannot_access_validator",
+        "description": "Raised when a validator is unaccessible.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 120,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 0
+        }
+    },
+    {
+        "_id": "62e235d5f161ba55e6db29e7",
+        "name": "Cannot access node",
+        "value": "cannot_access_node",
+        "description": "Raised when a node is unaccessible.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": false,
+            "repeat_enabled": true,
+            "threshold": 300,
+            "repeat": 600
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 0
+        }
+    },
+    {
+        "_id": "62e2366ef161ba55e6db29e8",
+        "name": "System is down",
+        "value": "system_is_down",
+        "description": "The Node Exporter URL is unreachable therefore the system is declared to be down.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 200,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 0
+        }
+    },
+    {
+        "_id": "62e236acf161ba55e6db29e9",
+        "name": "No change in block height for a validator",
+        "value": "no_change_in_block_height_validator",
+        "description": "This alert is raised when there has not been a change in validator block height over a period of time.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 60,
+            "repeat": 180
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 30
+        }
+    },
+    {
+        "_id": "62e23735f161ba55e6db29ea",
+        "name": "No change in block height for a node",
+        "value": "no_change_in_block_height_node",
+        "description": "This alert is raised when there has not been a change in node block height over a period of time.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": false,
+            "repeat_enabled": true,
+            "threshold": 300,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 120
+        }
+    },
+    {
+        "_id": "62e237acf161ba55e6db29eb",
+        "name": "Difference between monitored node heights",
+        "value": "block_height_difference",
+        "description": "This alert is raised when the block height difference between multiple Cosmos nodes increases above thresholds.",
+        "adornment": "Blocks",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": false,
+            "repeat_enabled": false,
+            "threshold": 100,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 50
+        }
+    },
+    {
+        "_id": "62e237d8f161ba55e6db29ec",
+        "name": "Open File Descriptors increased",
+        "value": "open_file_descriptors",
+        "description": "Open File Descriptors alerted based on percentage usage.",
+        "adornment": "%",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 95,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 85
+        }
+    },
+    {
+        "_id": "62e2383af161ba55e6db29ed",
+        "name": "System CPU usage increased",
+        "value": "system_cpu_usage",
+        "description": "System CPU alerted based on percentage usage.",
+        "adornment": "%",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 95,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 85
+        }
+    },
+    {
+        "_id": "62e23870f161ba55e6db29ee",
+        "name": "System Storage usage increased",
+        "value": "system_storage_usage",
+        "adornment": "%",
+        "description": "System Storage alerted based on percentage usage.",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 95,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 85
+        }
+    },
+    {
+        "_id": "62e2389cf161ba55e6db29ef",
+        "name": "System RAM usage increased",
+        "value": "system_ram_usage",
+        "adornment": "%",
+        "description": "System RAM alerted based on percentage usage.",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 95,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 85
+        }
+    },
+    {
+        "_id": "62e23908f161ba55e6db29f0",
+        "name": "Cannot access Prometheus for Validator",
+        "value": "cannot_access_prometheus_validator",
+        "description": "The Prometheus endpoint for a validator has not been accessible for some time.",
+        "adornment": "%",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 120,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 0
+        }
+    },
+    {
+        "_id": "62e23996f161ba55e6db29f1",
+        "name": "Cannot access Prometheus for Node",
+        "value": "cannot_access_prometheus_node",
+        "description": "The Prometheus endpoint for a node has not been accessible for some time.",
+        "adornment": "%",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": false,
+            "repeat_enabled": true,
+            "threshold": 300,
+            "repeat": 600
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 0
+        }
+    },
+    {
+        "_id": "62e23a26f161ba55e6db29f2",
+        "name": "Cannot access Cosmos REST server for Validator",
+        "value": "cannot_access_cosmos_rest_validator",
+        "description": "The Cosmos REST server for a validator has not been accessible for some time.",
+        "adornment": "%",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 120,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 0
+        }
+    },
+    {
+        "_id": "62e23a3bf161ba55e6db29f3",
+        "name": "Cannot access Cosmos REST server for Node",
+        "value": "cannot_access_cosmos_rest_node",
+        "description": "The Cosmos REST server for a node has not been accessible for some time.",
+        "adornment": "%",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": false,
+            "repeat_enabled": true,
+            "threshold": 300,
+            "repeat": 600
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 0
+        }
+    },
+    {
+        "_id": "62e23a55f161ba55e6db29f4",
+        "name": "Cannot access Tendermint RPC for Validator",
+        "value": "cannot_access_tendermint_rpc_validator",
+        "description": "The Tendermint RPC for a validator has not been accessible for some time.",
+        "adornment": "%",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 120,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 0
+        }
+    },
+    {
+        "_id": "62e23a65f161ba55e6db29f5",
+        "name": "Cannot access Tendermint RPC for Node",
+        "value": "cannot_access_tendermint_rpc_node",
+        "description": "The Tendermint RPC for a node has not been accessible for some time.",
+        "adornment": "%",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": false,
+            "repeat_enabled": true,
+            "threshold": 300,
+            "repeat": 600
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 0
+        }
+    },
+    {
+        "_id": "62e23e64f161ba55e6db2a05",
+        "name": "No Change in Validator Best Block Height",
+        "value": "no_change_in_best_block_height_validator",
+        "description": "Raised when the best block height of a validator is unchanged.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 300,
+            "repeat": 180
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 180
+        }
+    },
+    {
+        "_id": "62e23e8ef161ba55e6db2a06",
+        "name": "No Change in Node Best Block Height",
+        "value": "no_change_in_best_block_height_node",
+        "description": "Raised when the best block height of a node is unchanged.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": false,
+            "repeat_enabled": true,
+            "threshold": 300,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 180
+        }
+    },
+    {
+        "_id": "62e23eabf161ba55e6db2a07",
+        "name": "No Change in Validator Finalized Best Block Height",
+        "value": "no_change_in_finalized_block_height_validator",
+        "description": "Raised when the finalized best block height of a validator is unchanged.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 300,
+            "repeat": 180
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 180
+        }
+    },
+    {
+        "_id": "62e23ed3f161ba55e6db2a08",
+        "name": "No Change in Node Finalized Best Block Height",
+        "value": "no_change_in_finalized_block_height_node",
+        "description": "Raised when the finalized best block height of a node is unchanged.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": false,
+            "repeat_enabled": true,
+            "threshold": 300,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 180
+        }
+    },
+    {
+        "_id": "62e23f28f161ba55e6db2a09",
+        "name": "Validator is Syncing",
+        "value": "validator_is_syncing",
+        "description": "Raised when a validator is syncing.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 100,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 50
+        }
+    },
+    {
+        "_id": "62e23f75f161ba55e6db2a0a",
+        "name": "Node is Syncing",
+        "value": "node_is_syncing",
+        "description": "Raised when a node is syncing.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": false,
+            "repeat_enabled": true,
+            "threshold": 100,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 50
+        }
+    },
+    {
+        "_id": "62e23fadf161ba55e6db2a0b",
+        "name": "No Heartbeat and Did Not Author Block in Current Session Yet",
+        "value": "no_heartbeat_did_not_author_block",
+        "description": "Raised when no heartbeat was recieved and no block has yet been authored in the current session.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": false,
+            "threshold": 2700,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 1800
+        }
+    },
+    {
+        "_id": "62e23fedf161ba55e6db2a0c",
+        "name": "Payout Not Claimed",
+        "value": "payout_not_claimed",
+        "description": "Raised when a payout has not been claimed yet after a number of eras.",
+        "adornment": "Eras",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 60,
+            "repeat": 1
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 30
+        }
+    },
+    {
+        "_id": "62e2447cf161ba55e6db2a11",
+        "name": "Chainlink node: Latest block height processed by node",
+        "value": "head_tracker_current_head",
+        "description": "Keeps track of blocks processed by the node, alerts if no change over time.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 450,
+            "repeat": 180
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 300
+        }
+    },
+    {
+        "_id": "62e244fbf161ba55e6db2a13",
+        "name": "Chainlink node: New block headers not being received",
+        "value": "head_tracker_heads_received_total",
+        "description": "Keeps track of when the last block header was received, if a block header was not received after a while an alert will be raised.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 450,
+            "repeat": 180
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 300
+        }
+    },
+    {
+        "_id": "62e24547f161ba55e6db2a15",
+        "name": "Chainlink node: Balance",
+        "value": "balance_amount",
+        "description": "If the balance is less than the threshold an alert will be raised. This applies to all EVM networks e.g BNB.",
+        "adornment": "Balance",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 5,
+            "repeat": 600
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 10
+        }
+    },
+    {
+        "_id": "62e245adf161ba55e6db2a17",
+        "name": "Chainlink node is down",
+        "value": "node_is_down",
+        "description": "All data sources for the node are unreachable therefore the node is declared to be down.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 200,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 10
+        }
+    },
+    {
+        "_id": "62e245fdf161ba55e6db2a18",
+        "name": "Chainlink Contracts: Node did not respond in the latest round",
+        "value": "price_feed_not_observed",
+        "description": "If a round has ended and the node operator did not submit a price feed observation in that round an alert is raised.",
+        "adornment": "Missed Rounds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 6,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 3
+        }
+    },
+    {
+        "_id": "62e24640f161ba55e6db2a19",
+        "name": "Chainlink Contracts: Node's answer deviates from the median answer",
+        "value": "price_feed_deviation",
+        "description": "If a round has ended and the node operator submitted a price feed observation that deviates from the median by a certain threshold an alert is raised.",
+        "adornment": "%",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 15,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 4
+        }
+    },
+    {
+        "_id": "62e2467cf161ba55e6db2a1a",
+        "name": "EVM Node: Node is Down",
+        "value": "evm_node_is_down",
+        "description": "If the EVM node is not reachable for a period of time this alert will be raised.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 300,
+            "repeat": 500
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 300
+        }
+    },
+    {
+        "_id": "62e246abf161ba55e6db2a1b",
+        "name": "EVM Node: Block height difference between nodes",
+        "value": "evm_block_syncing_block_height_difference",
+        "description": "If the block height difference between monitored EVM nodes is greater than the specified thresholds this alert will be raised.",
+        "adornment": "Blocks",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 1000,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 700
+        }
+    },
+    {
+        "_id": "62e246fdf161ba55e6db2a1c",
+        "name": "EVM Node: Block height not changed after a period of time",
+        "value": "evm_block_syncing_no_change_in_block_height",
+        "description": "If the block height has not changed after a period of time this alert is raised.",
+        "adornment": "Seconds",
+        "group": "threshold_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 450,
+            "repeat": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 300
+        }
+    }
+]

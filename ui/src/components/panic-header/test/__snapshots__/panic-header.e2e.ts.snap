@@ -3,7 +3,10 @@
 exports[`panic-header renders 1`] = `
 <panic-header>
   <svc-header imgpath="/assets/logos/panic_logo.png" imgposition="start" imgurl="/" menuposition="end">
-    <svc-dropdown-menu label="Networks" slot="menu"></svc-dropdown-menu>
+    <div class="panic-header__menu" slot="menu">
+      <svc-dropdown-menu label="Networks"></svc-dropdown-menu>
+      <svc-dropdown-menu label="Settings"></svc-dropdown-menu>
+    </div>
   </svc-header>
 </panic-header>
 `;

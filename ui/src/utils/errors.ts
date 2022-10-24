@@ -2,6 +2,8 @@
  * {@link UnknownAlertSeverityError} class represents the error which is thrown
  * when an alert severity value which is not in {@link Severity} is encountered.
  */
+import {BaseChains, SourceType} from "./constants";
+
 export class UnknownAlertSeverityError extends Error {
     name = "UnknownAlertSeverityError";
 
@@ -44,5 +46,17 @@ export class UnknownRepoTypeError extends Error {
 
     constructor(repoType: string) {
         super(`An unknown repo type (${repoType}) was encountered.`);
+    }
+}
+
+/**
+ * {@link BaseChainDoesNotSupportSourceTypeError} class represents the error which is thrown
+ * when a {@link SourceType} which is not supported by a given base chain is encountered.
+ */
+export class BaseChainDoesNotSupportSourceTypeError extends Error {
+    name = "BaseChainDoesNotSupportSourceTypeError";
+
+    constructor(baseChain: BaseChains, sourceType: SourceType) {
+        super(`Base chain (${baseChain}) does not support source type (${sourceType}).`);
     }
 }

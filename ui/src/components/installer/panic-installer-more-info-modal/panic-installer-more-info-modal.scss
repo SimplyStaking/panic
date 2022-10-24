@@ -1,0 +1,100 @@
+@import '../../scss/mixins/modal-dimension.scss';
+
+ion-modal {
+  &.panic-installer-more-info-modal__channels {
+    @include modal-dimension(75vh, 750px);
+  }
+
+  &.panic-installer-more-info-modal {
+
+    &__cosmos-nodes {
+      @include modal-dimension(400px, 750px);
+    }
+
+    &__chainlink-nodes {
+      @include modal-dimension(430px, 750px);
+    }
+
+    &__chainlink-evm_nodes {
+      @include modal-dimension(420px, 750px);
+    }
+
+    &__chainlink-contract {
+      @include modal-dimension(430px, 750px);
+    }
+
+    &__chainlink-systems {
+      @include modal-dimension(380px, 750px);
+    }
+
+    &__substrate-nodes {
+      @include modal-dimension(400px, 750px);
+    }
+
+    &__general-systems {
+      @include modal-dimension(430px, 750px);
+    }
+  }
+
+  &.panic-installer-more-info-modal__repo {
+    --height: 670px;
+    --width: 750px;
+  }
+  &.panic-installer-more-info-modal__alerts {
+    --height: 670px;
+    --width: 750px;
+  }
+}
+
+panic-installer-more-info-modal {
+  ul {
+    list-style-type: none;
+
+    li {
+      margin-bottom: 8px;
+    }
+  }
+
+  svc-label {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+}
+
+.panic-installer-more-info-modal {
+
+  &__container {
+
+    svc-label {
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+    ul {
+      list-style-type: none;
+
+      li {
+        margin-bottom: 8px;
+      }
+    }
+
+  }
+}
+
+.panic-installer-more-info-modal {
+  &__info-list-item {
+    display: flex;
+    align-items: center;
+    margin: 5px 5px 15px 5px;
+    color: var(--ion-color-primary);
+  }
+
+  &__button-container {
+    display: flex;
+    justify-content: center;
+
+    ion-button {
+      font-size: 16px;
+    }
+  }
+}

@@ -1,5 +1,6 @@
-import redis, {RetryStrategyOptions} from "redis"
-import {MSG_REDIS_CONNECTION_ESTABLISHED, MSG_REDIS_DISCONNECTED} from "./msgs";
+import redis, { RetryStrategyOptions } from "redis"
+import { MSG_REDIS_CONNECTION_ESTABLISHED, MSG_REDIS_DISCONNECTED }
+    from "../constant/msg";
 import {
     AlertKeysDockerHubRepo,
     AlertKeysGitHubRepo,
@@ -14,7 +15,7 @@ import {
     SystemKeys,
     UniqueKeys
 } from "./types";
-import {RedisClientNotInitialised} from "./errors";
+import { RedisClientNotInitialised } from "../constant/errors";
 
 export const getRedisHashes = (): RedisHashes => ({
     parent: 'hash_p1'
@@ -181,7 +182,7 @@ export const getAlertKeysDockerHubRepo = (): AlertKeysDockerHubRepo => ({
 
 export const addPrefixToKeys =
     (keysObject: RedisKeys, prefix: string): RedisKeys => {
-        const newObject: RedisKeys = {...keysObject};
+        const newObject: RedisKeys = { ...keysObject };
         Object.keys(keysObject)
             .forEach((key) => {
                 newObject[key] = `${prefix}${keysObject[key]}`;
@@ -191,7 +192,7 @@ export const addPrefixToKeys =
 
 export const addPostfixToKeys =
     (keysObject: RedisKeys, postfix: string): RedisKeys => {
-        const newObject: RedisKeys = {...keysObject};
+        const newObject: RedisKeys = { ...keysObject };
         Object.keys(keysObject)
             .forEach((key) => {
                 newObject[key] = `${keysObject[key]}${postfix}`;
@@ -207,7 +208,7 @@ export class RedisInterface {
     private _client?: redis.RedisClient;
 
     constructor(host: string = "localhost", port: number = 6379,
-                db: number = 10, password?: string) {
+        db: number = 10, password?: string) {
         this.host = host;
         this.port = port;
         this.db = db;

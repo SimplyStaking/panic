@@ -1,0 +1,61 @@
+@import '../../scss/mixins/centralized-container.scss';
+@import '../../scss/mixins/heading.scss';
+@import '../../scss/mixins/text.scss';
+@import '../../scss/mixins/buttons.scss';
+@import '../../scss/mixins/data-table-container';
+@import '../../scss/mixins/data-tables.scss';
+
+.panic-installer-channels {
+
+  &__container {
+    padding: 5px 5% 5px 5%;
+
+    svc-surface {
+      margin: 10px;
+    }
+
+    p {
+      @include text();
+    }
+  }
+
+  &__heading {
+    @include heading-container();
+  }
+
+  &__title {
+    @include heading-title();
+  }
+
+  &__step {
+    @include heading-step();
+  }
+
+  &__text-with-tooltip{
+    @include text-with-tooltip();
+  }
+
+  &__add-channel-button {
+    @include add-button();
+  }
+
+  &__filter-container {
+    @include data-table-container();
+
+    svc-event-emitter {
+      form {
+        margin-bottom: 5px;
+      }
+    }
+  }
+
+  &__crud-data-table {
+    @include crud-data-table();
+  }
+}
+
+#no-channel-associated {
+  color: var(--ion-color-tertiary);
+  font-weight: 600;
+  text-align: center;
+}

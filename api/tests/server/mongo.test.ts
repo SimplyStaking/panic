@@ -1,5 +1,5 @@
-import {MongoClientNotInitialised} from "../../src/server/errors";
-import {MongoInterface} from "../../src/server/mongo";
+import { MongoClientNotInitialised } from "../../src/constant/errors";
+import { MongoInterface } from "../../src/server/mongo";
 
 describe('MongoInterface', () => {
     const mongoInterface: MongoInterface = new MongoInterface({});

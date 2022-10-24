@@ -1,0 +1,18 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-more-info-modal renders 1`] = `
+<panic-installer-more-info-modal class="hydrated">
+  <svc-content-container class="hydrated">
+    <!---->
+    <div style="display: flex; justify-content: center;">
+      <svc-button class="hydrated">
+        <!---->
+        <ion-button class="button button-default button-solid hydrated ion-activatable ion-focusable md" size="default">
+          <ion-icon aria-label="checkmark" class="hydrated md" name="checkmark" role="img" slot="start"></ion-icon>
+          Got it!
+        </ion-button>
+      </svc-button>
+    </div>
+  </svc-content-container>
+</panic-installer-more-info-modal>
+`;

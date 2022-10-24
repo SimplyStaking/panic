@@ -18,6 +18,7 @@ from src.data_store.redis.store_keys import Keys
 from src.data_store.stores.system import SystemStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
+from src.utils.constants.mongo import REPLICA_SET_HOSTS, REPLICA_SET_NAME
 from src.utils.constants.rabbitmq import (
     STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE, SYSTEM_STORE_INPUT_QUEUE_NAME, TOPIC,
     HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY, SYSTEM_TRANSFORMED_DATA_ROUTING_KEY)
@@ -51,14 +52,13 @@ class TestSystemStore(unittest.TestCase):
                               self.redis_namespace,
                               self.connection_check_time_interval)
 
-        self.mongo_ip = env.DB_IP
         self.mongo_db = env.DB_NAME
         self.mongo_port = env.DB_PORT
 
         self.mongo = MongoApi(logger=self.dummy_logger.getChild(
             MongoApi.__name__),
-            db_name=self.mongo_db, host=self.mongo_ip,
-            port=self.mongo_port)
+            db_name=self.mongo_db, host=REPLICA_SET_HOSTS,
+            replicaSet=REPLICA_SET_NAME)
 
         self.test_store_name = 'store name'
         self.test_store = SystemStore(self.test_store_name,
@@ -255,9 +255,6 @@ class TestSystemStore(unittest.TestCase):
 
     def test_name_property_returns_name_correctly(self) -> None:
         self.assertEqual(self.test_store_name, self.test_store.name)
-
-    def test_mongo_ip_property_returns_mongo_ip_correctly(self) -> None:
-        self.assertEqual(self.mongo_ip, self.test_store.mongo_ip)
 
     def test_mongo_db_property_returns_mongo_db_correctly(self) -> None:
         self.assertEqual(self.mongo_db, self.test_store.mongo_db)

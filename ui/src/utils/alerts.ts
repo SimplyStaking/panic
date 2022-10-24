@@ -56,7 +56,7 @@ async function getChainAlerts(chains: SubChain[], filterState: FilterStateV2): P
     }
 
     try {
-        const alerts = await fetch(`${API_URL}mongo/alerts`,
+        const alerts = await fetch(`${API_URL}server/mongo/alerts`,
             {
                 method: 'POST',
                 headers: {

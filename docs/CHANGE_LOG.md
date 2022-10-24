@@ -1,5 +1,20 @@
 # Change Log
 
+## Unreleased
+
+## 1.3.0
+
+Released on 24th October 2022
+
+- Web Installer: Installation procedure merged into PANIC UI.
+- Web Installer: Config editing functionality added to PANIC UI.
+- Web Installer: Docker service removed.
+- Updated PANIC UI to use `@simply-vc/uikit` 1.6.1.
+- Removed `@stencil/router` from PANIC UI dependencies.
+- API: Added endpoints required to migrate the web installer to PANIC UI
+- Updated documentation throughout.
+- Updated Polkadot API to 9.6.1.
+
 ## 1.2.1
 Released on 6th July 2022
 

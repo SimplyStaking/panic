@@ -37,6 +37,73 @@ export function mockMonitorablesInfoData(): any {
 }
 
 /**
+ * Mocking API response from `mongo/installation/is-first` endpoint.
+ */
+export function mockIsFirstInstall(): any {
+    return {
+        result: false
+    }
+}
+
+/**
+ * Mocking API response from `config/{config_id}` endpoint.
+ */
+export function mockGetConfigData(): any {
+    return {
+        subChain: {name: "test_sub_chain"},
+        baseChain: {name: "test_base_chain"},
+        channels: [
+            {
+                "channel_id": 1651233337426,
+                "enabled_sub_chains": [
+                    "test_sub_chain"
+                ],
+                "channel_data": {
+                    "channel_type": "telegram",
+                    "info": "true",
+                    "warning": "",
+                    "critical": "true",
+                    "error": "true",
+                    "channel_name": "telegram_bot_1",
+                    "bot_token": "token_123",
+                    "chat_id": "123",
+                    "telegram_commands": "true",
+                    "telegram_alerts": "true"
+                }
+            },
+            {
+                "channel_id": 1651233435456,
+                "enabled_sub_chains": [],
+                "channel_data": {
+                    "channel_type": "slack",
+                    "info": "true",
+                    "warning": "",
+                    "critical": "",
+                    "error": "",
+                    "channel_name": "slack_bot_1",
+                    "app_token": "app123",
+                    "bot_token": "123",
+                    "bot_channel_id": "123123",
+                    "commands": "",
+                    "alerts": "true"
+                }
+            },
+        ],
+        repos: [],
+        thresholdAlerts: [],
+        timeWindowAlerts: [],
+        severityAlerts: []
+    }
+}
+
+/**
+ * Mocking API response from `config/` endpoint.
+ */
+export function mockGetAllConfigs(): any {
+    return [mockGetConfigData()]
+}
+
+/**
  * Mocking API response from `mongo/alerts` endpoint.
  */
 export function mockAlertsData(): any {

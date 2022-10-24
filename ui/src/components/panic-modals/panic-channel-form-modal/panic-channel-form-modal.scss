@@ -1,0 +1,106 @@
+@import '../../scss/mixins/form.scss';
+@import '../../scss/mixins/modal-dimension.scss';
+
+.sc-ion-alert-md-h {
+  .alert-radio-group.sc-ion-alert-md, .alert-checkbox-group.sc-ion-alert-md{
+    max-height: 300px;
+  }
+}
+
+ion-modal {
+
+  &.panic-channel-form-modal {
+
+    &__no-channel-type {
+      @include modal-dimension(200px);
+    }
+
+    &__telegram {
+      @include modal-dimension(715px);
+    }
+
+    &__slack {
+      @include modal-dimension(770px);
+    }
+
+    &__email {
+      @include modal-dimension(820px);
+    }
+
+    &__opsgenie {
+      @include modal-dimension(600px);
+    }
+
+    &__pagerduty {
+      @include modal-dimension(530px);
+    }
+
+    &__twilio {
+      @include modal-dimension(630px);
+    }
+
+  }
+}
+
+panic-channel-form-modal {
+  padding: 10px;
+  @include form();
+}
+
+.panic-channel-form-modal {
+
+  &__buttons-container {
+    display: flex;
+    margin-top: 25px;
+    justify-content: center;
+  }
+
+  &__subtitle {
+     margin-top: 8px;
+
+     svc-label{
+       font-size: 15px;
+       font-weight: 900;
+       margin-left: 4px;
+     }
+   }
+
+  &__subtitle_2 {
+    font-size: 15px;
+    font-weight: 900;
+    margin-top: 25px;
+    margin-bottom: 10px;
+  }
+
+  &__channel-severities {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+
+    svc-checkbox {
+      width: 100px;
+    }
+  }
+}
+
+#channel-type {
+  ion-select {
+    margin-top: 5px;
+    margin-bottom: 15px;
+  }
+}
+
+panic-channel-form-modal {
+  panic-installer-test-button,
+  panic-installer-test-button-multiple-sources {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  svc-multiple-input {
+    .svc-multiple-input__chip-container {
+      flex-wrap: wrap;
+    }
+  }
+}

@@ -1,5 +1,5 @@
-import {MissingFile} from "../../src/server/errors";
-import {readFile} from "../../src/server/files";
+import { MissingFile } from "../../src/constant/errors";
+import { readFile } from "../../src/server/files";
 
 const fs = require('fs');
 

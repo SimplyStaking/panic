@@ -1,0 +1,55 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-sources-contract renders 1`] = `
+<panic-installer-sources-contract>
+  <svc-surface class="panic-installer-sources__container">
+    <svc-label class="panic-installer-sources__title">
+      Contracts Monitoring Setup
+    </svc-label>
+    <div class="panic-installer-sources__more-info">
+      <p>
+        Here you will configure the contracts you want monitored and triggering alerts
+      </p>
+      <svc-buttons-container>
+        <svc-button color="secondary" iconname="information-circle" iconposition="icon-only"></svc-button>
+      </svc-buttons-container>
+    </div>
+    <div class="panic-installer-sources-contract__container-form"></div>
+    <div class="panic-installer-sources-contract__container-wei">
+      <panic-installer-sources-contract-wei-watcher></panic-installer-sources-contract-wei-watcher>
+    </div>
+  </svc-surface>
+</panic-installer-sources-contract>
+`;
+
+exports[`panic-installer-sources-contract-form renders 1`] = `
+<panic-installer-sources-contract-form>
+  <form>
+    <svc-input label="Custom Network Name" labelcolor="primary" lines="inset" name="name" placeholder="Enter custom network name..." required=""></svc-input>
+    <svc-input label="Custom Network URL" labelcolor="primary" lines="inset" name="url" placeholder="Enter custom network URL..." required="" type="url"></svc-input>
+    <div class="panic-installer-sources-contract__add-contract-buttons">
+      <svc-button color="primary" iconname="checkmark" type="submit">
+        Save
+      </svc-button>
+      <svc-button color="primary" iconname="close">
+        Cancel
+      </svc-button>
+    </div>
+  </form>
+</panic-installer-sources-contract-form>
+`;
+
+exports[`panic-installer-sources-contract-wei-watcher renders 1`] = `
+<panic-installer-sources-contract-wei-watcher>
+  <div class="panic-installer-sources-contract__network-add-container">
+    <svc-select header="Network Name" name="name" placeholder="Network Name" withborder=""></svc-select>
+    <svc-buttons-container>
+      <svc-button color="primary" iconname="add-circle" iconposition="icon-only"></svc-button>
+    </svc-buttons-container>
+  </div>
+  <div>
+    <svc-input disabled="" label="WeiWatchers URL" labelcolor="primary" lines="inset" name="url"></svc-input>
+    <svc-toggle helptext="Whether to monitor price feed contract for this chain." htmlid="monitor_contracts" label="Enable Contract Monitoring" lines="none" name="monitor" position="end" value=""></svc-toggle>
+  </div>
+</panic-installer-sources-contract-wei-watcher>
+`;

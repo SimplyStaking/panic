@@ -10,9 +10,9 @@ import {
     MissingKeysInBody,
     MongoClientNotInitialised,
     RedisClientNotInitialised
-} from "../../src/server/errors";
-import {RedisError} from "redis";
-import {baseChains} from "../../src/server/constants";
+} from "../../src/constant/errors";
+import { RedisError } from "redis";
+import { baseChains } from "../../src/constant/server";
 
 describe('Server Errors have correct message and code', () => {
     it('MissingFile', () => {

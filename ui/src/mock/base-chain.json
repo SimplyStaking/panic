@@ -1,0 +1,43 @@
+[
+    {
+      "id":1,
+      "name":"Cosmos",
+      "description":"Cosmos desc...",
+      "value":"cosmos",
+      "sources":[
+        "node",
+        "network"
+      ]
+    },
+    {
+      "id":2,
+      "name":"Chainlink",
+      "description":"Chainlink desc...",
+      "value":"chainlink",
+      "sources":[
+        "node",
+        "evmnode",
+        "contract",
+        "system"
+      ]
+    },
+    {
+      "id":3,
+      "name":"Substrate",
+      "description":"Substrate desc...",
+      "value":"substrate",
+      "sources":[
+        "node",
+        "network"
+      ]
+    },
+    {
+      "id":4,
+      "name":"General",
+      "description":"General desc...",
+      "value":"general",
+      "sources":[
+        "system"
+      ]
+    }
+]

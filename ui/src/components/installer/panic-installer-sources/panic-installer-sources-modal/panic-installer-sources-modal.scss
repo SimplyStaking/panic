@@ -1,0 +1,22 @@
+.panic-installer-sources-modal {
+
+  svc-content-container {
+    overflow-x: hidden;
+  }
+
+  &__buttons-container {
+    display: flex;
+    margin-top: 15px;
+    justify-content: center;
+  }
+}
+
+panic-installer-test-button {
+  display: flex;
+  align-items: flex-end;
+}
+
+panic-installer-test-button-multiple-sources {
+  display: flex;
+  align-items: center;
+}

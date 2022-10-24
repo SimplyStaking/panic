@@ -21,17 +21,17 @@
 
 The PANIC alerter can alert a node operator on the following sources: 
 - The host systems that the Cosmos-SDK/Substrate/Chainlink nodes are running on based on system metrics obtained from the node via [Node Exporter](https://github.com/prometheus/node_exporter).
-- Chainlink nodes will be monitored through their Prometheus metrics.
+- Chainlink nodes will be monitored through their Prometheus ports.
 - Chainlink contracts are monitored through the use of EVM nodes and Chainlink node addresses.
 - EVM nodes will be monitored through the RPC endpoint.
-- Cosmos nodes will be monitored through their Prometheus metrics, REST, and Tendermint RPC.
-- Cosmos networks will be monitored using various Cosmos nodes' REST endpoint.
+- Cosmos nodes will be monitored through their Prometheus, REST, and Tendermint RPC endpoints.
+- Cosmos networks will be monitored using various Cosmos nodes' REST endpoints.
 - Substrate nodes will be monitored through their web-socket URL.
 - Substrate networks will be monitored using various Substrate nodes' web-socket URLs.
 - GitHub repository releases using the [GitHub Releases API](https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#releases).
 - DockerHub repository releases using the [Docker HUB API](https://docs.docker.com/docker-hub/api/latest).
 
-Given the above, systems monitoring and GitHub/DockerHub repositories monitoring were developed as general as possible to give the node operator the option to monitor any system and/or any repository (Don't have to be Substrate/Cosmos-SDK/Chainlink based nodes/repositories).
+**Note**: Systems monitoring and GitHub/DockerHub repositories monitoring were developed as general as possible to give the node operator the option to monitor any system and/or any repository (Don't have to be Substrate/Cosmos-SDK/Chainlink based nodes/repositories).
 
 The diagram below depicts the different components which constitute PANIC and how they interact with each other and the node operator.
 
@@ -85,7 +85,7 @@ For Substrate Network monitoring and alerting, PANIC operates similarly to that 
 
 **Notes**: 
 
-- Another important component which is not depicted above is the **Health-Checker** component. The **Health-Checker** was not included in the image above as it is not part of the monitoring and alerting process, in fact it runs in its own Docker container. The **Health-Checker** component constitutes of two separate components, the **Ping Publisher** and the **Heartbeat Handler**. The **Ping Publisher** sends ping requests to PANIC's components every 30 seconds via **RabbitMQ**, and the **Heartbeat Handler** listens for heartbeats and saves them to **Redis**. This mechanism makes it possible to deduce whether PANIC's components are running as expected when the node operator enters the `/status` command described [here](#telegram-and-slack-commands).
+- Another important component which is not depicted above is the **Health-Checker** component. The **Health-Checker** was not included in the image above as it is not part of the monitoring and alerting process, in fact it runs in its own Docker container. The **Health-Checker** component constitutes of two separate components, the **Ping Publisher** and the **Heartbeat Handler**. The **Ping Publisher** sends ping requests to PANIC's components every 30 seconds via **RabbitMQ**, and the **Heartbeat Handler** listens for heartbeats and saves them to **Redis**. This mechanism makes it possible to deduce whether PANIC's components are running as expected when the node operator enters the `/status` or `/panicstatus` commands described [here](#telegram-and-slack-commands).
 
 ## Alert Types
 
@@ -115,7 +115,7 @@ PANIC supports the following alerting channels:
 | `Opsenie`   | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All                     | Alerts are sent to the node operator's Opsgenie environment using the following severity mapping: `CRITICAL` → `P1`, `WARNING` → `P3`, `ERROR` → `P3`, `INFO` → `P5`                  |
 | `PagerDuty` | `INFO`, `CRITICAL`, `WARNING`, `ERROR` | All                     | Alerts are sent to the node operator's PagerDuty environment using the following severity mapping: `CRITICAL` → `critical`, `WARNING` → `warning`, `ERROR` → `error`, `INFO` → `info` |
 
-Using the installation procedure, the user is able to specify the chain a node/system/GitHub repository belongs to (if the system/GitHub repository is not associated with a chain, it is associated automatically under the GENERAL chain). Due to this, the user is given the capability of associating channels with specific chains, hence obtaining a more organized alerting system. In addition to this, the user can set multiple alerting channels of the same type and enable/disable alert severities on each channel.
+Using the installation procedure the user is able to specify the chain a node/system/GitHub repository belongs to (if the system/GitHub repository is not related to any chain it can be associated to the GENERAL chain). Due to this, the user is given the capability of associating channels with specific chains, hence obtaining a more organized alerting system. In addition to this, the user can set multiple alerting channels of the same type and enable/disable alert severities on each channel.
 
 For example the node operator may have the following setup:
 - A Telegram Channel for Polkadot alerts with only WARNING and CRITICAL alerts enabled.

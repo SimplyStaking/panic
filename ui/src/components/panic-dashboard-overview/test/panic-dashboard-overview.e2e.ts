@@ -2,11 +2,14 @@ import {newSpecPage} from '@stencil/core/testing';
 import {
     fetchMock,
     mockAlertsOverviewWithAlerts,
+    mockIsFirstInstall,
     mockMonitorablesInfoData
 } from '../../../utils/mock';
 import {PanicDashboardOverview} from '../panic-dashboard-overview';
 
-fetchMock.mockResponses([JSON.stringify(mockMonitorablesInfoData())], [JSON.stringify(mockAlertsOverviewWithAlerts())]);
+fetchMock.mockResponses([JSON.stringify(mockIsFirstInstall())],
+                        [JSON.stringify(mockMonitorablesInfoData())],
+                        [JSON.stringify(mockAlertsOverviewWithAlerts())]);
 
 describe('panic-dashboard-overview', () => {
     it('renders', async () => {

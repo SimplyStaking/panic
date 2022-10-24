@@ -2,10 +2,7 @@ import {h} from '@stencil/core';
 import {Alert, AlertsCount} from '../../../interfaces/alerts';
 import {BaseChain} from '../../../interfaces/chains';
 import {FilterState} from '../../../interfaces/filterState';
-import {
-    DataTableHeaderType,
-    DataTableRecordType
-} from "@simply-vc/uikit/dist/types/types/datatable";
+import {DataTableHeaderType, DataTableRowsType} from '@simply-vc/uikit/dist/types/types/datatable';
 import {SelectOptionType} from '@simply-vc/uikit/dist/types/types/select';
 import {AlertsAPI} from '../../../utils/alerts';
 import {ChartColumnType} from '@simply-vc/uikit/dist/types/types/piechart';
@@ -68,8 +65,8 @@ function getPieChartJSX(baseChain: BaseChain, selectedChains: string[]): JSX.Ele
         colors={hasAlerts ? alertsColors : noAlertsColors}
         cols={cols}
         rows={hasAlerts ? rows : noAlertsRows}
-        pie-slice-text={hasAlerts ? "percentage" : "none"}
-        tooltip-trigger={hasAlerts ? "focus" : "none"}
+        pie-slice-text={hasAlerts ? "value" : "none"}
+        tooltip-trigger={"none"}
     />
 }
 
@@ -91,7 +88,7 @@ function getDataTableJSX(baseChain: BaseChain, filterState: FilterState): JSX.El
 
     const hasAlerts = alerts.length > 0;
     const cols: DataTableHeaderType[] = ALERTS_DATA_TABLE_HEADER;
-    const rows: DataTableRecordType = hasAlerts ? getDataTableRecordTypeFromAlerts(alerts, filterState.selectedSeverities) : [];
+    const rows: DataTableRowsType = hasAlerts ? getDataTableRowsTypeFromAlerts(alerts, filterState.selectedSeverities) : [];
 
     return <svc-data-table
         id={baseChain.name}
@@ -106,12 +103,12 @@ function getDataTableJSX(baseChain: BaseChain, filterState: FilterState): JSX.El
 
 /**
  * Filters alerts which do not have an active (selected) severity and
- * formats alerts to {@link DataTableRecordType}.
+ * formats alerts to {@link DataTableRowsType}.
  * @param alerts array of alerts.
  * @param activeSeverities array of active (selected) severities.
- * @returns populated {@link DataTableRecordType} object.
+ * @returns populated {@link DataTableRowsType} object.
  */
-function getDataTableRecordTypeFromAlerts(alerts: Alert[], activeSeverities: Severity[]): DataTableRecordType {
+function getDataTableRowsTypeFromAlerts(alerts: Alert[], activeSeverities: Severity[]): DataTableRowsType {
     const noSeverityFilterSelected: boolean = activeSeverities.length === 0;
 
     // Filter alerts.
@@ -120,16 +117,20 @@ function getDataTableRecordTypeFromAlerts(alerts: Alert[], activeSeverities: Sev
     });
 
     // Format filtered alerts into DataTableRecordType type.
-    return filteredAlerts.map(alert => [
-        {
-            label: SeverityAPI.getSeverityIcon(alert.severity),
-            value: alert.severity
-        },
-        {
-            label: new Date(alert.timestamp * 1000).toLocaleString(),
-            value: new Date(alert.timestamp * 1000)
-        },
-        {label: alert.message, value: alert.message}]);
+    return filteredAlerts.map((alert, index) => ({
+        cells: [
+            {
+                label: SeverityAPI.getSeverityIcon(alert.severity),
+                value: alert.severity
+            },
+            {
+                label: new Date(alert.timestamp * 1000).toLocaleString(),
+                value: new Date(alert.timestamp * 1000)
+            },
+            {label: alert.message, value: alert.message}
+        ],
+        id: index
+    }));
 }
 
 /**

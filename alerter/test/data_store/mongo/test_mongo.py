@@ -8,6 +8,7 @@ from pymongo.errors import (PyMongoError, OperationFailure,
 
 from src.data_store.mongo.mongo_api import MongoApi
 from src.utils import env
+from src.utils.constants.mongo import REPLICA_SET_HOSTS, REPLICA_SET_NAME
 
 
 class TestMongoApiWithMongoOnline(unittest.TestCase):
@@ -19,13 +20,11 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
         dummy_logger = logging.getLogger('dummy')
         dummy_logger.disabled = True
         db = env.DB_NAME
-        host = env.DB_IP
-        port = env.DB_PORT
         user = ''
         password = ''
         mongo = MongoApi(logger=dummy_logger, db_name=db,
-                         host=host, port=port, username=user,
-                         password=password)
+                         host=REPLICA_SET_HOSTS, replicaSet=REPLICA_SET_NAME,
+                         username=user, password=password)
 
         # Ping Mongo
         try:
@@ -37,14 +36,12 @@ class TestMongoApiWithMongoOnline(unittest.TestCase):
         self.dummy_logger = logging.getLogger('dummy')
         self.dummy_logger.disabled = True
         self.db = env.DB_NAME
-        self.host = env.DB_IP
-        self.port = env.DB_PORT
         self.user = ''
         self.password = ''
         self.mongo = MongoApi(logger=self.dummy_logger,
-                              db_name=self.db, host=self.host,
-                              port=self.port,
-                              username=self.user, password=self.password)
+                              db_name=self.db, host=REPLICA_SET_HOSTS,
+                              replicaSet=REPLICA_SET_NAME, username=self.user,
+                              password=self.password)
 
         try:
             self.mongo.ping_unsafe()
@@ -301,8 +298,10 @@ class TestMongoApiWithMongoOffline(unittest.TestCase):
         self.port = env.DB_PORT
         self.user = ''
         self.password = ''
-        self.mongo = MongoApi(self.dummy_logger, self.db, self.host,
-                              self.port, timeout_ms=1)
+        self.mongo = MongoApi(logger=self.dummy_logger, db_name=self.db, 
+                              host=REPLICA_SET_HOSTS, 
+                              replicaSet=REPLICA_SET_NAME, 
+                              timeout_ms=1)
         # timeout_ms is set to 1ms to speed up tests. It cannot be 0
 
         self.col1 = 'collection1'
@@ -406,12 +405,12 @@ class TestMongoApiLiveAndDownFeaturesWithMongoOffline(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_logger = logging.getLogger('dummy')
         self.dummy_logger.disabled = True
-        self.db = env.DB_NAME
-        self.host = env.DB_IP
-        self.port = env.DB_PORT
+        self.db = env.DB_NAME        
         self.live_check_time_interval = timedelta(seconds=3)
         self.live_check_time_interval_with_error_margin = timedelta(seconds=3.5)
-        self.mongo = MongoApi(self.dummy_logger, self.db, self.host, self.port,
+        self.mongo = MongoApi(logger=self.dummy_logger, db_name=self.db, 
+                              host=REPLICA_SET_HOSTS, 
+                              replicaSet=REPLICA_SET_NAME,
                               live_check_time_interval=
                               self.live_check_time_interval)
 

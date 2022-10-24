@@ -58,6 +58,7 @@ class SubstrateMonitor(Monitor, ABC):
         :raises: SubstrateApiIsNotReachableException if the Substrate-API
                  service cannot be reached
         """
+        nodes = [node for node in nodes if node.node_ws_url]
         for node in nodes:
             ws_url = node.node_ws_url
             node_name = node.node_name

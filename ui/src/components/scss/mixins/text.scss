@@ -1,0 +1,15 @@
+@import 'buttons';
+
+@mixin text {
+  font-size: 17px;
+  color: var(--ion-color-primary);
+}
+
+@mixin text-with-tooltip {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: -20px;
+
+  @include tooltip-button();
+}

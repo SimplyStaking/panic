@@ -1,11 +1,11 @@
 import MongoClient from "mongodb";
-import {MongoClientNotInitialised} from "./errors";
+import {MongoClientNotInitialised} from "../constant/errors";
 import {
     MSG_MONGO_CONNECTION_ESTABLISHED,
     MSG_MONGO_COULD_NOT_DISCONNECT,
     MSG_MONGO_COULD_NOT_ESTABLISH_CONNECTION,
     MSG_MONGO_DISCONNECTED
-} from "./msgs";
+} from "../constant/msg";
 
 export const MonitorablesCollection = 'monitorables';
 
@@ -15,9 +15,13 @@ export class MongoInterface {
     private _client?: MongoClient.MongoClient;
 
     constructor(options: MongoClient.MongoClientOptions,
-                host: string = "localhost", port: number = 27017) {
+        host: string = "localhost", port: number = 27017) {
+            
         this.options = options;
-        this.url = `mongodb://${host}:${port}`;
+        this.options.readPreference = 'primaryPreferred';
+        this.options.replicaSet = 'replica-set';
+
+        this.url = `mongodb://rs1:${port},rs2:${port},rs3:${port}`;
         this._client = undefined;
     }
 

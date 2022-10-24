@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-sources-form-system renders 1`] = `
+<panic-installer-sources-form-system>
+  <svc-input label="System Name" lines="inset" name="name" placeholder="undefined_system_1" required=""></svc-input>
+  <div class="panic-installer-sources-form__help-text">
+    <span>
+      This will be used to identify the current System configuration.
+    </span>
+  </div>
+  <div class="panic-installer-sources-form__input_test_box">
+    <svc-input label="Node Exporter URL" lines="inset" name="exporterUrl" placeholder="https://IP:9100/metrics" required="" type="url"></svc-input>
+    <panic-installer-test-button service="node-exporter"></panic-installer-test-button>
+  </div>
+  <div class="panic-installer-sources-form__help-text">
+    <span>
+      This is the node exporter URL of your system.
+    </span>
+  </div>
+  <svc-toggle checked="" label="Monitor System" lines="inset" name="monitor" value=""></svc-toggle>
+  <div class="panic-installer-sources-form__help-text">
+    <span>
+      Whether to monitor this configured system.
+    </span>
+  </div>
+</panic-installer-sources-form-system>
+`;

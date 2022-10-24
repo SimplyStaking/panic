@@ -57,10 +57,10 @@ class SubstrateNetwork(Network):
             {
                 'index': Or(int, None),
                 'balance': Or(int, None),
-                'image': {
+                'image': Or({
                     'at': Or(int, None),
                     'balance': Or(int, None),
-                },
+                }, None),
                 'imageHash': Or(str, None),
                 'proposer': Or(str, None),
                 'seconds': Or([str], []),

@@ -1,0 +1,54 @@
+@import '../scss/mixins/heading.scss';
+@import '../scss/mixins/buttons.scss';
+@import '../scss/mixins/centralized-container.scss';
+@import '../scss/mixins/data-table-container.scss';
+@import '../scss/mixins/text.scss';
+@import '../scss/mixins/data-tables.scss';
+
+.panic-settings-channels {
+  &__container {
+    padding-left: 5%;
+    padding-right: 5%;
+
+    p {
+      @include text();
+    }
+  }
+
+  &__crud-data-table {
+    @include crud-data-table();
+  }
+}
+
+.panic-settings-channels-crud {
+
+  &__title {
+    padding-top: 15px;
+    @include heading-title();
+  }
+
+  &__add-channel-button {
+    @include add-button();
+  }
+
+  &__filter-container {
+    margin-top: 0 !important;
+
+    table {
+      margin-top: 15px;
+
+    }
+    @include data-table-container();
+  }
+
+  &__crud-data-table {
+    @include crud-data-table();
+  }
+}
+
+.panic-settings-channels-map {
+
+  &__crud-data-table {
+    @include crud-data-table();
+  }
+}

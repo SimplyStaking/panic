@@ -7,27 +7,27 @@ describe('isAlertsOverviewInputValid', () => {
     it.each([
         ['an empty body', {}],
         ['a single chain with no systems, nodes, or repos and chain sourced' +
-        ' alerts true',
-            {
-                'test_chain': {
-                    'include_chain_sourced_alerts': true,
-                    'systems': [],
-                    'nodes': [],
-                    'github_repos': [],
-                    'dockerhub_repos': []
-                }
-            }],
+            ' alerts true',
+        {
+            'test_chain': {
+                'include_chain_sourced_alerts': true,
+                'systems': [],
+                'nodes': [],
+                'github_repos': [],
+                'dockerhub_repos': []
+            }
+        }],
         ['a single chain with no systems, nodes, or repos and chain sourced' +
-        ' false',
-            {
-                'test_chain': {
-                    'include_chain_sourced_alerts': false,
-                    'systems': [],
-                    'nodes': [],
-                    'github_repos': [],
-                    'dockerhub_repos': []
-                }
-            }],
+            ' false',
+        {
+            'test_chain': {
+                'include_chain_sourced_alerts': false,
+                'systems': [],
+                'nodes': [],
+                'github_repos': [],
+                'dockerhub_repos': []
+            }
+        }],
         ['a single chain with a single system',
             {
                 'test_chain': {
@@ -99,27 +99,27 @@ describe('isAlertsOverviewInputValid', () => {
                 }
             }],
         ['a single chain with a single system, a single node, and a single' +
-        ' repo',
-            {
-                'test_chain': {
-                    'include_chain_sourced_alerts': true,
-                    'systems': ['test_system'],
-                    'nodes': ['test_node'],
-                    'github_repos': ['test_repo'],
-                    'dockerhub_repos': []
-                }
-            }],
+            ' repo',
+        {
+            'test_chain': {
+                'include_chain_sourced_alerts': true,
+                'systems': ['test_system'],
+                'nodes': ['test_node'],
+                'github_repos': ['test_repo'],
+                'dockerhub_repos': []
+            }
+        }],
         ['a single chain with multiple systems, multiple nodes, and multiple' +
-        ' repos',
-            {
-                'test_chain': {
-                    'include_chain_sourced_alerts': true,
-                    'systems': ['test_system', 'test_system2'],
-                    'nodes': ['test_node', 'test_node2'],
-                    'github_repos': ['test_repo', 'test_repo2'],
-                    'dockerhub_repos': ['test_repo3', 'test_repo4']
-                }
-            }],
+            ' repos',
+        {
+            'test_chain': {
+                'include_chain_sourced_alerts': true,
+                'systems': ['test_system', 'test_system2'],
+                'nodes': ['test_node', 'test_node2'],
+                'github_repos': ['test_repo', 'test_repo2'],
+                'dockerhub_repos': ['test_repo3', 'test_repo4']
+            }
+        }],
         ['multiple chains with no systems or repos',
             {
                 'test_chain': {
@@ -172,41 +172,41 @@ describe('isAlertsOverviewInputValid', () => {
                 }
             }],
         ['multiple chains with a single system, a single node, and a single' +
-        ' repo',
-            {
-                'test_chain': {
-                    'include_chain_sourced_alerts': true,
-                    'systems': ['test_system'],
-                    'nodes': ['test_node'],
-                    'github_repos': ['test_repo'],
-                    'dockerhub_repos': []
-                },
-                'test_chain2': {
-                    'include_chain_sourced_alerts': true,
-                    'systems': ['test_system2'],
-                    'nodes': ['test_node'],
-                    'github_repos': [],
-                    'dockerhub_repos': ['test_repo2']
-                }
-            }],
+            ' repo',
+        {
+            'test_chain': {
+                'include_chain_sourced_alerts': true,
+                'systems': ['test_system'],
+                'nodes': ['test_node'],
+                'github_repos': ['test_repo'],
+                'dockerhub_repos': []
+            },
+            'test_chain2': {
+                'include_chain_sourced_alerts': true,
+                'systems': ['test_system2'],
+                'nodes': ['test_node'],
+                'github_repos': [],
+                'dockerhub_repos': ['test_repo2']
+            }
+        }],
         ['multiple chains with multiple systems, multiple nodes, and multiple' +
-        ' repos',
-            {
-                'test_chain': {
-                    'include_chain_sourced_alerts': true,
-                    'systems': ['test_system', 'test_system2'],
-                    'nodes': ['test_node', 'test_node2'],
-                    'github_repos': ['test_repo', 'test_repo2'],
-                    'dockerhub_repos': ['test_repo3', 'test_repo4']
-                },
-                'test_chain2': {
-                    'include_chain_sourced_alerts': true,
-                    'systems': ['test_system3', 'test_system4'],
-                    'nodes': ['test_node3', 'test_node4'],
-                    'github_repos': ['test_repo5', 'test_repo6'],
-                    'dockerhub_repos': ['test_repo7', 'test_repo8']
-                }
-            }]
+            ' repos',
+        {
+            'test_chain': {
+                'include_chain_sourced_alerts': true,
+                'systems': ['test_system', 'test_system2'],
+                'nodes': ['test_node', 'test_node2'],
+                'github_repos': ['test_repo', 'test_repo2'],
+                'dockerhub_repos': ['test_repo3', 'test_repo4']
+            },
+            'test_chain2': {
+                'include_chain_sourced_alerts': true,
+                'systems': ['test_system3', 'test_system4'],
+                'nodes': ['test_node3', 'test_node4'],
+                'github_repos': ['test_repo5', 'test_repo6'],
+                'dockerhub_repos': ['test_repo7', 'test_repo8']
+            }
+        }]
     ])('Should return true if object consists of %s',
         async (_: string, object: any) => {
             const ret: boolean = isAlertsOverviewInputValid(object);
@@ -219,10 +219,10 @@ describe('isAlertsOverviewInputValid', () => {
         ['null', null],
         ['an array', ['test', 123, null]],
         ['a chain without include_chain_sourced_alerts, systems, nodes, and' +
-        ' repos fields',
-            {
-                'test_chain': {}
-            }],
+            ' repos fields',
+        {
+            'test_chain': {}
+        }],
         ['a chain without include_chain_sourced_alerts field',
             {
                 'test_chain': {

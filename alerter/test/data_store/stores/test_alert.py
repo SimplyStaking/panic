@@ -28,6 +28,7 @@ from src.data_store.stores.alert import AlertStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
 from src.utils.constants.data import EXPIRE_METRICS
+from src.utils.constants.mongo import REPLICA_SET_HOSTS, REPLICA_SET_NAME
 from src.utils.constants.rabbitmq import (STORE_EXCHANGE, HEALTH_CHECK_EXCHANGE,
                                           ALERT_STORE_INPUT_QUEUE_NAME,
                                           HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
@@ -52,14 +53,13 @@ class TestAlertStore(unittest.TestCase):
         self.test_rabbit_manager = RabbitMQApi(
             self.dummy_logger, self.rabbit_ip,
             connection_check_time_interval=self.connection_check_time_interval)
-
-        self.mongo_ip = env.DB_IP
+        
         self.mongo_db = env.DB_NAME
         self.mongo_port = env.DB_PORT
 
         self.mongo = MongoApi(logger=self.dummy_logger.getChild(
-            MongoApi.__name__), db_name=self.mongo_db, host=self.mongo_ip,
-            port=self.mongo_port)
+            MongoApi.__name__), db_name=self.mongo_db, host=REPLICA_SET_HOSTS,
+            replicaSet=REPLICA_SET_NAME)
 
         self.redis_db = env.REDIS_DB
         self.redis_host = env.REDIS_IP
@@ -666,10 +666,7 @@ class TestAlertStore(unittest.TestCase):
 
     def test_name_property_returns_name_correctly(self) -> None:
         self.assertEqual(self.test_store_name, self.test_store.name)
-
-    def test_mongo_ip_property_returns_mongo_ip_correctly(self) -> None:
-        self.assertEqual(self.mongo_ip, self.test_store.mongo_ip)
-
+    
     def test_mongo_db_property_returns_mongo_db_correctly(self) -> None:
         self.assertEqual(self.mongo_db, self.test_store.mongo_db)
 

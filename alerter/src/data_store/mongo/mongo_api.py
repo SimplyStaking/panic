@@ -1,8 +1,9 @@
 import logging
 from datetime import timedelta
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Mapping, Optional, Any
 
 from pymongo import MongoClient
+from pymongo.collection import CollectionChangeStream
 from pymongo.results import InsertOneResult, InsertManyResult, UpdateResult
 
 from src.utils.timing import TimedTaskLimiter
@@ -10,22 +11,16 @@ from src.utils.timing import TimedTaskLimiter
 
 class MongoApi:
     def __init__(self, logger: logging.Logger, db_name: str,
-                 host: str = 'localhost', port: int = 27017,
+                 host='localhost', port: int = 27017,
                  username: str = '', password: str = '',
                  live_check_time_interval: timedelta = timedelta(seconds=60),
-                 timeout_ms: int = 10000) \
+                 timeout_ms: int = 10000, replicaSet=None) \
             -> None:
         self._logger = logger
         self._db_name = db_name
-        if password == '':
-            self._client = MongoClient(
-                host=host, port=port, connectTimeoutMS=timeout_ms,
-                socketTimeoutMS=timeout_ms, serverSelectionTimeoutMS=timeout_ms)
-        else:
-            self._client = MongoClient(
-                host=host, port=port, connectTimeoutMS=timeout_ms,
-                socketTimeoutMS=timeout_ms, serverSelectionTimeoutMS=timeout_ms,
-                username=username, password=password)
+
+        self._create_client(host, port, username, password,
+                            timeout_ms, replicaSet)
 
         # The live check limiter means that we don't wait for connection
         # errors to occur to be able to continue, thus speeding everything up
@@ -42,6 +37,50 @@ class MongoApi:
     @property
     def is_live(self) -> bool:
         return self._is_live
+
+    @property
+    def db_name(self) -> str:
+        return self._db_name
+
+    def watch(self, collection: str, token = None) -> CollectionChangeStream:
+        return self._client[self._db_name][collection].watch(resume_after=token)
+
+    def _create_client(self, host, port, username, password, timeout_ms,
+                       replicaSet=None) -> None:
+        """
+        Configure Options connection options and/or Replica Set to the 
+        MongoClient.
+        @todo: We can put here an options decorator, cause MongoClient has many
+        options
+        """
+
+        if password == '':
+            if replicaSet is None:
+                self._client = MongoClient(
+                    host=host, port=port, connectTimeoutMS=timeout_ms,
+                    socketTimeoutMS=timeout_ms,
+                    serverSelectionTimeoutMS=timeout_ms)
+            else:
+                self._client = MongoClient(
+                    host=host, port=port, connectTimeoutMS=timeout_ms,
+                    socketTimeoutMS=timeout_ms,
+                    serverSelectionTimeoutMS=timeout_ms,
+                    replicaSet=replicaSet,
+                    readPreference='primaryPreferred')
+        else:
+            if replicaSet is None:
+                self._client = MongoClient(
+                    host=host, port=port, connectTimeoutMS=timeout_ms,
+                    socketTimeoutMS=timeout_ms,
+                    serverSelectionTimeoutMS=timeout_ms,
+                    username=username, password=password)
+            else:
+                self._client = MongoClient(
+                    host=host, port=port, connectTimeoutMS=timeout_ms,
+                    socketTimeoutMS=timeout_ms,
+                    serverSelectionTimeoutMS=timeout_ms, username=username,
+                    password=password, replicaSet=replicaSet,
+                    readPreference='primaryPreferred')
 
     def _set_as_live(self) -> None:
         if not self._is_live:
@@ -104,6 +143,11 @@ class MongoApi:
     def get_one(self, collection: str, query: Dict) -> Optional[Dict]:
         return self._safe(
             lambda col, q: self._db[col].find_one(q),
+            [collection, query], None)
+        
+    def get_by(self, collection: str, query: Dict) -> Optional[Dict]:
+        return self._safe(
+            lambda col, q: self._db[col].find(q),
             [collection, query], None)
 
     def get_all(self, collection: str) -> Optional[List[Dict]]:

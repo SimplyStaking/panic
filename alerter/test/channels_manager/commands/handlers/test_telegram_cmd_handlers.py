@@ -22,6 +22,7 @@ from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi, Keys
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
+from src.utils.constants.mongo import REPLICA_SET_HOSTS, REPLICA_SET_NAME
 from src.utils.constants.names import (
     SYSTEM_MONITORS_MANAGER_NAME, GITHUB_MONITORS_MANAGER_NAME,
     DOCKERHUB_MONITORS_MANAGER_NAME, DATA_TRANSFORMERS_MANAGER_NAME,
@@ -71,7 +72,8 @@ class TestTelegramCommandHandlers(unittest.TestCase):
             namespace=env.UNIQUE_ALERTER_IDENTIFIER)
         self.test_mongo = MongoApi(
             logger=self.dummy_logger.getChild(MongoApi.__name__),
-            host=env.DB_IP, db_name=env.DB_NAME, port=env.DB_PORT)
+            host=REPLICA_SET_HOSTS, db_name=env.DB_NAME, 
+            replicaSet=REPLICA_SET_NAME)
 
         self.test_telegram_command_handlers = TelegramCommandHandlers(
             self.test_handler_name, self.dummy_logger,

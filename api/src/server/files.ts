@@ -1,6 +1,6 @@
 import {Dirent, promises, readFileSync} from "fs";
 import path from 'path';
-import {MissingFile} from "./errors";
+import {MissingFile} from "../constant/errors";
 
 export const readFile = (filePath: string): Buffer => {
     let file: Buffer;

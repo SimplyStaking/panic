@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-alerts-alert-cell renders 1`] = `
+<panic-installer-alerts-alert-cell alertidentifier="test" primaryinputlabel="test" primaryinputvalue="100" severity="Warning" severityenabled="true">
+  <div class="panic-installer-alerts-alert-cell__container">
+    <div class="panic-installer-alerts-alert-cell__enabled-input">
+      <svc-label>
+        undefined Enabled
+      </svc-label>
+      <panic-installer-form-checkbox name="undefined undefined enabled"></panic-installer-form-checkbox>
+    </div>
+    <svc-input label="undefined (undefined)" labelposition="floating" name="undefined undefined undefined" type="number"></svc-input>
+  </div>
+</panic-installer-alerts-alert-cell>
+`;

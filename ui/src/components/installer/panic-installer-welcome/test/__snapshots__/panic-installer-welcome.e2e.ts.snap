@@ -1,0 +1,84 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-welcome renders 1`] = `
+<panic-installer-welcome>
+  <panic-header></panic-header>
+  <svc-content-container class="panic-installer-welcome__container">
+    <svc-surface>
+      <div class="panic-installer-welcome__heading">
+        <svc-icon color="primary" name="rocket" size="120px"></svc-icon>
+        <svc-label>
+          Installer Journey
+        </svc-label>
+      </div>
+      <svc-text color="primary">
+        <p class="panic-installer-welcome__message">
+          The following steps will have PANIC configured and ready!
+        </p>
+      </svc-text>
+      <ul class="panic-installer-welcome__list">
+        <li class="panic-installer-welcome__list-item">
+          <div class="panic-installer-welcome__list-item-subtitle">
+            <svc-icon name="link" size="25px"></svc-icon>
+            Blockchain
+          </div>
+          <div class="panic-installer-welcome__list-item-excerpt">
+            Start by adding the blockchain software being used (i.e. Akash, Polkadot, Matic, etc) based on the framework supported by PANIC (Cosmos-SDK, Substrate or Chainlink).
+          </div>
+        </li>
+        <li class="panic-installer-welcome__list-item">
+          <div class="panic-installer-welcome__list-item-subtitle">
+            <svc-icon name="call" size="25px"></svc-icon>
+            Channels
+          </div>
+          <div class="panic-installer-welcome__list-item-excerpt">
+            Then pick your preferred alerting methods, such as Telegram, Slack, Twilio and e-mail.
+          </div>
+        </li>
+        <li class="panic-installer-welcome__list-item">
+          <div class="panic-installer-welcome__list-item-subtitle">
+            <svc-icon name="server" size="25px"></svc-icon>
+            Nodes
+          </div>
+          <div class="panic-installer-welcome__list-item-excerpt">
+            Select the nodes you'd want to have monitored. These can be validators, full nodes, and more.
+          </div>
+        </li>
+        <li class="panic-installer-welcome__list-item">
+          <div class="panic-installer-welcome__list-item-subtitle">
+            <svc-icon name="code-slash" size="25px"></svc-icon>
+            Repositories
+          </div>
+          <div class="panic-installer-welcome__list-item-excerpt">
+            Choose whether to receive alerts when your favorite blockchain project releases a new version.
+          </div>
+        </li>
+        <li class="panic-installer-welcome__list-item">
+          <div class="panic-installer-welcome__list-item-subtitle">
+            <svc-icon name="notifications-circle" size="25px"></svc-icon>
+            Alerts
+          </div>
+          <div class="panic-installer-welcome__list-item-excerpt">
+            Set which metrics and their respective thresholds should be monitored to trigger alerts.
+          </div>
+        </li>
+        <li class="panic-installer-welcome__list-item">
+          <div class="panic-installer-welcome__list-item-subtitle">
+            <svc-icon name="checkmark-circle" size="25px"></svc-icon>
+            Feedback
+          </div>
+          <div class="panic-installer-welcome__list-item-excerpt">
+            You're done! The blockchain software is fully configured. You'll be able to restart the installer or visit the home page to check it out!
+          </div>
+        </li>
+      </ul>
+      <div class="panic-installer-welcome__button">
+        <svc-button color="secondary" href="/installer/sub-chain" iconname="arrow-forward-circle">
+          Start Configuration
+        </svc-button>
+      </div>
+    </svc-surface>
+  </svc-content-container>
+  <panic-footer></panic-footer>
+</panic-installer-welcome>
+`;

@@ -20,8 +20,7 @@ class Store(PublisherSubscriberComponent):
     def __init__(self, name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(logger, rabbitmq)
-        self._name = name
-        self._mongo_ip = env.DB_IP
+        self._name = name        
         self._mongo_db = env.DB_NAME
         self._mongo_port = env.DB_PORT
 
@@ -41,10 +40,6 @@ class Store(PublisherSubscriberComponent):
     @property
     def name(self) -> str:
         return self._name
-
-    @property
-    def mongo_ip(self) -> str:
-        return self._mongo_ip
 
     @property
     def mongo_db(self) -> str:

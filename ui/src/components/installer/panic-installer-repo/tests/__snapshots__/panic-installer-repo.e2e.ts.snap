@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-repo renders 1`] = `
+<panic-installer-repo>
+  <panic-header></panic-header>
+  <svc-progress-bar color="tertiary" value="0.8"></svc-progress-bar>
+  <svc-content-container class="panic-installer-repo__container">
+    <svc-surface>
+      <div class="panic-installer-repo__heading">
+        <svc-icon color="primary" name="code-slash" size="120px"></svc-icon>
+        <svc-label class="panic-installer-repo__title">
+          Repository Setup for test_sub_chain
+        </svc-label>
+        <svc-label class="panic-installer-repo__step">
+          step 4/5
+        </svc-label>
+      </div>
+      <div class="panic-installer-repo__text-with-tooltip">
+        <p>
+          PANIC allows you to monitor GitHub and DockerHub repositories for new releases/tags respectively.
+        </p>
+        <svc-buttons-container>
+          <svc-button color="secondary" iconname="information-circle" iconposition="icon-only"></svc-button>
+        </svc-buttons-container>
+      </div>
+      <div class="panic-installer-repo__add-repo-button">
+        <svc-button color="secondary" iconname="add-circle" id="add">
+          Add Repository
+        </svc-button>
+      </div>
+    </svc-surface>
+    <panic-installer-nav></panic-installer-nav>
+  </svc-content-container>
+  <panic-footer></panic-footer>
+</panic-installer-repo>
+`;

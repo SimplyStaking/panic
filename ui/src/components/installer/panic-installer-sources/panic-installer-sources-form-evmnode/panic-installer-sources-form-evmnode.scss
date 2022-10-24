@@ -1,0 +1,38 @@
+@import '../../../scss/mixins/form.scss';
+@import '../../../scss/mixins/modal-dimension.scss';
+
+.panic-installer-sources-modal {
+    &__evm_nodes {
+        @include modal-dimension(380px);
+    }
+}
+
+form {
+    @include form();
+    @include patch-svc-toggle();
+}
+
+.panic-installer-sources-form {
+
+    &__row-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        svc-input {
+            width: 100%;
+        }
+    }
+
+    &__help-text {
+        @include input-help-text();
+    }
+
+    &__input_test_box {
+        @include input_and_test();
+
+        svc-input {
+            width: 780px !important;
+        }
+    }
+}

@@ -1,7 +1,7 @@
 import {h} from "@stencil/core";
 import {MetricAlert, Metrics} from "../../../interfaces/metrics";
 import {
-    DataTableHeaderType, DataTableRecordType, DataTableRowCellType
+    DataTableHeaderType, DataTableRowsType, DataTableRowCellType
 } from "@simply-vc/uikit/dist/types/types/datatable";
 import {
     SystemMetricKeys,
@@ -21,7 +21,7 @@ export const SystemsOverviewAPI = {
  */
 function getDataTableJSX(metrics: Metrics[]): JSX.Element {
     const cols: DataTableHeaderType[] = SYSTEM_METRICS_DATA_TABLE_HEADER;
-    const rows: DataTableRecordType = getDataTableRecordTypeFromMetrics(metrics);
+    const rows: DataTableRowsType = getDataTableRowsTypeFromMetrics(metrics);
     let hasMetrics: boolean = metrics.length > 0;
 
     return <svc-data-table
@@ -35,20 +35,23 @@ function getDataTableJSX(metrics: Metrics[]): JSX.Element {
 }
 
 /**
- * Gets {@link DataTableRecordType} from an array of metrics.
+ * Gets {@link DataTableRowsType} from an array of metrics.
  * @param metrics array of metrics.
- * @returns populated {@link DataTableRecordType} object.
+ * @returns populated {@link DataTableRowsType} object.
  */
-function getDataTableRecordTypeFromMetrics(metrics: Metrics[]): DataTableRecordType {
-    return metrics.map(metric => [
-        {label: metric.name, value: metric.id},
-        metricToCellType(metric.metrics.CPU, SystemMetricKeys.SYSTEM_CPU_USAGE, metric.metricAlerts),
-        metricToCellType(metric.metrics.RAM, SystemMetricKeys.SYSTEM_RAM_USAGE, metric.metricAlerts),
-        metricToCellType(metric.metrics.Storage, SystemMetricKeys.SYSTEM_STORAGE_USAGE, metric.metricAlerts),
-        metricToCellType(metric.metrics.ProcessMemory),
-        metricToCellType(metric.metrics.ProcessVirtualMemory),
-        metricToCellType(metric.metrics.OpenFileDescriptors, SystemMetricKeys.OPEN_FILE_DESCRIPTORS, metric.metricAlerts)
-    ]);
+function getDataTableRowsTypeFromMetrics(metrics: Metrics[]): DataTableRowsType {
+    return metrics.map(metric => ({
+        cells: [
+            {label: metric.name, value: metric.id},
+            metricToCellType(metric.metrics.CPU, SystemMetricKeys.SYSTEM_CPU_USAGE, metric.metricAlerts),
+            metricToCellType(metric.metrics.RAM, SystemMetricKeys.SYSTEM_RAM_USAGE, metric.metricAlerts),
+            metricToCellType(metric.metrics.Storage, SystemMetricKeys.SYSTEM_STORAGE_USAGE, metric.metricAlerts),
+            metricToCellType(metric.metrics.ProcessMemory),
+            metricToCellType(metric.metrics.ProcessVirtualMemory),
+            metricToCellType(metric.metrics.OpenFileDescriptors, SystemMetricKeys.OPEN_FILE_DESCRIPTORS, metric.metricAlerts)
+        ],
+        id: metric.id
+    }));
 }
 
 /**
@@ -62,7 +65,7 @@ function getDataTableRecordTypeFromMetrics(metrics: Metrics[]): DataTableRecordT
  * @returns populated {@link DataTableRowCellType} object.
  */
 function metricToCellType(metricValue: number | string, metricKey?: SystemMetricKeys, metricAlerts?: MetricAlert[]): DataTableRowCellType {
-    if (metricValue === undefined || metricValue === null) {
+    if (metricValue === undefined || metricValue === null || Number.isNaN(metricValue)) {
         return {label: 'N/A', value: null, cssClasses: ['not-available']};
     }
 

@@ -1,0 +1,26 @@
+@mixin add-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 15px;
+
+  svc-button {
+    &:nth-child(1) {
+      margin-top: 25px;
+    }
+
+    ion-button {
+      width: 350px;
+    }
+  }
+}
+
+@mixin tooltip-button {
+  svc-icon {
+    margin-top: 1px;
+    padding-left: 8px;
+    ion-icon {
+      vertical-align: top;
+    }
+  }
+}

@@ -1,0 +1,44 @@
+.panic-installer-alerts-alert-cell {
+  &__container {
+    display: flex;
+    flex-direction: column;
+
+    svc-label {
+      font-weight: 900;
+      margin-left: 3px;
+      margin-right: 5px;
+
+      ion-label {
+        text-transform: capitalize;
+      }
+    }
+
+    svc-text {
+      font-size: 0.8em !important;
+      margin-left: 10px;
+    }
+  }
+
+  &__enabled-input {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+
+    svc-checkbox {
+      ion-item {
+        height: 0px;
+        --min-height: 0px;
+      }
+
+      ion-checkbox {
+        margin: 0px !important;
+        position: fixed;
+      }
+    }
+  }
+}
+
+ion-item {
+  margin-left: -12px;
+  text-transform: capitalize;
+}

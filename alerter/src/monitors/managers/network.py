@@ -141,9 +141,10 @@ class NetworkMonitorsManager(MonitorsManager):
         if len(value_set) == 1:
             return True, value_list[0]
         else:
-            self.logger.error(
-                "The following config does not have identical {}: {}".format(
-                    field_name, json.dumps(sent_configs)))
+            if sent_configs:
+                self.logger.error(
+                    "The following config does not have identical {}: {}".format(
+                        field_name, json.dumps(sent_configs)))
             return False, None
 
     def _extract_network_monitoring_fields_from_configs(

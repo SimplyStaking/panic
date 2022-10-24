@@ -1,0 +1,140 @@
+[
+    {
+        "_id": "62656ebafdb17d641746dcda",
+        "name": "Telegram",
+        "value": "telegram",
+        "group": "channel_type"
+    },
+    {
+        "_id": "626573a7fdb17d641746dcdb",
+        "name": "E-mail",
+        "value": "email",
+        "group": "channel_type"
+    },
+    {
+        "_id": "626573d6fdb17d641746dcdc",
+        "name": "Opsgenie",
+        "value": "opsgenie",
+        "group": "channel_type"
+    },
+    {
+        "_id": "626573fefdb17d641746dcdd",
+        "name": "PagerDuty",
+        "value": "pagerduty",
+        "group": "channel_type"
+    },
+    {
+        "_id": "62657442fdb17d641746dcde",
+        "name": "Twilio",
+        "value": "twilio",
+        "group": "channel_type"
+    },
+    {
+        "_id": "62657450fdb17d641746dcdf",
+        "name": "Slack",
+        "value": "slack",
+        "group": "channel_type"
+    },
+    {
+        "_id": "6265758cfdb17d641746dce4",
+        "name": "Sub Chain",
+        "value": "sub_chain",
+        "group": "config_type"
+    },
+    {
+        "_id": "626574fffdb17d641746dce0",
+        "name": "Email Channel",
+        "value": "email_channel",
+        "group": "config_type"
+    },
+    {
+        "_id": "62f0f9822bff1d0ead2d2df7",
+        "name": "Opsgenie Channel",
+        "value": "opsgenie_channel",
+        "group": "config_type"
+    },
+    {
+        "_id": "62f0f9a52bff1d0ead2d2df8",
+        "name": "PagerDuty Channel",
+        "value": "pagerduty_channel",
+        "group": "config_type"
+    },
+    {
+        "_id": "62f0f9b52bff1d0ead2d2df9",
+        "name": "Slack Channel",
+        "value": "slack_channel",
+        "group": "config_type"
+    },
+    {
+        "_id": "62f0f9c52bff1d0ead2d2dfa",
+        "name": "Telegram Channel",
+        "value": "telegram_channel",
+        "group": "config_type"
+    },
+    {
+        "_id": "62f0f9d52bff1d0ead2d2dfb",
+        "name": "Twilio Channel",
+        "value": "twilio_channel",
+        "group": "config_type"
+    },
+    {
+        "_id": "6265d085fdb17d641746dcef",
+        "name": "Info",
+        "value": "info",
+        "group": "severity_type"
+    },
+    {
+        "_id": "6265d08efdb17d641746dcf0",
+        "name": "Warning",
+        "value": "warning",
+        "group": "severity_type"
+    },
+    {
+        "_id": "6265d096fdb17d641746dcf1",
+        "name": "Error",
+        "value": "error",
+        "group": "severity_type"
+    },
+    {
+        "_id": "6265d0a7fdb17d641746dcf2",
+        "name": "Critical",
+        "value": "critical",
+        "group": "severity_type"
+    },   
+    {
+        "_id": "628bd8675c5ab4c82d151a99",
+        "name": "Nodes",
+        "value": "nodes",
+        "group": "source_type"
+    },
+    {
+        "_id": "628bd87e5c5ab4c82d151a9a",
+        "name": "EVM Nodes",
+        "value": "evm_nodes",
+        "group": "source_type"
+    },
+    {
+        "_id": "628bd88e5c5ab4c82d151a9b",
+        "name": "Systems",
+        "value": "systems",
+        "group": "source_type"
+    },
+    {
+        "_id": "628bd8355c5ab4c82d151a98",
+        "name": "Contract",
+        "value": "contract",
+        "group": "source_type"
+    },
+    {
+        "_id": "628bdacb5c5ab4c82d151aa4",
+        "name": "GitHub",
+        "value": "github",
+        "group": "repository_type"
+    },
+    {
+        "_id": "628bdafa5c5ab4c82d151aa5",
+        "name": "DockerHub",
+        "value": "dockerhub",
+        "group": "repository_type"
+    }
+]

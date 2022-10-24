@@ -1,12 +1,13 @@
-// This should be set here since it is used
-// when importing app from '../src/server'.
+// Make sure that this is at the top of the file since it is required before importing any packages.
 process.env.UI_ACCESS_IP = '0.0.0.0';
 
+import {getPrometheusMetricFromBaseChain} from "../src/server/utils";
 import {AggregationCursor, Collection, FilterQuery, MongoCallback, MongoClientCommonOption} from 'mongodb';
 import {Callback, RedisError} from 'redis';
+import {baseChains, PingStatus} from "../src/constant/server";
 import request from 'supertest'
 import {app, mongoInterval, redisInterval, server} from '../src/server';
-import {InvalidEndpoint} from '../src/server/errors';
+import {EnvVariablesNotAvailable, InvalidEndpoint, MissingKeysInBody} from '../src/constant/errors';
 import {
     alertsMultipleSourcesEndpointRet,
     alertsMultipleSourcesMongoRet,
@@ -26,6 +27,8 @@ import {
     alertsOverviewSingleSystemRedisRet,
     alertsSingleSourceEndpointRet,
     alertsSingleSourceMongoRet,
+    axiosMock,
+    emptyAxiosResponse,
     metricsMultipleSystemsEndpointRet,
     metricsMultipleSystemsMongoRet,
     metricsSingleRepoRedisEndpointRet,
@@ -47,17 +50,23 @@ import {
     noMetricsSingleSystemRedisRet,
     parentIdsInvalidSchemaError
 } from './test-utils';
-import {baseChains} from "../src/server/constants";
+import {AxiosResponse} from "axios";
+import * as pagerDutyApi from '@pagerduty/pdjs';
 
+const Web3 = require('web3');
+const opsgenie = require('opsgenie-sdk');
+const twilio = require('twilio');
+const nodemailer = require('nodemailer');
 
 // Mongo Mock
 let mongoAggregateMockReturn: any[] = [];
 let mongoFindMockReturn: any[] = [];
+let mongoMockCount: number = 0;
 
 jest.mock('../src/server/mongo', () => {
     return {
-        ...jest.requireActual('../src/server/mongo'),
-        MongoInterface: jest.fn().mockImplementation(() => {
+        ...jest.requireActual<any>('../src/server/mongo'),
+        MongoInterface: jest.fn(() => {
             return {
                 client: {
                     db: ((dbName?: string | undefined,
@@ -68,6 +77,7 @@ jest.mock('../src/server/mongo', () => {
                                              MongoCallback<Collection<any>> |
                                              undefined) => {
                                 return {
+                                    countDocuments: (async () => mongoMockCount),
                                     aggregate:
                                         ((_callback:
                                               MongoCallback<AggregationCursor<any>>) => {
@@ -108,8 +118,8 @@ let execMockCallbackError: Error | null = null;
 
 jest.mock('../src/server/redis', () => {
     return {
-        ...jest.requireActual('../src/server/redis'),
-        RedisInterface: jest.fn().mockImplementation(() => {
+        ...jest.requireActual<any>('../src/server/redis'),
+        RedisInterface: jest.fn(() => {
             return {
                 client: {
                     mget: ((_arg1: string | string[],
@@ -120,7 +130,9 @@ jest.mock('../src/server/redis', () => {
                     }),
                     multi: () => {
                         return {
-                            hgetall: ((_key: string, cb?: Callback<{ [p: string]: string }> | undefined) => {
+                            hgetall: ((_key: string, cb?: Callback<{
+                                [p: string]: string
+                            }> | undefined) => {
                                 if (cb) {
                                     cb(null, hgetallMockCallbackReply);
                                 }
@@ -147,6 +159,82 @@ jest.mock('../src/server/redis', () => {
     };
 });
 
+// Axios Mock
+jest.mock('axios');
+
+// Web3 mock
+jest.mock('web3');
+
+let web3EthGetBlockNumberPromiseResolve: null | number = null;
+
+Web3.providers.HttpProvider.mockImplementation((_url) => null);
+
+Web3.mockImplementation((_provider) => {
+    return {
+        eth: {
+            getBlockNumber: () => {
+                return new Promise((resolve, reject) => {
+                    web3EthGetBlockNumberPromiseResolve !== null ?
+                        resolve(web3EthGetBlockNumberPromiseResolve) : reject({message: 'test'})
+                });
+            }
+        }
+    }
+});
+
+// Opsgenie SDK Mock
+let alertV2CreateMockCallbackError: Error | null = null;
+
+jest.mock('opsgenie-sdk');
+
+opsgenie.alertV2.create.mockImplementation((_data, cb) => {
+    cb(alertV2CreateMockCallbackError, null);
+})
+
+// Slack Web-Api Mock
+let slackMock = {
+    chat: {
+        postMessage: jest.fn()
+    },
+};
+
+jest.mock('@slack/web-api', () => {
+    return {WebClient: jest.fn(() => slackMock)};
+});
+
+// Twilio mock
+jest.mock('twilio');
+
+let twilioClientCallsCreateResolve: null | object = null;
+
+twilio.mockImplementation((_accountSid, _authToken) => {
+    return {
+        calls: {
+            create: (_content) => {
+                return new Promise((resolve, reject) => {
+                    twilioClientCallsCreateResolve !== null ?
+                        resolve(twilioClientCallsCreateResolve) : reject({message: 'test'})
+                });
+            }
+        }
+    }
+});
+
+// nodemailer mock
+jest.mock('nodemailer');
+
+let nodemailerVerifyCallbackError: null | Error = null;
+let nodemailerSendMailCallbackError: null | Error = null;
+
+nodemailer.createTransport.mockReturnValue({
+    verify: (callback) => {
+        callback(nodemailerVerifyCallbackError, null);
+    },
+    sendMail: (_, callback) => {
+        callback(nodemailerSendMailCallbackError, null);
+    }
+});
+
 // This is used to clear all mock data before each test
 beforeEach(async () => {
     mongoAggregateMockReturn = [];
@@ -156,6 +244,16 @@ beforeEach(async () => {
     hgetallMockCallbackReply = {};
     hmgetMockCallbackReply = [];
     execMockCallbackError = null;
+    web3EthGetBlockNumberPromiseResolve = null;
+    alertV2CreateMockCallbackError = null;
+    slackMock = {
+        chat: {
+            postMessage: jest.fn()
+        },
+    };
+    twilioClientCallsCreateResolve = null;
+    nodemailerVerifyCallbackError = null;
+    nodemailerSendMailCallbackError = null;
 
     jest.clearAllMocks();
 })
@@ -164,6 +262,8 @@ beforeEach(async () => {
 afterAll(() => {
     mongoInterval.unref();
     redisInterval.unref();
+
+    server.close();
 });
 
 describe('Mongo Monitorables Info POST Route', () => {
@@ -222,7 +322,6 @@ describe('Mongo Monitorables Info POST Route', () => {
             const res = await request(app).post(endpoint).send(body);
             expect(res.statusCode).toEqual(200);
             expect(res.body).toEqual(endpointRet);
-            server.close()
         });
 
     it.each([
@@ -236,7 +335,6 @@ describe('Mongo Monitorables Info POST Route', () => {
             const res = await request(app).post(endpoint).send(body);
             expect(res.statusCode).toEqual(statusCode);
             expect(res.body).toEqual(endpointRet);
-            server.close()
         });
 
     it('Should return error and status code 536 if mongo returns an ' +
@@ -250,7 +348,6 @@ describe('Mongo Monitorables Info POST Route', () => {
                 .toEqual({
                     error: 'Error: Could not retrieve data from Mongo.'
                 });
-            server.close()
         });
 });
 
@@ -301,7 +398,6 @@ describe('Mongo Alerts POST Route', () => {
             const res = await request(app).post(endpoint).send(body);
             expect(res.statusCode).toEqual(200);
             expect(res.body).toEqual(endpointRet);
-            server.close()
         });
 
     it.each([
@@ -448,7 +544,6 @@ describe('Mongo Alerts POST Route', () => {
             const res = await request(app).post(endpoint).send(body);
             expect(res.statusCode).toEqual(statusCode);
             expect(res.body).toEqual(endpointRet);
-            server.close()
         });
 
     it('Should return error and status code 536 if mongo ' +
@@ -465,7 +560,6 @@ describe('Mongo Alerts POST Route', () => {
                 .toEqual({
                     error: 'Error: Could not retrieve data from Mongo.'
                 });
-            server.close()
         });
 });
 
@@ -512,7 +606,6 @@ describe('Mongo Metrics POST Route', () => {
             const res = await request(app).post(endpoint).send(body);
             expect(res.statusCode).toEqual(200);
             expect(res.body).toEqual(endpointRet);
-            server.close()
         });
 
     it.each([
@@ -626,7 +719,6 @@ describe('Mongo Metrics POST Route', () => {
             const res = await request(app).post(endpoint).send(body);
             expect(res.statusCode).toEqual(statusCode);
             expect(res.body).toEqual(endpointRet);
-            server.close()
         });
 });
 
@@ -829,7 +921,6 @@ describe('Redis Alerts Overview POST Route', () => {
             const res = await request(app).post(endpoint).send(body);
             expect(res.statusCode).toEqual(200);
             expect(res.body).toEqual(endpointRet);
-            server.close()
         });
 
     it.each([
@@ -854,7 +945,6 @@ describe('Redis Alerts Overview POST Route', () => {
             const res = await request(app).post(endpoint).send(body);
             expect(res.statusCode).toEqual(statusCode);
             expect(res.body).toEqual(endpointRet);
-            server.close()
         });
 
     it('Should return error and status code 534 if redis returns ' +
@@ -876,7 +966,6 @@ describe('Redis Alerts Overview POST Route', () => {
                 .toEqual({
                     error: 'Error: RedisError retrieved from Redis: Test Error.'
                 });
-            server.close()
         });
 
     it.each([
@@ -901,7 +990,6 @@ describe('Redis Alerts Overview POST Route', () => {
                 error: 'Error: Invalid value retrieved ' +
                     'from Redis: ' + invalidValueError + '.'
             });
-            server.close()
         });
 });
 
@@ -949,7 +1037,6 @@ describe('Redis Metrics POST Route', () => {
             const res = await request(app).post(endpoint).send(body);
             expect(res.statusCode).toEqual(200);
             expect(res.body).toEqual(endpointRet);
-            server.close()
         });
 
     it.each([
@@ -964,7 +1051,6 @@ describe('Redis Metrics POST Route', () => {
             const res = await request(app).post(endpoint).send(body);
             expect(res.statusCode).toEqual(statusCode);
             expect(res.body).toEqual(endpointRet);
-            server.close()
         });
 
     it('Should return error and status code 534 if redis returns ' +
@@ -981,7 +1067,6 @@ describe('Redis Metrics POST Route', () => {
                 .toEqual({
                     error: 'Error: RedisError retrieved from Redis: Test Error.'
                 });
-            server.close()
         });
 
     // For this endpoint, these redis returns do not cause an error since the
@@ -1006,7 +1091,569 @@ describe('Redis Metrics POST Route', () => {
                     }
                 }
             });
-            server.close()
+        });
+});
+
+describe('Ping Common Service - Node Exporter POST Route', () => {
+    const endpoint = '/server/common/node-exporter';
+
+    it('Should return error and status code if missing url in body', async () => {
+        let expectedReturn = new MissingKeysInBody('url');
+        const res = await request(app).post(endpoint).send({});
+        expect(res.statusCode).toEqual(532);
+        expect(res.body).toEqual({error: expectedReturn.message});
+    });
+
+    it('Should return correct result and a successful status code if node exporter does not return an error',
+        async () => {
+            const resp: AxiosResponse = emptyAxiosResponse('node_cpu_seconds_total');
+            axiosMock.get.mockResolvedValue(resp);
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({result: PingStatus.SUCCESS});
+        });
+
+    it('Should return ping error and status code 400 if node exporter returns an error',
+        async () => {
+            axiosMock.get.mockResolvedValue(emptyAxiosResponse());
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(400);
+            expect(res.body).toEqual({result: PingStatus.ERROR});
+        });
+
+    it('Should return ping timeout and status code 408 if node exporter returns a time out error',
+        async () => {
+            axiosMock.get.mockRejectedValue({code: 'ECONNABORTED'})
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(408);
+            expect(res.body).toEqual({result: PingStatus.TIMEOUT});
+        });
+});
+
+describe('Ping Common Service - Prometheus POST Route', () => {
+    const endpoint = '/server/common/prometheus';
+
+    it.each([
+        [532, 'url not specified', {'baseChain': 'test'},
+            {error: 'Error: Missing key(s) url in body.'}],
+        [532, 'baseChain not specified', {'url': 'test'},
+            {error: 'Error: Missing key(s) baseChain in body.'}],
+        [532, 'url and baseChain not specified', {},
+            {error: 'Error: Missing key(s) url, baseChain in body.'}],
+    ])('Should return error and %s status code if %s',
+        async (statusCode: number, _: string, body: any,
+               endpointRet: any) => {
+            const res = await request(app).post(endpoint).send(body);
+            expect(res.statusCode).toEqual(statusCode);
+            expect(res.body).toEqual(endpointRet);
+        });
+
+    it.each([
+        ['cosmos'],
+        ['chainlink'],
+        ['test chain'],
+    ])('Should return correct result and a successful status code if prometheus does not return an error for % baseChain',
+        async (baseChain: string) => {
+            const resp: AxiosResponse = emptyAxiosResponse(getPrometheusMetricFromBaseChain(baseChain));
+            axiosMock.get.mockResolvedValue(resp);
+            const res = await request(app).post(endpoint).send({
+                'url': 'test_url.com',
+                'baseChain': baseChain
+            });
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({result: PingStatus.SUCCESS});
+        });
+
+    it('Should return ping error and status code 400 if prometheus returns an error',
+        async () => {
+            axiosMock.get.mockResolvedValue(emptyAxiosResponse());
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com', 'baseChain': 'cosmos'});
+            expect(res.statusCode).toEqual(400);
+            expect(res.body).toEqual({result: PingStatus.ERROR});
+        });
+
+    it('Should return ping timeout and status code 408 if prometheus returns a time out error',
+        async () => {
+            axiosMock.get.mockRejectedValue({code: 'ECONNABORTED'})
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com', 'baseChain': 'cosmos'});
+            expect(res.statusCode).toEqual(408);
+            expect(res.body).toEqual({result: PingStatus.TIMEOUT});
+        });
+});
+
+describe('Ping Cosmos Service - Cosmos REST POST Route', () => {
+    const endpoint = '/server/cosmos/rest';
+
+    it('Should return error and status code if missing url in body', async () => {
+        let expectedReturn = new MissingKeysInBody('url');
+        const res = await request(app).post(endpoint).send({});
+        expect(res.statusCode).toEqual(532);
+        expect(res.body).toEqual({error: expectedReturn.message});
+    });
+
+    it('Should return correct result and a successful status code if cosmos rest does not return an error',
+        async () => {
+            const resp: AxiosResponse = emptyAxiosResponse({node_info: 'test'});
+            axiosMock.get.mockResolvedValue(resp);
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({result: PingStatus.SUCCESS});
+        });
+
+    it('Should return ping error and status code 400 if cosmos rest returns an error',
+        async () => {
+            axiosMock.get.mockResolvedValue(emptyAxiosResponse());
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(400);
+            expect(res.body).toEqual({result: PingStatus.ERROR});
+        });
+
+    it('Should return ping timeout and status code 408 if cosmos rest returns a time out error',
+        async () => {
+            axiosMock.get.mockRejectedValue({code: 'ECONNABORTED'})
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(408);
+            expect(res.body).toEqual({result: PingStatus.TIMEOUT});
+        });
+});
+
+describe('Ping Cosmos Service - Tendermint RPC POST Route', () => {
+    const endpoint = '/server/cosmos/tendermint-rpc';
+
+    it('Should return error and status code if missing url in body', async () => {
+        let expectedReturn = new MissingKeysInBody('url');
+        const res = await request(app).post(endpoint).send({});
+        expect(res.statusCode).toEqual(532);
+        expect(res.body).toEqual({error: expectedReturn.message});
+    });
+
+    it('Should return correct result and a successful status code if tendermint rpc does not return an error',
+        async () => {
+            const resp: AxiosResponse = emptyAxiosResponse({jsonrpc: 'test'});
+            axiosMock.get.mockResolvedValue(resp);
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({result: PingStatus.SUCCESS});
+        });
+
+    it('Should return ping error and status code 400 if tendermint rpc returns an error',
+        async () => {
+            axiosMock.get.mockResolvedValue(emptyAxiosResponse());
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(400);
+            expect(res.body).toEqual({result: PingStatus.ERROR});
+        });
+
+    it('Should return ping timeout and status code 408 if tendermint rpc returns a time out error',
+        async () => {
+            axiosMock.get.mockRejectedValue({code: 'ECONNABORTED'})
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(408);
+            expect(res.body).toEqual({result: PingStatus.TIMEOUT});
+        });
+});
+
+describe('Ping Substrate Service - Websocket POST Route', () => {
+    beforeEach(() => {
+        process.env.SUBSTRATE_API_IP = '0.0.0.0';
+        process.env.SUBSTRATE_API_PORT = '0000';
+    });
+
+    const endpoint = '/server/substrate/websocket';
+
+    it('Should return error and status code if missing url in body',
+        async () => {
+            let expectedReturn = new MissingKeysInBody('url');
+            const res = await request(app).post(endpoint).send({});
+            expect(res.statusCode).toEqual(532);
+            expect(res.body).toEqual({error: expectedReturn.message});
+        });
+
+    it('Should return error if Substrate env variables are not available',
+        async () => {
+            delete process.env.SUBSTRATE_API_IP;
+            delete process.env.SUBSTRATE_API_PORT;
+            const expectedReturn = new EnvVariablesNotAvailable('Substrate IP or Substrate API');
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(expectedReturn.code);
+            expect(res.body).toEqual({error: expectedReturn.message});
+        });
+
+    it('Should return correct result and a successful status code if request does not return an error',
+        async () => {
+            axiosMock.get.mockResolvedValue(emptyAxiosResponse());
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({result: PingStatus.SUCCESS});
+        });
+
+    it('Should return ping error and status code 400 if request returns an error',
+        async () => {
+            axiosMock.get.mockRejectedValue({code: 'RANDOMERROR'})
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(400);
+            expect(res.body).toEqual({result: PingStatus.ERROR});
+        });
+
+    it('Should return ping timeout and status code 408 if request times out',
+        async () => {
+            axiosMock.get.mockRejectedValue({code: 'ECONNABORTED'})
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(408);
+            expect(res.body).toEqual({result: PingStatus.TIMEOUT});
+        });
+});
+
+describe('Ping Ethereum Service - RPC POST Route', () => {
+    const endpoint = '/server/ethereum/rpc';
+
+    it('Should return error and status code if missing url in body', async () => {
+        let expectedReturn = new MissingKeysInBody('url');
+        const res = await request(app).post(endpoint).send({});
+        expect(res.statusCode).toEqual(532);
+        expect(res.body).toEqual({error: expectedReturn.message});
+    });
+
+    it('Should return correct result and a successful status code if web3 call does not return an error',
+        async () => {
+            web3EthGetBlockNumberPromiseResolve = 123;
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({result: PingStatus.SUCCESS});
+        });
+
+    it('Should return ping error and status code 400 if web3 call returns an error',
+        async () => {
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(400);
+            expect(res.body).toEqual({result: PingStatus.ERROR});
+        });
+
+    it('Should return ping timeout and status code 408 if web3 call times out',
+        async () => {
+            // While the web3 eth call will not return -1 in case of a timeout, this will mock the behaviour of the
+            // fulfillWithTimeLimit function, which will return the failure value (-1) if the call times out. The
+            // behaviour of this function is assumed to be valid and is tested in its respective unit tests.
+            web3EthGetBlockNumberPromiseResolve = -1;
+            const res = await request(app).post(endpoint).send({'url': 'test_url.com'});
+            expect(res.statusCode).toEqual(408);
+            expect(res.body).toEqual({result: PingStatus.TIMEOUT});
+        });
+});
+
+describe('Send Test Alert Channels Opsgenie POST Route', () => {
+    const endpoint = '/server/channels/opsgenie';
+
+    it('Should return correct result and a successful status code if opsgenie does not return an error',
+        async () => {
+            const res = await request(app).post(endpoint)
+                .send({'eu': true, 'apiKey': 'test'});
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({
+                result: PingStatus.SUCCESS
+            });
+        });
+
+    it.each([
+        [532, 'apiKey not specified', {'eu': true},
+            {error: 'Error: Missing key(s) apiKey in body.'}],
+        [532, 'eu not specified', {'apiKey': 'test'},
+            {error: 'Error: Missing key(s) eu in body.'}],
+        [532, 'apiKey and eu not specified', {},
+            {error: 'Error: Missing key(s) apiKey, eu in body.'}],
+    ])('Should return error and %s status code if %s',
+        async (statusCode: number, _: string, body: any,
+               endpointRet: any) => {
+            const res = await request(app).post(endpoint).send(body);
+            expect(res.statusCode).toEqual(statusCode);
+            expect(res.body).toEqual(endpointRet);
+        });
+
+    it('Should return ping error and status code 400 if opsgenie returns an error',
+        async () => {
+            alertV2CreateMockCallbackError = Error();
+            const res = await request(app).post(endpoint)
+                .send({'eu': true, 'apiKey': 'test'});
+            expect(res.statusCode).toEqual(400);
+            expect(res.body)
+                .toEqual({
+                    result: PingStatus.ERROR
+                });
+        });
+});
+
+describe('Send Test Alert Channels PagerDuty POST Route', () => {
+    const endpoint = '/server/channels/pagerduty';
+
+    it('Should return correct result and a successful status code if pagerduty does not return an error',
+        async () => {
+            // @ts-ignore
+            jest.spyOn(pagerDutyApi, 'event').mockResolvedValue('result');
+            const res = await request(app).post(endpoint).send({'integrationKey': 'test'});
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({
+                result: PingStatus.SUCCESS
+            });
+        });
+
+    it('Should return error and %s status code if %s',
+        async () => {
+            const res = await request(app).post(endpoint).send({});
+            expect(res.statusCode).toEqual(532);
+            expect(res.body).toEqual({error: 'Error: Missing key(s) integrationKey in body.'});
+        });
+
+    it('Should return ping error and status code 400 if pagerduty returns an error',
+        async () => {
+            jest.spyOn(pagerDutyApi, 'event').mockRejectedValue('error');
+            const res = await request(app).post(endpoint).send({'integrationKey': 'test'});
+            expect(res.statusCode).toEqual(400);
+            expect(res.body).toEqual({
+                result: PingStatus.ERROR
+            });
+        });
+});
+
+describe('Send Test Alert Channels Slack POST Route', () => {
+    const endpoint = '/server/channels/slack';
+
+    it('Should return correct result and a successful status code if slack does not raise an error',
+        async () => {
+            const res = await request(app).post(endpoint)
+                .send({'botToken': 'test', 'botChannelId': 'test'});
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({
+                result: PingStatus.SUCCESS
+            });
+        });
+
+    it.each([
+        [532, 'botToken not specified', {'botChannelId': 'test'},
+            {error: 'Error: Missing key(s) botToken in body.'}],
+        [532, 'botChannelId not specified', {'botToken': 'test'},
+            {error: 'Error: Missing key(s) botChannelId in body.'}],
+        [532, 'botToken and botChannelId not specified', {},
+            {error: 'Error: Missing key(s) botToken, botChannelId in body.'}],
+    ])('Should return error and %s status code if %s',
+        async (statusCode: number, _: string, body: any,
+               endpointRet: any) => {
+            const res = await request(app).post(endpoint).send(body);
+            expect(res.statusCode).toEqual(statusCode);
+            expect(res.body).toEqual(endpointRet);
+        });
+
+    it('Should return ping error and status code 400 if slack raises an error',
+        async () => {
+            slackMock.chat.postMessage.mockImplementation(() => {
+                throw new Error();
+            });
+            const res = await request(app).post(endpoint)
+                .send({'botToken': 'test', 'botChannelId': 'test'});
+            expect(res.statusCode).toEqual(400);
+            expect(res.body)
+                .toEqual({
+                    result: PingStatus.ERROR
+                });
+        });
+});
+
+describe('Send Test Alert Channels Telegram POST Route', () => {
+    const endpoint = '/server/channels/telegram';
+
+    it('Should return correct result and a successful status code if telegram does not return an error',
+        async () => {
+            axiosMock.get.mockResolvedValue(emptyAxiosResponse());
+            const res = await request(app).post(endpoint).send({'botToken': 'test', 'botChatId': 'test'});
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({result: PingStatus.SUCCESS});
+        });
+
+    it.each([
+        [532, 'botToken not specified', {'botChatId': 'test'},
+            {error: 'Error: Missing key(s) botToken in body.'}],
+        [532, 'botChatId not specified', {'botToken': 'test'},
+            {error: 'Error: Missing key(s) botChatId in body.'}],
+        [532, 'botToken and botChatId not specified', {},
+            {error: 'Error: Missing key(s) botToken, botChatId in body.'}],
+    ])('Should return error and %s status code if %s',
+        async (statusCode: number, _: string, body: any,
+               endpointRet: any) => {
+            const res = await request(app).post(endpoint).send(body);
+            expect(res.statusCode).toEqual(statusCode);
+            expect(res.body).toEqual(endpointRet);
+        });
+
+    it('Should return ping error and status code 408 if telegram returns a time out error',
+        async () => {
+            axiosMock.get.mockRejectedValue({code: 'ECONNABORTED'});
+            const res = await request(app).post(endpoint).send({'botToken': 'test', 'botChatId': 'test'});
+            expect(res.statusCode).toEqual(408);
+            expect(res.body).toEqual({result: PingStatus.TIMEOUT});
+        });
+
+    it('Should return ping error and status code 400 if telegram returns an error',
+        async () => {
+            axiosMock.get.mockRejectedValue({code: 'RANDOMERROR'});
+            const res = await request(app).post(endpoint).send({'botToken': 'test', 'botChatId': 'test'});
+            expect(res.statusCode).toEqual(400);
+            expect(res.body).toEqual({result: PingStatus.ERROR});
+        });
+});
+
+describe('Send Test Alert Channels PagerDuty POST Route', () => {
+    const endpoint = '/server/channels/pagerduty';
+
+    it('Should return correct result and a successful status code if pagerduty does not return an error',
+        async () => {
+            // @ts-ignore
+            jest.spyOn(pagerDutyApi, 'event').mockResolvedValue('result');
+            const res = await request(app).post(endpoint).send({'integrationKey': 'test'});
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({
+                result: PingStatus.SUCCESS
+            });
+        });
+
+    it('Should return error and %s status code if %s',
+        async () => {
+            const res = await request(app).post(endpoint).send({});
+            expect(res.statusCode).toEqual(532);
+            expect(res.body).toEqual({error: 'Error: Missing key(s) integrationKey in body.'});
+        });
+
+    it('Should return ping error and status code 400 if pagerduty returns an error',
+        async () => {
+            jest.spyOn(pagerDutyApi, 'event').mockRejectedValue('error');
+            const res = await request(app).post(endpoint).send({'integrationKey': 'test'});
+            expect(res.statusCode).toEqual(400);
+            expect(res.body).toEqual({
+                result: PingStatus.ERROR
+            });
+        });
+});
+
+describe('Send Test Alert Channels Twilio POST Route', () => {
+    const endpoint = '/server/channels/twilio';
+
+    it('Should return correct result and a successful status code if twilio does not return an error',
+        async () => {
+            twilioClientCallsCreateResolve = {test: 'test'}
+            const res = await request(app).post(endpoint).send({
+                accountSid: 'test', authToken: 'test',
+                twilioPhoneNumber: 'test', phoneNumberToDial: 'test'
+            });
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({result: PingStatus.SUCCESS});
+        });
+
+    it.each([
+        [532, 'accountSid not specified',
+            {authToken: 'test', twilioPhoneNumber: 'test', phoneNumberToDial: 'test'},
+            {error: 'Error: Missing key(s) accountSid in body.'}],
+        [532, 'authToken not specified',
+            {accountSid: 'test', twilioPhoneNumber: 'test', phoneNumberToDial: 'test'},
+            {error: 'Error: Missing key(s) authToken in body.'}],
+        [532, 'twilioPhoneNumber not specified',
+            {accountSid: 'test', authToken: 'test', phoneNumberToDial: 'test'},
+            {error: 'Error: Missing key(s) twilioPhoneNumber in body.'}],
+        [532, 'phoneNumberToDial not specified',
+            {accountSid: 'test', authToken: 'test', twilioPhoneNumber: 'test'},
+            {error: 'Error: Missing key(s) phoneNumberToDial in body.'}],
+        [532, 'accountSid and authToken not specified',
+            {twilioPhoneNumber: 'test', phoneNumberToDial: 'test'},
+            {error: 'Error: Missing key(s) accountSid, authToken in body.'}],
+        [532, 'twilioPhoneNumber and phoneNumberToDial not specified',
+            {accountSid: 'test', authToken: 'test'},
+            {error: 'Error: Missing key(s) twilioPhoneNumber, phoneNumberToDial in body.'}],
+        [532, 'accountSid, authToken, twilioPhoneNumber, and phoneNumberToDial not specified', {},
+            {error: 'Error: Missing key(s) accountSid, authToken, twilioPhoneNumber, phoneNumberToDial in body.'}],
+    ])('Should return error and %s status code if %s',
+        async (statusCode: number, _: string, body: any,
+               endpointRet: any) => {
+            const res = await request(app).post(endpoint).send(body);
+            expect(res.statusCode).toEqual(statusCode);
+            expect(res.body).toEqual(endpointRet);
+        });
+
+    it('Should return ping error and status code 400 if twilio returns an error',
+        async () => {
+            const res = await request(app).post(endpoint).send({
+                accountSid: 'test', authToken: 'test',
+                twilioPhoneNumber: 'test', phoneNumberToDial: 'test'
+            });
+            expect(res.statusCode).toEqual(400);
+            expect(res.body).toEqual({result: PingStatus.ERROR});
+        });
+});
+
+describe('Send Test Alert Channels Email POST Route', () => {
+    const endpoint = '/server/channels/email';
+
+    it('Should return correct result and a successful status code if email does not return an error',
+        async () => {
+            const res = await request(app).post(endpoint).send({
+                smtp: 'test', port: 123, from: 'test', to: 'test',
+                username: 'test', password: 'test'
+            });
+            expect(res.statusCode).toEqual(200);
+            expect(res.body).toEqual({result: PingStatus.SUCCESS});
+        });
+
+    it.each([
+        [532, 'smtp not specified',
+            {port: 123, from: 'test', to: 'test', username: '', password: ''},
+            {error: 'Error: Missing key(s) smtp in body.'}],
+        [532, 'port not specified',
+            {smtp: 'test', from: 'test', to: 'test', username: '', password: ''},
+            {error: 'Error: Missing key(s) port in body.'}],
+        [532, 'from not specified',
+            {smtp: 'test', port: 123, to: 'test', username: '', password: ''},
+            {error: 'Error: Missing key(s) from in body.'}],
+        [532, 'to not specified',
+            {smtp: 'test', port: 123, from: 'test', username: '', password: ''},
+            {error: 'Error: Missing key(s) to in body.'}],
+        [532, 'username not specified',
+            {smtp: 'test', port: 123, from: 'test', to: 'test', password: ''},
+            {error: 'Error: Missing key(s) username in body.'}],
+        [532, 'password not specified',
+            {smtp: 'test', port: 123, from: 'test', to: 'test', username: ''},
+            {error: 'Error: Missing key(s) password in body.'}],
+        [532, 'smtp and port not specified',
+            {from: 'test', to: 'test', username: '', password: ''},
+            {error: 'Error: Missing key(s) smtp, port in body.'}],
+        [532, 'username and password not specified',
+            {smtp: 'test', port: 123, from: 'test', to: 'test'},
+            {error: 'Error: Missing key(s) username, password in body.'}],
+        [532, 'smtp, port, from, to, username, and password not specified', {},
+            {error: 'Error: Missing key(s) smtp, port, from, to, username, password in body.'}],
+    ])('Should return error and %s status code if %s',
+        async (statusCode: number, _: string, body: any,
+               endpointRet: any) => {
+            const res = await request(app).post(endpoint).send(body);
+            expect(res.statusCode).toEqual(statusCode);
+            expect(res.body).toEqual(endpointRet);
+        });
+
+    it('Should return ping error and status code 400 if email client returns an error',
+        async () => {
+            nodemailerVerifyCallbackError = Error();
+            const res = await request(app).post(endpoint).send({
+                smtp: 'test', port: 123, from: 'test', to: 'test',
+                username: 'test', password: 'test'
+            });
+            expect(res.statusCode).toEqual(400);
+            expect(res.body).toEqual({result: PingStatus.ERROR});
+        });
+
+    it('Should return ping error and status code 400 if sending email returns an error',
+        async () => {
+            nodemailerSendMailCallbackError = Error();
+            const res = await request(app).post(endpoint).send({
+                smtp: 'test', port: 123, from: 'test', to: 'test',
+                username: 'test', password: 'test'
+            });
+            expect(res.statusCode).toEqual(400);
+            expect(res.body).toEqual({result: PingStatus.ERROR});
         });
 });
 
@@ -1021,7 +1668,6 @@ describe('Server Defaults', () => {
             expect(res.body).toEqual({
                 'error': expectedReturn.message
             });
-            server.close()
         });
 
     it.each([
@@ -1034,7 +1680,6 @@ describe('Server Defaults', () => {
             expect(res.body).toEqual({
                 'error': expectedReturn.message
             });
-            server.close()
         });
 });
 
@@ -1048,7 +1693,6 @@ describe('Server Redirects', () => {
             const res = await request(app).get(endpoint);
             expect(res.statusCode).toEqual(expectedStatusCode);
             expect(res.text).toEqual(expectedReturnedText);
-            server.close()
         });
 
     it.each([
@@ -1058,6 +1702,5 @@ describe('Server Redirects', () => {
             const res = await request(app).post(endpoint);
             expect(res.statusCode).toEqual(expectedStatusCode);
             expect(res.text).toEqual(expectedReturnedText);
-            server.close()
         });
 });

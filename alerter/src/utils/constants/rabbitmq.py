@@ -108,14 +108,7 @@ COSMOS_NETWORK_RAW_DATA_ROUTING_KEY = 'network.cosmos'
 SUBSTRATE_NETWORK_RAW_DATA_ROUTING_KEY = 'network.substrate'
 GITHUB_RAW_DATA_ROUTING_KEY = 'github'
 DOCKERHUB_RAW_DATA_ROUTING_KEY = 'dockerhub'
-GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.github_repos_config'
-GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.github_repos_config'
-DH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.dockerhub_repos_config'
-DH_MON_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.dockerhub_repos_config'
-SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS = 'chains.*.*.systems_config'
-SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.systems_config'
-NODES_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.nodes_config'
-EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.evm_nodes_config'
+
 GITHUB_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.github'
 DOCKERHUB_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.dockerhub'
 SYSTEM_TRANSFORMED_DATA_ROUTING_KEY = 'transformed_data.system'
@@ -137,21 +130,38 @@ COSMOS_NETWORK_ALERT_ROUTING_KEY = 'alert.network.cosmos'
 SUBSTRATE_NODE_ALERT_ROUTING_KEY = 'alert.node.substrate'
 SUBSTRATE_NETWORK_ALERT_ROUTING_KEY = 'alert.network.substrate'
 EVM_NODE_ALERT_ROUTING_KEY = 'alert.node.evm'
-CL_ALERTS_CONFIGS_ROUTING_KEY = 'chains.chainlink.*.alerts_config'
-EVM_ALERTS_CONFIGS_ROUTING_KEY = 'chains.chainlink.*.alerts_config'
-COSMOS_ALERTS_CONFIGS_ROUTING_KEY = 'chains.cosmos.*.alerts_config'
-SUBSTRATE_ALERTS_CONFIGS_ROUTING_KEY = 'chains.substrate.*.alerts_config'
-ALERTS_CONFIGS_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
-ALERTS_CONFIGS_ROUTING_KEY_GEN = 'general.alerts_config'
-ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'
+
 ALERT_ROUTER_INPUT_ROUTING_KEY = 'alert.#'
 ALERT_STORE_INPUT_ROUTING_KEY = 'alert'
 MONITORABLE_STORE_INPUT_ROUTING_KEY = '*.*'
 CHANNEL_HANDLER_INPUT_ROUTING_KEY_TEMPLATE = 'channel.{}'
-CONSOLE_HANDLER_INPUT_ROUTING_KEY = "channel.console"
 LOG_HANDLER_INPUT_ROUTING_KEY = 'channel.log'
-CHANNELS_MANAGER_CONFIGS_ROUTING_KEY = 'channels.*'
 PING_ROUTING_KEY = 'ping'
 HEARTBEAT_INPUT_ROUTING_KEY = 'heartbeat.*'
 HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY = 'heartbeat.worker'
 HEARTBEAT_OUTPUT_MANAGER_ROUTING_KEY = 'heartbeat.manager'
+
+### Channels Routing keys
+CHANNELS_MANAGER_CONFIGS_ROUTING_KEY = 'channels.*'
+ALERT_ROUTER_CONFIGS_ROUTING_KEY = 'channels.*'
+CONSOLE_HANDLER_INPUT_ROUTING_KEY = "channel.console"
+
+### Chains Routing keys
+GH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.github_repos_config'
+DH_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.dockerhub_repos_config'
+SYS_MON_MAN_CONFIGS_ROUTING_KEY_CHAINS_SYS = 'chains.*.*.systems_config'
+NODES_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.nodes_config'
+ALERTS_CONFIGS_ROUTING_KEY_CHAIN = 'chains.*.*.alerts_config'
+EVM_NODES_CONFIGS_ROUTING_KEY_CHAINS = 'chains.*.*.evm_nodes_config'
+
+CL_ALERTS_CONFIGS_ROUTING_KEY = 'chains.chainlink.*.alerts_config'
+EVM_ALERTS_CONFIGS_ROUTING_KEY = 'chains.chainlink.*.alerts_config'
+COSMOS_ALERTS_CONFIGS_ROUTING_KEY = 'chains.cosmos.*.alerts_config'
+SUBSTRATE_ALERTS_CONFIGS_ROUTING_KEY = 'chains.substrate.*.alerts_config'
+
+
+### General Routing keys
+GH_MON_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.github_repos_config'
+DH_MON_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.dockerhub_repos_config'
+SYS_MON_MAN_CONFIGS_ROUTING_KEY_GEN = 'general.systems_config'
+ALERTS_CONFIGS_ROUTING_KEY_GEN = 'general.alerts_config'

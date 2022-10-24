@@ -1,0 +1,81 @@
+@import '../../scss/mixins/centralized-container.scss';
+@import '../../scss/mixins/heading.scss';
+
+.panic-installer-sub-chain {
+
+  &__container {
+    padding: 5px 5% 5px 5%;
+
+    svc-surface {
+      margin: 10px;
+    }
+  }
+
+  &__heading {
+    @include heading-container();
+  }
+
+  &__title {
+    @include heading-title();
+  }
+
+  &__step {
+    @include heading-step();
+  }
+
+  &__message-container {
+    display: flex;
+    align-items: center;
+  }
+
+  &__message {
+    font-size: 17px;
+    color: var(--ion-color-primary);
+  }
+
+  &__list {
+    margin-top: -10px;
+    font-size: 17px;
+    color: var(--ion-color-primary);
+  }
+
+  &__list-item {
+    margin-bottom: 5px;
+  }
+
+  form {
+
+    #submit {
+      display: none;
+    }
+  }
+
+  svc-input {
+    margin: 10px 2px 10px 2px;
+  }
+
+  svc-select {
+
+    ion-select {
+      margin: 1px;
+    }
+  }
+}
+
+// setting info modal dimension
+.panic-installer-sub-chain {
+  &__info-modal {
+    --height: 690px !important;
+    --width: 800px !important;
+  }
+}
+
+.alert-radio-label {
+  text-transform: capitalize;
+}
+
+#unsaved-changes-text {
+  color: var(--ion-color-tertiary);
+  font-weight: 600;
+  margin-top: auto;
+}
