@@ -77,3 +77,17 @@ describe('formatBytes() function', () => {
         }
     });
 });
+
+describe('getBaseChainFullName()', () => {
+    it.each([
+        ['Cosmos', 'cosmos'],
+        ['Substrate', 'substrate'],
+        ['Chainlink', 'chainlink'],
+        ['General', 'general'],
+    ])('Should return %s for base chain %s',
+      async (expectedBaseChainFullName: string, baseChainValue: string) => {
+          const baseChainFullName = HelperAPI.getBaseChainFullName(baseChainValue);
+          expect(baseChainFullName).toEqual(expectedBaseChainFullName);
+      })
+
+})

@@ -1,0 +1,59 @@
+@import '../../../scss/mixins/nav-buttons.scss';
+@import '../../../scss/mixins/form.scss';
+@import '../../../scss/mixins/data-tables.scss';
+
+.panic-installer-sources {
+
+  &__container {
+
+    ion-item {
+      margin: 10px 0 10px -15px;
+      width: 600px;
+
+      &::part(native) {
+        background-color: var(--surface-background);
+      }
+    }
+
+    @include patch-svc-toggle();
+  }
+
+  &__icon {
+    display: flex;
+    justify-content: center;
+
+    ion-icon {
+      font-size: 100px;
+    }
+  }
+
+  &__title {
+    font-size: 25px;
+    font-weight: 900;
+    margin-bottom: 5px;
+  }
+
+  &__step {
+    font-size: 14px;
+    font-weight: 100;
+  }
+
+  &__more-info {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+  }
+
+  &__add-button-container {
+    @include add-button-container();
+    @include button();
+  }
+
+  &__crud-data-table {
+    @include crud-data-table();
+  }
+
+  &__network_monitoring_toggle {
+    text-align: -webkit-center;
+  }
+}

@@ -1,0 +1,66 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-alerts renders 1`] = `
+<panic-installer-alerts basechain="cosmos">
+  <panic-header></panic-header>
+  <svc-progress-bar color="tertiary" value="0.8"></svc-progress-bar>
+  <svc-content-container class="panic-installer-alerts__container">
+    <svc-surface>
+      <div class="panic-installer-alerts__heading">
+        <svc-icon color="primary" name="alert-circle-outline" size="120px"></svc-icon>
+        <svc-label class="panic-installer-alerts__title">
+          Alerts Setup for test_sub_chain
+        </svc-label>
+        <svc-label class="panic-installer-alerts__step">
+          step 5/5
+        </svc-label>
+      </div>
+      <p>
+        To simplify this process we have pre-configured the alerts based on our own experience with PANIC. You are free to change and adapt them as you see fit!
+      </p>
+      <p>
+        <b>
+          Important!
+        </b>
+        Make sure that warning thresholds and time windows are set lower than the critical thresholds and time windows, otherwise the alerter will not work properly.
+      </p>
+      <div class="panic-installer-alerts__text-with-tooltip">
+        <p>
+          PANIC supports four types of alerts:
+        </p>
+        <svc-buttons-container>
+          <svc-button color="secondary" iconname="information-circle" iconposition="icon-only"></svc-button>
+        </svc-buttons-container>
+      </div>
+      <div class="panic-installer-alerts-types">
+        <div class="panic-installer-alerts-types__item">
+          <svc-icon color="success" name="alert-circle" size="30px"></svc-icon>
+          <svc-label color="success">
+            Info
+          </svc-label>
+        </div>
+        <div class="panic-installer-alerts-types__item">
+          <svc-icon color="warning" name="warning" size="30px"></svc-icon>
+          <svc-label color="warning">
+            Warning
+          </svc-label>
+        </div>
+        <div class="panic-installer-alerts-types__item">
+          <svc-icon color="danger" name="alert-circle" size="30px"></svc-icon>
+          <svc-label color="danger">
+            Critical
+          </svc-label>
+        </div>
+        <div class="panic-installer-alerts-types__item">
+          <svc-icon color="dark" name="skull" size="30px"></svc-icon>
+          <svc-label color="dark">
+            Error
+          </svc-label>
+        </div>
+      </div>
+    </svc-surface>
+    <panic-installer-nav></panic-installer-nav>
+  </svc-content-container>
+  <panic-footer></panic-footer>
+</panic-installer-alerts>
+`;

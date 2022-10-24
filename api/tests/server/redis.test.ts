@@ -1,4 +1,4 @@
-import {RedisClientNotInitialised} from "../../src/server/errors";
+import { RedisClientNotInitialised } from "../../src/constant/errors";
 import {
     addPostfixToKeys,
     addPrefixToKeys,
@@ -39,7 +39,7 @@ import {
 
 describe('getRedisHashes', () => {
     it('Should return redis hashes', () => {
-        const expectedRet: RedisHashes = {parent: 'hash_p1'};
+        const expectedRet: RedisHashes = { parent: 'hash_p1' };
         const ret: any = getRedisHashes();
         expect(ret).toEqual(expectedRet);
     });
@@ -47,7 +47,7 @@ describe('getRedisHashes', () => {
 
 describe('getUniqueKeys', () => {
     it('Should return unique keys', () => {
-        const expectedRet: UniqueKeys = {mute: 'a1'};
+        const expectedRet: UniqueKeys = { mute: 'a1' };
         const ret: any = getUniqueKeys();
         expect(ret).toEqual(expectedRet);
     });
@@ -239,8 +239,8 @@ describe('addPrefixToKeys', () => {
         const keysObjects: RedisKeys[] = [
             getRedisHashes(), getUniqueKeys(), getGitHubKeys()]
         const keysObjectsResults: RedisKeys[] = [
-            {parent: 'test_hash_p1'},
-            {mute: 'test_a1'},
+            { parent: 'test_hash_p1' },
+            { mute: 'test_a1' },
             {
                 no_of_releases: 'test_gh1',
                 last_monitored: 'test_gh2'
@@ -258,10 +258,10 @@ describe('addPostfixToKeys', () => {
     it('Should return postfixed keys', () => {
         const postfix: string = '_test';
         const keysObjects: RedisKeys[] = [getRedisHashes(), getUniqueKeys(),
-            getGitHubKeys()]
+        getGitHubKeys()]
         const keysObjectsResults: RedisKeys[] = [
-            {parent: 'hash_p1_test'},
-            {mute: 'a1_test'},
+            { parent: 'hash_p1_test' },
+            { mute: 'a1_test' },
             {
                 no_of_releases: 'gh1_test',
                 last_monitored: 'gh2_test'

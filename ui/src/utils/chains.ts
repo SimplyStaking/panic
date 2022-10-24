@@ -35,7 +35,7 @@ export const ChainsAPI = {
  */
 async function getMonitorablesInfo(baseChainsNames: string[]): Promise<any> {
     try {
-        const monitorablesInfo: Response = await fetch(`${API_URL}mongo/monitorablesInfo`,
+        const monitorablesInfo: Response = await fetch(`${API_URL}server/mongo/monitorablesInfo`,
             {
                 method: 'POST',
                 headers: {

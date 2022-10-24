@@ -1,0 +1,48 @@
+.panic-installer-sources {
+
+  &__main-options-container {
+    svc-toggle {
+
+      ion-item {
+        margin-top: 25px !important;
+      }
+    }
+  }
+
+  &__more-info {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+  }
+}
+
+.panic-installer-sources-contract {
+
+  &__container-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  &__container-wei {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+
+    ion-item {
+      width: 100%;
+    }
+  }
+
+  &__network-add-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  &__add-contract-buttons {
+    display: flex;
+    margin: 15px 0 5px 0;
+    justify-content: center;
+  }
+}

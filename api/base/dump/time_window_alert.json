@@ -1,0 +1,82 @@
+[
+    {
+        "_id": "62e24c59f161ba55e6db2a1e",
+        "name": "Missed block signatures within a time window",
+        "value": "missed_blocks",
+        "description": "Raised after a number of missed block signatures during a time window.",
+        "adornment": "Blocks",
+        "group": "time_window_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 25,
+            "repeat": 300,
+            "time_window": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 10,
+            "time_window": 180
+        }
+    },
+    {
+        "_id": "62e252a8f161ba55e6db2a1f",
+        "name": "Chainlink node: Number of unconfirmed transactions",
+        "value": "unconfirmed_transactions",
+        "description": "Number of unconfirmed transactions per node persist over a time period. Example: If a node has 50 unconfirmed transactions for a period of 5 minutes you will get a critical alert.",
+        "adornment": "Transaction Count",
+        "group": "time_window_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 50,
+            "repeat": 300,
+            "time_window": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 15,
+            "time_window": 0
+        }
+    },
+    {
+        "_id": "62e2535bf161ba55e6db2a20",
+        "name": "Chainlink node: Run status update total",
+        "value": "run_status_update_total",
+        "description": "Number of jobs that have had an error over a time period.",
+        "adornment": "Errors",
+        "group": "time_window_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 100,
+            "repeat": 300,
+            "time_window": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 50,
+            "time_window": 300
+        }
+    },
+    {
+        "_id": "62e253a8f161ba55e6db2a21",
+        "name": "Chainlink node: Max Unconfirmed Blocks",
+        "value": "max_unconfirmed_blocks",
+        "description": "The max number of blocks your transactions have been unconfirmed for over a time period above the threshold. Example: If your transactions are unconfirmed for 50 blocks after 5 minutes you will get a critical alert.",
+        "adornment": "Block",
+        "group": "time_window_alert",
+        "critical": {
+            "enabled": true,
+            "repeat_enabled": true,
+            "threshold": 50,
+            "repeat": 300,
+            "time_window": 300
+        },
+        "warning": {
+            "enabled": true,
+            "threshold": 15,
+            "time_window": 300
+        }
+    }
+]

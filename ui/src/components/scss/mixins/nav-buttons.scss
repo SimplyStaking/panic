@@ -1,0 +1,22 @@
+@mixin button($width: 400px) {
+    ion-button {
+        font-size: 16px;
+        width: $width;
+    }
+}
+
+@mixin add-button-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px;
+}
+
+@mixin nav-buttons($margin: 20px 10px 0 10px) {
+    display: flex;
+    justify-content: center;
+    margin: #{$margin};
+    
+    #next {
+        margin-left: 15px;
+    }
+}

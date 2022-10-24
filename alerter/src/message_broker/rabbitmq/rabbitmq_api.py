@@ -105,7 +105,7 @@ class RabbitMQApi:
         # Calls the function with the provided arguments and performs exception
         # handling as well as returns a specified default if RabbtiMQ is running
         # into difficulties. Exceptions are raised to the calling function.
-        ERROR_MESSAGE_TEMPALTE = "RabbitMQ error in %s: %r"
+        ERROR_MESSAGE_TEMPLATE = "RabbitMQ error in %s: %r"
         try:
             if self._is_recently_disconnected():
                 self._logger.debug("RabbitMQ: Could not execute %s as RabbitMQ "
@@ -116,19 +116,19 @@ class RabbitMQApi:
             return ret
         except pika.exceptions.UnroutableError as e:
             # Unroutable errors should be logged and raised
-            self._logger.error(ERROR_MESSAGE_TEMPALTE, function.__name__, e)
+            self._logger.error(ERROR_MESSAGE_TEMPLATE, function.__name__, e)
             raise e
         except pika.exceptions.AMQPChannelError as e:
             # Channel errors do not reflect a connection error, therefore
             # do not set as disconnected
-            self._logger.error(ERROR_MESSAGE_TEMPALTE, function.__name__, e)
+            self._logger.error(ERROR_MESSAGE_TEMPLATE, function.__name__, e)
             # On a channel error, create a new channel
             self.new_channel_unsafe()
             raise e
         except pika.exceptions.AMQPConnectionError as e:
             # For connection related errors, if a connection has been
             # initialised, disconnect and mark the connection as down.
-            self._logger.error(ERROR_MESSAGE_TEMPALTE, function.__name__, e)
+            self._logger.error(ERROR_MESSAGE_TEMPLATE, function.__name__, e)
             if self.connection is not None:
                 self.disconnect_unsafe()
             raise e
@@ -136,7 +136,7 @@ class RabbitMQApi:
             # For any other exception, if the connection is broken mark it as
             # down. Also, raise the exception. If connection is not broken, it
             # is up to the user of the class to close it if need be.
-            self._logger.error(ERROR_MESSAGE_TEMPALTE, function.__name__, e)
+            self._logger.error(ERROR_MESSAGE_TEMPLATE, function.__name__, e)
             if self.connection is not None and self.connection.is_closed:
                 self.disconnect_unsafe()
             raise e
@@ -322,6 +322,12 @@ class RabbitMQApi:
         # this function will throw a ConnectionNotInitialised exception
         if self._connection_initialised():
             return self._safe(self.channel.start_consuming, [], -1)
+
+    def stop_consuming(self) -> Optional[int]:
+        # Perform operation only if a connection has been initialised, if not,
+        # this function will throw a ConnectionNotInitialised exception
+        if self._connection_initialised():
+            return self._safe(self.channel.stop_consuming, [], -1)
 
     def basic_ack(self, delivery_tag: int = 0, multiple: bool = False) \
             -> Optional[int]:

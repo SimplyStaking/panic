@@ -63,7 +63,7 @@ async function getSystemMetrics(chains: SubChain[]): Promise<any> {
     }
 
     try {
-        const metrics = await fetch(`${API_URL}redis/metrics`,
+        const metrics = await fetch(`${API_URL}server/redis/metrics`,
             {
                 method: 'POST',
                 headers: {
@@ -148,7 +148,7 @@ async function getMetricAlerts(chains: SubChain[]): Promise<any> {
     }
 
     try {
-        const metricAlerts = await fetch(`${API_URL}redis/alertsOverview`,
+        const metricAlerts = await fetch(`${API_URL}server/redis/alertsOverview`,
             {
                 method: 'POST',
                 headers: {

@@ -17,12 +17,60 @@
   ],
   "tags": [
     {
+      "name": "Install",
+      "description": "Endpoints about panic installation."
+    },
+    {
+      "name": "Config",
+      "description": "Endpoints about Configurations resources."
+    },
+    {
+      "name": "Channel",
+      "description": "Endpoints about Channels resources."
+    },
+    {
+      "name": "Channel > Config",
+      "description": "Endpoints about the relationship between Channels and Configs."
+    },
+    {
+      "name": "Base Chains",
+      "description": "Endpoints about Base Chains resources."
+    },
+    {
+      "name": "Domain",
+      "description": "Endpoints about entity domain of app."
+    },
+    {
       "name": "Mongo",
       "description": "Endpoints that retrieve data from Mongodb."
     },
     {
       "name": "Redis",
       "description": "Endpoints that retrieve data from Redis."
+    },
+    {
+      "name": "Pings > Common",
+      "description": "Endpoints that ping common services across base chains."
+    },
+    {
+      "name": "Pings > Cosmos",
+      "description": "Endpoints that ping Cosmos services."
+    },
+    {
+      "name": "Pings > Substrate",
+      "description": "Endpoints that ping Substrate services."
+    },
+    {
+      "name": "Pings > Ethereum",
+      "description": "Endpoints that ping Ethereum services."
+    },
+    {
+      "name": "Pings > Repositories",
+      "description": "Endpoints that ping Repository services."
+    },
+    {
+      "name": "Send Test Alert > Channels",
+      "description": "Endpoints that send test alerts to various channel types."
     }
   ],
   "paths": {
@@ -240,12 +288,2514 @@
           }
         }
       }
+    },
+    "/server/common/node-exporter": {
+      "post": {
+        "tags": [
+          "Pings > Common"
+        ],
+        "summary": "Pings endpoint to verify a valid Node Exporter URL.",
+        "requestBody": {
+          "description": "Node Exporter URL to be pinged.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/url"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Invalid URL.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Connection timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-timeout"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "Error: Missing key(s) in request body."
+          }
+        }
+      }
+    },
+    "/server/common/prometheus": {
+      "post": {
+        "tags": [
+          "Pings > Common"
+        ],
+        "summary": "Pings endpoint to verify a valid Prometheus URL.",
+        "requestBody": {
+          "description": "Prometheus URL to be pinged and Prometheus metric to be checked.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "example": "www.test-url.com"
+                  },
+                  "baseChain": {
+                    "type": "string",
+                    "example": "cosmos"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Invalid URL.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Connection timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-timeout"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "Error: Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "example": "Error: Missing key(s) url, baseChain in body."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/cosmos/rest": {
+      "post": {
+        "tags": [
+          "Pings > Cosmos"
+        ],
+        "summary": "Pings endpoint to verify a valid Cosmos REST URL.",
+        "requestBody": {
+          "description": "Cosmos REST URL to be pinged.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/url"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Invalid URL.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Connection timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-timeout"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "Error: Missing key(s) in request body."
+          }
+        }
+      }
+    },
+    "/server/cosmos/tendermint-rpc": {
+      "post": {
+        "tags": [
+          "Pings > Cosmos"
+        ],
+        "summary": "Pings endpoint to verify a valid Tendermint RPC URL.",
+        "requestBody": {
+          "description": "Tendermint RPC URL to be pinged.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/url"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Invalid URL.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Connection timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-timeout"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "Error: Missing key(s) in request body."
+          }
+        }
+      }
+    },
+    "/server/substrate/websocket": {
+      "post": {
+        "tags": [
+          "Pings > Substrate"
+        ],
+        "summary": "Pings endpoint to verify a valid Substrate Websocket URL.",
+        "requestBody": {
+          "description": "Substrate Websocket URL to be pinged.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/url"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Invalid URL.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Connection timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-timeout"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "Error: Missing key(s) in request body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "example": "Error: Missing key(s) url in body."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "541": {
+            "description": "Error: ENV variable not available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "example": "Error: Substrate IP or Substrate API ENV variable not available."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/ethereum/rpc": {
+      "post": {
+        "tags": [
+          "Pings > Ethereum"
+        ],
+        "summary": "Pings endpoint to verify a valid Ethereum RPC URL.",
+        "requestBody": {
+          "description": "Ethereum RPC URL to be pinged.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/url"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Invalid URL.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "Error: Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "example": "Error: Missing key(s) url in body."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/repositories/github": {
+      "post": {
+        "tags": [
+          "Pings > Repositories"
+        ],
+        "summary": "Pings endpoint to verify a valid GitHub repository.",
+        "requestBody": {
+          "description": "Repository name to be pinged.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/github"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Invalid URL.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "Error: Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "example": "Error: Missing key(s) name in body."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/repositories/dockerhub": {
+      "post": {
+        "tags": [
+          "Pings > Repositories"
+        ],
+        "summary": "Pings endpoint to verify a valid Dockerhub repository.",
+        "requestBody": {
+          "description": "Repository name to be pinged.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/dockerhub"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Invalid URL.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "Error: Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "example": "Error: Missing key(s) name in body."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/channels/opsgenie": {
+      "post": {
+        "tags": [
+          "Send Test Alert > Channels"
+        ],
+        "summary": "Sends a test alert to Opsgenie to verify a valid Opsgenie setup.",
+        "requestBody": {
+          "description": "Opsgenie API Key and whether Opsgenie is being operated in the EU region.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "apiKey": {
+                    "type": "string",
+                    "example": "API_KEY"
+                  },
+                  "eu": {
+                    "type": "boolean",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ERROR: Invalid API Key/Setup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "ERROR: Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "example": "Error: Missing key(s) apiKey, eu in body."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/channels/slack": {
+      "post": {
+        "tags": [
+          "Send Test Alert > Channels"
+        ],
+        "summary": "Sends a test alert to Slack to verify a valid Slack setup.",
+        "requestBody": {
+          "description": "Slack Bot Token and Bot Channel ID.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "botToken": {
+                    "type": "string",
+                    "example": "BOT_TOKEN"
+                  },
+                  "botChannelId": {
+                    "type": "string",
+                    "example": "BOT_CHANNEL_ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ERROR: Invalid Tokens/Setup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "ERROR: Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "example": "Error: Missing key(s) botToken, botChannelId in body."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/channels/telegram": {
+      "post": {
+        "tags": [
+          "Send Test Alert > Channels"
+        ],
+        "summary": "Sends a test alert to Telegram to verify a valid Telegram setup.",
+        "requestBody": {
+          "description": "Telegram Bot Token and Chat ID.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "botToken": {
+                    "type": "string",
+                    "example": "BOT_TOKEN"
+                  },
+                  "botChatId": {
+                    "type": "string",
+                    "example": "BOT_CHAT_ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ERROR: Invalid Bot Token/Chat ID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Connection timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-timeout"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "ERROR: Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "example": "Error: Missing key(s) botToken, botChatId in body."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/channels/pagerduty": {
+      "post": {
+        "tags": [
+          "Send Test Alert > Channels"
+        ],
+        "summary": "Sends a test alert to PagerDuty to verify a valid PagerDuty setup.",
+        "requestBody": {
+          "description": "PagerDuty API Token and the integration key.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "integrationKey": {
+                    "type": "string",
+                    "example": "INTEGRATION_KEY"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ERROR: Invalid API Token/Setup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "ERROR: Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "example": "Error: Missing key(s) integrationKey in body."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/channels/twilio": {
+      "post": {
+        "tags": [
+          "Send Test Alert > Channels"
+        ],
+        "summary": "Makes a test call via Twilio to verify a valid Twilio setup.",
+        "requestBody": {
+          "description": "Twilio account SID, authentication token and two phone numbers: that of twilio as well as the one to dial.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "accountSid": {
+                    "type": "string",
+                    "example": "ACCOUNT_SID"
+                  },
+                  "authToken": {
+                    "type": "string",
+                    "example": "AUTH_TOKEN"
+                  },
+                  "twilioPhoneNumber": {
+                    "type": "string",
+                    "example": "+123456789"
+                  },
+                  "phoneNumberToDial": {
+                    "type": "string",
+                    "example": "+123456789"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ERROR: Invalid Account SID/Auth Token/Phone Numbers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "ERROR: Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "example": "Error: Missing key(s) accountSid, authToken, twilioPhoneNumber, phoneNumberToDial in body."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server/channels/email": {
+      "post": {
+        "tags": [
+          "Send Test Alert > Channels"
+        ],
+        "summary": "Sends a test email to verify a valid email server/setup.",
+        "requestBody": {
+          "description": "Email server details, address to send email from, address to receive email, and optional email server authentication (username and password).",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "smtp": {
+                    "type": "string",
+                    "example": "test.test.com"
+                  },
+                  "port": {
+                    "type": "integer",
+                    "example": 123
+                  },
+                  "from": {
+                    "type": "string",
+                    "example": "test@email.com"
+                  },
+                  "to": {
+                    "type": "string",
+                    "example": "test@email.com"
+                  },
+                  "username": {
+                    "type": "string",
+                    "example": "USERNAME"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "PASSWORD"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ERROR: Invalid Account SID/Auth Token/Phone Numbers.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ping-error"
+                }
+              }
+            }
+          },
+          "532": {
+            "description": "ERROR: Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "example": "Error: Missing key(s) accountSid, authToken, twilioPhoneNumber, phoneNumberToDial in body."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/installation/is-first": {
+      "get": {
+        "tags": [
+          "Install"
+        ],
+        "summary": "Cheks if is the first installation.",
+        "responses": {
+          "200": {
+            "description": "Boolean Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error408"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/configs": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Return a list of configurations.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "result": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/configResponseGet"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Add a new configuration.",
+        "requestBody": {
+          "required": true,
+          "description": "Required fields basechain.id and subchain.id.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/configRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "result": {
+                      "$ref": "#/components/schemas/configResponsePost"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request for Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": "400"
+                    },
+                    "messages": {
+                      "example": [
+                        {
+                          "type": "error",
+                          "name": "validation_data_error",
+                          "description": "Bad Request! Invalid data input."
+                        },
+                        {
+                          "type": "error",
+                          "name": "base_chain",
+                          "description": "Base chain is required! on base_chain."
+                        },
+                        {
+                          "type": "error",
+                          "name": "sub_chain",
+                          "description": "Sub chain is required! on sub_chain"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Warning: Register Duplicate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/warning409"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/configs/{config-id}": {
+      "get": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Return a specific configuration.",
+        "parameters": [
+          {
+            "name": "config-id",
+            "in": "path",
+            "description": "The configuration hash id.",
+            "required": true,
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "result": {
+                      "$ref": "#/components/schemas/configResponseGet"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Configuration not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error404"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Updates a specific configuration.",
+        "parameters": [
+          {
+            "name": "config-id",
+            "in": "path",
+            "description": "The configuration hash id.",
+            "required": true,
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/configRequestUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "result": {
+                      "$ref": "#/components/schemas/configResponsePost"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request for Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": "400"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "example": "error"
+                          },
+                          "name": {
+                            "type": "string",
+                            "example": "Missing configuration id!"
+                          },
+                          "description": {
+                            "type": "string",
+                            "example": "Please send id to updates the configuration."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Configuration not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error404"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Warning: Register Duplicate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/warning409"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Config"
+        ],
+        "summary": "Removes a specific configuration.",
+        "parameters": [
+          {
+            "name": "config-id",
+            "in": "path",
+            "description": "The configuration hash id.",
+            "required": true,
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content - Indicates that specific configuration has been removed."
+          },
+          "400": {
+            "description": "Bad request for Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": "400"
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "example": "error"
+                          },
+                          "name": {
+                            "type": "string",
+                            "example": "Missing configuration id!"
+                          },
+                          "description": {
+                            "type": "string",
+                            "example": "Please send id to updates the configuration."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Configuration not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error404"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels": {
+      "get": {
+        "tags": [
+          "Channel"
+        ],
+        "summary": "Return a list of all channels.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "result": {
+                      "$ref": "#/components/schemas/channelsResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Channel"
+        ],
+        "summary": "Add a channel",
+        "requestBody": {
+          "description": "Channel that you want to add.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/channelRequestPost"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "result": {
+                      "$ref": "#/components/schemas/channelResponsePostAndPut"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request for Missing required fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": "400"
+                    },
+                    "messages": {
+                      "example": [
+                        {
+                          "type": "error",
+                          "name": "validation_data_error",
+                          "description": "Bad Request! Invalid data input."
+                        },
+                        {
+                          "type": "error",
+                          "name": "validation_data_error",
+                          "description": "type not in request body."
+                        },
+                        {
+                          "type": "error",
+                          "name": "validation_data_error",
+                          "description": "name not in request body."
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Warning: Register Duplicate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/warning409ChannelName"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not save data to Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channel-id}": {
+      "get": {
+        "tags": [
+          "Channel"
+        ],
+        "summary": "Return a specific channel.",
+        "parameters": [
+          {
+            "name": "channel-id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The channel hash id."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "result": {
+                      "$ref": "#/components/schemas/channelResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Channel not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error404"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Channel"
+        ],
+        "summary": "Update a specific channel.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel-id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The channel hash id."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Test Channel"
+                  },
+                  "info": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "critical": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "commands": {
+                    "type": "boolean",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "example": 200
+                    },
+                    "result": {
+                      "$ref": "#/components/schemas/channelResponsePostAndPut"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Channel not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error404"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Channel"
+        ],
+        "summary": "Removes a specific channel.",
+        "parameters": [
+          {
+            "name": "channel-id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The channel hash id."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content - Indicates that specific configuration has been removed."
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Channel not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error404"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channels/{channel-id}/configs/{config-id}": {
+      "post": {
+        "tags": [
+          "Channel > Config"
+        ],
+        "summary": "Links a channel to a config.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel-id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The hash id of the channel to link."
+          },
+          {
+            "in": "path",
+            "name": "config-id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The hash id of the config to link."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content - Indicates that channel has been linked to configuration."
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Channel or Configuration not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error404"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not save data to Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Channel > Config"
+        ],
+        "summary": "Unlinks a channel from a config.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "channel-id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The hash id of the channel to link."
+          },
+          {
+            "in": "path",
+            "name": "config-id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The hash id of the config to link."
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content - Indicates that channel has been unlinked from configuration."
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Channel or Configuration not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error404"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not save data to Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/basechains": {
+      "get": {
+        "tags": [
+          "Base Chains"
+        ],
+        "summary": "Return the list of base chains supported by PANIC.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "result": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/baseChainResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/basechains/{base-chain-id}": {
+      "get": {
+        "tags": [
+          "Base Chains"
+        ],
+        "summary": "Return a specific base chain.",
+        "parameters": [
+          {
+            "name": "base-chain-id",
+            "in": "path",
+            "description": "The base chain hash id.",
+            "required": true,
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "result": {
+                      "$ref": "#/components/schemas/baseChainResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Base Chain not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error404"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/channel-types": {
+      "get": {
+        "tags": [
+          "Domain"
+        ],
+        "summary": "Return a list of Channel Types enabled to PANIC.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/channelTypeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error408"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/threshold-alerts": {
+      "get": {
+        "tags": [
+          "Domain"
+        ],
+        "summary": "Return a list of Threshold Alerts enabled to PANIC.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/thresholdAlertResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error408"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/severity-alerts": {
+      "get": {
+        "tags": [
+          "Domain"
+        ],
+        "summary": "Return a list of Severity Alerts enabled to PANIC.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/severityAlertResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error408"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/time-window-alerts": {
+      "get": {
+        "tags": [
+          "Domain"
+        ],
+        "summary": "Return a list of Time Window Alerts enabled to PANIC.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/timeWindowAlertResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error408"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/severity-types": {
+      "get": {
+        "tags": [
+          "Domain"
+        ],
+        "summary": "Return a list of Severity Types enabled to PANIC.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/severityTypeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error408"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/repository-types": {
+      "get": {
+        "tags": [
+          "Domain"
+        ],
+        "summary": "Return a list of Repository Types enabled to PANIC.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/repositoryTypeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error408"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/source-types": {
+      "get": {
+        "tags": [
+          "Domain"
+        ],
+        "summary": "Return a list of Source Types enabled to PANIC.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/sourceTypeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: Bad Request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error400"
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Error: Timeout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error408"
+                }
+              }
+            }
+          },
+          "535": {
+            "description": "Error: Mongo client not initialised.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error535"
+                }
+              }
+            }
+          },
+          "536": {
+            "description": "Error: Could not retrieve data from Mongo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error536"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
       "baseChains": {
-        "type": "object",
         "properties": {
           "baseChains": {
             "type": "array",
@@ -262,7 +2812,6 @@
         }
       },
       "monitorablesInfo": {
-        "type": "object",
         "properties": {
           "result": {
             "type": "object",
@@ -307,8 +2856,8 @@
                   "dockerhub_repos": {
                     "$ref": "#/components/schemas/dockerhub_repos"
                   },
-                  "chains": {
-                    "$ref": "#/components/schemas/chains"
+                  "subchains": {
+                    "$ref": "#/components/schemas/subchains"
                   }
                 }
               }
@@ -360,12 +2909,12 @@
           }
         }
       },
-      "chains": {
+      "subchains": {
         "type": "array",
         "items": {
           "type": "object",
           "properties": {
-            "chain_id": {
+            "subchain_id": {
               "type": "string"
             }
           }
@@ -739,6 +3288,78 @@
           }
         }
       },
+      "url": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "items": {
+              "type": "object"
+            },
+            "example": "www.test-url.com"
+          }
+        }
+      },
+      "github": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "items": {
+              "type": "object"
+            },
+            "example": "simplyvc/panic"
+          }
+        }
+      },
+      "dockerhub": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "items": {
+              "type": "object"
+            },
+            "example": "library/panic"
+          }
+        }
+      },
+      "ping-success": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string",
+            "items": {
+              "type": "object"
+            },
+            "example": "PING_SUCCESS"
+          }
+        }
+      },
+      "ping-error": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string",
+            "items": {
+              "type": "object"
+            },
+            "example": "PING_ERROR"
+          }
+        }
+      },
+      "ping-timeout": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string",
+            "items": {
+              "type": "object"
+            },
+            "example": "PING_TIMEOUT"
+          }
+        }
+      },
       "alert": {
         "type": "object",
         "properties": {
@@ -803,6 +3424,1474 @@
           "noOfMetricsPerSource": {
             "type": "integer",
             "example": 100
+          }
+        }
+      },
+      "configResponsePost": {
+        "type": "string",
+        "example": "62675e2d8891cd77b87f5b16"
+      },
+      "configResponseGet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "62675e2d8891cd77b87f5b16"
+          },
+          "status": {
+            "type": "boolean",
+            "example": true
+          },
+          "ready": {
+            "type": "boolean",
+            "example": false
+          },
+          "created": {
+            "type": "string",
+            "example": "2022-05-02T22:02:46.000Z"
+          },
+          "modified": {
+            "type": "string",
+            "example": null
+          },
+          "baseChain": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "6265cefcfdb17d641746dced"
+              },
+              "name": {
+                "type": "string",
+                "example": "Chainlink"
+              }
+            }
+          },
+          "subChain": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "62e143f9f161ba55e6db29cb"
+              },
+              "status": {
+                "type": "boolean",
+                "example": true
+              },
+              "name": {
+                "type": "string",
+                "example": "cosmoshub"
+              },
+              "created": {
+                "type": "string",
+                "example": "2022-05-02T22:02:46.000Z"
+              },
+              "modified": {
+                "type": "string",
+                "example": null
+              },
+              "description": {
+                "type": "string",
+                "example": null
+              }
+            }
+          },
+          "contract": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "6267661fbe66cae642f57fb7"
+              },
+              "status": {
+                "type": "boolean",
+                "example": true
+              },
+              "created": {
+                "type": "string",
+                "example": "2022-05-02T22:02:46.000Z"
+              },
+              "modified": {
+                "type": "string",
+                "example": null
+              },
+              "name": {
+                "type": "string",
+                "example": "6267661fbe66cae642f57fb7"
+              },
+              "url": {
+                "type": "string",
+                "example": "https://weiwatchers.com/feeds-bsc-mainnet.json"
+              },
+              "monitor": {
+                "type": "boolean",
+                "example": true
+              }
+            }
+          },
+          "nodes": {
+            "example": [
+              {
+                "id": "626765f4d9d14938006c3250",
+                "status": true,
+                "created": "2022-05-02T22:02:46.000Z",
+                "modified": null,
+                "network": false,
+                "name": "chainlink_bsc_ocr",
+                "node_prometheus_urls": "https://ip:port/metrics,https://ip:port/metrics",
+                "monitor_prometheus": true,
+                "monitor_node": true,
+                "evm_nodes_urls": "http://ip:port,http://ip:port,http://ip:port",
+                "weiwatchers_url": "https://weiwatchers.com/feeds-bsc-mainnet.json",
+                "monitor_contracts": true
+              },
+              {
+                "id": "626765f4d9d14938006c0523",
+                "status": true,
+                "network": true,
+                "name": "chainlink_bsc_ocr",
+                "node_prometheus_urls": "https://ip:port/metrics,https://ip:port/metrics",
+                "monitor_prometheus": true,
+                "monitor_node": true,
+                "evm_nodes_urls": "http://ip:port,http://ip:port,http://ip:port",
+                "weiwatchers_url": "https://weiwatchers.com/feeds-bsc-mainnet.json",
+                "monitor_contracts": true
+              }
+            ]
+          },
+          "evmNodes": {
+            "example": [
+              {
+                "id": "6267683dc0e201f1edbbdc39",
+                "status": true,
+                "created": "2022-05-02T22:02:46.000Z",
+                "modified": null,
+                "name": "bsc_139",
+                "node_http_url": "http://ip:port",
+                "monitor": true
+              }
+            ]
+          },
+          "systems": {
+            "example": [
+              {
+                "id": "62676606c72149c8dfa37c4e",
+                "status": true,
+                "created": "2022-05-02T22:02:46.000Z",
+                "modified": null,
+                "name": "system_chainlink_ocr_2",
+                "exporter_url": "http://ip:port/metrics",
+                "monitor": true
+              }
+            ]
+          },
+          "repositories": {
+            "example": [
+              {
+                "id": "6269d75a5a34daa2cc7744e0",
+                "monitor": true,
+                "created": "2022-05-02T22:02:46.000Z",
+                "modified": null,
+                "name": "tendermint/tendermint/",
+                "namespace": null,
+                "type": {
+                  "id": "628bdacb5c5ab4c82d151aa4",
+                  "created": "2022-05-02T22:02:46.000Z",
+                  "modified": null,
+                  "status": true,
+                  "name": "GitHub",
+                  "value": "github",
+                  "description": null
+                }
+              },
+              {
+                "id": "6269d81f3f76d2c6ababbafe",
+                "monitor": true,
+                "created": "2022-05-02T22:02:46.000Z",
+                "modified": null,
+                "name": "tendermint",
+                "namespace": "tendermint",
+                "type": {
+                  "id": "628bdafa5c5ab4c82d151aa5",
+                  "status": true,
+                  "created": "2022-05-02T22:02:46.000Z",
+                  "modified": null,
+                  "name": "DockerHub",
+                  "value": "dockerhub",
+                  "description": null
+                }
+              }
+            ]
+          },
+          "thresholdAlerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/thresholdAlert"
+            }
+          },
+          "severityAlerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/severityAlert"
+            }
+          },
+          "timeWindowAlerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/timeWindowAlert"
+            }
+          }
+        }
+      },
+      "configRequest": {
+        "type": "object",
+        "properties": {
+          "baseChain": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "62e143f9f161ba55e6db29cb"
+              }
+            }
+          },
+          "subChain": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "example": "cosmoshub"
+              }
+            }
+          }
+        }
+      },
+      "configRequestUpdate": {
+        "type": "object",
+        "properties": {
+          "ready": {
+            "type": "boolean",
+            "example": true
+          },
+          "subChain": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "example": "cosmoshub 2"
+              }
+            }
+          },
+          "repositories": {
+            "example": [
+              {
+                "monitor": true,
+                "name": "repo_name",
+                "namespace": "repo_namespace",
+                "type": "628bdacb5c5ab4c82d151aa4"
+              }
+            ]
+          }
+        }
+      },
+      "channelsResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/channelResponse"
+        }
+      },
+      "channelRequestPost": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Test Channel"
+          },
+          "type": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "62656ebafdb17d641746dcda"
+              }
+            }
+          },
+          "botToken": {
+            "type": "string",
+            "example": "BOT_TOKEN"
+          },
+          "chatId": {
+            "type": "number",
+            "example": "BOT_CHAT_ID"
+          },
+          "commands": {
+            "type": "boolean",
+            "example": false
+          },
+          "alerts": {
+            "type": "boolean",
+            "example": false
+          },
+          "info": {
+            "type": "boolean",
+            "example": false
+          },
+          "warning": {
+            "type": "boolean",
+            "example": false
+          },
+          "critical": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "channelResponsePostAndPut": {
+        "type": "string",
+        "example": "62f0d2ebb7942db3608894f1"
+      },
+      "channelResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "62674c51fcf822cb9c653246"
+          },
+          "created": {
+            "type": "string",
+            "example": "2022-05-02T22:02:46.000Z"
+          },
+          "modified": {
+            "type": "string",
+            "example": null
+          },
+          "name": {
+            "type": "string",
+            "example": "Test Channel"
+          },
+          "type": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "62657450fdb17d641746dcdf"
+              },
+              "modified": {
+                "example": null
+              },
+              "status": {
+                "type": "boolean",
+                "example": true
+              },
+              "name": {
+                "type": "string",
+                "example": "Telegram"
+              },
+              "value": {
+                "type": "string",
+                "example": "telegram"
+              },
+              "description": {
+                "example": null
+              },
+              "group": {
+                "type": "string",
+                "example": "channel_type"
+              },
+              "created": {
+                "type": "string",
+                "example": "2022-05-02T22:02:46.000Z"
+              }
+            }
+          },
+          "configs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "a679nz7u4kb8y77rnutwjqjbj"
+                },
+                "subChain": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "example": "sub chain 1"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "botToken": {
+            "type": "string",
+            "example": "BOT_TOKEN"
+          },
+          "chatId": {
+            "type": "number",
+            "example": "BOT_CHAT_ID"
+          },
+          "commands": {
+            "type": "boolean",
+            "example": false
+          },
+          "alerts": {
+            "type": "boolean",
+            "example": false
+          },
+          "info": {
+            "type": "boolean",
+            "example": false
+          },
+          "warning": {
+            "type": "boolean",
+            "example": false
+          },
+          "critical": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "baseChainResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "62e143f9f161ba55e6db29cb"
+          },
+          "status": {
+            "type": "boolean",
+            "example": true
+          },
+          "created": {
+            "type": "string",
+            "example": "2022-05-02T22:02:46.000Z"
+          },
+          "modified": {
+            "type": "string",
+            "example": null
+          },
+          "name": {
+            "type": "string",
+            "example": "Cosmos"
+          },
+          "value": {
+            "type": "string",
+            "example": "cosmos"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "628bd8675c5ab4c82d151a99"
+                },
+                "status": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "created": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "modified": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Nodes"
+                },
+                "value": {
+                  "type": "string",
+                  "example": "nodes"
+                },
+                "group": {
+                  "type": "string",
+                  "example": "source_type"
+                },
+                "description": {
+                  "type": "string",
+                  "example": null
+                }
+              }
+            }
+          },
+          "severity_alerts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "62e2569af161ba55e6db2a24"
+                },
+                "created": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "modified": {
+                  "type": "string",
+                  "example": null
+                },
+                "status": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Node is syncing"
+                },
+                "value": {
+                  "type": "string",
+                  "example": "node_is_syncing"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Raised when your node is still catching up to the rest of the blockchain network in terms of block height."
+                },
+                "group": {
+                  "type": "string",
+                  "example": "severity_alert"
+                },
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "6265d085fdb17d641746dcef"
+                    },
+                    "created": {
+                      "type": "string",
+                      "format": "date-time",
+                      "example": "2022-04-01T00:00:00.000Z"
+                    },
+                    "modified": {
+                      "type": "string",
+                      "example": null
+                    },
+                    "status": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "name": {
+                      "type": "string",
+                      "example": "Critical"
+                    },
+                    "value": {
+                      "type": "string",
+                      "example": "critical"
+                    },
+                    "description": {
+                      "type": "string",
+                      "example": null
+                    },
+                    "group": {
+                      "type": "string",
+                      "example": "severity_type"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "threshold_alerts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "62656ebafdb17d641746dcda"
+                },
+                "created": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "modified": {
+                  "type": "string",
+                  "example": null
+                },
+                "status": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Cannot access validator"
+                },
+                "value": {
+                  "type": "string",
+                  "example": "cannot_acccess_validator"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Raised when a validator is unaccessible."
+                },
+                "group": {
+                  "type": "string",
+                  "example": "threshold_alert"
+                },
+                "critical": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "repeat_enabled": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "threshold": {
+                      "type": "number",
+                      "example": 120
+                    },
+                    "repeat": {
+                      "type": "number",
+                      "example": 300
+                    }
+                  }
+                },
+                "warning": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "threshold": {
+                      "type": "number",
+                      "example": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "time_window_alerts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "62e24c59f161ba55e6db2a1e"
+                },
+                "created": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "modified": {
+                  "type": "string",
+                  "example": null
+                },
+                "status": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Missed block signatures within a time window"
+                },
+                "value": {
+                  "type": "string",
+                  "example": "missed_blocks"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Raised after a number of missed block signatures during a time window."
+                },
+                "group": {
+                  "type": "string",
+                  "example": "time_window_alert"
+                },
+                "critical": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "repeat_enabled": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "threshold": {
+                      "type": "number",
+                      "example": 25
+                    },
+                    "repeat": {
+                      "type": "number",
+                      "example": 300
+                    },
+                    "time_window": {
+                      "type": "number",
+                      "example": 300
+                    }
+                  }
+                },
+                "warning": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "threshold": {
+                      "type": "number",
+                      "example": 10
+                    },
+                    "time_window": {
+                      "type": "number",
+                      "example": 180
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "channelTypeResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "62656ebafdb17d641746dcda"
+                },
+                "status": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "created": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "modified": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Slack"
+                },
+                "value": {
+                  "type": "string",
+                  "example": "slack_bot"
+                },
+                "description": {
+                  "type": "string",
+                  "example": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "thresholdAlert": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "62656ebafdb17d641746dcda"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2022-04-01T00:00:00.000Z"
+          },
+          "modified": {
+            "type": "string",
+            "example": null
+          },
+          "status": {
+            "type": "boolean",
+            "example": true
+          },
+          "name": {
+            "type": "string",
+            "example": "Cannot access validator"
+          },
+          "value": {
+            "type": "string",
+            "example": "cannot_acccess_validator"
+          },
+          "description": {
+            "type": "string",
+            "example": "Raised when a validator is unaccessible."
+          },
+          "group": {
+            "type": "string",
+            "example": "threshold_alert"
+          },
+          "critical": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "example": true
+              },
+              "repeat_enabled": {
+                "type": "boolean",
+                "example": true
+              },
+              "threshold": {
+                "type": "number",
+                "example": 120
+              },
+              "repeat": {
+                "type": "number",
+                "example": 300
+              }
+            }
+          },
+          "warning": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "example": true
+              },
+              "threshold": {
+                "type": "number",
+                "example": 0
+              }
+            }
+          }
+        }
+      },
+      "thresholdAlertResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/thresholdAlert"
+            }
+          }
+        }
+      },
+      "severityAlert": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "62656ebafdb17d641746dcda"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2022-04-01T00:00:00.000Z"
+          },
+          "modified": {
+            "type": "string",
+            "example": null
+          },
+          "status": {
+            "type": "boolean",
+            "example": true
+          },
+          "name": {
+            "type": "string",
+            "example": "Slashed"
+          },
+          "value": {
+            "type": "string",
+            "example": "slashed"
+          },
+          "description": {
+            "type": "string",
+            "example": "Raised when your validator has been slashed."
+          },
+          "group": {
+            "type": "string",
+            "example": "severity_alert"
+          },
+          "type": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "6265d085fdb17d641746dcef"
+              },
+              "created": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2022-04-01T00:00:00.000Z"
+              },
+              "modified": {
+                "type": "string",
+                "example": null
+              },
+              "status": {
+                "type": "boolean",
+                "example": true
+              },
+              "name": {
+                "type": "string",
+                "example": "Critical"
+              },
+              "value": {
+                "type": "string",
+                "example": "critical"
+              },
+              "description": {
+                "type": "string",
+                "example": null
+              },
+              "group": {
+                "type": "string",
+                "example": "severity_type"
+              }
+            }
+          }
+        }
+      },
+      "severityAlertResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/severityAlert"
+            }
+          }
+        }
+      },
+      "timeWindowAlert": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "62e24c59f161ba55e6db2a1e"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2022-04-01T00:00:00.000Z"
+          },
+          "modified": {
+            "type": "string",
+            "example": null
+          },
+          "status": {
+            "type": "boolean",
+            "example": true
+          },
+          "name": {
+            "type": "string",
+            "example": "Missed block signatures within a time window"
+          },
+          "value": {
+            "type": "string",
+            "example": "missed_blocks"
+          },
+          "description": {
+            "type": "string",
+            "example": "Raised after a number of missed block signatures during a time window."
+          },
+          "group": {
+            "type": "string",
+            "example": "time_window_alert"
+          },
+          "critical": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "example": true
+              },
+              "repeat_enabled": {
+                "type": "boolean",
+                "example": true
+              },
+              "threshold": {
+                "type": "number",
+                "example": 25
+              },
+              "repeat": {
+                "type": "number",
+                "example": 300
+              },
+              "time_window": {
+                "type": "number",
+                "example": 300
+              }
+            }
+          },
+          "warning": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "example": true
+              },
+              "threshold": {
+                "type": "number",
+                "example": 10
+              },
+              "time_window": {
+                "type": "number",
+                "example": 180
+              }
+            }
+          }
+        }
+      },
+      "timeWindowAlertResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/timeWindowAlert"
+            }
+          }
+        }
+      },
+      "severityTypeResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "6265d085fdb17d641746dcef"
+                },
+                "created": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "modified": {
+                  "type": "string",
+                  "example": null
+                },
+                "status": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Critical"
+                },
+                "value": {
+                  "type": "string",
+                  "example": "critical"
+                },
+                "description": {
+                  "type": "string",
+                  "example": null
+                },
+                "group": {
+                  "type": "string",
+                  "example": "severity_type"
+                }
+              }
+            }
+          }
+        }
+      },
+      "repositoryTypeResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "628bdacb5c5ab4c82d151aa4"
+                },
+                "status": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "created": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "modified": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "GitHub"
+                },
+                "value": {
+                  "type": "string",
+                  "example": "github"
+                },
+                "description": {
+                  "type": "string",
+                  "example": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "sourceTypeResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "628bd8675c5ab4c82d151a99"
+                },
+                "status": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "created": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "modified": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Nodes"
+                },
+                "value": {
+                  "type": "string",
+                  "example": "nodes"
+                },
+                "group": {
+                  "type": "string",
+                  "example": "source_type"
+                },
+                "description": {
+                  "type": "string",
+                  "example": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "configTypeResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": 200
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "62656ebafdb17d641746db1e"
+                },
+                "status": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "created": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "modified": {
+                  "type": "string",
+                  "format": "date-time",
+                  "example": "2022-04-01T00:00:00.000Z"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Channel"
+                },
+                "value": {
+                  "type": "string",
+                  "example": null
+                },
+                "description": {
+                  "type": "string",
+                  "example": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "error400": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": "400"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "error"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Error!"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Bad Request."
+                }
+              }
+            }
+          }
+        }
+      },
+      "error404": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": "404"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "error"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Error!"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Resource not found!."
+                }
+              }
+            }
+          }
+        }
+      },
+      "error408": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": "408"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "error"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "timeout_error"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "The server is taking to long to respond, this can be caused byeither poor connectivity or an error with our servers. Please try again in a while."
+                }
+              }
+            }
+          }
+        }
+      },
+      "warning409": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": "409"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "warning"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "duplicate"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Register Duplicated on subChain.name!"
+                }
+              }
+            }
+          }
+        }
+      },
+      "warning409ChannelName": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": "409"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "warning"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "duplicate"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Register Duplicated on name!"
+                }
+              }
+            }
+          }
+        }
+      },
+      "error535": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": "535"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "error"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Error!"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Mongo client not initialised."
+                }
+              }
+            }
+          }
+        }
+      },
+      "error536": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "example": "536"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "example": "error"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Error!"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Could not retrieve data from Mongo."
+                }
+              }
+            }
+          }
+        }
+      },
+      "error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Error: Mongo client not initialised."
           }
         }
       }

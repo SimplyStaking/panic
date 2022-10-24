@@ -9,6 +9,7 @@ import pika.exceptions
 from src.data_store.mongo import MongoApi
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.constants.mongo import REPLICA_SET_HOSTS, REPLICA_SET_NAME
 from src.utils.constants.monitorables import (
     MonitorableType, MONITORABLES_MONGO_COLLECTION, EMPTY_MONITORABLE_DATA)
 from src.utils.constants.rabbitmq import (
@@ -24,8 +25,8 @@ class MonitorableStore(Store):
         super().__init__(name, logger, rabbitmq)
         self._redis = None
         self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
-                               db_name=self.mongo_db, host=self.mongo_ip,
-                               port=self.mongo_port)
+                               db_name=self.mongo_db, host=REPLICA_SET_HOSTS,
+                               replicaSet=REPLICA_SET_NAME)
         self._monitorables = {}
 
     @property

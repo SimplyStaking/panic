@@ -26,24 +26,26 @@ body {
     --ion-color-primary-shade: #121659;
     --ion-color-primary-tint: #2c3074;
 
-    --ion-color-secondary: #3dc2ff;
-    --ion-color-secondary-rgb: 61, 194, 255;
+    --ion-color-secondary: #6A73F1;
+    --ion-color-secondary-rgb: 106,115,241;
     --ion-color-secondary-contrast: #ffffff;
-    --ion-color-secondary-contrast-rgb: 255, 255, 255;
-    --ion-color-secondary-shade: #36abe0;
-    --ion-color-secondary-tint: #50c8ff;
+    --ion-color-secondary-contrast-rgb: 255,255,255;
+    --ion-color-secondary-shade: #5d65d4;
+    --ion-color-secondary-tint: #7981f2;
 
-    --ion-color-tertiary: #5260ff;
-    --ion-color-tertiary-rgb: 82, 96, 255;
-    --ion-color-tertiary-contrast: #ffffff;
-    --ion-color-tertiary-contrast-rgb: 255, 255, 255;
-    --ion-color-tertiary-shade: #4854e0;
-    --ion-color-tertiary-tint: #6370ff;
+    --ion-color-tertiary: #FFB451;
+    --ion-color-tertiary-rgb: 255,180,81;
+    --ion-color-tertiary-contrast: #000000;
+    --ion-color-tertiary-contrast-rgb: 0,0,0;
+    --ion-color-tertiary-shade: #e09e47;
+    --ion-color-tertiary-tint: #ffbc62;
 
     --svc-data-table-body-max-height: 258px;
     --svc-card-collapsed-height: 100% !important;
     --background-color: #F1F5F9;
     --surface-background: #F8F8F8;
+
+    --svc-border-radius-default: 5px;
 }
 
 /* required to make the layout work, temporary fix */
@@ -59,4 +61,9 @@ svc-app > :first-child {
     contain: layout size style !important;
     overflow: hidden !important;
     z-index: 0 !important;
+}
+
+/* fix CSS bug in UI Kit*/
+svc-content-container {
+    margin: 10px 5px 10px 5px !important;
 }

@@ -1,0 +1,6 @@
+@import '../../scss/mixins/nav-buttons.scss';
+
+.panic-installer-nav {
+  @include button(190px);
+  @include nav-buttons();
+}

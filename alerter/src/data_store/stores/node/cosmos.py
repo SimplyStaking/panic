@@ -9,6 +9,7 @@ from src.data_store.mongo.mongo_api import MongoApi
 from src.data_store.redis import Keys
 from src.data_store.stores.store import Store
 from src.message_broker.rabbitmq.rabbitmq_api import RabbitMQApi
+from src.utils.constants.mongo import REPLICA_SET_HOSTS, REPLICA_SET_NAME
 from src.utils.constants.rabbitmq import (
     STORE_EXCHANGE, TOPIC, COSMOS_NODE_STORE_INPUT_QUEUE_NAME,
     COSMOS_NODE_TRANSFORMED_DATA_ROUTING_KEY, HEALTH_CHECK_EXCHANGE)
@@ -22,8 +23,8 @@ class CosmosNodeStore(Store):
                  rabbitmq: RabbitMQApi) -> None:
         super().__init__(name, logger, rabbitmq)
         self._mongo = MongoApi(logger=self.logger.getChild(MongoApi.__name__),
-                               db_name=self.mongo_db, host=self.mongo_ip,
-                               port=self.mongo_port)
+                               db_name=self.mongo_db, host=REPLICA_SET_HOSTS,
+                               replicaSet=REPLICA_SET_NAME)
 
     def _initialise_rabbitmq(self) -> None:
         """

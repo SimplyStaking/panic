@@ -45,7 +45,7 @@ async function getAlertsOverview(chains: SubChain[]): Promise<any> {
     }
 
     try {
-        const alertsOverview = await fetch(`${API_URL}redis/alertsOverview`,
+        const alertsOverview = await fetch(`${API_URL}server/redis/alertsOverview`,
             {
                 method: 'POST',
                 headers: {

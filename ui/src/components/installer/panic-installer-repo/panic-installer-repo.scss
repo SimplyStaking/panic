@@ -1,0 +1,46 @@
+@import '../../scss/mixins/centralized-container.scss';
+@import '../../scss/mixins/heading.scss';
+@import '../../scss/mixins/text.scss';
+@import '../../scss/mixins/buttons.scss';
+@import '../../scss/mixins/data-table-container';
+@import '../../scss/mixins/data-tables.scss';
+
+.panic-installer-repo {
+
+  &__container {
+    padding-left: 5%;
+    padding-right: 5%;
+
+    p {
+      @include text();
+    }
+  }
+
+  &__heading {
+    @include heading-container();
+  }
+
+  &__title {
+    @include heading-title();
+  }
+
+  &__step {
+    @include heading-step();
+  }
+
+  &__text-with-tooltip{
+    @include text-with-tooltip();
+  }
+
+  &__add-repo-button {
+    @include add-button();
+  }
+
+  &__data-table-container {
+    @include data-table-container();
+  }
+
+  &__crud-data-table {
+    @include crud-data-table();
+  }
+}

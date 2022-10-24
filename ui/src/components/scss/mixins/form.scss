@@ -1,0 +1,40 @@
+@mixin form {
+    fieldset {
+        border: 5px solid rgba(var(--ion-color-primary-rgb), 0.5);
+        border-radius: 3px;
+    
+        legend {
+            font-weight: 900;
+            color: var(--ion-color-primary);
+            font-size: 1.3em;
+        }
+    }
+}
+
+@mixin input-help-text {
+    margin: 5px 0 10px 15px;
+    
+    span {
+        color: rgba(0,0,0,0.5);
+        font-size: 0.8em;
+    }
+}
+
+@mixin patch-svc-toggle {
+    ion-toggle {
+        padding: 5px;
+    }
+}
+
+@mixin input_and_test {
+    display: flex;
+    justify-content: space-between;
+
+    svc-input {
+        width: 750px;
+    }
+
+    panic-installer-setup-test-button {
+        align-self: center;
+    }
+}

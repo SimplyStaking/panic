@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-alerts-message-cell renders 1`] = `
+<panic-installer-alerts-message-cell label="test" message="test">
+  <div class="panic-installer-alerts-message-cell__container">
+    <svc-label>
+      test
+    </svc-label>
+    <svc-text>
+      <p>
+        test
+      </p>
+    </svc-text>
+  </div>
+</panic-installer-alerts-message-cell>
+`;

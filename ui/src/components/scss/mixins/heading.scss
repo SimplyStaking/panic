@@ -1,0 +1,17 @@
+@mixin heading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+@mixin heading-title {
+  font-size: 25px;
+  font-weight: 900;
+}
+
+@mixin heading-step {
+    font-size: 14px;
+    font-weight: 100;
+    font-style: italic;
+    margin: 5px 0 25px 0;
+}

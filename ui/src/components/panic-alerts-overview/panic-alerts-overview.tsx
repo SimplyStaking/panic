@@ -27,9 +27,11 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
     }
     _updater: number;
     _updateFrequency: number = POLLING_FREQUENCY;
+    _isFirstRun: boolean = false;
 
     async componentWillLoad() {
         try {
+            this._subChains = await ChainsAPI.getSubChains();
             await this.reRenderAction();
 
             this._updater = window.setInterval(async () => {
@@ -107,13 +109,17 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
     }
 
     render() {
+        if (this._isFirstRun) {
+            return "";
+        }
+
         return (
             <Host>
                 <h1 class='panic-alerts-overview__title'
                     id="alerts-overview">ALERTS OVERVIEW</h1>
                 <svc-surface>
                     <div class="panic-alerts-overview__data-table-container">
-                        <svc-filter event-name="filter-changed" debounce={100}>
+                        <svc-event-emitter eventName="filter-changed" debounce={100}>
                             <div class="panic-alerts-overview__slots">
                                 {/* Chain filter */}
                                 <svc-select
@@ -164,7 +170,7 @@ export class PanicAlertsOverview implements PanicAlertsOverviewInterface {
                                     />
                                 </div>
                             </div>
-                        </svc-filter>
+                        </svc-event-emitter>
                         {/* Data table */}
                         {AlertsOverviewAPI.getDataTableJSX(this.alerts)}
                     </div>

@@ -12,5 +12,10 @@ export interface PanicHeaderInterface {
     /**
      * Array of links displayed in the dropdown menu.
      */
-    _menuOptions: DropdownMenuOptionType[]
+    _menuOptions: DropdownMenuOptionType[],
+
+    /**
+     * Whether the menu should be displayed or not. Default is `true`.
+     */
+    showMenu: boolean
 }

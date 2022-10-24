@@ -1,0 +1,71 @@
+@import '../../scss/mixins/centralized-container.scss';
+@import '../../scss/mixins/heading.scss';
+@import '../../scss/mixins/text.scss';
+@import '../../scss/mixins/buttons.scss';
+
+.panic-installer-alerts {
+
+  &__container {
+    padding-left: 50px;
+    padding-right: 50px;
+
+    p {
+      @include text();
+    }
+  }
+
+  &__heading {
+    @include heading-container();
+  }
+
+  &__title {
+    @include heading-title();
+  }
+
+  &__step {
+    @include heading-step();
+  }
+
+  &__text-with-tooltip{
+    @include text-with-tooltip();
+    margin-top: -15px;
+  }
+
+  &__threshold-alerts-table{
+    .svc-data-table__header-container{
+      justify-content: flex-start !important;
+    }
+  }
+}
+
+.panic-installer-alerts-types {
+  padding-top: 15px;
+  &__item {
+    display: flex;
+    align-items: center;
+
+    ion-icon {
+      padding-right: 10px;
+    }
+  }
+}
+
+.svc-card{
+  &__slot-container {
+    justify-content: center;
+  }
+  &__collapsed {
+    height: 50px !important;
+  }
+  &__slot-container {
+    display: flex;
+    flex-direction: column;
+  }
+  &__expanded {
+    height: 50px !important;
+  }
+}
+
+td {
+  vertical-align: inherit;
+}

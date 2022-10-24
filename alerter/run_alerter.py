@@ -18,7 +18,7 @@ from src.alerter.managers.manager import AlertersManager
 from src.alerter.managers.substrate import SubstrateAlertersManager
 from src.alerter.managers.system import SystemAlertersManager
 from src.channels_manager.manager import ChannelsManager
-from src.config_manager import ConfigsManager
+from src.config_manager.change_stream.config_manager import ConfigsManager
 from src.data_store.stores.manager import StoreManager
 from src.data_transformers.manager import DataTransformersManager
 from src.message_broker.rabbitmq import RabbitMQApi
@@ -30,7 +30,6 @@ from src.monitors.managers.network import NetworkMonitorsManager
 from src.monitors.managers.node import NodeMonitorsManager
 from src.monitors.managers.system import SystemMonitorsManager
 from src.utils import env
-from src.utils.constants.configs import IGNORE_FILE_PATTERNS
 from src.utils.constants.names import (
     SYSTEM_ALERTERS_MANAGER_NAME, GITHUB_ALERTER_MANAGER_NAME,
     DOCKERHUB_ALERTER_MANAGER_NAME, SYSTEM_MONITORS_MANAGER_NAME,
@@ -589,13 +588,12 @@ def _initialise_config_manager() -> Tuple[ConfigsManager, logging.Logger]:
     config_manager_logger = _initialise_logger(
         display_name, ConfigsManager.__name__, env.CONFIG_MANAGER_LOG_FILE
     )
-
+    
     rabbit_ip = env.RABBIT_IP
     while True:
         try:
             config_manager = ConfigsManager(
-                display_name, config_manager_logger, '../config', rabbit_ip,
-                ignore_file_patterns=IGNORE_FILE_PATTERNS
+                display_name, config_manager_logger, rabbit_ip                
             )
             return config_manager, config_manager_logger
         except Exception as e:

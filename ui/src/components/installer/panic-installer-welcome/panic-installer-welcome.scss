@@ -1,0 +1,70 @@
+@import '../../scss/mixins/centralized-container.scss';
+@import '../../scss/mixins/heading.scss';
+
+.panic-installer-welcome {
+
+  &__container {
+    padding: 5px 5% 5px 5%;
+
+    svc-surface {
+      margin: 10px;
+    }
+  }
+
+  &__heading {
+    @include heading-container();
+
+    svc-label {
+      font-size: 25px;
+      font-weight: 900;
+      margin-bottom: 25px;
+    }
+  }
+
+  &__message {
+    font-size: 17px;
+    color: var(--ion-color-primary);
+    margin-left: 2.2em;
+  }
+
+  &__list {
+    list-style-type: none;    
+  }
+
+  &__list-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+
+    color: var(--ion-color-primary);
+    font-weight: 900;
+    font-size: 17px;
+    margin-bottom: 12px;
+
+    ion-icon {
+      margin-right: 10px;
+    }
+  }
+
+  &__list-item-subtitle {
+    display: flex;
+    align-items: center;
+    font-weight: 900;
+  }
+
+  &__list-item-excerpt {
+    font-weight: 100;
+  }
+
+  &__button {
+    display: flex;
+    justify-content: center;
+    margin: 50px 0 0 0;
+
+    ion-button {
+      font-size: 16px;
+    }
+  }
+
+}

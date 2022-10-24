@@ -1,0 +1,46 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-sub-chain renders 1`] = `
+<panic-installer-sub-chain class="panic-installer-sub-chain">
+  <panic-header></panic-header>
+  <svc-progress-bar color="tertiary" value="0.1"></svc-progress-bar>
+  <svc-content-container class="panic-installer-sub-chain__container">
+    <svc-surface>
+      <div class="panic-installer-sub-chain__heading">
+        <svc-icon color="primary" name="link" size="100px"></svc-icon>
+        <svc-label class="panic-installer-sub-chain__title" position="center">
+          Blockchain Setup
+        </svc-label>
+        <svc-label class="panic-installer-sub-chain__step" position="center">
+          step 1/5
+        </svc-label>
+      </div>
+      <div class="panic-installer-sub-chain__message-container">
+        <p class="panic-installer-sub-chain__message">
+          PANIC works with the concept of "base chains" and "sub-chains".
+        </p>
+        <svc-buttons-container>
+          <svc-button color="secondary" iconname="information-circle" iconposition="icon-only"></svc-button>
+        </svc-buttons-container>
+      </div>
+      <p class="panic-installer-sub-chain__message">
+        <ul class="panic-installer-sub-chain__list">
+          <li class="panic-installer-sub-chain__list-item">
+            Supported base chains: Cosmos-SDK, Substrate, Chainlink or General - Used to represent any systems or repositories not associated with a blockchain. For example, the host machine that PANIC is running on.
+          </li>
+          <li>
+            Sub-chains are any protocol built on top of the base chains. For example, Akash (Cosmos-SDK), Polkadot (Substrate).
+          </li>
+        </ul>
+      </p>
+      <form>
+        <svc-select header="Base-chains" id="base_chain" name="base_chain" placeholder="Select a base chain..." withborder=""></svc-select>
+        <svc-input id="subChainName" label="Name" lines="full" name="name" placeholder="Ex: Akash, Polkadot" required="" type="text"></svc-input>
+        <svc-button id="submit" type="submit"></svc-button>
+      </form>
+    </svc-surface>
+    <panic-installer-nav></panic-installer-nav>
+  </svc-content-container>
+  <panic-footer></panic-footer>
+</panic-installer-sub-chain>
+`;

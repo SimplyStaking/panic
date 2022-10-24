@@ -14,6 +14,7 @@ from src.data_store.redis import RedisApi, Keys
 from src.data_store.stores.node.substrate import SubstrateNodeStore
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
+from src.utils.constants.mongo import REPLICA_SET_HOSTS, REPLICA_SET_NAME
 from src.utils.constants.rabbitmq import (
     HEARTBEAT_OUTPUT_WORKER_ROUTING_KEY,
     SUBSTRATE_NODE_TRANSFORMED_DATA_ROUTING_KEY, STORE_EXCHANGE,
@@ -50,13 +51,12 @@ class TestSubstrateNodeStore(unittest.TestCase):
                               self.connection_check_time_interval)
 
         # Mongo instance
-        self.mongo_ip = env.DB_IP
         self.mongo_db = env.DB_NAME
         self.mongo_port = env.DB_PORT
         self.mongo = MongoApi(logger=self.dummy_logger.getChild(
             MongoApi.__name__),
-            db_name=self.mongo_db, host=self.mongo_ip,
-            port=self.mongo_port)
+            db_name=self.mongo_db, host=REPLICA_SET_HOSTS,
+            replicaSet=REPLICA_SET_NAME)
 
         # Test store object
         self.test_store_name = 'store name'
@@ -224,9 +224,6 @@ class TestSubstrateNodeStore(unittest.TestCase):
 
     def test_name_returns_store_name(self) -> None:
         self.assertEqual(self.test_store_name, self.test_store.name)
-
-    def test_mongo_ip_returns_mongo_ip(self) -> None:
-        self.assertEqual(self.mongo_ip, self.test_store.mongo_ip)
 
     def test_mongo_db_returns_mongo_db(self) -> None:
         self.assertEqual(self.mongo_db, self.test_store.mongo_db)

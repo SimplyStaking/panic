@@ -1,0 +1,10 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-form-checkbox render the inputs in the correct order 1`] = `
+<panic-installer-form-checkbox class="hydrated">
+  <div>
+    <input type="hidden" value="false">
+    <input type="checkbox" value="true">
+  </div>
+</panic-installer-form-checkbox>
+`;

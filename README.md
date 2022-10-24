@@ -1,14 +1,13 @@
 # PANIC Monitoring and Alerting for Blockchains
 
-**DISCLAIMERS**: 
-- Don't allow public access to PANIC UI as it might contain sensitive information about your infrastructure. UI authentication is still to be developed.
+**DISCLAIMER**: Don't allow public access to PANIC UI as it might contain sensitive information about your infrastructure. UI authentication is still to be developed.
 
 ![PANIC Banner](./docs/images/PANIC_BANNER.png)
 
 PANIC is an open source monitoring and alerting solution for Cosmos-SDK, 
 Substrate and Chainlink based nodes by [Simply VC](https://simply-vc.com.mt/). 
-The tool was built with user friendliness in mind, and comes with numerous 
-features such as phone calls for critical alerts, a UI Dashboard, a Web-UI 
+The tool was built with user friendliness in mind and comes with numerous 
+features, such as phone calls for critical alerts, a UI Dashboard, a Web based 
 installation process and Telegram/Slack commands for increased control over your
 alerter.
 
@@ -82,19 +81,17 @@ git clone https://github.com/SimplyVC/panic
 cd panic
 ```
 
-Now that you're inside the PANIC directory, open up the .env file and change the `INSTALLER_USERNAME` and `INSTALLER_PASSWORD` fields to your preferred but secure choice. This is to ensure that when configuring PANIC through the web-installer no one else can access it. Moreover, the `UI_ACCESS_IP` field must also be changed to the IP of where PANIC UI is going to be hosted (can be set to `localhost` if running locally). This is to ensure that the API is only accessible from the UI. Helper scripts which can be used to get the IP address (`scripts/get_ip_linux.sh` and `scripts/get_ip_mac.sh`) are available but please note that these are not guaranteed to work on all servers/machines.
+Now that you're inside the PANIC directory, open up the .env file and change the `UI_ACCESS_IP` field to the IP of where PANIC UI is going to be hosted (can be set to `localhost` if running locally). This is to ensure that the API (PANIC UI Backend) is only accessible from the UI. Helper scripts which can be used to get the IP address (`scripts/get_ip_linux.sh` and `scripts/get_ip_mac.sh`) are available but please note that these are not guaranteed to work on all servers/machines.
 
 ```bash
 # This will access the .env file on your terminal
 nano .env
 ```
 
-Once inside change `UI_ACCESS_IP`, `INSTALLER_USERNAME` and `INSTALLER_PASSWORD` accordingly. Here is an example:
+Once inside change `UI_ACCESS_IP` accordingly. Here is an example:
 
 ```ini
 UI_ACCESS_IP=1.1.1.1
-INSTALLER_USERNAME=panic_operator
-INSTALLER_PASSWORD=wowthisisasecurepassword
 ```
 
 Then to exit hit the following keys:
@@ -118,13 +115,13 @@ docker system prune -a --volumes
 docker-compose up -d --build
 ```
 
-Now you will have to configure PANIC to monitor your nodes and systems as well as give it the channels to alert you through. To do this you will have to navigate to the running web-installer. This can be found at `https://{UI_ACCESS_IP}:8000`, or at `https://localhost:8000` if you're running it locally. The installer will first ask you to enter the username and password. These are `INSTALLER_USERNAME` and `INSTALLER_PASSWORD` which you have changed previously. Make sure you type **HTTPS** if you're getting an error when accessing the installer on your browser.
+The next step is to configure PANIC to monitor your nodes and systems as well as give it the channels to alert you through. You can do this by navigating to the PANIC UI at `https://{UI_ACCESS_IP}:3333`, or at `https://localhost:3333` if you're running it locally. The PANIC UI will start the installation procedure if it does not detect any configurations. Make sure you type **HTTPS** if you're getting an error when accessing PANIC UI on your browser.
 
-After you set-up PANIC to your liking, the Web-Installer will save these details in the form of configuration files inside the `config` folder. For correct behavior, these configuration files should never be modified. If you would like to edit them at some point, we suggest to re-run the web-installer again. The web-installer will ask you if you want to start a fresh install or load your old configuration.
+After you set-up PANIC to your liking the installation procedure will save these details in the Mongo database. For correct behavior the database should never be modified manually. If you would like to edit the configurations at some point you can do so by accessing the settings option on the PANIC UI header.
 
-PANIC will automatically read these configuration files and begin monitoring the data sources. To check that this is the case we suggest running the command `docker-compose logs -f alerter` and `docker-compose logs -f health-checker`. By this you can see the different components starting up. If you have set-up telegram/slack commands we suggest that you enter the command `/status` to check that all PANIC components are running. If you really want to check that PANIC is up and running, we suggest that you check that all the logs inside `panic/alerter/logs` have no errors.
+PANIC will automatically read these configuration files and begin monitoring the data sources. To confirm that PANIC is running as expected we suggest running the command `docker-compose logs -f alerter` and `docker-compose logs -f health-checker`. By this you can see the different components starting up. If you have set-up telegram/slack commands we suggest that you enter the command `/status` (telegram) or `/panicstatus` (slack) to check that all PANIC components are running. If you want to check that every PANIC component is up and running without any issue we suggest that you check that all the logs inside `panic/alerter/logs` have no errors.
 
-You can visualise node metrics and alerts using PANIC UI, which can be accessed at `https://{UI_ACCESS_IP}:3333`, or at `https://localhost:3333` if you're running it locally.
+After PANIC is up and running you can visualise node metrics and alerts using PANIC UI at `https://{UI_ACCESS_IP}:3333`, or at `https://localhost:3333` if you're running it locally.
 For more information regarding PANIC UI, [click here](./ui/README.md).
 
 Congratulations you should have PANIC up and running!
@@ -277,17 +274,11 @@ If you wish to explore more advanced features, PANIC also supports configurable 
       3. The rest can be configured to your preferences.
       4. Click `Add Service`
     2. You will be taken to a new page, where you need to navigate to the `Integrations` tab and take note of the (i)`Integration Key`.
-  - Secondly the API Token
-    1. Navigate to `https:/{YOUR_SUBDOMAIN}.pagerduty.com/api_keys`.
-    2. Click `Create New API Key`
-    3. Give it a description (This can be anything you want)
-    4. Click `Create Key` and take note of (ii)`API Key` value.
 
 **At the end, you should have:**
 1. The Integration Key
-2. The API token
 
-These will be used later in the Web-Installer to be saved in the configuration files.
+This will be used later on in the installation procedure.
 
 **Note** You can also install an app for Android / iPhone as well as setup your phone number to receive alerts.
 
@@ -306,7 +297,7 @@ These will be used later in the Web-Installer to be saved in the configuration f
 **At the end, you should have:**
 1. The API token
 
-These will be used later in the Web-Installer to be saved in the configuration files.
+This will be used later on in the installation procedure.
 
 **Note** You can also install the Opsgenie app for Android / iPhone as well as setup your phone number to receive calls.
 
@@ -314,7 +305,7 @@ These will be used later in the Web-Installer to be saved in the configuration f
 
 ### Replacing SSL certificates (recommended)
 
-Apply your own SSL certificate signed by a certificate authority. The SSL certificate (cert.pem) and the key (key.pem) should be placed in the `panic/certificates` folder, and they should replace the existing dummy files. Note that these dummy files were given just for convenience as the Installer server won't start without them, however, for maximum security these must be replaced.
+Apply your own SSL certificate signed by a certificate authority. The SSL certificate (cert.pem) and the key (key.pem) should be placed in the `panic/certificates` folder, and they should replace the existing dummy files. Note that these dummy files were given just for convenience as the API (PANIC UI Backend) server won't start without them, however, for maximum security these must be replaced.
 
 We suggest reading [this](https://nodejs.org/en/knowledge/HTTP/servers/how-to-create-a-HTTPS-server/) for more details on SSL certificates, and how to generate a self signed certificate in case you do not want to obtain a certificate signed by a certificate authority. However, for maximum security, the self signed certificate option is not recommended.
 
@@ -329,6 +320,13 @@ docker-compose -p panic-tests -f docker-compose-tests.yml kill  # To remove test
 
 To run the tests for the **API** component within PANIC, navigate to the 
 `/api` directory and do the following:
+```bash
+npm install         # Install API project dependencies
+npm test            # Run API unit tests
+```
+
+To run the tests for the **Substrate API** component within PANIC, navigate to the 
+`/substrate-api` directory and do the following:
 ```bash
 npm install         # Install API project dependencies
 npm test            # Run API unit tests

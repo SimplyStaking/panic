@@ -50,6 +50,7 @@ from src.data_store.mongo import MongoApi
 from src.data_store.redis import RedisApi
 from src.message_broker.rabbitmq import RabbitMQApi
 from src.utils import env
+from src.utils.constants.mongo import REPLICA_SET_HOSTS, REPLICA_SET_NAME
 from src.utils.constants.names import (TELEGRAM_ALERTS_HANDLER_NAME_TEMPLATE,
                                        TELEGRAM_COMMANDS_HANDLER_NAME_TEMPLATE,
                                        TELEGRAM_COMMAND_HANDLERS_NAME,
@@ -124,7 +125,8 @@ class TestHandlerStarters(unittest.TestCase):
             namespace=env.UNIQUE_ALERTER_IDENTIFIER)
         self.mongo = MongoApi(
             logger=self.dummy_logger.getChild(MongoApi.__name__),
-            host=env.DB_IP, db_name=env.DB_NAME, port=env.DB_PORT)
+            host=REPLICA_SET_HOSTS, db_name=env.DB_NAME,
+            replicaSet=REPLICA_SET_NAME)
         self.telegram_command_handlers_logger = self.dummy_logger.getChild(
             TelegramCommandHandlers.__name__)
         self.slack_command_handlers_logger = self.dummy_logger.getChild(
@@ -441,7 +443,7 @@ class TestHandlerStarters(unittest.TestCase):
         mock_mongo.assert_called_once_with(
             logger=self.telegram_command_handlers_logger.getChild(
                 MongoApi.__name__),
-            host=env.DB_IP, db_name=env.DB_NAME, port=env.DB_PORT)
+            host=REPLICA_SET_HOSTS,  db_name=env.DB_NAME, port=env.DB_PORT)
         mock_command_handlers.assert_called_once_with(
             TELEGRAM_COMMAND_HANDLERS_NAME,
             self.telegram_command_handlers_logger,
@@ -597,7 +599,7 @@ class TestHandlerStarters(unittest.TestCase):
         mock_mongo.assert_called_once_with(
             logger=self.slack_command_handlers_logger.getChild(
                 MongoApi.__name__),
-            host=env.DB_IP, db_name=env.DB_NAME, port=env.DB_PORT)
+            host=REPLICA_SET_HOSTS, db_name=env.DB_NAME, port=env.DB_PORT)
         mock_command_handlers.assert_called_once_with(
             SLACK_COMMAND_HANDLERS_NAME,
             self.slack_command_handlers_logger,

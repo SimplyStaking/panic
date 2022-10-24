@@ -1,0 +1,53 @@
+@import '../../scss/mixins/centralized-container.scss';
+@import '../../scss/mixins/heading.scss';
+@import '../../scss/mixins/text.scss';
+@import '../../scss/mixins/buttons.scss';
+@import '../../scss/mixins/data-table-container';
+
+.panic-installer-feedback {
+
+  &__container {
+    padding: 5px 5% 5px 5%;
+    overflow-y: initial;
+
+    svc-surface {
+      margin: 10px;
+      width: 100%;
+    }
+  }
+
+  &__messages_container {
+    padding-top: 30px;
+    padding-bottom: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    p {
+      @include text();
+    }
+
+    strong {
+      margin-left: 5px;
+      margin-right: 5px;
+    }
+  }
+
+  &__heading {
+    @include heading-container();
+  }
+
+  &__title {
+    @include heading-title();
+  }
+
+  &__data-table-container {
+    @include data-table-container();
+  }
+
+  &__navigation_buttons {
+    ion-button {
+      width: 295px !important;
+    }
+  }
+}

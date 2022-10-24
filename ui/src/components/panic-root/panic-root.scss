@@ -1,3 +1,5 @@
+@import '../scss/mixins/nav-buttons.scss';
+
 panic-root > svc-app {
   & > div {
     background-color: var(--background-color);
@@ -5,5 +7,33 @@ panic-root > svc-app {
 
   svc-surface {
     background-color: var(--surface-background);
+  }
+}
+
+.panic-root {
+  &__config-not-ready {
+    .alert-button:nth-last-child(1) {
+      background: none !important;
+      color: var(--ion-color-primary) !important;
+    }
+
+    .alert-button:nth-last-child(2) {
+      background: var(--ion-color-primary) !important;
+      color: var(--ion-color-primary-contrast) !important;
+    }
+  }
+}
+
+// Menu config modal
+.panic-settings-config-menu-modal {
+  --height: 345px !important;
+
+  svc-content-container {
+    padding: 10px;
+  }
+
+  svc-button {
+    @include button(190px);
+    @include nav-buttons(0 0 5px 0);
   }
 }

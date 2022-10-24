@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-settings-chains renders 1`] = `
+<panic-settings-chains>
+  <panic-header showmenu=""></panic-header>
+  <svc-content-container class="panic-settings-chains__container">
+    <svc-surface>
+      <svc-label class="panic-settings-chains__title">
+        Sub-Chains
+      </svc-label>
+      <div class="panic-settings-chains__add-sub-chain-button">
+        <svc-button color="secondary" href="/settings/new/sub-chain" iconname="add-circle" id="add">
+          Add a sub-chain
+        </svc-button>
+      </div>
+      <svc-data-table class="panic-settings-chains__crud-data-table" deleteeventname="deleteConfig" editeventname="editConfig" mode="crud" norecordsmessage="Click in the button above to add your first configuration..."></svc-data-table>
+    </svc-surface>
+  </svc-content-container>
+  <panic-footer></panic-footer>
+</panic-settings-chains>
+`;

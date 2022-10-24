@@ -1,0 +1,40 @@
+@import '../scss/mixins/heading.scss';
+@import '../scss/mixins/buttons.scss';
+@import '../scss/mixins/centralized-container.scss';
+@import '../scss/mixins/data-tables.scss';
+@import '../scss/mixins/nav-buttons.scss';
+
+.panic-settings-chains {
+
+  &__container {
+    padding-left: 5%;
+    padding-right: 5%;
+  }
+
+  &__crud-data-table {
+    @include crud-data-table();
+  }
+
+  &__title {
+    padding-top: 15px;
+    @include heading-title();
+  }
+
+  &__add-sub-chain-button {
+    @include add-button();
+  }
+}
+
+// Menu config modal
+.panic-settings-config-menu-modal {
+  --height: 345px !important;
+
+  svc-content-container {
+    padding: 10px;
+  }
+
+  svc-button {
+    @include button(190px);
+    @include nav-buttons(0 0 5px 0);
+  }
+}

@@ -12,8 +12,16 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 # Create app directory
 WORKDIR /opt/panic
 
-# Change directory, and copy all installer contents from the host to the container.
-WORKDIR ./ui
+# Change directory, and copy all required types from the host to the container.
+WORKDIR ./entities
+COPY ./entities ./
+
+# Change directory, and copy all required api contents from the host to the container.
+WORKDIR ../api/src/util
+COPY ./api/src/util ./
+
+# Change directory, and copy all ui contents from the host to the container.
+WORKDIR ../../../ui
 COPY ./ui ./
 
 # Clean any old build directories

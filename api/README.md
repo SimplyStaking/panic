@@ -277,6 +277,17 @@ of metrics per source to be retrieved.
 }
 ```
 
+### `server/mongo/installation/is-first`
+
+**Request Method** : GET
+Check if it's the first installation of PANIC.
+
+#### Example Output Response
+
+```
+true|false
+```
+
 ### `/server/redis/alertsOverview`
 
 Returns an overview of the current state of alerts of the chains for the

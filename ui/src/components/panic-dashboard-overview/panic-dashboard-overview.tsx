@@ -8,6 +8,7 @@ import {PanicDashboardOverviewInterface} from './panic-dashboard-overview.interf
 import {FilterState} from '../../interfaces/filterState';
 import {FilterStateAPI} from '../../utils/filterState';
 import {HelperAPI} from '../../utils/helpers';
+import {createModal} from "@simply-vc/uikit";
 
 @Component({
     tag: 'panic-dashboard-overview',
@@ -19,14 +20,22 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
     _filterStates: FilterState[] = [];
     _updater: number;
     _updateFrequency: number = POLLING_FREQUENCY;
+    _isFirstRun: boolean = false;
 
     async componentWillLoad() {
         try {
-            await this.reRenderAction();
-
-            this._updater = window.setInterval(async () => {
+            this._isFirstRun = await HelperAPI.isFirstInstall();
+            if (this._isFirstRun){
+                localStorage.removeItem('configId');
+                await createModal("panic-installer-modal", {},
+                  {backdropDismiss: false});
+            } else {
                 await this.reRenderAction();
-            }, this._updateFrequency);
+
+                this._updater = window.setInterval(async () => {
+                    await this.reRenderAction();
+                }, this._updateFrequency);
+            }
         } catch (error: any) {
             console.error(error);
         }
@@ -94,6 +103,10 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
     }
 
     render() {
+        if (this._isFirstRun) {
+            return "";
+        }
+
         return (
             <Host>
                 <h1 class='panic-dashboard-overview__title'>DASHBOARD
@@ -102,8 +115,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                     <svc-surface label={baseChain.name}>
                         <svc-card class="panic-dashboard-overview__chain-card">
                             <div slot="expanded">
-                                <svc-filter event-name="filter-changed"
-                                            debounce={100}>
+                                <svc-event-emitter eventName="filter-changed" debounce={100}>
                                     <input name='base-chain-name'
                                            value={baseChain.name} hidden/>
 
@@ -149,7 +161,7 @@ export class PanicDashboardOverview implements PanicDashboardOverviewInterface {
                                             </div>
                                         </div>
                                     </div>
-                                </svc-filter>
+                                </svc-event-emitter>
                             </div>
                             <div slot="collapsed"
                                  class="panic-dashboard-overview__collapsed-card">

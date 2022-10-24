@@ -8,14 +8,14 @@ exports[`panic-dashboard-overview renders 1`] = `
   <svc-surface label="general">
     <svc-card class="panic-dashboard-overview__chain-card">
       <div slot="expanded">
-        <svc-filter debounce="100" event-name="filter-changed">
+        <svc-event-emitter debounce="100" eventname="filter-changed">
           <input hidden="" name="base-chain-name" value="general">
           <div class="panic-dashboard-overview__chain-filter-container">
             <svc-select header="Select chains" id="general_chain-filter" multiple="" name="selected-chains" placeholder="Select chains"></svc-select>
           </div>
           <div class="panic-dashboard-overview__slots">
             <div class="panic-dashboard-overview__pie-chart">
-              <svc-pie-chart pie-slice-text="percentage" tooltip-trigger="focus"></svc-pie-chart>
+              <svc-pie-chart pie-slice-text="value" tooltip-trigger="none"></svc-pie-chart>
             </div>
             <div class="panic-dashboard-overview__data-table-container">
               <div>
@@ -24,7 +24,7 @@ exports[`panic-dashboard-overview renders 1`] = `
               </div>
             </div>
           </div>
-        </svc-filter>
+        </svc-event-emitter>
       </div>
       <div class="panic-dashboard-overview__collapsed-card" slot="collapsed">
         <svc-buttons-container>

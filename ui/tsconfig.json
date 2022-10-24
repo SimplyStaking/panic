@@ -6,7 +6,8 @@
     "experimentalDecorators": true,
     "lib": [
       "dom",
-      "es2015"
+      "es2015",
+      "DOM.Iterable"
     ],
     "moduleResolution": "node",
     "module": "esnext",

@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-sources-card renders 1`] = `<panic-installer-sources-card class="hydrated"></panic-installer-sources-card>`;

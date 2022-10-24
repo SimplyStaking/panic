@@ -1,0 +1,162 @@
+[
+    {
+        "_id": "62e2564cf161ba55e6db2a22",
+        "name": "Slashed",
+        "value": "slashed",
+        "description": "Raised when your validator has been slashed.",
+        "group": "severity_alert",
+        "type": "6265d0a7fdb17d641746dcf2"
+    },
+    {
+        "_id": "62e2569af161ba55e6db2a24",
+        "name": "Node is syncing",
+        "value": "node_is_syncing",
+        "description": "Raised when your node is still catching up to the rest of the blockchain network in terms of block height.",
+        "group": "severity_alert",
+        "type": "6265d085fdb17d641746dcef"
+    },
+    {
+        "_id": "62e256e4f161ba55e6db2a25",
+        "name": "Validator is syncing",
+        "value": "validator_is_syncing",
+        "description": "Raised when your validator is still catching up to the rest of the blockchain network in terms of block height.",
+        "group": "severity_alert",
+        "type": "6265d08efdb17d641746dcf0"
+    },
+    {
+        "_id": "62e25724f161ba55e6db2a26",
+        "name": "Validator not active in session",
+        "value": "validator_not_active_in_session",
+        "description": "Raised if a validator is not active in the current session.",
+        "group": "severity_alert",
+        "type": "6265d0a7fdb17d641746dcf2"
+    },
+    {
+        "_id": "62e2574cf161ba55e6db2a27",
+        "name": "Validator is jailed",
+        "value": "validator_is_jailed",
+        "description": "Status of validator jailed/not jailed.",
+        "group": "severity_alert",
+        "type": "6265d0a7fdb17d641746dcf2"
+    },
+    {
+        "_id": "62e257d8f161ba55e6db2a28",
+        "name": "New proposal submitted",
+        "value": "new_proposal",
+        "description": "A new proposal has been submitted.",
+        "group": "severity_alert",
+        "type": "6265d085fdb17d641746dcef"
+    },
+    {
+        "_id": "62e25823f161ba55e6db2a29",
+        "name": "Proposal concluded",
+        "value": "proposal_concluded",
+        "description": "A proposal has been concluded.",
+        "group": "severity_alert",
+        "type": "6265d085fdb17d641746dcef"
+    },
+    {
+        "_id": "62e25906f161ba55e6db2a2a",
+        "name": "Not Active in Session",
+        "value": "not_active_in_session",
+        "description": "Raised when a validator does not participate in a session.",
+        "group": "severity_alert",
+        "type": "6265d08efdb17d641746dcf0"
+    },
+    {
+        "_id": "62e2593af161ba55e6db2a2b",
+        "name": "Is Disabled",
+        "value": "is_disabled",
+        "description": "Raised when a validator is disabled.",
+        "group": "severity_alert",
+        "type": "6265d0a7fdb17d641746dcf2"
+    },
+    {
+        "_id": "62e25951f161ba55e6db2a2c",
+        "name": "Not elected",
+        "value": "not_elected",
+        "description": "Raised when a validator was not elected for next session.",
+        "group": "severity_alert",
+        "type": "6265d08efdb17d641746dcf0"
+    },
+    {
+        "_id": "62e259c3f161ba55e6db2a2d",
+        "name": "Bonded Amount Changed",
+        "value": "bonded_amount_change",
+        "description": "Raised when the bonded amount of a validator is changed.",
+        "group": "severity_alert",
+        "type": "6265d085fdb17d641746dcef"
+    },
+    {
+        "_id": "62e259f7f161ba55e6db2a2e",
+        "name": "Offline",
+        "value": "offline",
+        "description": "Raised when an offline event is generated for a validator.",
+        "group": "severity_alert",
+        "type": "6265d0a7fdb17d641746dcf2"
+    },
+    {
+        "_id": "62e25a42f161ba55e6db2a2f",
+        "name": "Controller Address Change",
+        "value": "controller_address_change",
+        "description": "Raised when the controller address changes.",
+        "group": "severity_alert",
+        "type": "6265d08efdb17d641746dcf0"
+    },
+    {
+        "_id": "62e25a61f161ba55e6db2a30",
+        "name": "Grandpa is Stalled",
+        "value": "grandpa_is_stalled",
+        "description": "Raised when the grandpa algorithm stalls.",
+        "group": "severity_alert",
+        "type": "6265d08efdb17d641746dcf0"
+    },
+    {
+        "_id": "62e25abdf161ba55e6db2a31",
+        "name": "New Referendum",
+        "value": "new_referendum",
+        "description": "A new referendum has been submitted.",
+        "group": "severity_alert",
+        "type": "6265d085fdb17d641746dcef"
+    },
+    {
+        "_id": "62e25ae3f161ba55e6db2a32",
+        "name": "Referendum concluded",
+        "value": "referendum_concluded",
+        "description": "A referendum has been concluded.",
+        "group": "severity_alert",
+        "type": "6265d085fdb17d641746dcef"
+    },
+    {
+        "_id": "62e25ba4f161ba55e6db2a33",
+        "name": "Chainlink node: Node Switch",
+        "value": "process_start_time_seconds",
+        "description": "Whenever a node being monitored goes down, a back-up Chainlink is started, this alert signifies that.",
+        "group": "severity_alert",
+        "type": "6265d08efdb17d641746dcf0"
+    },
+    {
+        "_id": "62e25bd1f161ba55e6db2a34",
+        "name": "Balance Topped Up",
+        "value": "balance_amount_increase",
+        "description": "Whenever the balance of a node is topped up you will get alerted.",
+        "group": "severity_alert",
+        "type": "6265d085fdb17d641746dcef"
+    },
+    {
+        "_id": "62e25bfdf161ba55e6db2a35",
+        "name": "Chainlink node: Gas price increases over the node's price limit",
+        "value": "tx_manager_gas_bump_exceeds_limit_total",
+        "description": "If the current gas price is higher than the gas limit of the node an alert should be raised.",
+        "group": "severity_alert",
+        "type": "6265d0a7fdb17d641746dcf2"
+    },
+    {
+        "_id": "62e25c1ff161ba55e6db2a36",
+        "name": "Chainlink Contracts: Consensus Failure",
+        "value": "consensus_failure",
+        "description": "An alert will be raised if the number of oracles that have submitted their observations is less than the minimum requirement. Severity is set as warning as from a node operator perspective there is nothing one can do.",
+        "group": "severity_alert",
+        "type": "6265d085fdb17d641746dcef"
+    }
+]

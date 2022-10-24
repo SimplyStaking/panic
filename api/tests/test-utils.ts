@@ -1,5 +1,9 @@
+import axios, {AxiosResponse} from "axios";
+
 export {
     // Common
+    axiosMock,
+    emptyAxiosResponse,
     parentIdsInvalidSchemaError,
 
     // Mongo - Monitorables Info
@@ -51,6 +55,22 @@ export {
 }
 
 // Common
+
+/**
+ * Mocking {@link axios} package.
+ */
+const axiosMock: any = axios as any;
+
+const emptyAxiosResponse = (data: any = null): AxiosResponse => {
+    return {
+        config: null,
+        headers: null,
+        status: 200,
+        statusText: 'OK',
+        data
+    }
+};
+
 const parentIdsInvalidSchemaError: string = 'Error: req.body.parentIds ' +
     'does not obey the required schema.';
 

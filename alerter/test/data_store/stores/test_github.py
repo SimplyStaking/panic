@@ -51,7 +51,6 @@ class TestGithubStore(unittest.TestCase):
                               self.redis_namespace,
                               self.connection_check_time_interval)
 
-        self.mongo_ip = env.DB_IP
         self.mongo_db = env.DB_NAME
         self.mongo_port = env.DB_PORT
 
@@ -197,9 +196,6 @@ class TestGithubStore(unittest.TestCase):
 
     def test_name_property_returns_name_correctly(self) -> None:
         self.assertEqual(self.test_store_name, self.test_store.name)
-
-    def test_mongo_ip_property_returns_mongo_ip_correctly(self) -> None:
-        self.assertEqual(self.mongo_ip, self.test_store.mongo_ip)
 
     def test_mongo_db_property_returns_mongo_db_correctly(self) -> None:
         self.assertEqual(self.mongo_db, self.test_store.mongo_db)

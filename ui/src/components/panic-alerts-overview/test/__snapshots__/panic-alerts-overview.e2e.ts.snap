@@ -7,7 +7,7 @@ exports[`panic-alerts-overview renders 1`] = `
   </h1>
   <svc-surface>
     <div class="panic-alerts-overview__data-table-container">
-      <svc-filter debounce="100" event-name="filter-changed">
+      <svc-event-emitter debounce="100" eventname="filter-changed">
         <div class="panic-alerts-overview__slots">
           <svc-select header="Select chains" id="chains-filter" multiple="" name="selected-chains" placeholder="Select chains"></svc-select>
           <svc-select header="Select severities" id="severity-filter" multiple="" name="selected-severities" placeholder="Select severities"></svc-select>
@@ -25,7 +25,7 @@ exports[`panic-alerts-overview renders 1`] = `
             <svc-date-time mode="datetime-local" name="date-time-to" value=""></svc-date-time>
           </div>
         </div>
-      </svc-filter>
+      </svc-event-emitter>
       <svc-data-table last-clicked-column-index="1" no-records-message="There are no alerts to display at this time" ordering="descending"></svc-data-table>
     </div>
   </svc-surface>

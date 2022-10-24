@@ -1,0 +1,4 @@
+@mixin modal-dimension($height, $width: 900px) {
+    --width: #{$width};
+    --height: #{$height};
+}

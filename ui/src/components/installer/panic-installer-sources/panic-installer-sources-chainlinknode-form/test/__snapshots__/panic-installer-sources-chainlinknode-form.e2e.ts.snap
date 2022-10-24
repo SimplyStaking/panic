@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-sources-chainlinknode-form renders 1`] = `
+<panic-installer-sources-chainlinknode-form>
+  <svc-input label="Node Name" lines="inset" name="name" placeholder="chainlink_node_1(IP)" required=""></svc-input>
+  <div class="panic-installer-sources-form__help-text">
+    <span>
+      This unique identifier will be used to identify your node.
+    </span>
+  </div>
+  <div class="panic-installer-sources-form__row-container">
+    <div class="panic-installer-sources-form__input_test_box">
+      <svc-multiple-input addeventname="AddedPrometheusURL" label="Prometheus URLs" name="nodePrometheusUrls" outline="" placeholder="https://IP:6688/metrics [Press Enter after each URL]" removeeventname="RemovedPrometheusURL" type="url"></svc-multiple-input>
+      <svc-toggle checked="" label="Monitor" lines="none" name="monitorPrometheus" value=""></svc-toggle>
+      <panic-installer-test-button-multiple-sources service="prometheus"></panic-installer-test-button-multiple-sources>
+    </div>
+  </div>
+  <div class="panic-installer-sources-form__help-text">
+    <span>
+      These are the prometheus URLs of your node.
+    </span>
+  </div>
+  <svc-toggle checked="" helptext="Whether to monitor this configured node." label="Monitor Node" lines="inset" name="monitorNode" value=""></svc-toggle>
+</panic-installer-sources-chainlinknode-form>
+`;

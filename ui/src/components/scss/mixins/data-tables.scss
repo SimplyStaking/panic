@@ -1,0 +1,21 @@
+@mixin crud-data-table {
+  // This means that we want the td element before the last to be positioned
+  // at the end of its container (svc-buttons-container). In this case we want
+  // that the edit action icon is placed at the end of the
+  // svc-buttons-container
+  td:nth-last-child(2){
+    svc-buttons-container {
+      justify-content: flex-end;
+    }
+  }
+
+  // This means that we want the last td element to be positioned at the start
+  // of its container (svc-buttons-container). In this case we want that the
+  // delete action icon is placed at the beginning of the
+  // svc-buttons-container
+  td:last-child{
+    svc-buttons-container {
+      justify-content: flex-start;
+    }
+  }
+}

@@ -1,11 +1,13 @@
 import {
     allElementsInList,
     allElementsInListHaveTypeString,
-    errorJson,
+    fulfillWithTimeLimit,
     getElementsNotInList,
     missingValues,
     resultJson,
-    toBool
+    toBool,
+    verifyNodeExporterPing,
+    verifyPrometheusPing
 } from "../../src/server/utils";
 
 describe('resultJson', () => {
@@ -118,5 +120,105 @@ describe('allElementsInListHaveTypeString', () => {
         (list: any[]) => {
             const ret: boolean = allElementsInListHaveTypeString(list)
             expect(ret).toEqual(false);
+        });
+});
+
+describe('verifyPrometheusPing', () => {
+    it.each([
+        ['tendermint_consensus_height', 'cosmos'],
+        ['max_unconfirmed_blocks[test]', 'chainlink'],
+        ['testing\nmax_unconfirmed_blocks 123', 'chainlink'],
+        ['tendermint_consensus_height[test]\ntest_metric', 'cosmos'],
+        ['', 'other_chain'],
+    ])('Should return true when metric of a given base chain is in prometheus ping data',
+        (prometheusPingData: string, baseChain: string) => {
+            const ret: boolean = verifyPrometheusPing(prometheusPingData, baseChain);
+            expect(ret).toEqual(true);
+        });
+
+    it.each([
+        ['', 'cosmos'],
+        ['testing_metric', 'chainlink'],
+        ['testing_metric[test]\ntesting_metric', 'cosmos'],
+    ])('Should return false when metric of a given base chain is not in prometheus ping data',
+        (prometheusPingData: string, baseChain: string) => {
+            const ret: boolean = verifyPrometheusPing(prometheusPingData, baseChain);
+            expect(ret).toEqual(false);
+        });
+});
+
+describe('verifyNodeExporterPing', () => {
+    it.each([
+        ['node_cpu_seconds_total'],
+        ['node_cpu_seconds_total\ntesting'],
+        ['testing\nnode_cpu_seconds_total'],
+        ['testing\nnode_cpu_seconds_total 123'],
+    ])('Should return true when node_cpu_seconds_total is in node exporter ping data',
+        (nodeExporterPingData: string) => {
+            const ret: boolean = verifyNodeExporterPing(nodeExporterPingData);
+            expect(ret).toEqual(true);
+        });
+
+    it.each([
+        [''],
+        ['testing_metric'],
+        ['testing_metric[test]\ntesting_metric'],
+        ['node_cpu_seconds_total[test]'],
+    ])('Should return false when node_cpu_seconds_total is not in node exporter ping data',
+        (nodeExporterPingData: string) => {
+            const ret: boolean = verifyNodeExporterPing(nodeExporterPingData);
+            expect(ret).toEqual(false);
+        });
+});
+
+describe('fulfillWithTimeLimit', () => {
+    it.each([
+        [new Promise((resolve, _reject) => {
+            resolve(1);
+        }), 100],
+        [new Promise((resolve, _reject) => {
+            setTimeout(() => {
+                resolve(1);
+            }, 1);
+        }), 100],
+        [new Promise((resolve, _reject) => {
+            setTimeout(() => {
+                resolve(1);
+            }, 50);
+        }), 100],
+        [new Promise((resolve, _reject) => {
+            setTimeout(() => {
+                resolve(1);
+            }, 99);
+        }), 100],
+    ])('Should return task\'s result if task finishes within time limit.',
+        (promise: Promise<any>, timeLimit: number) => {
+            const ret = fulfillWithTimeLimit(promise, timeLimit, null);
+            expect(ret).not.toEqual(null);
+        });
+
+    it.each([
+        [new Promise((resolve, _reject) => {
+            resolve(100);
+        }), 1],
+        [new Promise((resolve, _reject) => {
+            setTimeout(() => {
+                resolve(1);
+            }, 100);
+        }), 50],
+        [new Promise((resolve, _reject) => {
+            setTimeout(() => {
+                resolve(1);
+            }, 100);
+        }), 99],
+        [new Promise((resolve, _reject) => {
+            setTimeout(() => {
+                resolve(1);
+            }, 100);
+        }), 0],
+    ])('Should return failure value if task did not finish within time limit.',
+        (promise: Promise<any>, timeLimit: number) => {
+            const ret = fulfillWithTimeLimit(promise, timeLimit, null);
+            expect(ret).not.toEqual(null);
         });
 });

@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`panic-installer-test-button renders 1`] = `<panic-installer-setup-test-button></panic-installer-setup-test-button>`;

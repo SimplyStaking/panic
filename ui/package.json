@@ -1,21 +1,21 @@
 {
   "name": "panic-ui",
   "private": true,
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "PANIC UI",
   "author": "Simply-VC",
   "scripts": {
     "build": "stencil build",
+    "dev": "stencil build --serve --watch --dev",
     "start": "stencil build --serve --watch",
     "test": "stencil test --spec --e2e",
-    "test.spec": "stencil test --spec --verbose",
-    "test.e2e": "stencil test --e2e --verbose",
+    "test.spec": "stencil test --spec",
+    "test.e2e": "stencil test --e2e",
     "test.watch": "stencil test --spec --e2e --watchAll",
     "generate": "stencil generate"
   },
   "devDependencies": {
     "@stencil/core": "^2.0.0",
-    "@stencil/router": "^1.0.1",
     "@stencil/sass": "^1.4.1",
     "@types/jest": "^27.0.3",
     "@types/react": "^17.0.20",
@@ -30,6 +30,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@simply-vc/uikit": "~1.2.0"
+    "@simply-vc/uikit": "~1.6.1"
   }
 }
