@@ -13,8 +13,9 @@ class CosmosNodeAlertsConfig:
             cannot_access_cosmos_rest_node: Dict,
             cannot_access_tendermint_rpc_validator: Dict,
             cannot_access_tendermint_rpc_node: Dict, missed_blocks: Dict,
-            slashed: Dict, node_is_syncing: Dict, validator_is_syncing: Dict,
-            validator_is_jailed: Dict) -> None:
+            slashed: Dict, node_is_syncing: Dict, validator_is_syncing: Dict, validator_is_jailed: Dict,
+            node_is_peered_with_sentinel: Dict = None, validator_is_peered_with_sentinel: Dict = None,
+            ) -> None:
         self._parent_id = parent_id
         self._cannot_access_validator = cannot_access_validator
         self._cannot_access_node = cannot_access_node
@@ -38,6 +39,8 @@ class CosmosNodeAlertsConfig:
         self._node_is_syncing = node_is_syncing
         self._validator_is_syncing = validator_is_syncing
         self._validator_is_jailed = validator_is_jailed
+        self._node_is_peered_with_sentinel = node_is_peered_with_sentinel
+        self._validator_is_peered_with_sentinel = validator_is_peered_with_sentinel
 
     def __eq__(self, other: Any) -> bool:
         return self.__dict__ == other.__dict__
@@ -109,6 +112,14 @@ class CosmosNodeAlertsConfig:
     @property
     def validator_is_syncing(self) -> Dict:
         return self._validator_is_syncing
+
+    @property
+    def node_is_peered_with_sentinel(self) -> Dict:
+        return self._node_is_peered_with_sentinel
+
+    @property
+    def validator_is_peered_with_sentinel(self) -> Dict:
+        return self._validator_is_peered_with_sentinel
 
     @property
     def validator_is_jailed(self) -> Dict:

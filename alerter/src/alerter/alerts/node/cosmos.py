@@ -80,6 +80,23 @@ class NodeIsNoLongerSyncingAlert(Alert):
             timestamp, parent_id, origin_id,
             GroupedCosmosNodeAlertsMetricCode.NodeIsSyncing, [origin_id])
 
+class NodeIsPeeredWithSentinelAlert(Alert):
+    def __init__(self, origin_name: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            CosmosNodeAlertCode.NodeIsPeeredWithSentinelAlert,
+            "Node {} is peered with sentinel.".format(origin_name), severity,
+            timestamp, parent_id, origin_id,
+            GroupedCosmosNodeAlertsMetricCode.NodeIsNotPeeredWithSentinel, [origin_id])
+
+class NodeIsNotPeeredWithSentinelAlert(Alert):
+    def __init__(self, origin_name: str, severity: str, timestamp: float,
+                 parent_id: str, origin_id: str) -> None:
+        super().__init__(
+            CosmosNodeAlertCode.NodeIsNotPeeredWithSentinelAlert,
+            "Node {} is not peered with sentinel.".format(origin_name), severity,
+            timestamp, parent_id, origin_id,
+            GroupedCosmosNodeAlertsMetricCode.NodeIsNotPeeredWithSentinel, [origin_id])
 
 class ValidatorIsNotActiveAlert(Alert):
     def __init__(self, origin_name: str, severity: str, timestamp: float,

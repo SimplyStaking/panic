@@ -33,11 +33,13 @@ class TestCosmosAlertsConfigsFactory(unittest.TestCase):
             'cannot_access_tendermint_rpc_validator',
             'cannot_access_tendermint_rpc_node', 'missed_blocks', 'slashed',
             'node_is_syncing', 'validator_is_syncing',
+            'node_is_peered_with_sentinel', 'validator_is_peered_with_sentinel',
             'validator_not_active_in_session', 'validator_is_jailed'
         ]
         cosmos_network_config_metrics = ['new_proposal', 'proposal_concluded']
         self.received_config_example_1_cosmos_node = {}
         self.received_config_example_2_cosmos_node = {}
+        self.received_config_example_3_cosmos_node = {}
         self.received_config_example_1_cosmos_network = {}
         self.received_config_example_2_cosmos_network = {}
 
@@ -50,6 +52,7 @@ class TestCosmosAlertsConfigsFactory(unittest.TestCase):
                 'name': cosmos_node_config_metrics[i],
                 'parent_id': self.test_parent_id_2
             }
+
         for i in range(len(cosmos_network_config_metrics)):
             self.received_config_example_1_cosmos_network[str(i)] = {
                 'name': cosmos_network_config_metrics[i],
@@ -59,7 +62,6 @@ class TestCosmosAlertsConfigsFactory(unittest.TestCase):
                 'name': cosmos_network_config_metrics[i],
                 'parent_id': self.test_parent_id_2
             }
-
         """
         Now we will construct the expected config objects
         """
@@ -109,8 +111,13 @@ class TestCosmosAlertsConfigsFactory(unittest.TestCase):
             slashed=filtered_1_cosmos_node["slashed"],
             node_is_syncing=filtered_1_cosmos_node["node_is_syncing"],
             validator_is_syncing=filtered_1_cosmos_node["validator_is_syncing"],
-            validator_is_jailed=filtered_1_cosmos_node["validator_is_jailed"]
+            validator_is_jailed=filtered_1_cosmos_node["validator_is_jailed"],
+            node_is_peered_with_sentinel=filtered_1_cosmos_node['node_is_peered_with_sentinel'],
+            validator_is_peered_with_sentinel=filtered_1_cosmos_node['validator_is_peered_with_sentinel'],
         )
+
+
+
         self.alerts_config_2_cosmos_node = CosmosNodeAlertsConfig(
             parent_id=self.test_parent_id_2,
             cannot_access_validator=filtered_2_cosmos_node[
@@ -140,8 +147,11 @@ class TestCosmosAlertsConfigsFactory(unittest.TestCase):
             slashed=filtered_2_cosmos_node["slashed"],
             node_is_syncing=filtered_2_cosmos_node["node_is_syncing"],
             validator_is_syncing=filtered_2_cosmos_node["validator_is_syncing"],
-            validator_is_jailed=filtered_2_cosmos_node["validator_is_jailed"]
+            validator_is_jailed=filtered_2_cosmos_node["validator_is_jailed"],
+            node_is_peered_with_sentinel=filtered_2_cosmos_node['node_is_peered_with_sentinel'],
+            validator_is_peered_with_sentinel=filtered_2_cosmos_node['validator_is_peered_with_sentinel'],
         )
+
         self.alerts_config_1_cosmos_network = CosmosNetworkAlertsConfig(
             parent_id=self.test_parent_id_1,
             new_proposal=filtered_1_cosmos_network['new_proposal'],
@@ -204,6 +214,7 @@ class TestCosmosAlertsConfigsFactory(unittest.TestCase):
         expected_state = {
             self.test_chain_name_1: alerts_config_1
         }
+
         self.assertEqual(expected_state, configs_factory.configs)
 
         # Add another config and check that the state was modified correctly
@@ -213,6 +224,7 @@ class TestCosmosAlertsConfigsFactory(unittest.TestCase):
             self.test_chain_name_1: alerts_config_1,
             self.test_chain_name_2: alerts_config_2
         }
+
         self.assertEqual(expected_state, configs_factory.configs)
 
     @parameterized.expand([

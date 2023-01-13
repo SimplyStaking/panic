@@ -85,6 +85,7 @@ class TestCosmosAlertersManager(unittest.TestCase):
             'node_is_syncing', 'validator_is_syncing',
             'validator_not_active_in_session', 'validator_is_jailed',
             'new_proposal', 'proposal_concluded'
+            'node_is_peered_with_sentinel', 'validator_is_peered_with_sentinel',
         ]
         self.received_configs = {}
         for i in range(len(cosmos_config_metrics)):

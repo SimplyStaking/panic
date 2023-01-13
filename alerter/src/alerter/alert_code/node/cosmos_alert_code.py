@@ -43,3 +43,5 @@ class CosmosNodeAlertCode(AlertCode):
     TendermintRPCDataObtainedAlert = 'cosmos_node_alert_39'
     MetricNotFoundErrorAlert = 'cosmos_node_alert_40'
     MetricFoundAlert = 'cosmos_node_alert_41'
+    NodeIsNotPeeredWithSentinelAlert = 'cosmos_node_alert_42'
+    NodeIsPeeredWithSentinelAlert = 'cosmos_node_alert_43'
