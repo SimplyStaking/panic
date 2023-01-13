@@ -8,7 +8,7 @@ class CosmosNodeConfig(NodeConfig):
             monitor_cosmos_rest: bool, cosmos_rest_url: str,
             monitor_tendermint_rpc: bool, tendermint_rpc_url: str,
             is_validator: bool, is_archive_node: bool, use_as_data_source: bool,
-            operator_address: str) -> None:
+            operator_address: str, is_mev_tendermint_node: bool = False) -> None:
         super().__init__(node_id, parent_id, node_name, monitor_node)
 
         self._monitor_prometheus = monitor_prometheus
@@ -18,6 +18,7 @@ class CosmosNodeConfig(NodeConfig):
         self._monitor_tendermint_rpc = monitor_tendermint_rpc
         self._tendermint_rpc_url = tendermint_rpc_url
         self._is_validator = is_validator
+        self._is_mev_tendermint_node = is_mev_tendermint_node
         self._is_archive_node = is_archive_node
         self._use_as_data_source = use_as_data_source
         self._operator_address = operator_address
@@ -51,6 +52,10 @@ class CosmosNodeConfig(NodeConfig):
         return self._is_validator
 
     @property
+    def is_mev_tendermint_node(self) -> bool:
+        return self._is_mev_tendermint_node
+
+    @property
     def is_archive_node(self) -> bool:
         return self._is_archive_node
 
@@ -82,6 +87,9 @@ class CosmosNodeConfig(NodeConfig):
 
     def set_is_validator(self, is_validator: bool) -> None:
         self._is_validator = is_validator
+
+    def set_is_mev_tendermint_node(self, is_mev_tendermint_node: bool) -> None:
+        self._is_mev_tendermint_node = is_mev_tendermint_node
 
     def set_is_archive_node(self, is_archive_node: bool) -> None:
         self._is_archive_node = is_archive_node

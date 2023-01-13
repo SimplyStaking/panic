@@ -150,8 +150,7 @@ class CosmosNodeMonitor(CosmosMonitor):
 
     def _get_cosmos_rest_v0_39_2_indirect_data_validator(
             self, source: CosmosNodeConfig) -> Dict:
-        """
-        This function retrieves node specific metrics using a different node as
+        """        This function retrieves node specific metrics using a different node as
         data source. We do not use the node directly since the node may be
         offline or syncing, thus the data may be corrupt. Note that as a last
         resource the manager may supply the node itself as data source. To
@@ -424,6 +423,8 @@ class CosmosNodeMonitor(CosmosMonitor):
                     'address'],
                 'is_syncing': status['result']['sync_info'][
                     'catching_up'],
+                'is_peered_with_sentinel' : status['result']['mev_info'][
+                    'is_peered_with_sentinel'],
             }
 
         return self._execute_cosmos_tendermint_retrieval_with_exceptions(
@@ -684,8 +685,14 @@ class CosmosNodeMonitor(CosmosMonitor):
             if direct_data['consensus_hex_address'] not in ['', None]:
                 self._validator_consensus_address = direct_data[
                     'consensus_hex_address']
-                direct_data = {'is_syncing': direct_data['is_syncing']}
-
+                ## If the node is running mev-tendermint add the is_peered_with_sentinel field
+                if self.node_config.is_mev_tendermint_node:
+                    direct_data = {'is_syncing': direct_data['is_syncing'],
+                                   'is_peered_with_sentinel':
+                                       direct_data['is_peered_with_sentinel']}
+                else:    
+                    direct_data = {'is_syncing': direct_data['is_syncing']}
+            
             # Select archive node for archive data retrieval. If no archive
             # node is accessible, or given by the user, try getting data with
             # an indirect node just in case.
@@ -882,6 +889,7 @@ class CosmosNodeMonitor(CosmosMonitor):
                     'node_id': self.node_config.node_id,
                     'node_parent_id': self.node_config.parent_id,
                     'time': datetime.now().timestamp(),
+                    'is_mev_tendermint_node': self.node_config.is_mev_tendermint_node,
                     'is_validator': self.node_config.is_validator,
                     'operator_address': self.node_config.operator_address,
                 },

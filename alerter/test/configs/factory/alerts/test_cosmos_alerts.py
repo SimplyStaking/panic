@@ -39,7 +39,6 @@ class TestCosmosAlertsConfigsFactory(unittest.TestCase):
         cosmos_network_config_metrics = ['new_proposal', 'proposal_concluded']
         self.received_config_example_1_cosmos_node = {}
         self.received_config_example_2_cosmos_node = {}
-        self.received_config_example_3_cosmos_node = {}
         self.received_config_example_1_cosmos_network = {}
         self.received_config_example_2_cosmos_network = {}
 
