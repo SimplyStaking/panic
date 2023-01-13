@@ -69,7 +69,6 @@ class CosmosAlertsConfigsFactory(ConfigsFactory, ABC):
 
         return None
 
-
 class CosmosNodeAlertsConfigsFactory(CosmosAlertsConfigsFactory):
     """
     This class manages the node alerts configs. The configs are indexed by the

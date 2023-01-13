@@ -54,6 +54,7 @@ class TestCosmosNodeAlerter(unittest.TestCase):
         self.test_node_id = 'test_cosmos_node_id345834t8h3r5893h8'
         self.test_last_monitored = datetime(2012, 1, 1).timestamp()
         self.test_is_validator = True
+        self.test_is_mev_tendermint_node = False
         self.test_operator_address = 'test_address'
         self.test_exception = PANICException('test_exception', 1)
         self.test_node_is_down_exception = NodeIsDownException(
@@ -75,7 +76,8 @@ class TestCosmosNodeAlerter(unittest.TestCase):
         metrics_with_time_window = ['missed_blocks']
         severity_metrics = [
             'slashed', 'node_is_syncing', 'validator_is_syncing',
-            'validator_not_active_in_session', 'validator_is_jailed'
+            'validator_not_active_in_session', 'validator_is_jailed',
+            'node_is_peered_with_sentinel', 'validator_is_peered_with_sentinel',
         ]
         all_metrics = (metrics_without_time_window
                        + metrics_with_time_window
@@ -166,6 +168,7 @@ class TestCosmosNodeAlerter(unittest.TestCase):
                         'node_parent_id': self.test_parent_id,
                         'last_monitored': self.test_last_monitored,
                         'is_validator': self.test_is_validator,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'operator_address': self.test_operator_address,
                     },
                     'data': {
