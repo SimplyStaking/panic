@@ -228,6 +228,9 @@ class CosmosNodeDataTransformer(DataTransformer):
             node.set_slashed(metrics['slashed'])
             node.set_missed_blocks(metrics['missed_blocks'])
             node.set_is_syncing(metrics['is_syncing'])
+            ## check if the node was a mev-tendermint node and update state if so
+            if meta_data['is_mev_tendermint_node']:
+                node.set_is_peered_with_sentinel(metrics['is_peered_with_sentinel'])
             node.set_last_monitored_tendermint_rpc(meta_data['last_monitored'])
             node.set_tendermint_rpc_as_up()
         elif 'error' in tendermint_rpc_data:
@@ -402,6 +405,9 @@ class CosmosNodeDataTransformer(DataTransformer):
             pd_data['missed_blocks']['previous'] = copy.deepcopy(
                 node.missed_blocks)
             pd_data['is_syncing']['previous'] = node.is_syncing
+            ## Check if the current node is a mev-tendermint node, if so send the previous state of the mev-tendermint metrics
+            if td_meta_data['is_mev_tendermint_node']:
+                pd_data['is_peered_with_sentinel']['previous'] = node.is_peered_with_sentinel
         elif 'error' in transformed_tendermint_rpc_data:
             td_meta_data = transformed_tendermint_rpc_data['error']['meta_data']
             td_error_code = transformed_tendermint_rpc_data['error']['code']
