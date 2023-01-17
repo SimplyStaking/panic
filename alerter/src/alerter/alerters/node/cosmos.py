@@ -483,11 +483,11 @@ class CosmosNodeAlerter(Alerter):
                 if current is not None:
                     classification_fn(
                         parent_id, node_id, MetricCode.NodeIsNotPeeredWithSentinel.value,
-                        cosmos_alerts.NodeIsPeeredWithSentinelAlert,
-                        self._is_true_condition_function, [current],
-                        [node_name, is_syncing_configs['severity'],
-                         last_monitored, parent_id, node_id], data_for_alerting,
                         cosmos_alerts.NodeIsNotPeeredWithSentinelAlert,
+                        self._is_false_condition_function, [current],
+                        [node_name, is_peered_with_sentinel_configs['severity'],
+                         last_monitored, parent_id, node_id], data_for_alerting,
+                        cosmos_alerts.NodeIsPeeredWithSentinelAlert,
                         [node_name, Severity.INFO.value, last_monitored,
                          parent_id, node_id]
                     )

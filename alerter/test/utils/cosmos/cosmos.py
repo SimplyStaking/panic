@@ -19,10 +19,6 @@ class CosmosTestNodes:
             'node_id_4', 'parent_id_4', 'node_name_4', True, True, 'prom_url_4',
             True, 'cosmos_rest_url_4', True, 'tendermint_rpc_url_4', False,
             False, True, 'operator_address_4')
-        self._is_mev_tendermint_node = CosmosNodeConfig( 
-            'node_id_4', 'parent_id_4', 'node_name_4', True, True, 'prom_url_4',
-            True, 'cosmos_rest_url_4', True, 'tendermint_rpc_url_4', False,
-            False, True, 'operator_address_4', is_mev_tendermint_node=True)
 
     @property
     def archive_validator(self) -> CosmosNodeConfig:
@@ -39,10 +35,6 @@ class CosmosTestNodes:
     @property
     def pruned_non_validator(self) -> CosmosNodeConfig:
         return self._pruned_non_validator
-
-    @property
-    def is_mev_tendermint_node(self) -> CosmosNodeConfig:
-        return self._is_mev_tendermint_node
 
     @staticmethod
     def create_custom_node(

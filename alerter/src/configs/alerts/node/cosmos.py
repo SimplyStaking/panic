@@ -13,9 +13,9 @@ class CosmosNodeAlertsConfig:
             cannot_access_cosmos_rest_node: Dict,
             cannot_access_tendermint_rpc_validator: Dict,
             cannot_access_tendermint_rpc_node: Dict, missed_blocks: Dict,
-            slashed: Dict, node_is_syncing: Dict, validator_is_syncing: Dict, validator_is_jailed: Dict,
-            node_is_peered_with_sentinel: Dict = None, validator_is_peered_with_sentinel: Dict = None,
-            ) -> None:
+            slashed: Dict, node_is_syncing: Dict, validator_is_syncing: Dict,
+            validator_is_jailed: Dict,
+            node_is_peered_with_sentinel: Dict = None, validator_is_peered_with_sentinel: Dict = None) -> None:
         self._parent_id = parent_id
         self._cannot_access_validator = cannot_access_validator
         self._cannot_access_node = cannot_access_node

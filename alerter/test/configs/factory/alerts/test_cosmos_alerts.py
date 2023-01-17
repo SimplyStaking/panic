@@ -61,6 +61,7 @@ class TestCosmosAlertsConfigsFactory(unittest.TestCase):
                 'name': cosmos_network_config_metrics[i],
                 'parent_id': self.test_parent_id_2
             }
+
         """
         Now we will construct the expected config objects
         """
@@ -114,8 +115,6 @@ class TestCosmosAlertsConfigsFactory(unittest.TestCase):
             node_is_peered_with_sentinel=filtered_1_cosmos_node['node_is_peered_with_sentinel'],
             validator_is_peered_with_sentinel=filtered_1_cosmos_node['validator_is_peered_with_sentinel'],
         )
-
-
 
         self.alerts_config_2_cosmos_node = CosmosNodeAlertsConfig(
             parent_id=self.test_parent_id_2,

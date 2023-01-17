@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import unittest
@@ -54,7 +55,6 @@ class TestCosmosNodeAlerter(unittest.TestCase):
         self.test_node_id = 'test_cosmos_node_id345834t8h3r5893h8'
         self.test_last_monitored = datetime(2012, 1, 1).timestamp()
         self.test_is_validator = True
-        self.test_is_mev_tendermint_node = False
         self.test_operator_address = 'test_address'
         self.test_exception = PANICException('test_exception', 1)
         self.test_node_is_down_exception = NodeIsDownException(
@@ -167,8 +167,8 @@ class TestCosmosNodeAlerter(unittest.TestCase):
                         'node_id': self.test_node_id,
                         'node_parent_id': self.test_parent_id,
                         'last_monitored': self.test_last_monitored,
+                        'is_mev_tendermint_node': False,
                         'is_validator': self.test_is_validator,
-                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'operator_address': self.test_operator_address,
                     },
                     'data': {
@@ -202,6 +202,14 @@ class TestCosmosNodeAlerter(unittest.TestCase):
                 }
             }
         }
+
+        self.transformed_data_result_mev = copy.deepcopy(self.transformed_data_result)
+        self.transformed_data_result_mev['tendermint_rpc']['result']['meta_data']['is_mev_tendermint_node'] = True
+        self.transformed_data_result_mev['tendermint_rpc']['result']['data']['is_peered_with_sentinel'] = {
+            'current': True,
+            'previous': None,
+        }
+
         self.transformed_data_general_error = {
             'prometheus': {
                 'error': {
@@ -238,6 +246,7 @@ class TestCosmosNodeAlerter(unittest.TestCase):
                         'node_id': self.test_node_id,
                         'node_parent_id': self.test_parent_id,
                         'time': self.test_last_monitored,
+                        'is_mev_tendermint_node': False,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -294,6 +303,7 @@ class TestCosmosNodeAlerter(unittest.TestCase):
                         'node_id': self.test_node_id,
                         'node_parent_id': self.test_parent_id,
                         'time': self.test_last_monitored,
+                        'is_mev_tendermint_node' : False,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -1148,7 +1158,7 @@ class TestCosmosNodeAlerter(unittest.TestCase):
 
         data_for_alerting = []
         self.test_alerter._process_tendermint_rpc_result(
-            self.transformed_data_result['tendermint_rpc']['result'],
+            self.transformed_data_result_mev['tendermint_rpc']['result'],
             data_for_alerting)
 
         calls = mock_error_alert.call_args_list
@@ -1230,7 +1240,7 @@ class TestCosmosNodeAlerter(unittest.TestCase):
         self.assertTrue(call_1 in calls)
 
         calls = mock_solvable_conditional.call_args_list
-        self.assertEqual(1, mock_solvable_conditional.call_count)
+        self.assertEqual(2, mock_solvable_conditional.call_count)
         is_syncing_configs = (
             configs.validator_is_syncing if self.test_is_validator
             else configs.node_is_syncing
@@ -1248,6 +1258,24 @@ class TestCosmosNodeAlerter(unittest.TestCase):
             [self.test_node_name, Severity.INFO.value,
              self.test_last_monitored, self.test_parent_id, self.test_node_id])
         self.assertTrue(call_1 in calls)
+
+        ## Test that the is_peered_with_sentinel call is in calls
+        is_peered_with_sentinel_configs = (
+            configs.validator_is_peered_with_sentinel if self.test_is_validator
+            else configs.node_is_peered_with_sentinel
+        )
+        current = self.transformed_data_result_mev['tendermint_rpc']['result']['data']['is_peered_with_sentinel']['current']
+        call_2 = call(
+            self.test_parent_id, self.test_node_id,
+            GroupedCosmosNodeAlertsMetricCode.NodeIsNotPeeredWithSentinel.value,
+            NodeIsNotPeeredWithSentinelAlert, self.test_alerter._is_false_condition_function,
+            [current],
+            [self.test_node_name, is_peered_with_sentinel_configs['severity'],
+            self.test_last_monitored, self.test_parent_id, self.test_node_id], 
+            data_for_alerting, NodeIsPeeredWithSentinelAlert,
+            [self.test_node_name, Severity.INFO.value,
+            self.test_last_monitored, self.test_parent_id, self.test_node_id])
+        self.assertTrue(call_2 in calls)
 
     @mock.patch.object(CosmosNodeAlertingFactory, "classify_error_alert")
     def test_process_tendermint_rpc_error_does_nothing_if_config_not_received(

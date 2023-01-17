@@ -231,6 +231,9 @@ class CosmosNodeDataTransformer(DataTransformer):
             ## check if the node was a mev-tendermint node and update state if so
             if meta_data['is_mev_tendermint_node']:
                 node.set_is_peered_with_sentinel(metrics['is_peered_with_sentinel'])
+            else:
+                # If a node has changed its config, this will be reflected in is_peered_with_sentinel
+                node.set_is_peered_with_sentinel(None)
             node.set_last_monitored_tendermint_rpc(meta_data['last_monitored'])
             node.set_tendermint_rpc_as_up()
         elif 'error' in tendermint_rpc_data:
@@ -390,6 +393,7 @@ class CosmosNodeDataTransformer(DataTransformer):
                     'data': {}
                 }
             }
+
             pd_data = processed_data['result']['data']
 
             # Reformat the data in such a way that both the previous and current

@@ -150,7 +150,8 @@ class CosmosNodeMonitor(CosmosMonitor):
 
     def _get_cosmos_rest_v0_39_2_indirect_data_validator(
             self, source: CosmosNodeConfig) -> Dict:
-        """        This function retrieves node specific metrics using a different node as
+        """
+        This function retrieves node specific metrics using a different node as
         data source. We do not use the node directly since the node may be
         offline or syncing, thus the data may be corrupt. Note that as a last
         resource the manager may supply the node itself as data source. To
@@ -418,6 +419,14 @@ class CosmosNodeMonitor(CosmosMonitor):
         def retrieval_process() -> Dict:
             status = self.tendermint_rpc_api.execute_with_checks(
                 self.tendermint_rpc_api.get_status, [node_url], node_name)
+            ## check if mev_info is present in response
+            if 'mev_info' not in status['result']:
+                return {
+                    'consensus_hex_address': status['result']['validator_info'][
+                        'address'],
+                    'is_syncing': status['result']['sync_info'][
+                        'catching_up'],
+                }
             return {
                 'consensus_hex_address': status['result']['validator_info'][
                     'address'],
@@ -686,11 +695,11 @@ class CosmosNodeMonitor(CosmosMonitor):
                 self._validator_consensus_address = direct_data[
                     'consensus_hex_address']
                 ## If the node is running mev-tendermint add the is_peered_with_sentinel field
-                if self.node_config.is_mev_tendermint_node:
+                if 'is_peered_with_sentinel' in direct_data:
                     direct_data = {'is_syncing': direct_data['is_syncing'],
                                    'is_peered_with_sentinel':
                                        direct_data['is_peered_with_sentinel']}
-                else:    
+                else:
                     direct_data = {'is_syncing': direct_data['is_syncing']}
 
             # Select archive node for archive data retrieval. If no archive
@@ -889,7 +898,7 @@ class CosmosNodeMonitor(CosmosMonitor):
                     'node_id': self.node_config.node_id,
                     'node_parent_id': self.node_config.parent_id,
                     'time': datetime.now().timestamp(),
-                    'is_mev_tendermint_node': self.node_config.is_mev_tendermint_node,
+                    'is_mev_tendermint_node': 'is_peered_with_sentinel' in data,
                     'is_validator': self.node_config.is_validator,
                     'operator_address': self.node_config.operator_address,
                 },
