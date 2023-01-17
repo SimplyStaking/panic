@@ -692,7 +692,7 @@ class CosmosNodeMonitor(CosmosMonitor):
                                        direct_data['is_peered_with_sentinel']}
                 else:    
                     direct_data = {'is_syncing': direct_data['is_syncing']}
-            
+
             # Select archive node for archive data retrieval. If no archive
             # node is accessible, or given by the user, try getting data with
             # an indirect node just in case.

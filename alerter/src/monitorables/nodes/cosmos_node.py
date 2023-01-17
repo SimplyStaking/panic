@@ -89,7 +89,7 @@ class CosmosNode(Node):
 
     @property
     def is_peered_with_sentinel(self) -> Optional[bool]:
-        return self._is_peered_with_sentinel
+        return self.is_peered_with_sentinel
 
     @property
     def bond_status(self) -> Optional[BondStatus]:

@@ -62,6 +62,8 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         self.sdk_version_0_42_6 = 'v0.42.6'
         self.test_consensus_address = 'test_consensus_address'
         self.test_is_syncing = False
+        self.test_is_peered_with_sentinel = True
+
 
         # --------------- Data retrieval variables and examples ---------------
         # Prometheus
@@ -102,10 +104,17 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         }
 
         # Tendermint
-        self.retrieved_tendermint_direct_data = {
+        self.retrieved_tendermint_direct_data_mev = {
             'consensus_hex_address': self.test_consensus_address,
-            'is_syncing': self.test_is_syncing
+            'is_syncing': self.test_is_syncing,
+            'is_peered_with_sentinel': True,
         }
+
+        self.retrieved_tendermint_direct_data_not_mev = {
+            'consensus_hex_address': self.test_consensus_address,
+            'is_syncing': self.test_is_syncing,
+        }
+
         self.retrieved_tendermint_archive_data = {
             'historical': [
                 {
@@ -131,9 +140,15 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                 },
             ],
         }
-        self.retrieved_tendermint_rpc_data = {
+        self.retrieved_tendermint_rpc_data_not_mev = {
             **self.retrieved_tendermint_archive_data,
             'is_syncing': self.test_is_syncing,
+        }
+
+        self.retrieved_tendermint_rpc_data_mev = {
+            **self.retrieved_tendermint_archive_data,
+            'is_syncing': self.test_is_syncing,
+            'is_peered_with_sentinel': True,
         }
 
         # Processed retrieved data example
@@ -160,6 +175,12 @@ class TestCosmosNodeMonitor(unittest.TestCase):
             self.monitoring_period, self.rabbitmq, self.data_sources,
         )
 
+        ## construct a node monintor for a mev-tendermint node
+        self.test_monitor_mev = CosmosNodeMonitor(
+            self.monitor_name, self.cosmos_test_nodes.is_mev_tendermint_node, self.dummy_logger,
+            self.monitoring_period, self.rabbitmq, self.data_sources,
+        )
+
         self.received_retrieval_info_all_source_types_enabled = {
             'prometheus': {
                 'data': self.retrieved_prometheus_data_example_1,
@@ -180,7 +201,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                 'monitoring_enabled': True
             },
             'tendermint_rpc': {
-                'data': self.retrieved_tendermint_rpc_data,
+                'data': self.retrieved_tendermint_rpc_data_not_mev,
                 'data_retrieval_failed': False,
                 'data_retrieval_exception': None,
                 'get_function': self.test_monitor._get_tendermint_rpc_data,
@@ -209,7 +230,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                 'monitoring_enabled': True
             },
             'tendermint_rpc': {
-                'data': self.retrieved_tendermint_rpc_data,
+                'data': self.retrieved_tendermint_rpc_data_mev,
                 'data_retrieval_failed': False,
                 'data_retrieval_exception': None,
                 'get_function': self.test_monitor._get_tendermint_rpc_data,
@@ -802,11 +823,15 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                 },
                 'sync_info': {
                     'catching_up': self.test_is_syncing
-                }
+                },
+                'mev_info' : {
+                    'is_peered_with_sentinel' : self.test_is_peered_with_sentinel,
+                },
             }
         }
-        actual_return = self.test_monitor._get_tendermint_rpc_direct_data()
-        self.assertEqual(self.retrieved_tendermint_direct_data, actual_return)
+
+        actual_return_mev = self.test_monitor_mev._get_tendermint_rpc_direct_data()
+        self.assertEqual(self.retrieved_tendermint_direct_data_mev, actual_return_mev)
 
     @parameterized.expand([
         (None, 1000, True, 999,),
@@ -1458,13 +1483,29 @@ class TestCosmosNodeMonitor(unittest.TestCase):
             mock_get_archive_data) -> None:
         mock_select_node.return_value = self.data_sources[0]
         mock_get_direct_data.return_value = \
-            self.retrieved_tendermint_direct_data
+            self.retrieved_tendermint_direct_data_not_mev
         mock_get_archive_data.return_value = \
             self.retrieved_tendermint_archive_data
 
         self.test_monitor._get_tendermint_rpc_data()
         self.assertEqual(self.test_consensus_address,
                          self.test_monitor.validator_consensus_address)
+
+    @mock.patch.object(CosmosNodeMonitor, '_get_tendermint_rpc_archive_data')
+    @mock.patch.object(CosmosNodeMonitor, '_get_tendermint_rpc_direct_data')
+    @mock.patch.object(CosmosNodeMonitor, '_select_cosmos_tendermint_node')
+    def test_get_tendermint_rpc_data_sets_peered_with_sentinel(
+            self, mock_select_node, mock_get_direct_data,
+            mock_get_archive_data) -> None:
+        mock_select_node.return_value = self.data_sources[0]
+        mock_get_direct_data.return_value = \
+            self.retrieved_tendermint_direct_data_mev
+        mock_get_archive_data.return_value = \
+            self.retrieved_tendermint_archive_data
+
+        actual_return = self.test_monitor_mev._get_tendermint_rpc_data()
+        self.assertEqual(actual_return[0],
+                         self.retrieved_tendermint_rpc_data_mev)
 
     @parameterized.expand([
         ('',),
@@ -1494,12 +1535,18 @@ class TestCosmosNodeMonitor(unittest.TestCase):
             mock_get_archive_data) -> None:
         mock_select_node.return_value = self.data_sources[0]
         mock_get_direct_data.return_value = \
-            self.retrieved_tendermint_direct_data
+            self.retrieved_tendermint_direct_data_not_mev
         mock_get_archive_data.return_value = \
             self.retrieved_tendermint_archive_data
         actual_ret = self.test_monitor._get_tendermint_rpc_data()
-        self.assertEqual((self.retrieved_tendermint_rpc_data, False, None),
+        self.assertEqual((self.retrieved_tendermint_rpc_data_not_mev, False, None),
                          actual_ret)
+        ## update mock direct response data
+        mock_get_direct_data.return_value = \
+            self.retrieved_tendermint_direct_data_mev
+        actual_ret_mev = self.test_monitor_mev._get_tendermint_rpc_data()
+        self.assertEqual((self.retrieved_tendermint_rpc_data_mev, False, None), actual_ret_mev)
+
 
     @parameterized.expand([
         (NodeIsDownException('node_name_1'),
@@ -1548,7 +1595,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
             self, raised_err, returned_err, mock_select_node,
             mock_get_direct, mock_get_archive) -> None:
         mock_select_node.return_value = self.data_sources[0]
-        mock_get_direct.return_value = self.retrieved_tendermint_direct_data
+        mock_get_direct.return_value = self.retrieved_tendermint_direct_data_not_mev
         mock_get_archive.side_effect = raised_err
         actual_ret = self.test_monitor._get_tendermint_rpc_data()
         self.assertEqual(({}, True, returned_err), actual_ret)
@@ -1603,15 +1650,14 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         ('self.received_retrieval_info_all_source_types_enabled',
          ['self.retrieved_prometheus_data_example_1', False, None], True,
          ['self.retrieved_cosmos_rest_data_1', False, None], True,
-         ['self.retrieved_tendermint_rpc_data', False, None], True),
+         ['self.retrieved_tendermint_rpc_data_not_mev', False, None], True, False),
         ('self.received_retrieval_info_some_sources_disabled', None, False,
          ['self.retrieved_cosmos_rest_data_1', False, None], True,
-         ['self.retrieved_tendermint_rpc_data', False, None], True
-         ),
+         ['self.retrieved_tendermint_rpc_data_mev', False, None], True, True),
         ('self.received_retrieval_info_all_source_types_enabled_err',
          [{}, True, PANICException('test_exception_1', 1)], True,
          [{}, True, PANICException('test_exception_2', 2)], True,
-         [{}, True, PANICException('test_exception_3', 3)], True),
+         [{}, True, PANICException('test_exception_3', 3)], True, False),
     ])
     @mock.patch.object(CosmosNodeMonitor, '_get_tendermint_rpc_data')
     @mock.patch.object(CosmosNodeMonitor, '_get_cosmos_rest_data')
@@ -1619,7 +1665,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
     def test_get_data_return(
             self, expected_ret, retrieved_prom_data, monitor_prom,
             retrieved_cosmos_rest_data, monitor_cosmos_rest,
-            retrieved_tendermint_rpc_data, monitor_tendermint_rpc,
+            retrieved_tendermint_rpc_data, monitor_tendermint_rpc, is_mev,
             mock_get_prom_data, mock_get_cosmos_rest_data,
             mock_get_tendermint_rpc_data) -> None:
         """
@@ -1627,6 +1673,8 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         for every possible test case. We will use parameterized.expand to
         explore all possible cases
         """
+        monitor = self.test_monitor
+
         if monitor_prom:
             # If prometheus is to be monitored, then we have a list which needs
             # to be converted to a tuple
@@ -1652,18 +1700,24 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                     retrieved_tendermint_rpc_data[0])
             mock_get_tendermint_rpc_data.return_value = tuple(
                 retrieved_tendermint_rpc_data)
-        self.test_monitor._node_config._monitor_prometheus = monitor_prom
-        self.test_monitor._node_config._monitor_cosmos_rest = \
+        monitor._node_config._monitor_prometheus = monitor_prom
+        monitor._node_config._monitor_cosmos_rest = \
             monitor_cosmos_rest
-        self.test_monitor._node_config._monitor_tendermint_rpc = \
-            monitor_tendermint_rpc
 
-        actual_ret = self.test_monitor._get_data()
+        monitor._node_config._monitor_tendermint_rpc = \
+            monitor_tendermint_rpc
+        monitor._node_config._is_mev_tendermint_node = True
+
+        actual_ret = monitor._get_data()
         expected_ret = eval(expected_ret)
         expected_ret['cosmos_rest']['get_function'] = mock_get_cosmos_rest_data
         expected_ret['prometheus']['get_function'] = mock_get_prom_data
         expected_ret['tendermint_rpc']['get_function'] = \
             mock_get_tendermint_rpc_data
+
+        print(expected_ret)
+        print(actual_ret)
+
         self.assertEqual(expected_ret, actual_ret)
 
     @freeze_time("2012-01-01")
@@ -1720,6 +1774,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                     'node_id': self.test_monitor.node_config.node_id,
                     'node_parent_id': self.test_monitor.node_config.parent_id,
                     'time': datetime.now().timestamp(),
+                    'is_mev_tendermint_node': False,
                     'is_validator': self.test_monitor.node_config.is_validator,
                     'operator_address':
                         self.test_monitor.node_config.operator_address,
@@ -1859,12 +1914,13 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                         'node_parent_id':
                             self.test_monitor.node_config.parent_id,
                         'time': datetime(2012, 1, 1).timestamp(),
+                        'is_mev_tendermint_node': False,
                         'is_validator':
                             self.test_monitor.node_config.is_validator,
                         'operator_address':
                             self.test_monitor.node_config.operator_address
                     },
-                    'data': self.retrieved_tendermint_rpc_data,
+                    'data': self.retrieved_tendermint_rpc_data_not_mev,
                 }
             },
         }
@@ -1916,12 +1972,13 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                         'node_parent_id':
                             self.test_monitor.node_config.parent_id,
                         'time': datetime(2012, 1, 1).timestamp(),
+                        'is_mev_tendermint_node': True,
                         'is_validator':
                             self.test_monitor.node_config.is_validator,
                         'operator_address':
                             self.test_monitor.node_config.operator_address
                     },
-                    'data': self.retrieved_tendermint_rpc_data,
+                    'data': self.retrieved_tendermint_rpc_data_mev,
                 }
             },
         }
@@ -1934,7 +1991,8 @@ class TestCosmosNodeMonitor(unittest.TestCase):
             self.received_retrieval_info_some_sources_disabled
         mock_send_data.return_value = None
         mock_send_heartbeat.return_value = None
-
+        # update node_config on test_monitor temporarily
+        self.test_monitor.node_config._is_mev_tendermint_node = True
         self.test_monitor._monitor()
         mock_send_data.assert_called_once_with(expected_output_data)
         mock_send_heartbeat.assert_called_once_with(expected_output_hb)
@@ -2064,12 +2122,13 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                         'node_parent_id':
                             self.test_monitor.node_config.parent_id,
                         'time': datetime(2012, 1, 1).timestamp(),
+                        'is_mev_tendermint_node': False,
                         'is_validator':
                             self.test_monitor.node_config.is_validator,
                         'operator_address':
                             self.test_monitor.node_config.operator_address
                     },
-                    'data': self.retrieved_tendermint_rpc_data,
+                    'data': self.retrieved_tendermint_rpc_data_not_mev,
                 }
             },
         })
