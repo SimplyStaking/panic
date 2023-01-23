@@ -846,7 +846,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                     'catching_up': self.test_is_syncing
                 },
                 'mev_info' : {
-                    'is_peered_with_sentinel' : self.test_is_peered_with_sentinel,
+                    'is_peered_with_relayer' : self.test_is_peered_with_sentinel,
                 },
             }
         }

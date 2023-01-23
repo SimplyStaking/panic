@@ -432,8 +432,7 @@ class CosmosNodeMonitor(CosmosMonitor):
                     'address'],
                 'is_syncing': status['result']['sync_info'][
                     'catching_up'],
-                'is_peered_with_sentinel' : status['result']['mev_info'][
-                    'is_peered_with_sentinel'],
+                'is_peered_with_sentinel' : status['result']['mev_info']['is_peered_with_relayer'],
             }
 
         return self._execute_cosmos_tendermint_retrieval_with_exceptions(
