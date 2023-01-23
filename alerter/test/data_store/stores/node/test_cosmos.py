@@ -1,6 +1,7 @@
 import json
 import logging
 import unittest
+import copy
 from datetime import datetime
 from datetime import timedelta
 from unittest import mock
@@ -79,6 +80,7 @@ class TestCosmosNodeStore(unittest.TestCase):
         self.downtime_exception = NodeIsDownException(self.node_name)
         self.is_validator = True
         self.operator_address = 'test_address'
+        self.test_is_peered_with_sentinel = True
 
         # Some metrics
         self.test_went_down_at_prometheus = None
@@ -159,6 +161,9 @@ class TestCosmosNodeStore(unittest.TestCase):
                 }
             }
         }
+        
+        self.node_data_mev = copy.deepcopy(self.node_data_optionals_enabled)
+        self.node_data_mev['tendermint_rpc']['result']['data']['is_peered_with_sentinel'] = self.test_is_peered_with_sentinel
 
         self.node_data_down_error = {
             'prometheus': {
@@ -649,6 +654,30 @@ class TestCosmosNodeStore(unittest.TestCase):
                 redis_hash,
                 Keys.get_cosmos_node_last_monitored_tendermint_rpc(self.node_id)
             ).decode('utf-8'), 'bad_val'))
+        self.assertEqual(
+            "",
+            self.redis.hget(
+                redis_hash,
+                Keys.get_cosmos_node_is_peered(self.node_id),
+            )
+        )
+
+    @parameterized.expand([
+        ("self.node_data_mev",),
+    ])
+    def test_process_redis_tendermint_rpc_result_store_stores_mev_data_correctly(
+            self, data_var) -> None:
+        data = eval(data_var)['tendermint_rpc']['result']
+        redis_hash = Keys.get_hash_parent(self.parent_id)
+
+        self.test_store._process_redis_tendermint_rpc_result_store(data)
+
+        self.assertEqual(
+            data['data']['is_peered_with_sentinel'],
+            self.redis.hget(
+                redis_hash,
+                Keys.get_cosmos_node_is_peered(self.node_id)
+        ))
 
     def test_process_redis_prometheus_error_store_stores_correctly_if_down_err(
             self) -> None:

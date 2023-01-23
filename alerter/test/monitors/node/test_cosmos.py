@@ -63,7 +63,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         self.test_consensus_address = 'test_consensus_address'
         self.test_is_syncing = False
         self.test_is_peered_with_sentinel = True
-
+        self.test_is_mev_tendermint_node = False
 
         # --------------- Data retrieval variables and examples ---------------
         # Prometheus
@@ -204,6 +204,13 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                 'monitoring_enabled': True
             },
         }
+
+        self.received_retrieval_info_all_sources_mev = copy.deepcopy(self.received_retrieval_info_all_source_types_enabled)
+        self.received_retrieval_info_all_sources_mev['tendermint_rpc']['data'] = self.retrieved_tendermint_rpc_data_mev
+        self.received_retrieval_info_all_sources_mev['tendermint_rpc']['processing_function'] = self.test_monitor._process_retrieved_tendermint_rpc_data
+        self.received_retrieval_info_all_sources_mev['cosmos_rest']['processing_function'] = self.test_monitor._process_retrieved_cosmos_rest_data
+        self.received_retrieval_info_all_sources_mev['prometheus']['processing_function'] = self.test_monitor._process_retrieved_prometheus_data
+
         self.received_retrieval_info_some_sources_disabled = {
             'prometheus': {
                 'data': {},
@@ -224,7 +231,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                 'monitoring_enabled': True
             },
             'tendermint_rpc': {
-                'data': self.retrieved_tendermint_rpc_data_mev,
+                'data': self.retrieved_tendermint_rpc_data,
                 'data_retrieval_failed': False,
                 'data_retrieval_exception': None,
                 'get_function': self.test_monitor._get_tendermint_rpc_data,
@@ -1674,9 +1681,13 @@ class TestCosmosNodeMonitor(unittest.TestCase):
          ['self.retrieved_prometheus_data_example_1', False, None], True,
          ['self.retrieved_cosmos_rest_data_1', False, None], True,
          ['self.retrieved_tendermint_rpc_data', False, None], True),
-        ('self.received_retrieval_info_some_sources_disabled', None, False,
+        ('self.received_retrieval_info_all_sources_mev',
+         ['self.retrieved_prometheus_data_example_1', False, None], True,
          ['self.retrieved_cosmos_rest_data_1', False, None], True,
          ['self.retrieved_tendermint_rpc_data_mev', False, None], True),
+        ('self.received_retrieval_info_some_sources_disabled', None, False,
+         ['self.retrieved_cosmos_rest_data_1', False, None], True,
+         ['self.retrieved_tendermint_rpc_data', False, None], True),
         ('self.received_retrieval_info_all_source_types_enabled_err',
          [{}, True, PANICException('test_exception_1', 1)], True,
          [{}, True, PANICException('test_exception_2', 2)], True,
@@ -1791,7 +1802,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                     'node_id': self.test_monitor.node_config.node_id,
                     'node_parent_id': self.test_monitor.node_config.parent_id,
                     'time': datetime.now().timestamp(),
-                    'is_mev_tendermint_node': False,
+                    'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                     'is_validator': self.test_monitor.node_config.is_validator,
                     'operator_address':
                         self.test_monitor.node_config.operator_address,
@@ -1955,7 +1966,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                         'node_parent_id':
                             self.test_monitor.node_config.parent_id,
                         'time': datetime(2012, 1, 1).timestamp(),
-                        'is_mev_tendermint_node': False,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator':
                             self.test_monitor.node_config.is_validator,
                         'operator_address':
@@ -2013,13 +2024,13 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                         'node_parent_id':
                             self.test_monitor.node_config.parent_id,
                         'time': datetime(2012, 1, 1).timestamp(),
-                        'is_mev_tendermint_node': True,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator':
                             self.test_monitor.node_config.is_validator,
                         'operator_address':
                             self.test_monitor.node_config.operator_address
                     },
-                    'data': self.retrieved_tendermint_rpc_data_mev,
+                    'data': self.retrieved_tendermint_rpc_data,
                 }
             },
         }
@@ -2032,7 +2043,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
             self.received_retrieval_info_some_sources_disabled
         mock_send_data.return_value = None
         mock_send_heartbeat.return_value = None
-        # update node_config on test_monitor temporarily
+        
         self.test_monitor._monitor()
         mock_send_data.assert_called_once_with(expected_output_data)
         mock_send_heartbeat.assert_called_once_with(expected_output_hb)
@@ -2162,7 +2173,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                         'node_parent_id':
                             self.test_monitor.node_config.parent_id,
                         'time': datetime(2012, 1, 1).timestamp(),
-                        'is_mev_tendermint_node': False,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator':
                             self.test_monitor.node_config.is_validator,
                         'operator_address':

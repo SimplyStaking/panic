@@ -56,6 +56,7 @@ _key_cosmos_node_went_down_at_tendermint_rpc = 'CosmosNode10'
 _key_cosmos_node_last_monitored_prometheus = 'CosmosNode11'
 _key_cosmos_node_last_monitored_cosmos_rest = 'CosmosNode12'
 _key_cosmos_node_last_monitored_tendermint_rpc = 'CosmosNode13'
+_key_cosmos_node_is_peered = 'CosmosNode14'
 
 # CosmosNetworkX_<cosmos_network_id>
 _key_cosmos_network_proposals = 'CosmosNetwork1'
@@ -406,6 +407,10 @@ class Keys:
     @staticmethod
     def get_cosmos_node_is_syncing(cosmos_node_id: str) -> str:
         return Keys._as_prefix(_key_cosmos_node_is_syncing) + cosmos_node_id
+
+    @staticmethod
+    def get_cosmos_node_is_peered(cosmos_node_id: str) -> str:
+        return Keys._as_prefix(_key_cosmos_node_is_peered) + cosmos_node_id
 
     @staticmethod
     def get_cosmos_node_bond_status(cosmos_node_id: str) -> str:
