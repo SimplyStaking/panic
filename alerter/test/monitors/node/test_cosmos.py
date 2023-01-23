@@ -148,7 +148,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         self.retrieved_tendermint_rpc_data_mev = {
             **self.retrieved_tendermint_archive_data,
             'is_syncing': self.test_is_syncing,
-            'is_peered_with_sentinel': True,
+            'is_peered_with_sentinel': self.test_is_peered_with_sentinel,
         }
 
         # Processed retrieved data example
@@ -808,7 +808,27 @@ class TestCosmosNodeMonitor(unittest.TestCase):
     def test_get_tendermint_rpc_direct_data_return(
             self, mock_get_status) -> None:
         """
-        We will check that the return is as expected for all cases
+        We will check that the return is as expected for all responses without a mev_info key
+        """
+        mock_get_status.return_value = {
+            'result': {
+                'validator_info': {
+                    'address': self.test_consensus_address
+                },
+                'sync_info': {
+                    'catching_up': self.test_is_syncing
+                },
+            }
+        }
+
+        actual_return = self.test_monitor._get_tendermint_rpc_direct_data()
+        self.assertEqual(self.retrieved_tendermint_direct_data, actual_return)
+
+    @mock.patch.object(TendermintRpcApiWrapper, 'get_status')
+    def test_get_tendermint_rpc_direct_data_return_mev_info(
+            self, mock_get_status) -> None:
+        """
+        We will check that the return is as expected when mev_info exists
         """
         mock_get_status.return_value = {
             'result': {
@@ -826,20 +846,6 @@ class TestCosmosNodeMonitor(unittest.TestCase):
 
         actual_return_mev = self.test_monitor._get_tendermint_rpc_direct_data()
         self.assertEqual(self.retrieved_tendermint_direct_data_mev, actual_return_mev)
-
-        mock_get_status.return_value = {
-            'result': {
-                'validator_info': {
-                    'address': self.test_consensus_address
-                },
-                'sync_info': {
-                    'catching_up': self.test_is_syncing
-                },
-            }
-        }
-
-        actual_return = self.test_monitor._get_tendermint_rpc_direct_data()
-        self.assertEqual(self.retrieved_tendermint_direct_data, actual_return)
 
     @parameterized.expand([
         (None, 1000, True, 999,),
@@ -1491,7 +1497,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
             mock_get_archive_data) -> None:
         mock_select_node.return_value = self.data_sources[0]
         mock_get_direct_data.return_value = \
-            self.retrieved_tendermint_direct_data_not_mev
+            self.retrieved_tendermint_direct_data
         mock_get_archive_data.return_value = \
             self.retrieved_tendermint_archive_data
 
@@ -1549,12 +1555,21 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         actual_ret = self.test_monitor._get_tendermint_rpc_data()
         self.assertEqual((self.retrieved_tendermint_rpc_data, False, None),
                          actual_ret)
+
+    @mock.patch.object(CosmosNodeMonitor, '_get_tendermint_rpc_archive_data')
+    @mock.patch.object(CosmosNodeMonitor, '_get_tendermint_rpc_direct_data')
+    @mock.patch.object(CosmosNodeMonitor, '_select_cosmos_tendermint_node')
+    def test_get_tendermint_rpc_data_ret_if_peering_data_retrieved_successfully(
+            self, mock_select_node, mock_get_direct_data,
+            mock_get_archive_data) -> None:
+        mock_select_node.return_value = self.data_sources[0]
+        mock_get_archive_data.return_value = \
+            self.retrieved_tendermint_archive_data
         ## update mock direct response data
         mock_get_direct_data.return_value = \
             self.retrieved_tendermint_direct_data_mev
         actual_ret_mev = self.test_monitor._get_tendermint_rpc_data()
         self.assertEqual((self.retrieved_tendermint_rpc_data_mev, False, None), actual_ret_mev)
-
 
     @parameterized.expand([
         (NodeIsDownException('node_name_1'),
@@ -1787,8 +1802,26 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         actual_ret = self.test_monitor._process_retrieved_tendermint_rpc_data(
             self.test_data_dict)
         self.assertEqual(expected_ret, actual_ret)
-        ## Test that with mev data that values are set correctly
-        expected_ret['result']['meta_data']['is_mev_tendermint_node'] = True
+
+    @freeze_time("2012-01-01")
+    def test_process_retrieved_tendermint_rpc_data_returns_expected_data_when_node_is_mev(
+            self) -> None:
+        expected_ret = {
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'node_name': self.test_monitor.node_config.node_name,
+                    'node_id': self.test_monitor.node_config.node_id,
+                    'node_parent_id': self.test_monitor.node_config.parent_id,
+                    'time': datetime.now().timestamp(),
+                    'is_mev_tendermint_node': True,
+                    'is_validator': self.test_monitor.node_config.is_validator,
+                    'operator_address':
+                        self.test_monitor.node_config.operator_address,
+                },
+                'data': copy.deepcopy(self.test_data_dict),
+            }
+        }
         actual_ret = self.test_monitor._process_retrieved_tendermint_rpc_data(
             self.retrieved_tendermint_direct_data_mev)
         expected_ret['result']['data'] = self.retrieved_tendermint_direct_data_mev

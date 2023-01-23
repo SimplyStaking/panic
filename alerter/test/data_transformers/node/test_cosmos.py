@@ -49,6 +49,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
         self.dummy_logger.disabled = True
         self.invalid_transformed_data = {'bad_key': 'bad_value'}
         self.test_monitor_name = 'test_monitor_name'
+        self.test_is_mev_tendermint_node = False
 
         # Rabbit instance
         self.connection_check_time_interval = timedelta(seconds=0)
@@ -143,7 +144,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
-                        'is_mev_tendermint_node': False,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -233,7 +234,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
-                        'is_mev_tendermint_node': False,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -281,7 +282,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
-                        'is_mev_tendermint_node': False,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -334,7 +335,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'last_monitored': self.test_last_monitored,
-                        'is_mev_tendermint_node': False,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -419,7 +420,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
-                        'is_mev_tendermint_node': False,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -470,7 +471,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
-                        'is_mev_tendermint_node': False,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -532,7 +533,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'last_monitored': self.test_last_monitored,
-                        'is_mev_tendermint_node': False,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -632,7 +633,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
-                        'is_mev_tendermint_node': False,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -689,7 +690,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
-                        'is_mev_tendermint_node': False,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -1068,6 +1069,12 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                              self.node_1.node_id].is_down_cosmos_rest)
         self.assertFalse(self.test_data_transformer._state[
                              self.node_1.node_id].is_down_prometheus)
+
+    def test_update_state_with_mev_metrics(self) -> None:
+        expected_updated_node = copy.deepcopy(self.node_1)
+        self.node_1.reset()
+        self.test_data_transformer._state = copy.deepcopy(self.test_state)
+        self.test_data_transformer._state['dummy_id'] = self.test_data_str
 
         # Update state with mev metrics
         self.test_data_transformer._update_state(

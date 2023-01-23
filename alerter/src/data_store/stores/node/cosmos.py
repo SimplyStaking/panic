@@ -17,7 +17,6 @@ from src.utils.data import transformed_data_processing_helper
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   NodeIsDownException)
 
-
 class CosmosNodeStore(Store):
     def __init__(self, name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi) -> None:
