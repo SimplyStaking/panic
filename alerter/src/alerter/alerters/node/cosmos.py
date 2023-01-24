@@ -422,7 +422,6 @@ class CosmosNodeAlerter(Alerter):
                 parent_id, node_id, configs, is_validator)
 
             # Check if some errors have been resolved
-
             self.alerting_factory.classify_error_alert(
                 InvalidUrlException.code,
                 cosmos_alerts.TendermintRPCInvalidUrlAlert,
@@ -451,11 +450,16 @@ class CosmosNodeAlerter(Alerter):
             )
 
             # Check if the alert rules are satisfied for the metrics
-
             is_syncing_configs = (
                 configs.validator_is_syncing if is_validator
                 else configs.node_is_syncing
             )
+
+            is_peered_with_sentinel_configs = (
+                configs.validator_is_peered_with_sentinel if is_validator
+                else configs.node_is_peered_with_sentinel
+            )
+
             classification_fn = (
                 self.alerting_factory
                     .classify_solvable_conditional_alert_no_repetition
@@ -470,6 +474,20 @@ class CosmosNodeAlerter(Alerter):
                         [node_name, is_syncing_configs['severity'],
                          last_monitored, parent_id, node_id], data_for_alerting,
                         cosmos_alerts.NodeIsNoLongerSyncingAlert,
+                        [node_name, Severity.INFO.value, last_monitored,
+                         parent_id, node_id]
+                    )
+            ## Only alert if the node is running mev_tendermint
+            if str_to_bool(is_peered_with_sentinel_configs['enabled']) and meta_data['is_mev_tendermint_node']:
+                current = data['is_peered_with_sentinel']['current']
+                if current is not None:
+                    classification_fn(
+                        parent_id, node_id, MetricCode.NodeIsNotPeeredWithSentinel.value,
+                        cosmos_alerts.NodeIsNotPeeredWithSentinelAlert,
+                        self._is_false_condition_function, [current],
+                        [node_name, is_peered_with_sentinel_configs['severity'],
+                         last_monitored, parent_id, node_id], data_for_alerting,
+                        cosmos_alerts.NodeIsPeeredWithSentinelAlert,
                         [node_name, Severity.INFO.value, last_monitored,
                          parent_id, node_id]
                     )

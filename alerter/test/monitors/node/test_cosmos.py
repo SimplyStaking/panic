@@ -62,6 +62,8 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         self.sdk_version_0_42_6 = 'v0.42.6'
         self.test_consensus_address = 'test_consensus_address'
         self.test_is_syncing = False
+        self.test_is_peered_with_sentinel = True
+        self.test_is_mev_tendermint_node = False
 
         # --------------- Data retrieval variables and examples ---------------
         # Prometheus
@@ -102,10 +104,17 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         }
 
         # Tendermint
+        self.retrieved_tendermint_direct_data_mev = {
+            'consensus_hex_address': self.test_consensus_address,
+            'is_syncing': self.test_is_syncing,
+            'is_peered_with_sentinel': self.test_is_peered_with_sentinel,
+        }
+
         self.retrieved_tendermint_direct_data = {
             'consensus_hex_address': self.test_consensus_address,
             'is_syncing': self.test_is_syncing
         }
+
         self.retrieved_tendermint_archive_data = {
             'historical': [
                 {
@@ -134,6 +143,12 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         self.retrieved_tendermint_rpc_data = {
             **self.retrieved_tendermint_archive_data,
             'is_syncing': self.test_is_syncing,
+        }
+
+        self.retrieved_tendermint_rpc_data_mev = {
+            **self.retrieved_tendermint_archive_data,
+            'is_syncing': self.test_is_syncing,
+            'is_peered_with_sentinel': self.test_is_peered_with_sentinel,
         }
 
         # Processed retrieved data example
@@ -189,6 +204,13 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                 'monitoring_enabled': True
             },
         }
+
+        self.received_retrieval_info_all_sources_mev = copy.deepcopy(self.received_retrieval_info_all_source_types_enabled)
+        self.received_retrieval_info_all_sources_mev['tendermint_rpc']['data'] = self.retrieved_tendermint_rpc_data_mev
+        self.received_retrieval_info_all_sources_mev['tendermint_rpc']['processing_function'] = self.test_monitor._process_retrieved_tendermint_rpc_data
+        self.received_retrieval_info_all_sources_mev['cosmos_rest']['processing_function'] = self.test_monitor._process_retrieved_cosmos_rest_data
+        self.received_retrieval_info_all_sources_mev['prometheus']['processing_function'] = self.test_monitor._process_retrieved_prometheus_data
+
         self.received_retrieval_info_some_sources_disabled = {
             'prometheus': {
                 'data': {},
@@ -793,7 +815,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
     def test_get_tendermint_rpc_direct_data_return(
             self, mock_get_status) -> None:
         """
-        We will check that the return is as expected for all cases
+        We will check that the return is as expected for all responses without a mev_info key
         """
         mock_get_status.return_value = {
             'result': {
@@ -802,11 +824,35 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                 },
                 'sync_info': {
                     'catching_up': self.test_is_syncing
-                }
+                },
             }
         }
+
         actual_return = self.test_monitor._get_tendermint_rpc_direct_data()
         self.assertEqual(self.retrieved_tendermint_direct_data, actual_return)
+
+    @mock.patch.object(TendermintRpcApiWrapper, 'get_status')
+    def test_get_tendermint_rpc_direct_data_return_mev_info(
+            self, mock_get_status) -> None:
+        """
+        We will check that the return is as expected when mev_info exists
+        """
+        mock_get_status.return_value = {
+            'result': {
+                'validator_info': {
+                    'address': self.test_consensus_address
+                },
+                'sync_info': {
+                    'catching_up': self.test_is_syncing
+                },
+                'mev_info' : {
+                    'is_peered_with_relayer' : self.test_is_peered_with_sentinel,
+                },
+            }
+        }
+
+        actual_return_mev = self.test_monitor._get_tendermint_rpc_direct_data()
+        self.assertEqual(self.retrieved_tendermint_direct_data_mev, actual_return_mev)
 
     @parameterized.expand([
         (None, 1000, True, 999,),
@@ -1466,6 +1512,22 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         self.assertEqual(self.test_consensus_address,
                          self.test_monitor.validator_consensus_address)
 
+    @mock.patch.object(CosmosNodeMonitor, '_get_tendermint_rpc_archive_data')
+    @mock.patch.object(CosmosNodeMonitor, '_get_tendermint_rpc_direct_data')
+    @mock.patch.object(CosmosNodeMonitor, '_select_cosmos_tendermint_node')
+    def test_get_tendermint_rpc_data_sets_peered_with_sentinel(
+            self, mock_select_node, mock_get_direct_data,
+            mock_get_archive_data) -> None:
+        mock_select_node.return_value = self.data_sources[0]
+        mock_get_direct_data.return_value = \
+            self.retrieved_tendermint_direct_data_mev
+        mock_get_archive_data.return_value = \
+            self.retrieved_tendermint_archive_data
+
+        actual_return = self.test_monitor._get_tendermint_rpc_data()
+        self.assertEqual(actual_return[0],
+                         self.retrieved_tendermint_rpc_data_mev)
+
     @parameterized.expand([
         ('',),
         (None,),
@@ -1500,6 +1562,21 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         actual_ret = self.test_monitor._get_tendermint_rpc_data()
         self.assertEqual((self.retrieved_tendermint_rpc_data, False, None),
                          actual_ret)
+
+    @mock.patch.object(CosmosNodeMonitor, '_get_tendermint_rpc_archive_data')
+    @mock.patch.object(CosmosNodeMonitor, '_get_tendermint_rpc_direct_data')
+    @mock.patch.object(CosmosNodeMonitor, '_select_cosmos_tendermint_node')
+    def test_get_tendermint_rpc_data_ret_if_peering_data_retrieved_successfully(
+            self, mock_select_node, mock_get_direct_data,
+            mock_get_archive_data) -> None:
+        mock_select_node.return_value = self.data_sources[0]
+        mock_get_archive_data.return_value = \
+            self.retrieved_tendermint_archive_data
+        ## update mock direct response data
+        mock_get_direct_data.return_value = \
+            self.retrieved_tendermint_direct_data_mev
+        actual_ret_mev = self.test_monitor._get_tendermint_rpc_data()
+        self.assertEqual((self.retrieved_tendermint_rpc_data_mev, False, None), actual_ret_mev)
 
     @parameterized.expand([
         (NodeIsDownException('node_name_1'),
@@ -1604,10 +1681,13 @@ class TestCosmosNodeMonitor(unittest.TestCase):
          ['self.retrieved_prometheus_data_example_1', False, None], True,
          ['self.retrieved_cosmos_rest_data_1', False, None], True,
          ['self.retrieved_tendermint_rpc_data', False, None], True),
+        ('self.received_retrieval_info_all_sources_mev',
+         ['self.retrieved_prometheus_data_example_1', False, None], True,
+         ['self.retrieved_cosmos_rest_data_1', False, None], True,
+         ['self.retrieved_tendermint_rpc_data_mev', False, None], True),
         ('self.received_retrieval_info_some_sources_disabled', None, False,
          ['self.retrieved_cosmos_rest_data_1', False, None], True,
-         ['self.retrieved_tendermint_rpc_data', False, None], True
-         ),
+         ['self.retrieved_tendermint_rpc_data', False, None], True),
         ('self.received_retrieval_info_all_source_types_enabled_err',
          [{}, True, PANICException('test_exception_1', 1)], True,
          [{}, True, PANICException('test_exception_2', 2)], True,
@@ -1655,6 +1735,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         self.test_monitor._node_config._monitor_prometheus = monitor_prom
         self.test_monitor._node_config._monitor_cosmos_rest = \
             monitor_cosmos_rest
+
         self.test_monitor._node_config._monitor_tendermint_rpc = \
             monitor_tendermint_rpc
 
@@ -1664,6 +1745,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         expected_ret['prometheus']['get_function'] = mock_get_prom_data
         expected_ret['tendermint_rpc']['get_function'] = \
             mock_get_tendermint_rpc_data
+
         self.assertEqual(expected_ret, actual_ret)
 
     @freeze_time("2012-01-01")
@@ -1720,6 +1802,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                     'node_id': self.test_monitor.node_config.node_id,
                     'node_parent_id': self.test_monitor.node_config.parent_id,
                     'time': datetime.now().timestamp(),
+                    'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                     'is_validator': self.test_monitor.node_config.is_validator,
                     'operator_address':
                         self.test_monitor.node_config.operator_address,
@@ -1729,6 +1812,30 @@ class TestCosmosNodeMonitor(unittest.TestCase):
         }
         actual_ret = self.test_monitor._process_retrieved_tendermint_rpc_data(
             self.test_data_dict)
+        self.assertEqual(expected_ret, actual_ret)
+
+    @freeze_time("2012-01-01")
+    def test_process_retrieved_tendermint_rpc_data_returns_expected_data_when_node_is_mev(
+            self) -> None:
+        expected_ret = {
+            'result': {
+                'meta_data': {
+                    'monitor_name': self.monitor_name,
+                    'node_name': self.test_monitor.node_config.node_name,
+                    'node_id': self.test_monitor.node_config.node_id,
+                    'node_parent_id': self.test_monitor.node_config.parent_id,
+                    'time': datetime.now().timestamp(),
+                    'is_mev_tendermint_node': True,
+                    'is_validator': self.test_monitor.node_config.is_validator,
+                    'operator_address':
+                        self.test_monitor.node_config.operator_address,
+                },
+                'data': copy.deepcopy(self.test_data_dict),
+            }
+        }
+        actual_ret = self.test_monitor._process_retrieved_tendermint_rpc_data(
+            self.retrieved_tendermint_direct_data_mev)
+        expected_ret['result']['data'] = self.retrieved_tendermint_direct_data_mev
         self.assertEqual(expected_ret, actual_ret)
 
     @parameterized.expand([
@@ -1859,6 +1966,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                         'node_parent_id':
                             self.test_monitor.node_config.parent_id,
                         'time': datetime(2012, 1, 1).timestamp(),
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator':
                             self.test_monitor.node_config.is_validator,
                         'operator_address':
@@ -1916,6 +2024,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                         'node_parent_id':
                             self.test_monitor.node_config.parent_id,
                         'time': datetime(2012, 1, 1).timestamp(),
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator':
                             self.test_monitor.node_config.is_validator,
                         'operator_address':
@@ -1934,7 +2043,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
             self.received_retrieval_info_some_sources_disabled
         mock_send_data.return_value = None
         mock_send_heartbeat.return_value = None
-
+        
         self.test_monitor._monitor()
         mock_send_data.assert_called_once_with(expected_output_data)
         mock_send_heartbeat.assert_called_once_with(expected_output_hb)
@@ -2064,6 +2173,7 @@ class TestCosmosNodeMonitor(unittest.TestCase):
                         'node_parent_id':
                             self.test_monitor.node_config.parent_id,
                         'time': datetime(2012, 1, 1).timestamp(),
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator':
                             self.test_monitor.node_config.is_validator,
                         'operator_address':

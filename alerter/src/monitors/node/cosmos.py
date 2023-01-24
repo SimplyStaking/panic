@@ -419,11 +419,20 @@ class CosmosNodeMonitor(CosmosMonitor):
         def retrieval_process() -> Dict:
             status = self.tendermint_rpc_api.execute_with_checks(
                 self.tendermint_rpc_api.get_status, [node_url], node_name)
+            ## check if mev_info is present in response
+            if 'mev_info' not in status['result']:
+                return {
+                    'consensus_hex_address': status['result']['validator_info'][
+                        'address'],
+                    'is_syncing': status['result']['sync_info'][
+                        'catching_up'],
+                }
             return {
                 'consensus_hex_address': status['result']['validator_info'][
                     'address'],
                 'is_syncing': status['result']['sync_info'][
                     'catching_up'],
+                'is_peered_with_sentinel' : status['result']['mev_info']['is_peered_with_relayer'],
             }
 
         return self._execute_cosmos_tendermint_retrieval_with_exceptions(
@@ -684,7 +693,13 @@ class CosmosNodeMonitor(CosmosMonitor):
             if direct_data['consensus_hex_address'] not in ['', None]:
                 self._validator_consensus_address = direct_data[
                     'consensus_hex_address']
-                direct_data = {'is_syncing': direct_data['is_syncing']}
+                ## If the node is running mev-tendermint add the is_peered_with_sentinel field
+                if 'is_peered_with_sentinel' in direct_data:
+                    direct_data = {'is_syncing': direct_data['is_syncing'],
+                                   'is_peered_with_sentinel':
+                                       direct_data['is_peered_with_sentinel']}
+                else:
+                    direct_data = {'is_syncing': direct_data['is_syncing']}
 
             # Select archive node for archive data retrieval. If no archive
             # node is accessible, or given by the user, try getting data with
@@ -882,6 +897,7 @@ class CosmosNodeMonitor(CosmosMonitor):
                     'node_id': self.node_config.node_id,
                     'node_parent_id': self.node_config.parent_id,
                     'time': datetime.now().timestamp(),
+                    'is_mev_tendermint_node': 'is_peered_with_sentinel' in data,
                     'is_validator': self.node_config.is_validator,
                     'operator_address': self.node_config.operator_address,
                 },

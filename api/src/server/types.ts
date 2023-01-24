@@ -112,6 +112,7 @@ export interface AlertKeysNode {
     cosmos_node_is_down: string,
     cosmos_node_slashed: string,
     cosmos_node_syncing: string,
+    cosmos_node_peering: string,
     cosmos_node_active: string,
     cosmos_node_jailed: string,
     cosmos_node_blocks_missed: string,

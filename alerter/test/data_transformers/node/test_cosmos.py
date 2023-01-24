@@ -49,6 +49,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
         self.dummy_logger.disabled = True
         self.invalid_transformed_data = {'bad_key': 'bad_value'}
         self.test_monitor_name = 'test_monitor_name'
+        self.test_is_mev_tendermint_node = False
 
         # Rabbit instance
         self.connection_check_time_interval = timedelta(seconds=0)
@@ -143,6 +144,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -175,6 +177,12 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                 }
             }
         }
+
+        self.raw_data_example_result_mev = copy.deepcopy(
+            self.raw_data_example_result_all)
+        self.raw_data_example_result_mev['tendermint_rpc']['result']['data']['is_peered_with_sentinel'] = True
+        self.raw_data_example_result_mev['tendermint_rpc']['result']['meta_data']['is_mev_tendermint_node'] = True
+
         self.raw_data_example_result_options_None = copy.deepcopy(
             self.raw_data_example_result_all)
         self.raw_data_example_result_options_None['prometheus'][
@@ -226,6 +234,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -273,6 +282,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -325,6 +335,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'last_monitored': self.test_last_monitored,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -347,6 +358,12 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                 }
             }
         }
+        self.transformed_data_example_result_mev = copy.deepcopy(
+            self.transformed_data_example_result_all)
+        self.transformed_data_example_result_mev['tendermint_rpc']['result']['data']['is_peered_with_sentinel'] = True
+        self.transformed_data_example_result_mev['tendermint_rpc']['result']['meta_data']['is_mev_tendermint_node'] = True
+
+
         self.transformed_data_example_result_options_None = copy.deepcopy(
             self.transformed_data_example_result_all)
         self.transformed_data_example_result_options_None['prometheus'][
@@ -403,6 +420,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -453,6 +471,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -514,6 +533,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'last_monitored': self.test_last_monitored,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -548,6 +568,15 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                 }
             }
         }
+
+        self.processed_data_example_result_all_mev = copy.deepcopy(
+            self.processed_data_example_result_all)
+        self.processed_data_example_result_all_mev['tendermint_rpc']['result']['data']['is_peered_with_sentinel'] = {
+            'current': True,
+            'previous': None
+        }
+        self.processed_data_example_result_all_mev['tendermint_rpc']['result']['meta_data']['is_mev_tendermint_node'] = True
+
         self.processed_data_example_result_options_None = copy.deepcopy(
             self.processed_data_example_result_all)
         self.processed_data_example_result_options_None['prometheus'][
@@ -604,6 +633,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -660,6 +690,7 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
                         'node_id': self.node_1.node_id,
                         'node_parent_id': self.node_1.parent_id,
                         'time': self.test_last_monitored,
+                        'is_mev_tendermint_node': self.test_is_mev_tendermint_node,
                         'is_validator': self.test_is_validator,
                         'operator_address': self.test_operator_address,
                     },
@@ -1039,6 +1070,31 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
         self.assertFalse(self.test_data_transformer._state[
                              self.node_1.node_id].is_down_prometheus)
 
+    def test_update_state_with_mev_metrics(self) -> None:
+        expected_updated_node = copy.deepcopy(self.node_1)
+        self.node_1.reset()
+        self.test_data_transformer._state = copy.deepcopy(self.test_state)
+        self.test_data_transformer._state['dummy_id'] = self.test_data_str
+
+        # Update state with mev metrics
+        self.test_data_transformer._update_state(
+            self.transformed_data_example_result_mev)
+
+        expected_updated_node.set_is_peered_with_sentinel(True)
+
+        # Check that the nodes's state values have been modified correctly
+        self.assertEqual(
+            expected_updated_node,
+            self.test_data_transformer._state[self.node_1.node_id])
+        # Check that the nodes not in question were not modified
+        self.assertEqual(self.test_data_str,
+                         self.test_data_transformer._state['dummy_id'])
+        # Check that setting state to false after true works
+        self.transformed_data_example_result_mev['tendermint_rpc']['result']['data']['is_peered_with_sentinel'] = False
+        self.test_data_transformer._update_state(
+            self.transformed_data_example_result_mev)
+        self.assertFalse(self.test_data_transformer._state[self.node_1.node_id].is_peered_with_sentinel)
+
     @parameterized.expand([
         ('self.transformed_data_example_general_error', False,),
         ('self.transformed_data_example_downtime_error', True,)
@@ -1132,6 +1188,8 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
          'self.processed_data_example_general_error'),
         ('self.transformed_data_example_downtime_error',
          'self.processed_data_example_downtime_error'),
+        ('self.transformed_data_example_result_mev',
+         'self.processed_data_example_result_all_mev'),
     ])
     def test_process_transformed_data_for_alerting_returns_expected_data(
             self, transformed_data: str, expected_processed_data: str) -> None:
@@ -1477,6 +1535,8 @@ class TestCosmosNodeDataTransformer(unittest.TestCase):
     @parameterized.expand([
         ('self.raw_data_example_result_all',
          'self.transformed_data_example_result_all',),
+        ('self.raw_data_example_result_mev',
+          'self.transformed_data_example_result_mev',),
         ('self.raw_data_example_result_options_None',
          'self.transformed_data_example_result_options_None'),
         ('self.raw_data_example_general_error',

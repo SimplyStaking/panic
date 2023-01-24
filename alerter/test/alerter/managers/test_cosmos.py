@@ -84,7 +84,8 @@ class TestCosmosAlertersManager(unittest.TestCase):
             'cannot_access_tendermint_rpc_node', 'missed_blocks', 'slashed',
             'node_is_syncing', 'validator_is_syncing',
             'validator_not_active_in_session', 'validator_is_jailed',
-            'new_proposal', 'proposal_concluded'
+            'new_proposal', 'proposal_concluded',
+            'node_is_peered_with_sentinel', 'validator_is_peered_with_sentinel',
         ]
         self.received_configs = {}
         for i in range(len(cosmos_config_metrics)):
@@ -132,7 +133,9 @@ class TestCosmosAlertersManager(unittest.TestCase):
                 validator_is_syncing=filtered_received_configs[
                     'validator_is_syncing'],
                 validator_is_jailed=filtered_received_configs[
-                    'validator_is_jailed']
+                    'validator_is_jailed'],
+                node_is_peered_with_sentinel=filtered_received_configs['node_is_peered_with_sentinel'],
+                validator_is_peered_with_sentinel=filtered_received_configs['validator_is_peered_with_sentinel'],
             )
         }
         self.network_config_expected = {

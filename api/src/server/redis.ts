@@ -131,6 +131,7 @@ export const getAlertKeysNode = (): AlertKeysNode => ({
     cosmos_node_is_down: `${alertKeysCosmosNodePrefix}1`,
     cosmos_node_slashed: `${alertKeysCosmosNodePrefix}2`,
     cosmos_node_syncing: `${alertKeysCosmosNodePrefix}3`,
+    cosmos_node_peering: `${alertKeysCosmosNodePrefix}14`, 
     cosmos_node_active: `${alertKeysCosmosNodePrefix}4`,
     cosmos_node_jailed: `${alertKeysCosmosNodePrefix}5`,
     cosmos_node_blocks_missed: `${alertKeysCosmosNodePrefix}6`,

@@ -17,7 +17,6 @@ from src.utils.data import transformed_data_processing_helper
 from src.utils.exceptions import (MessageWasNotDeliveredException,
                                   NodeIsDownException)
 
-
 class CosmosNodeStore(Store):
     def __init__(self, name: str, logger: logging.Logger,
                  rabbitmq: RabbitMQApi) -> None:
@@ -261,6 +260,8 @@ class CosmosNodeStore(Store):
                     node_id): str(metrics['went_down_at']),
                 Keys.get_cosmos_node_is_syncing(node_id):
                     str(metrics['is_syncing']),
+                Keys.get_cosmos_node_is_peered(node_id):
+                    "" if ('is_peered_with_sentinel' not in metrics) else str(metrics['is_peered_with_sentinel']),
                 Keys.get_cosmos_node_slashed(node_id):
                     json.dumps(metrics['slashed']),
                 Keys.get_cosmos_node_missed_blocks(
@@ -401,6 +402,7 @@ class CosmosNodeStore(Store):
                         'went_down_at_tendermint_rpc': str(
                             metrics['went_down_at']),
                         'is_syncing': str(metrics['is_syncing']),
+                        'is_peered_with_sentinel': "" if ('is_peered_with_sentinel' not in metrics) else str(metrics['is_peered_with_sentinel']),
                         'slashed': json.dumps(metrics['slashed']),
                         'missed_blocks': json.dumps(metrics['missed_blocks']),
                         'timestamp': meta_data['last_monitored'],

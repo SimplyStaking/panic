@@ -42,7 +42,8 @@ class TestCosmosNodeAlertingFactory(unittest.TestCase):
         metrics_with_time_window = ['missed_blocks']
         severity_metrics = [
             'slashed', 'node_is_syncing', 'validator_is_syncing',
-            'validator_not_active_in_session', 'validator_is_jailed'
+            'validator_not_active_in_session', 'validator_is_jailed',
+            'node_is_peered_with_sentinel', 'validator_is_peered_with_sentinel',
         ]
 
         filtered = {}
@@ -106,7 +107,10 @@ class TestCosmosNodeAlertingFactory(unittest.TestCase):
             missed_blocks=filtered['missed_blocks'], slashed=filtered[
                 'slashed'], node_is_syncing=filtered['node_is_syncing'],
             validator_is_syncing=filtered['validator_is_syncing'],
-            validator_is_jailed=filtered['validator_is_jailed'])
+            validator_is_jailed=filtered['validator_is_jailed'],
+            node_is_peered_with_sentinel=filtered['node_is_peered_with_sentinel'],
+            validator_is_peered_with_sentinel=filtered['validator_is_peered_with_sentinel'],
+            )
 
         # Test object
         self.cosmos_node_alerting_factory = CosmosNodeAlertingFactory(
@@ -157,6 +161,7 @@ class TestCosmosNodeAlertingFactory(unittest.TestCase):
             AlertsMetricCode.MetricNotFound.value: False,
         }
         any_severity_sent = {
+            AlertsMetricCode.NodeIsNotPeeredWithSentinel.value: False,
             AlertsMetricCode.NodeIsSyncing.value: False,
             AlertsMetricCode.ValidatorIsNotActive.value: False,
             AlertsMetricCode.ValidatorIsJailed.value: False,

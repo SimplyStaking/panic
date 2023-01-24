@@ -158,5 +158,21 @@
         "description": "An alert will be raised if the number of oracles that have submitted their observations is less than the minimum requirement. Severity is set as warning as from a node operator perspective there is nothing one can do.",
         "group": "severity_alert",
         "type": "6265d085fdb17d641746dcef"
+    },
+    {
+        "_id": "62e25c1ff161ba55e6db2a37",
+        "name": "Node is Peered With Sentinel",
+        "value": "node_is_peered_with_sentinel",
+        "description": "An alert will be raised if the current node is not peering with the sentinel on the source chain",
+        "group": "severity_alert",
+        "type": "6265d085fdb17d641746dcef"
+    },
+    {
+        "_id": "62e25c1ff161ba55e6db2a38",
+        "name": "Validator is Peered With Sentinel",
+        "value": "validator_is_peered_with_sentinel",
+        "description": "An alert will be raised if the current node is not peering with the sentinel on the source chain",
+        "group": "severity_alert",
+        "type": "6265d08efdb17d641746dcf0"
     }
 ]

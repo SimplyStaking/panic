@@ -47,6 +47,10 @@ class Alerter(QueuingPublisherSubscriberComponent):
         return current is True
 
     @staticmethod
+    def _is_false_condition_function(current: Any) -> bool:
+        return current is False
+
+    @staticmethod
     def _true_fn() -> bool:
         return True
 

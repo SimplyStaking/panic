@@ -5,6 +5,7 @@ class GroupedCosmosNodeAlertsMetricCode(GroupedAlertsMetricCode):
     NodeIsDown = 'cosmos_node_is_down'
     ValidatorWasSlashed = 'cosmos_node_slashed'
     NodeIsSyncing = 'cosmos_node_syncing'
+    NodeIsNotPeeredWithSentinel = 'cosmos_node_is_not_peered_with_sentinel'
     ValidatorIsNotActive = 'cosmos_node_active'
     ValidatorIsJailed = 'cosmos_node_jailed'
     BlocksMissedThreshold = 'cosmos_node_blocks_missed'

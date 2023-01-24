@@ -69,7 +69,6 @@ class CosmosAlertsConfigsFactory(ConfigsFactory, ABC):
 
         return None
 
-
 class CosmosNodeAlertsConfigsFactory(CosmosAlertsConfigsFactory):
     """
     This class manages the node alerts configs. The configs are indexed by the
@@ -125,7 +124,9 @@ class CosmosNodeAlertsConfigsFactory(CosmosAlertsConfigsFactory):
             slashed=filtered['slashed'],
             node_is_syncing=filtered['node_is_syncing'],
             validator_is_syncing=filtered['validator_is_syncing'],
-            validator_is_jailed=filtered['validator_is_jailed']
+            validator_is_jailed=filtered['validator_is_jailed'],
+            node_is_peered_with_sentinel=filtered['node_is_peered_with_sentinel'],
+            validator_is_peered_with_sentinel=filtered['validator_is_peered_with_sentinel'],
         )
 
         self._configs[chain_name] = cosmos_node_alerts_config

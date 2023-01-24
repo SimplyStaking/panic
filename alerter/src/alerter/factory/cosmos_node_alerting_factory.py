@@ -107,6 +107,7 @@ class CosmosNodeAlertingFactory(AlertingFactory):
                 AlertsMetricCode.MetricNotFound.value: False,
             }
             any_severity_sent = {
+                AlertsMetricCode.NodeIsNotPeeredWithSentinel.value: False,
                 AlertsMetricCode.NodeIsSyncing.value: False,
                 AlertsMetricCode.ValidatorIsNotActive.value: False,
                 AlertsMetricCode.ValidatorIsJailed.value: False,

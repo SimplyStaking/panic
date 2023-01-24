@@ -19,6 +19,7 @@ class CosmosNode(Node):
         self._current_height = None
         self._voting_power = None
         self._is_syncing = None
+        self._is_peered_with_sentinel = None
         self._bond_status = None
         self._jailed = None
 
@@ -85,6 +86,10 @@ class CosmosNode(Node):
     @property
     def is_syncing(self) -> Optional[bool]:
         return self._is_syncing
+
+    @property
+    def is_peered_with_sentinel(self) -> Optional[bool]:
+        return self._is_peered_with_sentinel
 
     @property
     def bond_status(self) -> Optional[BondStatus]:
@@ -199,6 +204,9 @@ class CosmosNode(Node):
     def set_is_syncing(self, new_is_syncing: Optional[bool]) -> None:
         self._is_syncing = new_is_syncing
 
+    def set_is_peered_with_sentinel(self, new_is_peered_with_sentinel: Optional[bool]) -> None:
+        self._is_peered_with_sentinel = new_is_peered_with_sentinel
+
     def set_bond_status(self, new_bond_status: Optional[BondStatus]) -> None:
         self._bond_status = new_bond_status
 
@@ -284,6 +292,7 @@ class CosmosNode(Node):
         self.set_current_height(None)
         self.set_voting_power(None)
         self.set_is_syncing(None)
+        self.set_is_peered_with_sentinel(None)
         self.set_bond_status(None)
         self.set_jailed(None)
         self.set_slashed({'slashed': False, 'amount_map': {}})

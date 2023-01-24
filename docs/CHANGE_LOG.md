@@ -1,6 +1,10 @@
 # Change Log
 
 ## Unreleased
+ - Added `is_peered_with_sentinel` monitorable for use in nodes that are running `mev-tendermint`
+ - Added `node_is_peered_with_sentinel` / `validator_is_peered_with_sentinel` alerts / alerting configs
+- Updated CosmosNode `data_store`, `data_transformer`, `monitor`, and `alerter` to accomodate this new monitorable / alert
+ - Update API / UI for configuring these alerts
 
 ## 1.3.0
 
